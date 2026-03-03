@@ -1,0 +1,68 @@
+# =========================
+# 1. Binaries & Executables
+# =========================
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/bin/
+/main
+/web
+/worker
+permatatex-inventory
+
+# =========================
+# 2. Environment & Secrets
+# =========================
+.env
+.env.*
+.env.local
+.env.development
+.env.test
+.env.production
+!.env.example
+
+# =========================
+# 3. Live Reloading (Air)
+# =========================
+/tmp/
+
+# =========================
+# 4. Go Workspace & Vendor
+# =========================
+go.work
+go.work.sum
+/vendor/
+
+# =========================
+# 5. OS & Editor / IDE
+# =========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.code-workspace
+AGENTS.md
+
+# JetBrains / GoLand
+.idea/
+*.iml
+
+# =========================
+# 6. Logs & Databases
+# =========================
+*.log
+*.sqlite
+*.db
