@@ -44,8 +44,14 @@ func main() {
 		slog.Int("min_conns", int(cfg.DBMinConns)),
 	)
 
+	if err := httpdelivery.SetupValidator(); err != nil {
+		logger.Error("failed to setup validator", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	router := gin.New()
-	router.Use(gin.Recovery())
+	router.Use(httpdelivery.ErrorHandlerMiddleware())
 	router.Use(corsMiddleware(cfg.CORSAllowOrigin))
 
 	healthHandler := httpdelivery.NewHealthHandler()

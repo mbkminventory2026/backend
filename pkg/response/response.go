@@ -15,6 +15,8 @@ const (
 const (
 	MessageSuccess             = "success"
 	MessageBadRequest          = "bad request"
+	MessageValidationFailed    = "validation failed"
+	MessageInvalidRequestBody  = "invalid request body"
 	MessageInternalServerError = "internal server error"
 )
 
