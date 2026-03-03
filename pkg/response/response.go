@@ -28,6 +28,11 @@ type JSONResponse struct {
 	Error   any    `json:"error,omitempty"`
 }
 
+// HealthResponse is the minimal payload for service health checks.
+type HealthResponse struct {
+	Status string `json:"status" example:"ok"`
+}
+
 // JSON writes a JSONResponse with a specific HTTP status code.
 func JSON(c *gin.Context, httpCode int, payload JSONResponse) {
 	c.JSON(httpCode, payload)
@@ -55,5 +60,5 @@ func Fail(c *gin.Context, httpCode int, message string, errDetail any) {
 
 // Health writes a minimal health check response.
 func Health(c *gin.Context) {
-	JSON(c, http.StatusOK, JSONResponse{Status: StatusOK})
+	c.JSON(http.StatusOK, HealthResponse{Status: StatusOK})
 }

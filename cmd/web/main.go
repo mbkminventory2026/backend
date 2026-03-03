@@ -1,3 +1,16 @@
+// @title           Permatatex IT Inventory API
+// @version         1.0
+// @description     API documentation for Permatatex IT Inventory System backend.
+// @termsOfService  https://swagger.io/terms/
+// @contact.name    API Support
+// @contact.email   support@permatatex.local
+// @license.name    MIT
+// @host            localhost:8080
+// @BasePath        /
+// @schemes         http
+// @securityDefinitions.apikey BearerAuth
+// @in              header
+// @name            Authorization
 package main
 
 import (
@@ -11,7 +24,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
+	docs "permatatex-inventory/docs"
 	"permatatex-inventory/internal/config"
 	httpdelivery "permatatex-inventory/internal/delivery/http"
 )
@@ -50,12 +66,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	docs.SwaggerInfo.Host = "localhost:" + cfg.ServerPort
+	docs.SwaggerInfo.BasePath = "/"
+	docs.SwaggerInfo.Schemes = []string{"http"}
+
 	router := gin.New()
 	router.Use(httpdelivery.ErrorHandlerMiddleware())
 	router.Use(corsMiddleware(cfg.CORSAllowOrigin))
 
 	healthHandler := httpdelivery.NewHealthHandler()
 	healthHandler.RegisterRoutes(router)
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	server := &stdhttp.Server{
 		Addr:         ":" + cfg.ServerPort,

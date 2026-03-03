@@ -1,0 +1,41 @@
+basePath: /
+definitions:
+  response.HealthResponse:
+    properties:
+      status:
+        example: ok
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@permatatex.local
+    name: API Support
+  description: API documentation for Permatatex IT Inventory System backend.
+  license:
+    name: MIT
+  termsOfService: https://swagger.io/terms/
+  title: Permatatex IT Inventory API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: Returns service health status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.HealthResponse'
+      summary: Health Check
+      tags:
+      - System
+schemes:
+- http
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
