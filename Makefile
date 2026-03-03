@@ -2,8 +2,9 @@ APP_NAME := permatatex-inventory
 SQLC_CONFIG := sqlc.yaml
 MIGRATIONS_PATH := db/migrations
 DB_URL ?= postgres://postgres:postgres@localhost:5432/permatatex_inventory?sslmode=disable
+LINT_CONFIG := .golangci.yml
 
-.PHONY: dev db-gen migrate-up migrate-down swag
+.PHONY: dev db-gen migrate-up migrate-down swag lint lint-fix docker-up docker-down docker-logs
 
 dev:
 	air -c .air.toml
@@ -19,3 +20,18 @@ migrate-down:
 
 swag:
 	swag init -g cmd/web/main.go -o docs
+
+lint:
+	golangci-lint run --config $(LINT_CONFIG) ./...
+
+lint-fix:
+	golangci-lint run --fix --config $(LINT_CONFIG) ./...
+
+docker-up:
+	docker compose up --build -d
+
+docker-down:
+	docker compose down
+
+docker-logs:
+	docker compose logs -f app

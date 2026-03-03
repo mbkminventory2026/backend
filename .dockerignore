@@ -1,0 +1,12 @@
+.git
+.gitignore
+.idea
+.vscode
+tmp
+docs
+AGENTS.md
+*.log
+*.md
+.env
+.env.*
+!.env.example

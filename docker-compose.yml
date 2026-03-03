@@ -1,0 +1,52 @@
+services:
+  app:
+    container_name: permatatex-backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: "8080"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: permatatex_inventory
+      DB_SSLMODE: disable
+      DB_URL: postgres://postgres:postgres@db:5432/permatatex_inventory?sslmode=disable
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - permatatex-net
+
+  db:
+    container_name: permatatex-postgres
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: permatatex_inventory
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d permatatex_inventory"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - permatatex-net
+
+volumes:
+  pgdata:
+
+networks:
+  permatatex-net:
+    driver: bridge
