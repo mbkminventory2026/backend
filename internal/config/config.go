@@ -15,6 +15,12 @@ const (
 	defaultDBPort          = "5432"
 	defaultDBSSLMode       = "disable"
 	defaultCORSAllowOrigin = "*"
+	defaultDBMaxConns      = int32(20)
+	defaultDBMinConns      = int32(2)
+	defaultDBConnLifetime  = 30
+	defaultDBConnIdleTime  = 10
+	defaultDBHealthPeriod  = 30
+	defaultDBConnectTO     = 5
 )
 
 // Config stores all application settings loaded from .env or system environment.
@@ -29,6 +35,13 @@ type Config struct {
 	DBPassword string `mapstructure:"DB_PASSWORD"`
 	DBName     string `mapstructure:"DB_NAME"`
 	DBSSLMode  string `mapstructure:"DB_SSLMODE"`
+	DBMaxConns int32  `mapstructure:"DB_MAX_CONNS"`
+	DBMinConns int32  `mapstructure:"DB_MIN_CONNS"`
+
+	DBMaxConnLifetimeMinutes int `mapstructure:"DB_MAX_CONN_LIFETIME_MINUTES"`
+	DBMaxConnIdleTimeMinutes int `mapstructure:"DB_MAX_CONN_IDLE_TIME_MINUTES"`
+	DBHealthCheckPeriodSec   int `mapstructure:"DB_HEALTH_CHECK_PERIOD_SECONDS"`
+	DBConnectTimeoutSec      int `mapstructure:"DB_CONNECT_TIMEOUT_SECONDS"`
 
 	JWTSecret       string `mapstructure:"JWT_SECRET"`
 	TurnstileSecret string `mapstructure:"TURNSTILE_SECRET"`
@@ -44,6 +57,12 @@ func Load() (*Config, error) {
 	viper.SetDefault("DB_PORT", defaultDBPort)
 	viper.SetDefault("DB_SSLMODE", defaultDBSSLMode)
 	viper.SetDefault("CORS_ALLOW_ORIGIN", defaultCORSAllowOrigin)
+	viper.SetDefault("DB_MAX_CONNS", defaultDBMaxConns)
+	viper.SetDefault("DB_MIN_CONNS", defaultDBMinConns)
+	viper.SetDefault("DB_MAX_CONN_LIFETIME_MINUTES", defaultDBConnLifetime)
+	viper.SetDefault("DB_MAX_CONN_IDLE_TIME_MINUTES", defaultDBConnIdleTime)
+	viper.SetDefault("DB_HEALTH_CHECK_PERIOD_SECONDS", defaultDBHealthPeriod)
+	viper.SetDefault("DB_CONNECT_TIMEOUT_SECONDS", defaultDBConnectTO)
 
 	if err := viper.ReadInConfig(); err != nil {
 		var configNotFound viper.ConfigFileNotFoundError

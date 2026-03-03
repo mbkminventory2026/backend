@@ -33,6 +33,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	dbPool, err := config.NewPGXPool(cfg)
+	if err != nil {
+		logger.Error("failed to initialize database pool", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+	logger.Info(
+		"database pool initialized",
+		slog.Int("max_conns", int(cfg.DBMaxConns)),
+		slog.Int("min_conns", int(cfg.DBMinConns)),
+	)
+
 	router := gin.New()
 	router.Use(gin.Recovery())
 	router.Use(corsMiddleware(cfg.CORSAllowOrigin))
@@ -64,6 +75,8 @@ func main() {
 		logger.Info("shutdown signal received", slog.String("signal", sig.String()))
 	case err := <-serverErrCh:
 		logger.Error("server stopped unexpectedly", slog.String("error", err.Error()))
+		dbPool.Close()
+		logger.Info("database pool closed")
 		os.Exit(1)
 	}
 
@@ -75,9 +88,13 @@ func main() {
 		if closeErr := server.Close(); closeErr != nil {
 			logger.Error("force close failed", slog.String("error", closeErr.Error()))
 		}
+		dbPool.Close()
+		logger.Info("database pool closed")
 		os.Exit(1)
 	}
 
+	dbPool.Close()
+	logger.Info("database pool closed")
 	logger.Info("server shutdown complete")
 }
 
