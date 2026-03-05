@@ -1,20 +1,22 @@
 services:
   app:
     container_name: permatatex-backend
+    profiles: ["production"]
     build:
       context: .
       dockerfile: Dockerfile
-    env_file:
-      - .env
     environment:
       SERVER_PORT: "8080"
+      GIN_MODE: "${GIN_MODE:-release}"
+      CORS_ALLOW_ORIGIN: "${CORS_ALLOW_ORIGIN:-*}"
       DB_HOST: db
       DB_PORT: "5432"
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: permatatex_inventory
-      DB_SSLMODE: disable
-      DB_URL: postgres://postgres:postgres@db:5432/permatatex_inventory?sslmode=disable
+      DB_USER: "${DB_USER:-postgres}"
+      DB_PASSWORD: "${DB_PASSWORD:-postgres}"
+      DB_NAME: "${DB_NAME:-permatatex_inventory}"
+      DB_SSLMODE: "${DB_SSLMODE:-disable}"
+      JWT_SECRET: "${JWT_SECRET:-change-me}"
+      TURNSTILE_SECRET: "${TURNSTILE_SECRET:-change-me}"
     ports:
       - "8080:8080"
     depends_on:
@@ -28,11 +30,11 @@ services:
     container_name: permatatex-postgres
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: permatatex_inventory
+      POSTGRES_USER: "${DB_USER:-postgres}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD:-postgres}"
+      POSTGRES_DB: "${DB_NAME:-permatatex_inventory}"
     ports:
-      - "5432:5432"
+      - "15432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

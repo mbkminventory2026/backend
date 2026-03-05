@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -48,10 +49,25 @@ type Config struct {
 }
 
 // Load reads configuration from .env (if present) and environment variables.
+// When .env is missing (e.g. inside Docker), it falls back to OS environment variables only.
 func Load() (*Config, error) {
 	viper.SetConfigFile(envFileName)
 	viper.SetConfigType("env")
 	viper.AutomaticEnv()
+
+	// Explicitly bind all known keys so that viper.Unmarshal picks up
+	// OS environment variables even when no .env file is present.
+	// (AutomaticEnv only works with viper.Get, not with Unmarshal.)
+	for _, key := range []string{
+		"SERVER_PORT", "CORS_ALLOW_ORIGIN", "GIN_MODE",
+		"DB_URL", "DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD",
+		"DB_NAME", "DB_SSLMODE", "DB_MAX_CONNS", "DB_MIN_CONNS",
+		"DB_MAX_CONN_LIFETIME_MINUTES", "DB_MAX_CONN_IDLE_TIME_MINUTES",
+		"DB_HEALTH_CHECK_PERIOD_SECONDS", "DB_CONNECT_TIMEOUT_SECONDS",
+		"JWT_SECRET", "TURNSTILE_SECRET",
+	} {
+		_ = viper.BindEnv(key)
+	}
 
 	viper.SetDefault("SERVER_PORT", defaultServerPort)
 	viper.SetDefault("DB_PORT", defaultDBPort)
@@ -65,8 +81,11 @@ func Load() (*Config, error) {
 	viper.SetDefault("DB_CONNECT_TIMEOUT_SECONDS", defaultDBConnectTO)
 
 	if err := viper.ReadInConfig(); err != nil {
+		// When using SetConfigFile with an explicit path, viper returns
+		// *os.PathError (not ConfigFileNotFoundError) if the file is missing.
+		// Both cases are safe to ignore — the app will use OS env vars instead.
 		var configNotFound viper.ConfigFileNotFoundError
-		if !errors.As(err, &configNotFound) {
+		if !errors.As(err, &configNotFound) && !errors.Is(err, os.ErrNotExist) {
 			return nil, fmt.Errorf("read config file: %w", err)
 		}
 	}
