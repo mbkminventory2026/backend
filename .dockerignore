@@ -3,7 +3,6 @@
 .idea
 .vscode
 tmp
-docs
 AGENTS.md
 *.log
 *.md
