@@ -78,7 +78,10 @@ func ErrorHandlerMiddleware() gin.HandlerFunc {
 
 // AbortWithError appends an error to gin context and stops request chain.
 func AbortWithError(c *gin.Context, err error) {
-	_ = c.Error(err)
+	ginErr := c.Error(err)
+	if ginErr != nil && ginErr.Err != nil {
+		slog.Debug("request error attached to gin context", slog.String("error", ginErr.Err.Error()))
+	}
 	c.Abort()
 }
 

@@ -66,7 +66,9 @@ func Load() (*Config, error) {
 		"DB_HEALTH_CHECK_PERIOD_SECONDS", "DB_CONNECT_TIMEOUT_SECONDS",
 		"JWT_SECRET", "TURNSTILE_SECRET",
 	} {
-		_ = viper.BindEnv(key)
+		if err := viper.BindEnv(key); err != nil {
+			return nil, fmt.Errorf("bind env %s: %w", key, err)
+		}
 	}
 
 	viper.SetDefault("SERVER_PORT", defaultServerPort)

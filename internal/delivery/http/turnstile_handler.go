@@ -15,7 +15,7 @@ import (
 const (
 	messageCaptchaVerificationSucceeded = "captcha verification succeeded"
 	messageCaptchaVerificationFailed    = "captcha verification failed"
-	messageCaptchaTokenRequired         = "captcha token is required"
+	messageCaptchaRequired              = "captcha is required"
 	messageCaptchaServiceUnavailable    = "captcha verification service unavailable"
 	errorCodeCaptchaInvalid             = "captcha_invalid"
 	errorCodeCaptchaMissing             = "captcha_missing"
@@ -72,7 +72,7 @@ func (h *TurnstileHandler) handleVerificationError(c *gin.Context, err error) {
 	if usecase.IsTurnstileTokenRequiredError(err) {
 		AbortWithError(c, NewHTTPError(
 			http.StatusBadRequest,
-			messageCaptchaTokenRequired,
+			messageCaptchaRequired,
 			model.TurnstileErrorDetail{
 				Code: errorCodeCaptchaMissing,
 			},
