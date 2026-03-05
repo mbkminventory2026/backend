@@ -30,6 +30,8 @@ import (
 	docs "permatatex-inventory/docs"
 	"permatatex-inventory/internal/config"
 	httpdelivery "permatatex-inventory/internal/delivery/http"
+	turnstilegateway "permatatex-inventory/internal/gateway/turnstile"
+	"permatatex-inventory/internal/usecase"
 )
 
 const (
@@ -66,6 +68,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	turnstileGateway, err := turnstilegateway.NewTurnstileGateway(cfg.TurnstileSecret)
+	if err != nil {
+		logger.Error("failed to initialize turnstile gateway", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	turnstileUseCase, err := usecase.NewTurnstileUseCase(turnstileGateway)
+	if err != nil {
+		logger.Error("failed to initialize turnstile usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	docs.SwaggerInfo.Host = "localhost:" + cfg.ServerPort
 	docs.SwaggerInfo.BasePath = "/"
 	docs.SwaggerInfo.Schemes = []string{"http"}
@@ -76,6 +92,15 @@ func main() {
 
 	healthHandler := httpdelivery.NewHealthHandler()
 	healthHandler.RegisterRoutes(router)
+
+	turnstileHandler, err := httpdelivery.NewTurnstileHandler(turnstileUseCase)
+	if err != nil {
+		logger.Error("failed to initialize turnstile handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+	turnstileHandler.RegisterRoutes(router)
+
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	server := &stdhttp.Server{

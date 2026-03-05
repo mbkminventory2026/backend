@@ -19,6 +19,52 @@
     "host": "localhost:8080",
     "basePath": "/",
     "paths": {
+        "/api/v1/auth/turnstile/verify": {
+            "post": {
+                "description": "Validates frontend Turnstile token via Cloudflare siteverify API.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Verify Turnstile Token",
+                "parameters": [
+                    {
+                        "description": "Turnstile payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.VerifyTurnstileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.VerifyTurnstileSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.VerifyTurnstileBadRequestDoc"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/model.VerifyTurnstileBadGatewayDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Returns service health status",
@@ -41,6 +87,90 @@
         }
     },
     "definitions": {
+        "model.TurnstileErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "captcha_invalid"
+                },
+                "error_codes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "model.VerifyTurnstileBadGatewayDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/model.TurnstileErrorDetail"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "captcha verification service unavailable"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.VerifyTurnstileBadRequestDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/model.TurnstileErrorDetail"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "captcha verification failed"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.VerifyTurnstileRequest": {
+            "type": "object",
+            "required": [
+                "turnstile_token"
+            ],
+            "properties": {
+                "turnstile_token": {
+                    "type": "string",
+                    "maxLength": 2048
+                }
+            }
+        },
+        "model.VerifyTurnstileResponse": {
+            "type": "object",
+            "properties": {
+                "verified": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "model.VerifyTurnstileSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.VerifyTurnstileResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "captcha verification succeeded"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "response.HealthResponse": {
             "type": "object",
             "properties": {

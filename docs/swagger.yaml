@@ -1,5 +1,62 @@
 basePath: /
 definitions:
+  model.TurnstileErrorDetail:
+    properties:
+      code:
+        example: captcha_invalid
+        type: string
+      error_codes:
+        items:
+          type: string
+        type: array
+    type: object
+  model.VerifyTurnstileBadGatewayDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.TurnstileErrorDetail'
+      message:
+        example: captcha verification service unavailable
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.VerifyTurnstileBadRequestDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.TurnstileErrorDetail'
+      message:
+        example: captcha verification failed
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.VerifyTurnstileRequest:
+    properties:
+      turnstile_token:
+        maxLength: 2048
+        type: string
+    required:
+    - turnstile_token
+    type: object
+  model.VerifyTurnstileResponse:
+    properties:
+      verified:
+        example: true
+        type: boolean
+    type: object
+  model.VerifyTurnstileSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.VerifyTurnstileResponse'
+      message:
+        example: captcha verification succeeded
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   response.HealthResponse:
     properties:
       status:
@@ -18,6 +75,36 @@ info:
   title: Permatatex IT Inventory API
   version: "1.0"
 paths:
+  /api/v1/auth/turnstile/verify:
+    post:
+      consumes:
+      - application/json
+      description: Validates frontend Turnstile token via Cloudflare siteverify API.
+      parameters:
+      - description: Turnstile payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.VerifyTurnstileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.VerifyTurnstileSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.VerifyTurnstileBadRequestDoc'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/model.VerifyTurnstileBadGatewayDoc'
+      summary: Verify Turnstile Token
+      tags:
+      - Auth
   /health:
     get:
       description: Returns service health status
