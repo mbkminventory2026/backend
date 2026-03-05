@@ -1,4 +1,27 @@
 services:
+  # ── Development: Air hot-reload inside Docker ──────────────────────
+  dev:
+    container_name: permatatex-dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+    volumes:
+      - .:/app
+      - gomodcache:/go/pkg/mod
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - permatatex-net
+
+  # ── Production: optimized static binary ────────────────────────────
   app:
     container_name: permatatex-backend
     profiles: ["production"]
@@ -48,6 +71,7 @@ services:
 
 volumes:
   pgdata:
+  gomodcache:
 
 networks:
   permatatex-net:

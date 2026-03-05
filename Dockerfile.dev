@@ -1,0 +1,22 @@
+# syntax=docker/dockerfile:1.7
+
+ARG GO_VERSION=1.26
+
+FROM golang:${GO_VERSION}-alpine
+WORKDIR /app
+
+RUN apk add --no-cache ca-certificates tzdata
+
+# Install Air for hot-reload
+RUN go install github.com/air-verse/air@latest
+
+# Pre-download dependencies (cached layer)
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Source code is mounted as a volume — not copied.
+# Air watches for file changes and rebuilds automatically.
+
+EXPOSE 8080
+
+ENTRYPOINT ["air"]
