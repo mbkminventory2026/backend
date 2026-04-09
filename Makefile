@@ -1,7 +1,7 @@
 APP_NAME := permatatex-inventory
 SQLC_CONFIG := sqlc.yaml
 MIGRATIONS_PATH := db/migrations
-DB_URL ?= postgres://postgres:postgres@localhost:5432/permatatex_inventory?sslmode=disable
+DB_URL ?= postgres://postgres:postgres@localhost:15432/permatatex_inventory?sslmode=disable
 LINT_CONFIG := .golangci.yml
 
 .PHONY: dev db-gen migrate-up migrate-down swag lint lint-fix docker-up docker-down docker-logs
