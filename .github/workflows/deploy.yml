@@ -40,3 +40,6 @@ jobs:
       
       - name: Restart containers
         run: docker compose up -d
+      
+      - name: Cleanup old images
+        run: docker image prune -f
