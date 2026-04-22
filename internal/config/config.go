@@ -22,6 +22,8 @@ const (
 	defaultDBConnIdleTime  = 10
 	defaultDBHealthPeriod  = 30
 	defaultDBConnectTO     = 5
+	defaultLoginRateMax    = 5
+	defaultLoginRateWindow = 60
 )
 
 // Config stores all application settings loaded from .env or system environment.
@@ -46,6 +48,9 @@ type Config struct {
 
 	JWTSecret       string `mapstructure:"JWT_SECRET"`
 	TurnstileSecret string `mapstructure:"TURNSTILE_SECRET"`
+
+	LoginRateLimitMaxAttempts int `mapstructure:"LOGIN_RATE_LIMIT_MAX_ATTEMPTS"`
+	LoginRateLimitWindowSec   int `mapstructure:"LOGIN_RATE_LIMIT_WINDOW_SECONDS"`
 }
 
 // Load reads configuration from .env (if present) and environment variables.
@@ -65,6 +70,7 @@ func Load() (*Config, error) {
 		"DB_MAX_CONN_LIFETIME_MINUTES", "DB_MAX_CONN_IDLE_TIME_MINUTES",
 		"DB_HEALTH_CHECK_PERIOD_SECONDS", "DB_CONNECT_TIMEOUT_SECONDS",
 		"JWT_SECRET", "TURNSTILE_SECRET",
+		"LOGIN_RATE_LIMIT_MAX_ATTEMPTS", "LOGIN_RATE_LIMIT_WINDOW_SECONDS",
 	} {
 		if err := viper.BindEnv(key); err != nil {
 			return nil, fmt.Errorf("bind env %s: %w", key, err)
@@ -81,6 +87,8 @@ func Load() (*Config, error) {
 	viper.SetDefault("DB_MAX_CONN_IDLE_TIME_MINUTES", defaultDBConnIdleTime)
 	viper.SetDefault("DB_HEALTH_CHECK_PERIOD_SECONDS", defaultDBHealthPeriod)
 	viper.SetDefault("DB_CONNECT_TIMEOUT_SECONDS", defaultDBConnectTO)
+	viper.SetDefault("LOGIN_RATE_LIMIT_MAX_ATTEMPTS", defaultLoginRateMax)
+	viper.SetDefault("LOGIN_RATE_LIMIT_WINDOW_SECONDS", defaultLoginRateWindow)
 
 	if err := viper.ReadInConfig(); err != nil {
 		// When using SetConfigFile with an explicit path, viper returns
@@ -95,6 +103,14 @@ func Load() (*Config, error) {
 	var cfg Config
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("unmarshal config: %w", err)
+	}
+
+	if strings.TrimSpace(cfg.JWTSecret) == "" {
+		return nil, errors.New("JWT_SECRET is required")
+	}
+
+	if strings.TrimSpace(cfg.TurnstileSecret) == "" {
+		return nil, errors.New("TURNSTILE_SECRET is required")
 	}
 
 	return &cfg, nil

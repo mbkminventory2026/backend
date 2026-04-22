@@ -1,5 +1,132 @@
 basePath: /
 definitions:
+  model.AuthServiceUnavailableErrorDetail:
+    properties:
+      code:
+        example: auth_service_unavailable
+        type: string
+    type: object
+  model.GetMeResponse:
+    properties:
+      user_id:
+        example: 1
+        type: integer
+    type: object
+  model.GetMeSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.GetMeResponse'
+      message:
+        example: profile retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.GetMeUnauthorizedDoc:
+    properties:
+      error: {}
+      message:
+        example: unauthorized
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.LoginBadGatewayDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.TurnstileErrorDetail'
+      message:
+        example: captcha verification service unavailable
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.LoginBadRequestDoc:
+    properties:
+      error: {}
+      message:
+        example: bad request
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.LoginRateLimitErrorDetail:
+    properties:
+      code:
+        example: too_many_login_attempts
+        type: string
+      retry_after_seconds:
+        example: 60
+        type: integer
+    type: object
+  model.LoginRequest:
+    properties:
+      password:
+        type: string
+      turnstile_token:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - turnstile_token
+    - username
+    type: object
+  model.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      token_type:
+        type: string
+    type: object
+  model.LoginServiceUnavailableDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.AuthServiceUnavailableErrorDetail'
+      message:
+        example: authentication service unavailable
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.LoginSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.LoginResponse'
+      message:
+        example: login successful
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.LoginTooManyRequestsDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.LoginRateLimitErrorDetail'
+      message:
+        example: too many login attempts, please try again later
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.LoginUnauthorizedDoc:
+    properties:
+      message:
+        example: invalid username or password
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
   model.TurnstileErrorDetail:
     properties:
       code:
@@ -75,6 +202,68 @@ info:
   title: Permatatex IT Inventory API
   version: "1.0"
 paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates user using username, password, and Turnstile token,
+        then returns JWT access token.
+      parameters:
+      - description: Login payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.LoginSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.LoginUnauthorizedDoc'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/model.LoginTooManyRequestsDoc'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/model.LoginBadGatewayDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      summary: Sign In
+      tags:
+      - Auth
+  /api/v1/auth/me:
+    get:
+      description: Returns authenticated user ID extracted from JWT token.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.GetMeSuccessDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Current User Profile
+      tags:
+      - Auth
   /api/v1/auth/turnstile/verify:
     post:
       consumes:

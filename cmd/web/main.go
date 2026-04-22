@@ -30,6 +30,7 @@ import (
 	docs "permatatex-inventory/docs"
 	"permatatex-inventory/internal/config"
 	httpdelivery "permatatex-inventory/internal/delivery/http"
+	"permatatex-inventory/internal/entity"
 	turnstilegateway "permatatex-inventory/internal/gateway/turnstile"
 	"permatatex-inventory/internal/usecase"
 )
@@ -82,6 +83,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	queries := entity.New(dbPool)
+	authUseCase := usecase.NewAuthUseCase(queries, turnstileUseCase, cfg.JWTSecret)
+	authHandler, err := httpdelivery.NewAuthHandler(authUseCase)
+	if err != nil {
+		logger.Error("failed to initialize auth handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	docs.SwaggerInfo.Host = "localhost:" + cfg.ServerPort
 	docs.SwaggerInfo.BasePath = "/"
 	docs.SwaggerInfo.Schemes = []string{"http"}
@@ -100,6 +110,14 @@ func main() {
 		os.Exit(1)
 	}
 	turnstileHandler.RegisterRoutes(router)
+	authHandler.RegisterRoutes(
+		router,
+		httpdelivery.AuthMiddleware(cfg.JWTSecret),
+		httpdelivery.NewLoginRateLimitMiddleware(
+			cfg.LoginRateLimitMaxAttempts,
+			time.Duration(cfg.LoginRateLimitWindowSec)*time.Second,
+		),
+	)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

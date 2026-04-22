@@ -19,6 +19,101 @@
     "host": "localhost:8080",
     "basePath": "/",
     "paths": {
+        "/api/v1/auth/login": {
+            "post": {
+                "description": "Authenticates user using username, password, and Turnstile token, then returns JWT access token.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Sign In",
+                "parameters": [
+                    {
+                        "description": "Login payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginUnauthorizedDoc"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginTooManyRequestsDoc"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadGatewayDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns authenticated user ID extracted from JWT token.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Get Current User Profile",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeSuccessDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeUnauthorizedDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/turnstile/verify": {
             "post": {
                 "description": "Validates frontend Turnstile token via Cloudflare siteverify API.",
@@ -87,6 +182,191 @@
         }
     },
     "definitions": {
+        "model.AuthServiceUnavailableErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "auth_service_unavailable"
+                }
+            }
+        },
+        "model.GetMeResponse": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "model.GetMeSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.GetMeResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "profile retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.GetMeUnauthorizedDoc": {
+            "type": "object",
+            "properties": {
+                "error": {},
+                "message": {
+                    "type": "string",
+                    "example": "unauthorized"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.LoginBadGatewayDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/model.TurnstileErrorDetail"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "captcha verification service unavailable"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.LoginBadRequestDoc": {
+            "type": "object",
+            "properties": {
+                "error": {},
+                "message": {
+                    "type": "string",
+                    "example": "bad request"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.LoginRateLimitErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "too_many_login_attempts"
+                },
+                "retry_after_seconds": {
+                    "type": "integer",
+                    "example": 60
+                }
+            }
+        },
+        "model.LoginRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "turnstile_token",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "turnstile_token": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                },
+                "token_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.LoginServiceUnavailableDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/model.AuthServiceUnavailableErrorDetail"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "authentication service unavailable"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.LoginSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.LoginResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "login successful"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.LoginTooManyRequestsDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/model.LoginRateLimitErrorDetail"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "too many login attempts, please try again later"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.LoginUnauthorizedDoc": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "invalid username or password"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
         "model.TurnstileErrorDetail": {
             "type": "object",
             "properties": {
