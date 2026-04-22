@@ -2,9 +2,10 @@ services:
   # ── Development: Air hot-reload inside Docker ──────────────────────
   dev:
     container_name: permatatex-dev
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.dev
+    image: ibananazzz/backend:latest
     env_file:
       - .env
     environment:
