@@ -6,6 +6,24 @@ definitions:
         example: auth_service_unavailable
         type: string
     type: object
+  model.CreateReportPengirimanRequest:
+    properties:
+      date:
+        type: string
+      id_wo_shell_size:
+        type: integer
+      quantity:
+        type: integer
+    required:
+    - date
+    - id_wo_shell_size
+    - quantity
+    type: object
+  model.DeleteReportPengirimanResponse:
+    properties:
+      id_report_pengiriman:
+        type: integer
+    type: object
   model.GetMeResponse:
     properties:
       user_id:
@@ -122,6 +140,94 @@ definitions:
     properties:
       message:
         example: invalid username or password
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.ReportPengirimanBadRequestDoc:
+    properties:
+      error: {}
+      message:
+        example: bad request
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.ReportPengirimanDeleteSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.DeleteReportPengirimanResponse'
+      message:
+        example: report pengiriman deleted
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.ReportPengirimanListSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.ReportPengirimanResponse'
+        type: array
+      message:
+        example: report pengiriman list retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.ReportPengirimanNotFoundDoc:
+    properties:
+      error: {}
+      message:
+        example: report pengiriman not found
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.ReportPengirimanResponse:
+    properties:
+      created_at:
+        type: string
+      date:
+        type: string
+      id_report_pengiriman:
+        type: integer
+      id_wo_shell_size:
+        type: integer
+      quantity:
+        type: integer
+    type: object
+  model.ReportPengirimanServiceUnavailableDoc:
+    properties:
+      error: {}
+      message:
+        example: report pengiriman service unavailable
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.ReportPengirimanSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.ReportPengirimanResponse'
+      message:
+        example: report pengiriman created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.ReportPengirimanUnauthorizedDoc:
+    properties:
+      error: {}
+      message:
+        example: unauthorized
         type: string
       status:
         example: error
@@ -294,6 +400,162 @@ paths:
       summary: Verify Turnstile Token
       tags:
       - Auth
+  /api/v1/report-pengiriman:
+    get:
+      description: Returns report pengiriman list with optional filters.
+      parameters:
+      - description: Start date filter (YYYY-MM-DD)
+        in: query
+        name: date_from
+        type: string
+      - description: End date filter (YYYY-MM-DD)
+        in: query
+        name: date_to
+        type: string
+      - description: Work order shell size ID filter
+        in: query
+        name: id_wo_shell_size
+        type: integer
+      - description: 'Result limit (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Result offset (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanUnauthorizedDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: List Report Pengiriman
+      tags:
+      - Report Pengiriman
+    post:
+      consumes:
+      - application/json
+      description: Creates a new report pengiriman entry.
+      parameters:
+      - description: Create payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateReportPengirimanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanUnauthorizedDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Report Pengiriman
+      tags:
+      - Report Pengiriman
+  /api/v1/report-pengiriman/{id}:
+    delete:
+      description: Deletes report pengiriman by ID.
+      parameters:
+      - description: Report Pengiriman ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanDeleteSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanNotFoundDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Delete Report Pengiriman
+      tags:
+      - Report Pengiriman
+    get:
+      description: Returns report pengiriman detail by ID.
+      parameters:
+      - description: Report Pengiriman ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanNotFoundDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.ReportPengirimanServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Report Pengiriman Detail
+      tags:
+      - Report Pengiriman
   /health:
     get:
       description: Returns service health status

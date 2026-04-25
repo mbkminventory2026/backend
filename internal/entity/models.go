@@ -14,3 +14,11 @@ type User struct {
 	IDMitra      pgtype.Int4        `json:"id_mitra"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }
+
+type ReportPengiriman struct {
+	IDReportPengiriman int32              `json:"id_report_pengiriman"`
+	Date               pgtype.Date        `json:"date"`
+	Quantity           pgtype.Int4        `json:"quantity"`
+	IDWOShellSize      pgtype.Int4        `json:"id_wo_shell_size"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+}
