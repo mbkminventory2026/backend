@@ -33,6 +33,7 @@ func NewAuthUseCase(userRepo entity.Querier, turnstileUseCase *TurnstileUseCase,
 		jwtSecret:        jwtSecret,
 	}
 }
+
 func (u *AuthUseCase) Login(ctx context.Context, req model.LoginRequest, remoteIP string) (*model.LoginResponse, error) {
 	// 1. Verify Turnstile Token
 	_, err := u.turnstileUseCase.VerifyToken(ctx, model.VerifyTurnstileRequest{
@@ -56,21 +57,34 @@ func (u *AuthUseCase) Login(ctx context.Context, req model.LoginRequest, remoteI
 		return nil, ErrAuthServiceUnavailable
 	}
 
-	if !user.Password.Valid {
+	if user.Password == "" {
 		return nil, ErrInvalidCredentials
 	}
 
 	// 3. Verify Password
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password.String), []byte(req.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 	if err != nil {
 		return nil, ErrInvalidCredentials
 	}
 
-	// 4. Generate JWT
+	// 4. Handle RBAC (Permissions)
+	var permissions []string
+	if user.IsManager {
+		permissions = []string{"ALL_ACCESS"}
+	} else {
+		permissions, err = u.userRepo.GetUserPermissions(ctx, user.IDUser)
+		if err != nil {
+			return nil, fmt.Errorf("%w: get user permissions", ErrAuthServiceUnavailable)
+		}
+	}
+
+	// 5. Generate JWT
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &jwt.MapClaims{
-		"user_id": user.IDUser,
-		"exp":     expirationTime.Unix(),
+		"user_id":     user.IDUser,
+		"is_manager":  user.IsManager,
+		"permissions": permissions,
+		"exp":         expirationTime.Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

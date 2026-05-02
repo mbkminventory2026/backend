@@ -92,20 +92,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	reportPengirimanUseCase, err := usecase.NewReportPengirimanUseCase(queries)
-	if err != nil {
-		logger.Error("failed to initialize report pengiriman usecase", slog.String("error", err.Error()))
-		dbPool.Close()
-		os.Exit(1)
-	}
-
-	reportPengirimanHandler, err := httpdelivery.NewReportPengirimanHandler(reportPengirimanUseCase)
-	if err != nil {
-		logger.Error("failed to initialize report pengiriman handler", slog.String("error", err.Error()))
-		dbPool.Close()
-		os.Exit(1)
-	}
-
 	docs.SwaggerInfo.Host = "localhost:" + cfg.ServerPort
 	docs.SwaggerInfo.BasePath = "/"
 	docs.SwaggerInfo.Schemes = []string{"http"}
@@ -114,16 +100,9 @@ func main() {
 	router.Use(httpdelivery.ErrorHandlerMiddleware())
 	router.Use(corsMiddleware(cfg.CORSAllowOrigin))
 
-	healthHandler := httpdelivery.NewHealthHandler()
+	healthHandler := httpdelivery.NewHealthHandler(dbPool)
 	healthHandler.RegisterRoutes(router)
 
-	turnstileHandler, err := httpdelivery.NewTurnstileHandler(turnstileUseCase)
-	if err != nil {
-		logger.Error("failed to initialize turnstile handler", slog.String("error", err.Error()))
-		dbPool.Close()
-		os.Exit(1)
-	}
-	turnstileHandler.RegisterRoutes(router)
 	authMiddleware := httpdelivery.AuthMiddleware(cfg.JWTSecret)
 	authHandler.RegisterRoutes(
 		router,
@@ -133,7 +112,6 @@ func main() {
 			time.Duration(cfg.LoginRateLimitWindowSec)*time.Second,
 		),
 	)
-	reportPengirimanHandler.RegisterRoutes(router, authMiddleware)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

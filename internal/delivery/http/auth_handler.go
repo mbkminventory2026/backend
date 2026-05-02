@@ -15,6 +15,13 @@ import (
 const (
 	messageAuthServiceUnavailable   = "authentication service unavailable"
 	errorCodeAuthServiceUnavailable = "auth_service_unavailable"
+
+	messageCaptchaRequired           = "captcha token is required"
+	errorCodeCaptchaMissing          = "captcha_token_missing"
+	messageCaptchaVerificationFailed = "captcha verification failed"
+	errorCodeCaptchaInvalid          = "captcha_token_invalid"
+	messageCaptchaServiceUnavailable = "captcha verification service unavailable"
+	errorCodeCaptchaServiceUnavailable = "captcha_service_unavailable"
 )
 
 type AuthHandler struct {
