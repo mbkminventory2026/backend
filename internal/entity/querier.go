@@ -6,11 +6,9 @@ package entity
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5"
 )
 
 type Querier interface {
-	WithTx(tx pgx.Tx) *Queries
 	CreateBarang(ctx context.Context, arg CreateBarangParams) (Barang, error)
 	CreateDepartemen(ctx context.Context, namaDepartemen string) (Departeman, error)
 	CreateJenisBarang(ctx context.Context, arg CreateJenisBarangParams) (JenisBarang, error)

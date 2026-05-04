@@ -55,7 +55,7 @@ func (u *UserUseCase) Create(ctx context.Context, req model.CreateUserRequest) (
 	}
 	defer tx.Rollback(ctx)
 
-	qtx := u.repo.WithTx(tx)
+	qtx := entity.New(tx)
 
 	// 3. Create User
 	idDept := pgtype.Int4{Valid: false}
@@ -203,7 +203,7 @@ func (u *UserUseCase) Update(ctx context.Context, id int32, req model.UpdateUser
 		return nil, err
 	}
 	defer tx.Rollback(ctx)
-	qtx := u.repo.WithTx(tx)
+	qtx := entity.New(tx)
 
 	// 5. Update User record
 	idDept := pgtype.Int4{Valid: false}

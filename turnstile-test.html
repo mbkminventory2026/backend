@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Turnstile + Login Flow Test</title>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+</head>
+<body>
+  <div class="container">
+    <h2>Login Flow Test (Turnstile + JWT)</h2>
+
+    <div class="grid">
+      <div class="full">
+        <label for="api-base">API Base URL</label>
+        <input id="api-base" value="http://localhost:8080" />
+      </div>
+
+      <div>
+        <label for="username">Username</label>
+        <input id="username" value="super-admin" />
+      </div>
+
+      <div>
+        <label for="password">Password</label>
+        <input id="password" type="password" value="admin123" />
+      </div>
+    </div>
+
+    <div class="panel">
+      <div id="turnstile-container"></div>
+      <div class="actions">
+        <button id="btn-render" type="button">Render / Reset Captcha</button>
+        <button id="btn-verify" type="button">Verify Turnstile</button>
+        <button id="btn-login" class="primary" type="button">Login</button>
+        <button id="btn-me" type="button">Get /me</button>
+        <button id="btn-clear" type="button">Clear Saved Token</button>
+      </div>
+      <p id="status" class="status">Waiting Turnstile widget...</p>
+    </div>
+
+    <div class="panel">
+      <strong>Access Token (current)</strong>
+      <pre id="token-view">(empty)</pre>
+    </div>
+
+    <div class="panel">
+      <strong>Latest Response</strong>
+      <pre id="result">(no request yet)</pre>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      turnstileToken: "",
+      accessToken: localStorage.getItem("inventory_access_token") || "",
+      widgetId: null,
+    };
+
+    function el(id) {
+      return document.getElementById(id);
+    }
+
+    function setStatus(message) {
+      el("status").textContent = message;
+    }
+
+    function setResult(tag, statusCode, payload) {
+      const out = {
+        tag,
+        status_code: statusCode,
+        payload,
+        time: new Date().toISOString(),
+      };
+      el("result").textContent = JSON.stringify(out, null, 2);
+    }
+
+    function setTokenView() {
+      el("token-view").textContent = state.accessToken || "(empty)";
+    }
+
+    function normalizeBaseURL() {
+      return el("api-base").value.trim().replace(/\/+$/, "");
+    }
+
+    function getLoginPayload() {
+      return {
+        username: el("username").value.trim(),
+        password: el("password").value,
+        turnstile_token: state.turnstileToken,
+      };
+    }
+
+    function onTurnstileSolved(token) {
+      state.turnstileToken = token;
+      setStatus("Captcha solved. Token ready for verify/login.");
+    }
+
+    function onTurnstileExpired() {
+      state.turnstileToken = "";
+      setStatus("Captcha expired. Please solve again.");
+    }
+
+    function onTurnstileError() {
+      state.turnstileToken = "";
+      setStatus("Turnstile error. Please render/reset captcha.");
+    }
+
+    async function parseResponse(response) {
+      const text = await response.text();
+      if (!text) {
+        return null;
+      }
+
+      try {
+        return JSON.parse(text);
+      } catch (_) {
+        return { raw: text };
+      }
+    }
+
+    function renderTurnstile() {
+      const siteKey = "0x4AAAAAACm1QQwy4f0wxjXu";
+      if (!siteKey) {
+        setStatus("Site key is required.");
+        return;
+      }
+
+      if (!window.turnstile) {
+        setStatus("Turnstile script still loading. Please wait a second.");
+        return;
+      }
+
+      const container = el("turnstile-container");
+      container.innerHTML = "";
+      state.turnstileToken = "";
+
+      state.widgetId = window.turnstile.render("#turnstile-container", {
+        sitekey: siteKey,
+        callback: onTurnstileSolved,
+        "expired-callback": onTurnstileExpired,
+        "error-callback": onTurnstileError,
+      });
+
+      setStatus("Captcha rendered. Please solve it.");
+    }
+
+    async function verifyTurnstile() {
+      if (!state.turnstileToken) {
+        setStatus("Solve captcha first.");
+        return;
+      }
+
+      const response = await fetch(`${normalizeBaseURL()}/api/v1/auth/turnstile/verify`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ turnstile_token: state.turnstileToken }),
+      });
+
+      const payload = await parseResponse(response);
+      setResult("turnstile_verify", response.status, payload);
+    }
+
+    async function login() {
+      if (!state.turnstileToken) {
+        setStatus("Solve captcha first.");
+        return;
+      }
+
+      const payload = getLoginPayload();
+      const response = await fetch(`${normalizeBaseURL()}/api/v1/auth/login`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const body = await parseResponse(response);
+      setResult("login", response.status, body);
+
+      const token = body && body.data && body.data.access_token;
+      if (response.ok && token) {
+        state.accessToken = token;
+        localStorage.setItem("inventory_access_token", token);
+        setTokenView();
+        setStatus("Login success. Access token saved to localStorage.");
+      }
+    }
+
+    async function getMe() {
+      if (!state.accessToken) {
+        setStatus("No access token. Login first.");
+        return;
+      }
+
+      const response = await fetch(`${normalizeBaseURL()}/api/v1/auth/me`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${state.accessToken}`,
+        },
+      });
+
+      const body = await parseResponse(response);
+      setResult("get_me", response.status, body);
+    }
+
+    function clearToken() {
+      state.accessToken = "";
+      localStorage.removeItem("inventory_access_token");
+      setTokenView();
+      setStatus("Saved token cleared.");
+    }
+
+    async function runSafely(fn) {
+      try {
+        await fn();
+      } catch (error) {
+        setResult("request_error", 0, { message: error.message || String(error) });
+      }
+    }
+
+    el("btn-render").addEventListener("click", () => renderTurnstile());
+    el("btn-verify").addEventListener("click", () => runSafely(verifyTurnstile));
+    el("btn-login").addEventListener("click", () => runSafely(login));
+    el("btn-me").addEventListener("click", () => runSafely(getMe));
+    el("btn-clear").addEventListener("click", clearToken);
+
+    setTokenView();
+
+    (function waitTurnstile() {
+      if (window.turnstile) {
+        renderTurnstile();
+        return;
+      }
+
+      setTimeout(waitTurnstile, 250);
+    })();
+  </script>
+</body>
+</html>

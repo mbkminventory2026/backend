@@ -175,7 +175,7 @@ SELECT u.id_user, u.username, u.is_manager, d.nama_departemen, m.nama_perusahaan
 FROM USERS u
 LEFT JOIN DEPARTEMEN d ON u.id_departemen = d.id_departemen
 LEFT JOIN MITRA m ON u.id_mitra = m.id_mitra
-ORDER BY u.created_at DESC
+ORDER BY u.id_user ASC
 LIMIT $1 OFFSET $2
 `
 
