@@ -38,7 +38,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 2. Seed Super Admin User
+	// 2. Seed Departemen
+	err = seedDepartemen(ctx, dbPool)
+	if err != nil {
+		slog.Error("failed to seed departemen", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	// 3. Seed Super Admin User
 	err = seedUser(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed user", slog.String("error", err.Error()))
@@ -73,6 +80,21 @@ func seedHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 	return nil
 }
 
+func seedDepartemen(ctx context.Context, db *pgxpool.Pool) error {
+	depts := []string{"IT", "PRODUKSI", "GUDANG", "OFFICE"}
+	for _, d := range depts {
+		var exists bool
+		err := db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM DEPARTEMEN WHERE NAMA_DEPARTEMEN = $1)`, d).Scan(&exists)
+		if err != nil { return err }
+		if !exists {
+			_, err = db.Exec(ctx, `INSERT INTO DEPARTEMEN (NAMA_DEPARTEMEN) VALUES ($1)`, d)
+			if err != nil { return err }
+			slog.Info("departemen seeded", slog.String("name", d))
+		}
+	}
+	return nil
+}
+
 func seedUser(ctx context.Context, db *pgxpool.Pool) error {
 	username := "super-admin"
 	password := "admin123"
@@ -82,7 +104,6 @@ func seedUser(ctx context.Context, db *pgxpool.Pool) error {
 		return fmt.Errorf("hash password: %w", err)
 	}
 
-	// Check if user already exists
 	var exists bool
 	err = db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM USERS WHERE username = $1)`, username).Scan(&exists)
 	if err != nil {
@@ -95,8 +116,8 @@ func seedUser(ctx context.Context, db *pgxpool.Pool) error {
 	}
 
 	_, err = db.Exec(ctx, `
-		INSERT INTO USERS (USERNAME, PASSWORD, IS_MANAGER)
-		VALUES ($1, $2, $3)
+		INSERT INTO USERS (USERNAME, PASSWORD, IS_MANAGER, ID_DEPARTEMEN)
+		VALUES ($1, $2, $3, (SELECT ID_DEPARTEMEN FROM DEPARTEMEN WHERE NAMA_DEPARTEMEN = 'IT' LIMIT 1))
 	`, username, string(hashedPassword), true)
 	if err != nil {
 		return fmt.Errorf("insert user: %w", err)

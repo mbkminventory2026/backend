@@ -6,11 +6,42 @@ package entity
 
 import (
 	"context"
+	"github.com/jackc/pgx/v5"
 )
 
 type Querier interface {
+	WithTx(tx pgx.Tx) *Queries
+	CreateBarang(ctx context.Context, arg CreateBarangParams) (Barang, error)
+	CreateDepartemen(ctx context.Context, namaDepartemen string) (Departeman, error)
+	CreateJenisBarang(ctx context.Context, arg CreateJenisBarangParams) (JenisBarang, error)
+	CreateMitra(ctx context.Context, arg CreateMitraParams) (Mitra, error)
+	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
+	CreateUserAkses(ctx context.Context, arg CreateUserAksesParams) error
+	DeleteBarang(ctx context.Context, idBarang int32) (int64, error)
+	DeleteDepartemen(ctx context.Context, idDepartemen int32) (int64, error)
+	DeleteJenisBarang(ctx context.Context, idJenisBarang int32) (int64, error)
+	DeleteMitra(ctx context.Context, idMitra int32) (int64, error)
+	DeleteUser(ctx context.Context, idUser int32) (int64, error)
+	GetBarangByID(ctx context.Context, idBarang int32) (GetBarangByIDRow, error)
+	GetCompany(ctx context.Context) (Company, error)
+	GetDepartemenByID(ctx context.Context, idDepartemen int32) (Departeman, error)
+	GetJenisBarangByID(ctx context.Context, idJenisBarang int32) (JenisBarang, error)
+	GetMitraByID(ctx context.Context, idMitra int32) (Mitra, error)
+	GetUserByID(ctx context.Context, idUser int32) (GetUserByIDRow, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
 	GetUserPermissions(ctx context.Context, idUser int32) ([]string, error)
+	ListBarang(ctx context.Context, arg ListBarangParams) ([]ListBarangRow, error)
+	ListDepartemen(ctx context.Context) ([]Departeman, error)
+	ListHakAkses(ctx context.Context) ([]HakAkse, error)
+	ListJenisBarang(ctx context.Context) ([]JenisBarang, error)
+	ListMitra(ctx context.Context) ([]Mitra, error)
+	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
+	UpdateBarang(ctx context.Context, arg UpdateBarangParams) (Barang, error)
+	UpdateCompany(ctx context.Context, arg UpdateCompanyParams) (Company, error)
+	UpdateDepartemen(ctx context.Context, arg UpdateDepartemenParams) (Departeman, error)
+	UpdateJenisBarang(ctx context.Context, arg UpdateJenisBarangParams) (JenisBarang, error)
+	UpdateMitra(ctx context.Context, arg UpdateMitraParams) (Mitra, error)
+	UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

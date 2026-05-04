@@ -22,7 +22,7 @@ migrate-down:
 	migrate -path $(MIGRATIONS_PATH) -database "$(DB_URL)" down
 
 swag:
-	swag init -g main.go -d cmd/web,internal/delivery/http,internal/model,pkg/response -o docs --parseInternal
+	swag init -g main.go -d cmd/web,internal/delivery/http,internal/model,internal/entity,pkg/response -o docs --parseInternal --parseDependency
 
 lint:
 	golangci-lint run --config $(LINT_CONFIG) ./...

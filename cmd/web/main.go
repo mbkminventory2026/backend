@@ -69,6 +69,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// 1. Gateways
 	turnstileGateway, err := turnstilegateway.NewTurnstileGateway(cfg.TurnstileSecret)
 	if err != nil {
 		logger.Error("failed to initialize turnstile gateway", slog.String("error", err.Error()))
@@ -76,6 +77,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	// 2. Repository/Queries
+	queries := entity.New(dbPool)
+
+	// 3. Usecases
 	turnstileUseCase, err := usecase.NewTurnstileUseCase(turnstileGateway)
 	if err != nil {
 		logger.Error("failed to initialize turnstile usecase", slog.String("error", err.Error()))
@@ -83,8 +88,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	queries := entity.New(dbPool)
 	authUseCase := usecase.NewAuthUseCase(queries, turnstileUseCase, cfg.JWTSecret)
+	userUseCase, err := usecase.NewUserUseCase(queries, dbPool)
+	if err != nil {
+		logger.Error("failed to initialize user usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	masterDataUseCase, err := usecase.NewMasterDataUseCase(queries)
+	if err != nil {
+		logger.Error("failed to initialize master data usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	// 4. Handlers
 	authHandler, err := httpdelivery.NewAuthHandler(authUseCase)
 	if err != nil {
 		logger.Error("failed to initialize auth handler", slog.String("error", err.Error()))
@@ -92,6 +111,23 @@ func main() {
 		os.Exit(1)
 	}
 
+	userHandler, err := httpdelivery.NewUserHandler(userUseCase)
+	if err != nil {
+		logger.Error("failed to initialize user handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	masterDataHandler, err := httpdelivery.NewMasterDataHandler(masterDataUseCase)
+	if err != nil {
+		logger.Error("failed to initialize master data handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	healthHandler := httpdelivery.NewHealthHandler(dbPool)
+
+	// 5. Routes
 	docs.SwaggerInfo.Host = "localhost:" + cfg.ServerPort
 	docs.SwaggerInfo.BasePath = "/"
 	docs.SwaggerInfo.Schemes = []string{"http"}
@@ -100,10 +136,10 @@ func main() {
 	router.Use(httpdelivery.ErrorHandlerMiddleware())
 	router.Use(corsMiddleware(cfg.CORSAllowOrigin))
 
-	healthHandler := httpdelivery.NewHealthHandler(dbPool)
 	healthHandler.RegisterRoutes(router)
 
 	authMiddleware := httpdelivery.AuthMiddleware(cfg.JWTSecret)
+	
 	authHandler.RegisterRoutes(
 		router,
 		authMiddleware,
@@ -112,6 +148,9 @@ func main() {
 			time.Duration(cfg.LoginRateLimitWindowSec)*time.Second,
 		),
 	)
+	
+	userHandler.RegisterRoutes(router, authMiddleware)
+	masterDataHandler.RegisterRoutes(router, authMiddleware)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

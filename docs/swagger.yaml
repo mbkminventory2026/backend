@@ -1,9 +1,191 @@
 basePath: /
 definitions:
+  entity.HakAkse:
+    properties:
+      created_at:
+        $ref: '#/definitions/pgtype.Timestamptz'
+      id_hak_akses:
+        type: integer
+      nama_halaman:
+        type: string
+    type: object
   model.AuthServiceUnavailableErrorDetail:
     properties:
       code:
         example: auth_service_unavailable
+        type: string
+    type: object
+  model.BarangResponse:
+    properties:
+      created_at:
+        type: string
+      id_barang:
+        type: integer
+      kode:
+        type: string
+      nama_barang:
+        type: string
+      nama_jenis_barang:
+        type: string
+      nama_perusahaan:
+        type: string
+    type: object
+  model.CompanyResponse:
+    properties:
+      about:
+        type: string
+      alamat:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      id_company:
+        type: integer
+      logo:
+        type: string
+      nama:
+        type: string
+      no_telp:
+        type: string
+    type: object
+  model.CompanySuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.CompanyResponse'
+      message:
+        example: company data retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.CreateBarangRequest:
+    properties:
+      id_jenis_barang:
+        type: integer
+      id_mitra:
+        type: integer
+      kode:
+        type: string
+      nama_barang:
+        type: string
+    required:
+    - id_jenis_barang
+    - id_mitra
+    - kode
+    - nama_barang
+    type: object
+  model.CreateBarangSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.BarangResponse'
+      message:
+        example: barang created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.CreateDepartemenRequest:
+    properties:
+      nama_departemen:
+        type: string
+    required:
+    - nama_departemen
+    type: object
+  model.CreateDepartemenSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.DepartemenResponse'
+      message:
+        example: departemen created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.CreateJenisBarangRequest:
+    properties:
+      kode:
+        type: string
+      nama_jenis_barang:
+        type: string
+    required:
+    - kode
+    - nama_jenis_barang
+    type: object
+  model.CreateJenisBarangSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.JenisBarangResponse'
+      message:
+        example: jenis barang created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.CreateMitraRequest:
+    properties:
+      alamat:
+        type: string
+      email:
+        type: string
+      kode_pos:
+        type: string
+      kota:
+        type: string
+      nama_perusahaan:
+        type: string
+      no_telp:
+        type: string
+      tipe_perusahaan:
+        type: string
+    required:
+    - nama_perusahaan
+    - no_telp
+    - tipe_perusahaan
+    type: object
+  model.CreateMitraSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.MitraResponse'
+      message:
+        example: mitra created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.CreateUserRequest:
+    properties:
+      hak_akses_ids:
+        items:
+          type: integer
+        type: array
+      id_departemen:
+        type: integer
+      id_mitra:
+        type: integer
+      is_manager:
+        type: boolean
+      password:
+        minLength: 6
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  model.DepartemenResponse:
+    properties:
+      created_at:
+        type: string
+      id_departemen:
+        type: integer
+      nama_departemen:
         type: string
     type: object
   model.GetMeResponse:
@@ -31,6 +213,82 @@ definitions:
         type: string
       status:
         example: error
+        type: string
+    type: object
+  model.JenisBarangResponse:
+    properties:
+      created_at:
+        type: string
+      id_jenis_barang:
+        type: integer
+      kode:
+        type: string
+      nama_jenis_barang:
+        type: string
+    type: object
+  model.ListBarangSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.BarangResponse'
+        type: array
+      message:
+        example: barang retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.ListDepartemenSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.DepartemenResponse'
+        type: array
+      message:
+        example: departemen retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.ListJenisBarangSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.JenisBarangResponse'
+        type: array
+      message:
+        example: jenis barang retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.ListMitraSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.MitraResponse'
+        type: array
+      message:
+        example: mitra retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.ListPermissionsSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/entity.HakAkse'
+        type: array
+      message:
+        example: permissions retrieved
+        type: string
+      status:
+        example: success
         type: string
     type: object
   model.LoginBadGatewayDoc:
@@ -127,6 +385,21 @@ definitions:
         example: error
         type: string
     type: object
+  model.MitraResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id_mitra:
+        type: integer
+      nama_perusahaan:
+        type: string
+      no_telp:
+        type: string
+      tipe_perusahaan:
+        type: string
+    type: object
   model.TurnstileErrorDetail:
     properties:
       code:
@@ -136,6 +409,169 @@ definitions:
         items:
           type: string
         type: array
+    type: object
+  model.UpdateBarangRequest:
+    properties:
+      id_jenis_barang:
+        type: integer
+      id_mitra:
+        type: integer
+      kode:
+        type: string
+      nama_barang:
+        type: string
+    required:
+    - id_jenis_barang
+    - id_mitra
+    - kode
+    - nama_barang
+    type: object
+  model.UpdateCompanyRequest:
+    properties:
+      about:
+        type: string
+      alamat:
+        type: string
+      email:
+        type: string
+      logo:
+        type: string
+      nama:
+        type: string
+      no_telp:
+        type: string
+    required:
+    - nama
+    type: object
+  model.UpdateDepartemenRequest:
+    properties:
+      nama_departemen:
+        type: string
+    required:
+    - nama_departemen
+    type: object
+  model.UpdateJenisBarangRequest:
+    properties:
+      kode:
+        type: string
+      nama_jenis_barang:
+        type: string
+    required:
+    - kode
+    - nama_jenis_barang
+    type: object
+  model.UpdateMitraRequest:
+    properties:
+      alamat:
+        type: string
+      email:
+        type: string
+      kode_pos:
+        type: string
+      kota:
+        type: string
+      nama_perusahaan:
+        type: string
+      no_telp:
+        type: string
+      tipe_perusahaan:
+        type: string
+    required:
+    - nama_perusahaan
+    - no_telp
+    - tipe_perusahaan
+    type: object
+  model.UpdateUserRequest:
+    properties:
+      hak_akses_ids:
+        items:
+          type: integer
+        type: array
+      id_departemen:
+        type: integer
+      id_mitra:
+        type: integer
+      is_manager:
+        type: boolean
+      password:
+        minLength: 6
+        type: string
+      username:
+        type: string
+    required:
+    - username
+    type: object
+  model.UserListSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.UserResponse'
+        type: array
+      message:
+        example: users retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.UserResponse:
+    properties:
+      created_at:
+        type: string
+      id_user:
+        type: integer
+      is_manager:
+        type: boolean
+      nama_departemen:
+        type: string
+      nama_perusahaan:
+        type: string
+      permissions:
+        items:
+          type: string
+        type: array
+      username:
+        type: string
+    type: object
+  model.UserSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.UserResponse'
+      message:
+        example: user created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  pgtype.InfinityModifier:
+    enum:
+    - 1
+    - 0
+    - -1
+    format: int32
+    type: integer
+    x-enum-varnames:
+    - Infinity
+    - Finite
+    - NegativeInfinity
+  pgtype.Timestamptz:
+    properties:
+      infinityModifier:
+        $ref: '#/definitions/pgtype.InfinityModifier'
+      time:
+        type: string
+      valid:
+        type: boolean
+    type: object
+  response.BaseResponse:
+    properties:
+      data: {}
+      error: {}
+      message:
+        type: string
+      status:
+        type: string
     type: object
   response.HealthResponse:
     properties:
@@ -217,6 +653,561 @@ paths:
       summary: Get Current User Profile
       tags:
       - Auth
+  /api/v1/master/barang:
+    get:
+      parameters:
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset (default 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ListBarangSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: List Items
+      tags:
+      - Master Data
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Item payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateBarangRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.CreateBarangSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Item
+      tags:
+      - Master Data
+  /api/v1/master/barang/{id}:
+    delete:
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete Item
+      tags:
+      - Master Data
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateBarangRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CreateBarangSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Update Item
+      tags:
+      - Master Data
+  /api/v1/master/company:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CompanySuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Company Data
+      tags:
+      - Master Data
+  /api/v1/master/company/{id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Company ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Company payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateCompanyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CompanySuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Update Company Data
+      tags:
+      - Master Data
+  /api/v1/master/departemen:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ListDepartemenSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: List Departments
+      tags:
+      - Master Data
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Department payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateDepartemenRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.CreateDepartemenSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Department
+      tags:
+      - Master Data
+  /api/v1/master/departemen/{id}:
+    delete:
+      parameters:
+      - description: Department ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete Department
+      tags:
+      - Master Data
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Department ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Department payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateDepartemenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CreateDepartemenSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Update Department
+      tags:
+      - Master Data
+  /api/v1/master/jenis-barang:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ListJenisBarangSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: List Item Types
+      tags:
+      - Master Data
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Item type payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateJenisBarangRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.CreateJenisBarangSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Item Type
+      tags:
+      - Master Data
+  /api/v1/master/jenis-barang/{id}:
+    delete:
+      parameters:
+      - description: Item Type ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete Item Type
+      tags:
+      - Master Data
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Item Type ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item type payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateJenisBarangRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CreateJenisBarangSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Update Item Type
+      tags:
+      - Master Data
+  /api/v1/master/mitra:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ListMitraSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: List Partners
+      tags:
+      - Master Data
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Partner payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateMitraRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.CreateMitraSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Partner
+      tags:
+      - Master Data
+  /api/v1/master/mitra/{id}:
+    delete:
+      parameters:
+      - description: Partner ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete Partner
+      tags:
+      - Master Data
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Partner ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Partner payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateMitraRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CreateMitraSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Update Partner
+      tags:
+      - Master Data
+  /api/v1/master/permissions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ListPermissionsSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: List Available Permissions
+      tags:
+      - Master Data
+  /api/v1/users:
+    get:
+      description: Returns a paginated list of users with their department and mitra
+        names.
+      parameters:
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset (default 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UserListSuccessDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+      security:
+      - BearerAuth: []
+      summary: List Users
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user and assigns permissions in a single transaction.
+      parameters:
+      - description: Create user payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.UserSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Create New User
+      tags:
+      - Users
+  /api/v1/users/{id}:
+    delete:
+      description: Deletes a user by ID. Protects Super Admin (ID 1) from deletion.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+      security:
+      - BearerAuth: []
+      summary: Delete User
+      tags:
+      - Users
+    get:
+      description: Returns a single user detail with permissions.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UserSuccessDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+      security:
+      - BearerAuth: []
+      summary: Get User Detail
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: Updates user profile and permissions in a single transaction. Password
+        is optional.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update user payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UserSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+      security:
+      - BearerAuth: []
+      summary: Update User
+      tags:
+      - Users
   /health:
     get:
       description: Returns service health status, including database connectivity.

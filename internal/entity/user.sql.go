@@ -7,7 +7,120 @@ package entity
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const createUser = `-- name: CreateUser :one
+INSERT INTO USERS (
+    username, password, is_manager, id_departemen, id_mitra
+) VALUES (
+    $1, $2, $3, $4, $5
+) RETURNING id_user, username, is_manager, id_departemen, id_mitra, created_at
+`
+
+type CreateUserParams struct {
+	Username     string      `json:"username"`
+	Password     string      `json:"password"`
+	IsManager    bool        `json:"is_manager"`
+	IDDepartemen pgtype.Int4 `json:"id_departemen"`
+	IDMitra      pgtype.Int4 `json:"id_mitra"`
+}
+
+type CreateUserRow struct {
+	IDUser       int32              `json:"id_user"`
+	Username     string             `json:"username"`
+	IsManager    bool               `json:"is_manager"`
+	IDDepartemen pgtype.Int4        `json:"id_departemen"`
+	IDMitra      pgtype.Int4        `json:"id_mitra"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
+	row := q.db.QueryRow(ctx, createUser,
+		arg.Username,
+		arg.Password,
+		arg.IsManager,
+		arg.IDDepartemen,
+		arg.IDMitra,
+	)
+	var i CreateUserRow
+	err := row.Scan(
+		&i.IDUser,
+		&i.Username,
+		&i.IsManager,
+		&i.IDDepartemen,
+		&i.IDMitra,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const createUserAkses = `-- name: CreateUserAkses :exec
+INSERT INTO USER_AKSES (
+    id_user, id_hak_akses
+) VALUES (
+    $1, $2
+)
+`
+
+type CreateUserAksesParams struct {
+	IDUser     int32 `json:"id_user"`
+	IDHakAkses int32 `json:"id_hak_akses"`
+}
+
+func (q *Queries) CreateUserAkses(ctx context.Context, arg CreateUserAksesParams) error {
+	_, err := q.db.Exec(ctx, createUserAkses, arg.IDUser, arg.IDHakAkses)
+	return err
+}
+
+const deleteUser = `-- name: DeleteUser :execrows
+DELETE FROM USERS
+WHERE id_user = $1
+`
+
+func (q *Queries) DeleteUser(ctx context.Context, idUser int32) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteUser, idUser)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const getUserByID = `-- name: GetUserByID :one
+SELECT u.id_user, u.username, u.is_manager, u.id_departemen, u.id_mitra, d.nama_departemen, m.nama_perusahaan, u.created_at
+FROM USERS u
+LEFT JOIN DEPARTEMEN d ON u.id_departemen = d.id_departemen
+LEFT JOIN MITRA m ON u.id_mitra = m.id_mitra
+WHERE u.id_user = $1 LIMIT 1
+`
+
+type GetUserByIDRow struct {
+	IDUser         int32              `json:"id_user"`
+	Username       string             `json:"username"`
+	IsManager      bool               `json:"is_manager"`
+	IDDepartemen   pgtype.Int4        `json:"id_departemen"`
+	IDMitra        pgtype.Int4        `json:"id_mitra"`
+	NamaDepartemen pgtype.Text        `json:"nama_departemen"`
+	NamaPerusahaan pgtype.Text        `json:"nama_perusahaan"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) GetUserByID(ctx context.Context, idUser int32) (GetUserByIDRow, error) {
+	row := q.db.QueryRow(ctx, getUserByID, idUser)
+	var i GetUserByIDRow
+	err := row.Scan(
+		&i.IDUser,
+		&i.Username,
+		&i.IsManager,
+		&i.IDDepartemen,
+		&i.IDMitra,
+		&i.NamaDepartemen,
+		&i.NamaPerusahaan,
+		&i.CreatedAt,
+	)
+	return i, err
+}
 
 const getUserByUsername = `-- name: GetUserByUsername :one
 SELECT id_user, username, password, is_manager, id_departemen, id_mitra, created_at
@@ -55,4 +168,104 @@ func (q *Queries) GetUserPermissions(ctx context.Context, idUser int32) ([]strin
 		return nil, err
 	}
 	return items, nil
+}
+
+const listUsers = `-- name: ListUsers :many
+SELECT u.id_user, u.username, u.is_manager, d.nama_departemen, m.nama_perusahaan, u.created_at
+FROM USERS u
+LEFT JOIN DEPARTEMEN d ON u.id_departemen = d.id_departemen
+LEFT JOIN MITRA m ON u.id_mitra = m.id_mitra
+ORDER BY u.created_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type ListUsersParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+type ListUsersRow struct {
+	IDUser         int32              `json:"id_user"`
+	Username       string             `json:"username"`
+	IsManager      bool               `json:"is_manager"`
+	NamaDepartemen pgtype.Text        `json:"nama_departemen"`
+	NamaPerusahaan pgtype.Text        `json:"nama_perusahaan"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error) {
+	rows, err := q.db.Query(ctx, listUsers, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListUsersRow
+	for rows.Next() {
+		var i ListUsersRow
+		if err := rows.Scan(
+			&i.IDUser,
+			&i.Username,
+			&i.IsManager,
+			&i.NamaDepartemen,
+			&i.NamaPerusahaan,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateUser = `-- name: UpdateUser :one
+UPDATE USERS
+SET username = $2,
+    password = $3,
+    is_manager = $4,
+    id_departemen = $5,
+    id_mitra = $6
+WHERE id_user = $1
+RETURNING id_user, username, is_manager, id_departemen, id_mitra, created_at
+`
+
+type UpdateUserParams struct {
+	IDUser       int32       `json:"id_user"`
+	Username     string      `json:"username"`
+	Password     string      `json:"password"`
+	IsManager    bool        `json:"is_manager"`
+	IDDepartemen pgtype.Int4 `json:"id_departemen"`
+	IDMitra      pgtype.Int4 `json:"id_mitra"`
+}
+
+type UpdateUserRow struct {
+	IDUser       int32              `json:"id_user"`
+	Username     string             `json:"username"`
+	IsManager    bool               `json:"is_manager"`
+	IDDepartemen pgtype.Int4        `json:"id_departemen"`
+	IDMitra      pgtype.Int4        `json:"id_mitra"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error) {
+	row := q.db.QueryRow(ctx, updateUser,
+		arg.IDUser,
+		arg.Username,
+		arg.Password,
+		arg.IsManager,
+		arg.IDDepartemen,
+		arg.IDMitra,
+	)
+	var i UpdateUserRow
+	err := row.Scan(
+		&i.IDUser,
+		&i.Username,
+		&i.IsManager,
+		&i.IDDepartemen,
+		&i.IDMitra,
+		&i.CreatedAt,
+	)
+	return i, err
 }

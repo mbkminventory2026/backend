@@ -13,6 +13,9 @@ const (
 	authorizationHeaderKey  = "authorization"
 	authorizationTypeBearer = "bearer"
 	authorizationPayloadKey = "authorization_payload"
+
+	// PermissionAllAccess is the special permission granted to managers.
+	PermissionAllAccess = "ALL_ACCESS"
 )
 
 // AuthMiddleware validates JWT token from Authorization header.
@@ -57,6 +60,58 @@ func AuthMiddleware(secretKey string) gin.HandlerFunc {
 
 		// Store user data in context for handlers to use
 		c.Set(authorizationPayloadKey, claims)
+		c.Next()
+	}
+}
+
+// RequirePermission intercepts the request and checks if the authenticated user
+// has the required permission in their JWT claims.
+func RequirePermission(requiredPermission string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		payload, exists := c.Get(authorizationPayloadKey)
+		if !exists {
+			AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+			return
+		}
+
+		claims, ok := payload.(jwt.MapClaims)
+		if !ok {
+			AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid token payload", nil))
+			return
+		}
+
+		permissionsRaw, ok := claims["permissions"]
+		if !ok {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: no permissions assigned", nil))
+			return
+		}
+
+		hasAccess := false
+		// Permissions in JWT claims are usually parsed as []interface{}
+		if list, ok := permissionsRaw.([]interface{}); ok {
+			for _, p := range list {
+				if str, ok := p.(string); ok {
+					if str == PermissionAllAccess || str == requiredPermission {
+						hasAccess = true
+						break
+					}
+				}
+			}
+		} else if list, ok := permissionsRaw.([]string); ok {
+			// Fallback in case of manual context override or different decoder config
+			for _, s := range list {
+				if s == PermissionAllAccess || s == requiredPermission {
+					hasAccess = true
+					break
+				}
+			}
+		}
+
+		if !hasAccess {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, fmt.Sprintf("access denied: missing required permission '%s'", requiredPermission), nil))
+			return
+		}
+
 		c.Next()
 	}
 }

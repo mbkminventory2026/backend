@@ -20,8 +20,8 @@ const (
 	MessageInternalServerError = "internal server error"
 )
 
-// JSONResponse is the standard response envelope for all HTTP endpoints.
-type JSONResponse struct {
+// BaseResponse is the standard response envelope for all HTTP endpoints.
+type BaseResponse struct {
 	Status  string `json:"status"`
 	Message string `json:"message,omitempty"`
 	Data    any    `json:"data,omitempty"`
@@ -33,14 +33,14 @@ type HealthResponse struct {
 	Status string `json:"status" example:"ok"`
 }
 
-// JSON writes a JSONResponse with a specific HTTP status code.
-func JSON(c *gin.Context, httpCode int, payload JSONResponse) {
+// JSON writes a BaseResponse with a specific HTTP status code.
+func JSON(c *gin.Context, httpCode int, payload BaseResponse) {
 	c.JSON(httpCode, payload)
 }
 
 // Success writes a successful standardized response.
 func Success(c *gin.Context, httpCode int, message string, data any) {
-	JSON(c, httpCode, JSONResponse{
+	JSON(c, httpCode, BaseResponse{
 		Status:  StatusSuccess,
 		Message: message,
 		Data:    data,
@@ -50,7 +50,7 @@ func Success(c *gin.Context, httpCode int, message string, data any) {
 
 // Fail writes a failed standardized response.
 func Fail(c *gin.Context, httpCode int, message string, errDetail any) {
-	JSON(c, httpCode, JSONResponse{
+	JSON(c, httpCode, BaseResponse{
 		Status:  StatusError,
 		Message: message,
 		Data:    nil,
