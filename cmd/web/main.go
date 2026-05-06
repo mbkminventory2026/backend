@@ -103,6 +103,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	transactionDocumentUseCase, err := usecase.NewTransactionDocumentUseCase(queries, dbPool)
+	if err != nil {
+		logger.Error("failed to initialize transaction document usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	// 4. Handlers
 	authHandler, err := httpdelivery.NewAuthHandler(authUseCase)
 	if err != nil {
@@ -121,6 +128,13 @@ func main() {
 	masterDataHandler, err := httpdelivery.NewMasterDataHandler(masterDataUseCase)
 	if err != nil {
 		logger.Error("failed to initialize master data handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	transactionDocumentHandler, err := httpdelivery.NewTransactionDocumentHandler(transactionDocumentUseCase)
+	if err != nil {
+		logger.Error("failed to initialize transaction document handler", slog.String("error", err.Error()))
 		dbPool.Close()
 		os.Exit(1)
 	}
@@ -151,6 +165,7 @@ func main() {
 
 	userHandler.RegisterRoutes(router, authMiddleware)
 	masterDataHandler.RegisterRoutes(router, authMiddleware)
+	transactionDocumentHandler.RegisterRoutes(router, authMiddleware)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

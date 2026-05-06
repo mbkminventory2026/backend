@@ -15,6 +15,13 @@ type Querier interface {
 	CreateHakAkses(ctx context.Context, namaHalaman string) (HakAkse, error)
 	CreateJenisBarang(ctx context.Context, arg CreateJenisBarangParams) (JenisBarang, error)
 	CreateMitra(ctx context.Context, arg CreateMitraParams) (Mitra, error)
+	CreatePOClient(ctx context.Context, arg CreatePOClientParams) (PoClient, error)
+	CreatePOClientItem(ctx context.Context, arg CreatePOClientItemParams) (PoClientItem, error)
+	CreatePOInternal(ctx context.Context, arg CreatePOInternalParams) (PoInternal, error)
+	CreatePOInternalItem(ctx context.Context, arg CreatePOInternalItemParams) (PoInternalItem, error)
+	CreatePRInternal(ctx context.Context, arg CreatePRInternalParams) (PrInternal, error)
+	CreatePRInternalItem(ctx context.Context, arg CreatePRInternalItemParams) (PrInternalItem, error)
+	CreatePenanggungJawab(ctx context.Context, arg CreatePenanggungJawabParams) (PenanggungJawab, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	CreateUserAkses(ctx context.Context, arg CreateUserAksesParams) error
 	DeleteBarang(ctx context.Context, idBarang int32) (int64, error)

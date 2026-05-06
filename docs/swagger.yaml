@@ -173,6 +173,186 @@ definitions:
         example: success
         type: string
     type: object
+  model.CreatePOClientItemRequest:
+    properties:
+      colour:
+        type: string
+      description:
+        type: string
+      price:
+        minimum: 0
+        type: number
+      qty:
+        type: integer
+      style:
+        type: string
+    required:
+    - colour
+    - price
+    - qty
+    - style
+    type: object
+  model.CreatePOClientRequest:
+    properties:
+      delivery:
+        type: string
+      file:
+        type: string
+      id_mitra:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.CreatePOClientItemRequest'
+        minItems: 1
+        type: array
+      payment_term:
+        type: string
+      penanggung_jawab:
+        items:
+          $ref: '#/definitions/model.CreatePenanggungJawabRequest'
+        minItems: 1
+        type: array
+      po_number:
+        type: string
+      season:
+        type: string
+      tanggal:
+        type: string
+    required:
+    - delivery
+    - id_mitra
+    - items
+    - penanggung_jawab
+    - po_number
+    - tanggal
+    type: object
+  model.CreatePOInternalItemRequest:
+    properties:
+      description:
+        type: string
+      item:
+        type: string
+      qty:
+        type: integer
+      unit:
+        type: string
+      unit_price:
+        minimum: 0
+        type: number
+    required:
+    - item
+    - qty
+    - unit
+    - unit_price
+    type: object
+  model.CreatePOInternalRequest:
+    properties:
+      cpo:
+        type: string
+      currency:
+        type: string
+      id_pr_internal:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.CreatePOInternalItemRequest'
+        minItems: 1
+        type: array
+      nama_po:
+        type: string
+      ship_date:
+        type: string
+      supplier_addr:
+        type: string
+      supplier_contact:
+        type: string
+      supplier_email:
+        type: string
+      supplier_fax:
+        type: string
+      supplier_name:
+        type: string
+      supplier_telp:
+        type: string
+      tanggal:
+        type: string
+      term:
+        type: string
+    required:
+    - currency
+    - id_pr_internal
+    - items
+    - nama_po
+    - ship_date
+    - supplier_name
+    - tanggal
+    type: object
+  model.CreatePRInternalItemRequest:
+    properties:
+      description:
+        type: string
+      est_price:
+        minimum: 0
+        type: number
+      item:
+        type: string
+      qty:
+        type: integer
+      unit:
+        type: string
+    required:
+    - est_price
+    - item
+    - qty
+    - unit
+    type: object
+  model.CreatePRInternalRequest:
+    properties:
+      departemen:
+        type: string
+      id_user:
+        type: integer
+      id_wo:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.CreatePRInternalItemRequest'
+        minItems: 1
+        type: array
+      nama:
+        type: string
+      projek:
+        type: string
+      tanggal:
+        type: string
+      vendor_address:
+        type: string
+      vendor_name:
+        type: string
+      vendor_telp:
+        type: string
+    required:
+    - departemen
+    - id_user
+    - id_wo
+    - items
+    - nama
+    - projek
+    - tanggal
+    - vendor_name
+    type: object
+  model.CreatePenanggungJawabRequest:
+    properties:
+      email:
+        type: string
+      nama:
+        type: string
+      no_telp:
+        type: string
+    required:
+    - nama
+    - no_telp
+    type: object
   model.CreateUserRequest:
     properties:
       hak_akses_ids:
@@ -435,6 +615,228 @@ definitions:
       tipe_perusahaan:
         type: string
     type: object
+  model.POClientItemResponse:
+    properties:
+      colour:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id_po_client_item:
+        type: integer
+      price:
+        type: number
+      qty:
+        type: integer
+      style:
+        type: string
+    type: object
+  model.POClientResponse:
+    properties:
+      created_at:
+        type: string
+      delivery:
+        type: string
+      file:
+        type: string
+      id_mitra:
+        type: integer
+      id_po_client:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.POClientItemResponse'
+        type: array
+      payment_term:
+        type: string
+      penanggung_jawab:
+        items:
+          $ref: '#/definitions/model.PenanggungJawabResponse'
+        type: array
+      po_number:
+        type: string
+      season:
+        type: string
+      tanggal:
+        type: string
+    type: object
+  model.POClientSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.POClientResponse'
+      message:
+        example: po client created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.POInternalItemResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id_po_internal_item:
+        type: integer
+      item:
+        type: string
+      qty:
+        type: integer
+      unit:
+        type: string
+      unit_price:
+        type: number
+    type: object
+  model.POInternalResponse:
+    properties:
+      cpo:
+        type: string
+      created_at:
+        type: string
+      currency:
+        type: string
+      id_po_internal:
+        type: integer
+      id_pr_internal:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.POInternalItemResponse'
+        type: array
+      nama_po:
+        type: string
+      ship_date:
+        type: string
+      supplier_addr:
+        type: string
+      supplier_contact:
+        type: string
+      supplier_email:
+        type: string
+      supplier_fax:
+        type: string
+      supplier_name:
+        type: string
+      supplier_telp:
+        type: string
+      tanggal:
+        type: string
+      term:
+        type: string
+    type: object
+  model.POInternalSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.POInternalResponse'
+      message:
+        example: po internal created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.PRInternalItemResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      est_price:
+        type: number
+      id_pr_internal_item:
+        type: integer
+      item:
+        type: string
+      qty:
+        type: integer
+      unit:
+        type: string
+    type: object
+  model.PRInternalResponse:
+    properties:
+      created_at:
+        type: string
+      departemen:
+        type: string
+      id_pr_internal:
+        type: integer
+      id_user:
+        type: integer
+      id_wo:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.PRInternalItemResponse'
+        type: array
+      nama:
+        type: string
+      projek:
+        type: string
+      tanggal:
+        type: string
+      vendor_address:
+        type: string
+      vendor_name:
+        type: string
+      vendor_telp:
+        type: string
+    type: object
+  model.PRInternalSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.PRInternalResponse'
+      message:
+        example: pr internal created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.PenanggungJawabResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id_penanggung_jawab:
+        type: integer
+      nama:
+        type: string
+      no_telp:
+        type: string
+    type: object
+  model.TransactionErrorDetail:
+    properties:
+      code:
+        example: related_data_not_found
+        type: string
+    type: object
+  model.TransactionErrorDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.TransactionErrorDetail'
+      message:
+        example: related data not found
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.TransactionValidationErrorDoc:
+    properties:
+      error:
+        items:
+          $ref: '#/definitions/response.ValidationErrorItem'
+        type: array
+      message:
+        example: bad request
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
   model.TurnstileErrorDetail:
     properties:
       code:
@@ -599,6 +1001,17 @@ definitions:
     properties:
       status:
         example: ok
+        type: string
+    type: object
+  response.ValidationErrorItem:
+    properties:
+      field:
+        type: string
+      message:
+        type: string
+      param:
+        type: string
+      rule:
         type: string
     type: object
 host: localhost:8080
@@ -1308,6 +1721,107 @@ paths:
       summary: Update Permission
       tags:
       - Master Data
+  /api/v1/po-clients:
+    post:
+      consumes:
+      - application/json
+      description: Create a PO client document with nested items and penanggung jawab
+        in a single transaction.
+      parameters:
+      - description: PO client payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreatePOClientRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.POClientSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TransactionValidationErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Create PO Client
+      tags:
+      - Transaction Documents
+  /api/v1/po-internals:
+    post:
+      consumes:
+      - application/json
+      description: Create a PO internal document with nested items in a single transaction.
+      parameters:
+      - description: PO internal payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreatePOInternalRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.POInternalSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TransactionValidationErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Create PO Internal
+      tags:
+      - Transaction Documents
+  /api/v1/pr-internals:
+    post:
+      consumes:
+      - application/json
+      description: Create a PR internal document with nested items in a single transaction.
+      parameters:
+      - description: PR internal payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreatePRInternalRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.PRInternalSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TransactionValidationErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Create PR Internal
+      tags:
+      - Transaction Documents
   /api/v1/users:
     get:
       description: Returns a paginated list of users with their department and mitra

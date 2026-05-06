@@ -1151,6 +1151,165 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/po-clients": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a PO client document with nested items and penanggung jawab in a single transaction.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction Documents"
+                ],
+                "summary": "Create PO Client",
+                "parameters": [
+                    {
+                        "description": "PO client payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreatePOClientRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.POClientSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionValidationErrorDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/po-internals": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a PO internal document with nested items in a single transaction.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction Documents"
+                ],
+                "summary": "Create PO Internal",
+                "parameters": [
+                    {
+                        "description": "PO internal payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreatePOInternalRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.POInternalSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionValidationErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/pr-internals": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a PR internal document with nested items in a single transaction.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction Documents"
+                ],
+                "summary": "Create PR Internal",
+                "parameters": [
+                    {
+                        "description": "PR internal payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreatePRInternalRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.PRInternalSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionValidationErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users": {
             "get": {
                 "security": [
@@ -1707,6 +1866,262 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CreatePOClientItemRequest": {
+            "type": "object",
+            "required": [
+                "colour",
+                "price",
+                "qty",
+                "style"
+            ],
+            "properties": {
+                "colour": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "style": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.CreatePOClientRequest": {
+            "type": "object",
+            "required": [
+                "delivery",
+                "id_mitra",
+                "items",
+                "penanggung_jawab",
+                "po_number",
+                "tanggal"
+            ],
+            "properties": {
+                "delivery": {
+                    "type": "string"
+                },
+                "file": {
+                    "type": "string"
+                },
+                "id_mitra": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.CreatePOClientItemRequest"
+                    }
+                },
+                "payment_term": {
+                    "type": "string"
+                },
+                "penanggung_jawab": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.CreatePenanggungJawabRequest"
+                    }
+                },
+                "po_number": {
+                    "type": "string"
+                },
+                "season": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.CreatePOInternalItemRequest": {
+            "type": "object",
+            "required": [
+                "item",
+                "qty",
+                "unit",
+                "unit_price"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "item": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "unit_price": {
+                    "type": "number",
+                    "minimum": 0
+                }
+            }
+        },
+        "model.CreatePOInternalRequest": {
+            "type": "object",
+            "required": [
+                "currency",
+                "id_pr_internal",
+                "items",
+                "nama_po",
+                "ship_date",
+                "supplier_name",
+                "tanggal"
+            ],
+            "properties": {
+                "cpo": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "id_pr_internal": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.CreatePOInternalItemRequest"
+                    }
+                },
+                "nama_po": {
+                    "type": "string"
+                },
+                "ship_date": {
+                    "type": "string"
+                },
+                "supplier_addr": {
+                    "type": "string"
+                },
+                "supplier_contact": {
+                    "type": "string"
+                },
+                "supplier_email": {
+                    "type": "string"
+                },
+                "supplier_fax": {
+                    "type": "string"
+                },
+                "supplier_name": {
+                    "type": "string"
+                },
+                "supplier_telp": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                },
+                "term": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.CreatePRInternalItemRequest": {
+            "type": "object",
+            "required": [
+                "est_price",
+                "item",
+                "qty",
+                "unit"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "est_price": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "item": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.CreatePRInternalRequest": {
+            "type": "object",
+            "required": [
+                "departemen",
+                "id_user",
+                "id_wo",
+                "items",
+                "nama",
+                "projek",
+                "tanggal",
+                "vendor_name"
+            ],
+            "properties": {
+                "departemen": {
+                    "type": "string"
+                },
+                "id_user": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.CreatePRInternalItemRequest"
+                    }
+                },
+                "nama": {
+                    "type": "string"
+                },
+                "projek": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                },
+                "vendor_address": {
+                    "type": "string"
+                },
+                "vendor_name": {
+                    "type": "string"
+                },
+                "vendor_telp": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.CreatePenanggungJawabRequest": {
+            "type": "object",
+            "required": [
+                "nama",
+                "no_telp"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "nama": {
+                    "type": "string"
+                },
+                "no_telp": {
+                    "type": "string"
+                }
+            }
+        },
         "model.CreateUserRequest": {
             "type": "object",
             "required": [
@@ -2093,6 +2508,340 @@ const docTemplate = `{
                 }
             }
         },
+        "model.POClientItemResponse": {
+            "type": "object",
+            "properties": {
+                "colour": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id_po_client_item": {
+                    "type": "integer"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "style": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.POClientResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "delivery": {
+                    "type": "string"
+                },
+                "file": {
+                    "type": "string"
+                },
+                "id_mitra": {
+                    "type": "integer"
+                },
+                "id_po_client": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.POClientItemResponse"
+                    }
+                },
+                "payment_term": {
+                    "type": "string"
+                },
+                "penanggung_jawab": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PenanggungJawabResponse"
+                    }
+                },
+                "po_number": {
+                    "type": "string"
+                },
+                "season": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.POClientSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.POClientResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "po client created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.POInternalItemResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id_po_internal_item": {
+                    "type": "integer"
+                },
+                "item": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "unit_price": {
+                    "type": "number"
+                }
+            }
+        },
+        "model.POInternalResponse": {
+            "type": "object",
+            "properties": {
+                "cpo": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "id_po_internal": {
+                    "type": "integer"
+                },
+                "id_pr_internal": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.POInternalItemResponse"
+                    }
+                },
+                "nama_po": {
+                    "type": "string"
+                },
+                "ship_date": {
+                    "type": "string"
+                },
+                "supplier_addr": {
+                    "type": "string"
+                },
+                "supplier_contact": {
+                    "type": "string"
+                },
+                "supplier_email": {
+                    "type": "string"
+                },
+                "supplier_fax": {
+                    "type": "string"
+                },
+                "supplier_name": {
+                    "type": "string"
+                },
+                "supplier_telp": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                },
+                "term": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.POInternalSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.POInternalResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "po internal created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.PRInternalItemResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "est_price": {
+                    "type": "number"
+                },
+                "id_pr_internal_item": {
+                    "type": "integer"
+                },
+                "item": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.PRInternalResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "departemen": {
+                    "type": "string"
+                },
+                "id_pr_internal": {
+                    "type": "integer"
+                },
+                "id_user": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PRInternalItemResponse"
+                    }
+                },
+                "nama": {
+                    "type": "string"
+                },
+                "projek": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                },
+                "vendor_address": {
+                    "type": "string"
+                },
+                "vendor_name": {
+                    "type": "string"
+                },
+                "vendor_telp": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.PRInternalSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.PRInternalResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "pr internal created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.PenanggungJawabResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id_penanggung_jawab": {
+                    "type": "integer"
+                },
+                "nama": {
+                    "type": "string"
+                },
+                "no_telp": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.TransactionErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "related_data_not_found"
+                }
+            }
+        },
+        "model.TransactionErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/model.TransactionErrorDetail"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "related data not found"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.TransactionValidationErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ValidationErrorItem"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "bad request"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
         "model.TurnstileErrorDetail": {
             "type": "object",
             "properties": {
@@ -2338,6 +3087,23 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "ok"
+                }
+            }
+        },
+        "response.ValidationErrorItem": {
+            "type": "object",
+            "properties": {
+                "field": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "param": {
+                    "type": "string"
+                },
+                "rule": {
+                    "type": "string"
                 }
             }
         }
