@@ -96,6 +96,6 @@ func (u *AuthUseCase) Login(ctx context.Context, req model.LoginRequest, remoteI
 	return &model.LoginResponse{
 		AccessToken: tokenString,
 		TokenType:   "Bearer",
-		ExpiresIn:   int64(expirationTime.Sub(time.Now()).Seconds()),
+		ExpiresIn:   int64(time.Until(expirationTime).Seconds()),
 	}, nil
 }

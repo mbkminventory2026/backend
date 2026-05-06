@@ -139,7 +139,7 @@ func main() {
 	healthHandler.RegisterRoutes(router)
 
 	authMiddleware := httpdelivery.AuthMiddleware(cfg.JWTSecret)
-	
+
 	authHandler.RegisterRoutes(
 		router,
 		authMiddleware,
@@ -148,7 +148,7 @@ func main() {
 			time.Duration(cfg.LoginRateLimitWindowSec)*time.Second,
 		),
 	)
-	
+
 	userHandler.RegisterRoutes(router, authMiddleware)
 	masterDataHandler.RegisterRoutes(router, authMiddleware)
 

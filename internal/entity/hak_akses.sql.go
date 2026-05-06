@@ -9,6 +9,44 @@ import (
 	"context"
 )
 
+const createHakAkses = `-- name: CreateHakAkses :one
+INSERT INTO HAK_AKSES (nama_halaman)
+VALUES ($1)
+RETURNING id_hak_akses, nama_halaman, created_at
+`
+
+func (q *Queries) CreateHakAkses(ctx context.Context, namaHalaman string) (HakAkse, error) {
+	row := q.db.QueryRow(ctx, createHakAkses, namaHalaman)
+	var i HakAkse
+	err := row.Scan(&i.IDHakAkses, &i.NamaHalaman, &i.CreatedAt)
+	return i, err
+}
+
+const deleteHakAkses = `-- name: DeleteHakAkses :execrows
+DELETE FROM HAK_AKSES
+WHERE id_hak_akses = $1
+`
+
+func (q *Queries) DeleteHakAkses(ctx context.Context, idHakAkses int32) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteHakAkses, idHakAkses)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const getHakAksesByID = `-- name: GetHakAksesByID :one
+SELECT id_hak_akses, nama_halaman, created_at FROM HAK_AKSES
+WHERE id_hak_akses = $1 LIMIT 1
+`
+
+func (q *Queries) GetHakAksesByID(ctx context.Context, idHakAkses int32) (HakAkse, error) {
+	row := q.db.QueryRow(ctx, getHakAksesByID, idHakAkses)
+	var i HakAkse
+	err := row.Scan(&i.IDHakAkses, &i.NamaHalaman, &i.CreatedAt)
+	return i, err
+}
+
 const listHakAkses = `-- name: ListHakAkses :many
 SELECT id_hak_akses, nama_halaman, created_at FROM HAK_AKSES
 ORDER BY nama_halaman ASC
@@ -32,4 +70,23 @@ func (q *Queries) ListHakAkses(ctx context.Context) ([]HakAkse, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateHakAkses = `-- name: UpdateHakAkses :one
+UPDATE HAK_AKSES
+SET nama_halaman = $2
+WHERE id_hak_akses = $1
+RETURNING id_hak_akses, nama_halaman, created_at
+`
+
+type UpdateHakAksesParams struct {
+	IDHakAkses  int32  `json:"id_hak_akses"`
+	NamaHalaman string `json:"nama_halaman"`
+}
+
+func (q *Queries) UpdateHakAkses(ctx context.Context, arg UpdateHakAksesParams) (HakAkse, error) {
+	row := q.db.QueryRow(ctx, updateHakAkses, arg.IDHakAkses, arg.NamaHalaman)
+	var i HakAkse
+	err := row.Scan(&i.IDHakAkses, &i.NamaHalaman, &i.CreatedAt)
+	return i, err
 }

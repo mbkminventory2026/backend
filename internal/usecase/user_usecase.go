@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,6 +21,7 @@ var (
 	ErrUserNotFound           = errors.New("user not found")
 	ErrUserServiceUnavailable = errors.New("user service unavailable")
 	ErrCannotDeleteSuperAdmin = errors.New("Super Admin cannot be deleted")
+	ErrUsernameAlreadyExists  = errors.New("username already exists")
 )
 
 type UserUseCase struct {
@@ -53,7 +55,11 @@ func (u *UserUseCase) Create(ctx context.Context, req model.CreateUserRequest) (
 	if err != nil {
 		return nil, fmt.Errorf("%w: failed to start transaction", ErrUserServiceUnavailable)
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil && !errors.Is(rollbackErr, pgx.ErrTxClosed) {
+			err = rollbackErr
+		}
+	}()
 
 	qtx := entity.New(tx)
 
@@ -76,6 +82,9 @@ func (u *UserUseCase) Create(ctx context.Context, req model.CreateUserRequest) (
 		IDMitra:      idMitra,
 	})
 	if err != nil {
+		if isUniqueViolation(err) {
+			return nil, ErrUsernameAlreadyExists
+		}
 		return nil, fmt.Errorf("%w: failed to create user", ErrUserServiceUnavailable)
 	}
 
@@ -184,6 +193,9 @@ func (u *UserUseCase) Update(ctx context.Context, id int32, req model.UpdateUser
 	// 2. Fetch raw user to get the current hashed password
 	rawUser, err := u.repo.GetUserByUsername(ctx, userForUpdate.Username)
 	if err != nil {
+		if isUniqueViolation(err) {
+			return nil, ErrUsernameAlreadyExists
+		}
 		return nil, err
 	}
 	finalPassword := rawUser.Password
@@ -202,7 +214,11 @@ func (u *UserUseCase) Update(ctx context.Context, id int32, req model.UpdateUser
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil && !errors.Is(rollbackErr, pgx.ErrTxClosed) {
+			err = rollbackErr
+		}
+	}()
 	qtx := entity.New(tx)
 
 	// 5. Update User record
@@ -272,4 +288,9 @@ func (u *UserUseCase) Delete(ctx context.Context, idUser int32) error {
 	}
 
 	return nil
+}
+
+func isUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }

@@ -3,7 +3,6 @@ package httpdelivery
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -28,7 +27,7 @@ func NewUserHandler(useCase *usecase.UserUseCase) (*UserHandler, error) {
 
 func (h *UserHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/api/v1/users").Use(authMiddleware)
-	
+
 	group.POST("", h.Create)
 	group.GET("", h.List)
 	group.GET("/:id", h.GetByID)
@@ -46,6 +45,7 @@ func (h *UserHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.Hand
 // @Param        payload  body      model.CreateUserRequest  true  "Create user payload"
 // @Success      201      {object}  model.UserSuccessDoc
 // @Failure      400      {object}  model.LoginBadRequestDoc
+// @Failure      409      {object}  model.LoginBadRequestDoc
 // @Failure      401      {object}  model.GetMeUnauthorizedDoc
 // @Failure      503      {object}  model.LoginServiceUnavailableDoc
 // @Router       /api/v1/users [post]
@@ -76,12 +76,20 @@ func (h *UserHandler) Create(c *gin.Context) {
 // @Failure      401     {object}  model.GetMeUnauthorizedDoc
 // @Router       /api/v1/users [get]
 func (h *UserHandler) List(c *gin.Context) {
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	limit, err := parseQueryInt32(c, "limit", 20)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid limit", nil))
+		return
+	}
+	offset, err := parseQueryInt32(c, "offset", 0)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid offset", nil))
+		return
+	}
 
 	result, err := h.useCase.List(c.Request.Context(), model.ListUsersFilter{
-		Limit:  int32(limit),
-		Offset: int32(offset),
+		Limit:  limit,
+		Offset: offset,
 	})
 	if err != nil {
 		h.handleError(c, err)
@@ -103,13 +111,13 @@ func (h *UserHandler) List(c *gin.Context) {
 // @Failure      404  {object}  model.LoginBadRequestDoc
 // @Router       /api/v1/users/{id} [get]
 func (h *UserHandler) GetByID(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 32)
+	id, err := parsePathInt32(c, "id")
 	if err != nil {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid user id", nil))
 		return
 	}
 
-	result, err := h.useCase.GetByID(c.Request.Context(), int32(id))
+	result, err := h.useCase.GetByID(c.Request.Context(), id)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -129,11 +137,12 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 // @Param        payload  body      model.UpdateUserRequest  true  "Update user payload"
 // @Success      200      {object}  model.UserSuccessDoc
 // @Failure      400      {object}  model.LoginBadRequestDoc
+// @Failure      409      {object}  model.LoginBadRequestDoc
 // @Failure      401      {object}  model.GetMeUnauthorizedDoc
 // @Failure      404      {object}  model.LoginBadRequestDoc
 // @Router       /api/v1/users/{id} [put]
 func (h *UserHandler) Update(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 32)
+	id, err := parsePathInt32(c, "id")
 	if err != nil {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid user id", nil))
 		return
@@ -144,7 +153,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 		return
 	}
 
-	result, err := h.useCase.Update(c.Request.Context(), int32(id), req)
+	result, err := h.useCase.Update(c.Request.Context(), id, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -166,13 +175,13 @@ func (h *UserHandler) Update(c *gin.Context) {
 // @Failure      404  {object}  model.LoginBadRequestDoc
 // @Router       /api/v1/users/{id} [delete]
 func (h *UserHandler) Delete(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 32)
+	id, err := parsePathInt32(c, "id")
 	if err != nil {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid user id", nil))
 		return
 	}
 
-	err = h.useCase.Delete(c.Request.Context(), int32(id))
+	err = h.useCase.Delete(c.Request.Context(), id)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -186,6 +195,10 @@ func (h *UserHandler) handleError(c *gin.Context, err error) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), nil))
 		return
 	}
+	if errors.Is(err, usecase.ErrUsernameAlreadyExists) {
+		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), nil))
+		return
+	}
 	if errors.Is(err, usecase.ErrUserNotFound) {
 		AbortWithError(c, NewHTTPError(http.StatusNotFound, err.Error(), nil))
 		return
@@ -194,6 +207,6 @@ func (h *UserHandler) handleError(c *gin.Context, err error) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), nil))
 		return
 	}
-	
+
 	AbortWithError(c, err)
 }

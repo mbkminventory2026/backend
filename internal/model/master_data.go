@@ -1,7 +1,5 @@
 package model
 
-import "permatatex-inventory/internal/entity"
-
 // --- REQUESTS ---
 
 // Departemen
@@ -61,6 +59,15 @@ type UpdateBarangRequest struct {
 }
 
 // Company
+type CreateCompanyRequest struct {
+	Nama   string `json:"nama" binding:"required"`
+	Alamat string `json:"alamat"`
+	Email  string `json:"email" binding:"omitempty,email"`
+	NoTelp string `json:"no_telp"`
+	About  string `json:"about"`
+	Logo   string `json:"logo"`
+}
+
 type UpdateCompanyRequest struct {
 	Nama   string `json:"nama" binding:"required"`
 	Alamat string `json:"alamat"`
@@ -68,6 +75,15 @@ type UpdateCompanyRequest struct {
 	NoTelp string `json:"no_telp"`
 	About  string `json:"about"`
 	Logo   string `json:"logo"`
+}
+
+// Hak Akses
+type CreateHakAksesRequest struct {
+	NamaHalaman string `json:"nama_halaman" binding:"required"`
+}
+
+type UpdateHakAksesRequest struct {
+	NamaHalaman string `json:"nama_halaman" binding:"required"`
 }
 
 // --- RESPONSES ---
@@ -111,6 +127,12 @@ type CompanyResponse struct {
 	NoTelp    string `json:"no_telp"`
 	About     string `json:"about"`
 	Logo      string `json:"logo"`
+	CreatedAt string `json:"created_at"`
+}
+
+type HakAksesResponse struct {
+	ID        int32  `json:"id_hak_akses"`
+	Nama      string `json:"nama_halaman"`
 	CreatedAt string `json:"created_at"`
 }
 
@@ -165,13 +187,19 @@ type CreateBarangSuccessDoc struct {
 }
 
 type ListPermissionsSuccessDoc struct {
-	Status  string           `json:"status" example:"success"`
-	Message string           `json:"message" example:"permissions retrieved"`
-	Data    []entity.HakAkse `json:"data"`
+	Status  string             `json:"status" example:"success"`
+	Message string             `json:"message" example:"permissions retrieved"`
+	Data    []HakAksesResponse `json:"data"`
 }
 
 type CompanySuccessDoc struct {
 	Status  string          `json:"status" example:"success"`
 	Message string          `json:"message" example:"company data retrieved"`
 	Data    CompanyResponse `json:"data"`
+}
+
+type HakAksesSuccessDoc struct {
+	Status  string           `json:"status" example:"success"`
+	Message string           `json:"message" example:"permission created"`
+	Data    HakAksesResponse `json:"data"`
 }

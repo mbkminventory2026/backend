@@ -1,14 +1,5 @@
 basePath: /
 definitions:
-  entity.HakAkse:
-    properties:
-      created_at:
-        $ref: '#/definitions/pgtype.Timestamptz'
-      id_hak_akses:
-        type: integer
-      nama_halaman:
-        type: string
-    type: object
   model.AuthServiceUnavailableErrorDetail:
     properties:
       code:
@@ -87,6 +78,23 @@ definitions:
         example: success
         type: string
     type: object
+  model.CreateCompanyRequest:
+    properties:
+      about:
+        type: string
+      alamat:
+        type: string
+      email:
+        type: string
+      logo:
+        type: string
+      nama:
+        type: string
+      no_telp:
+        type: string
+    required:
+    - nama
+    type: object
   model.CreateDepartemenRequest:
     properties:
       nama_departemen:
@@ -104,6 +112,13 @@ definitions:
       status:
         example: success
         type: string
+    type: object
+  model.CreateHakAksesRequest:
+    properties:
+      nama_halaman:
+        type: string
+    required:
+    - nama_halaman
     type: object
   model.CreateJenisBarangRequest:
     properties:
@@ -215,6 +230,26 @@ definitions:
         example: error
         type: string
     type: object
+  model.HakAksesResponse:
+    properties:
+      created_at:
+        type: string
+      id_hak_akses:
+        type: integer
+      nama_halaman:
+        type: string
+    type: object
+  model.HakAksesSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.HakAksesResponse'
+      message:
+        example: permission created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.JenisBarangResponse:
     properties:
       created_at:
@@ -282,7 +317,7 @@ definitions:
     properties:
       data:
         items:
-          $ref: '#/definitions/entity.HakAkse'
+          $ref: '#/definitions/model.HakAksesResponse'
         type: array
       message:
         example: permissions retrieved
@@ -450,6 +485,13 @@ definitions:
     required:
     - nama_departemen
     type: object
+  model.UpdateHakAksesRequest:
+    properties:
+      nama_halaman:
+        type: string
+    required:
+    - nama_halaman
+    type: object
   model.UpdateJenisBarangRequest:
     properties:
       kode:
@@ -543,26 +585,6 @@ definitions:
       status:
         example: success
         type: string
-    type: object
-  pgtype.InfinityModifier:
-    enum:
-    - 1
-    - 0
-    - -1
-    format: int32
-    type: integer
-    x-enum-varnames:
-    - Infinity
-    - Finite
-    - NegativeInfinity
-  pgtype.Timestamptz:
-    properties:
-      infinityModifier:
-        $ref: '#/definitions/pgtype.InfinityModifier'
-      time:
-        type: string
-      valid:
-        type: boolean
     type: object
   response.BaseResponse:
     properties:
@@ -693,6 +715,10 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/model.CreateBarangSuccessDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
       security:
       - BearerAuth: []
       summary: Create Item
@@ -714,6 +740,25 @@ paths:
       security:
       - BearerAuth: []
       summary: Delete Item
+      tags:
+      - Master Data
+    get:
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CreateBarangSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Item Detail
       tags:
       - Master Data
     put:
@@ -738,6 +783,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/model.CreateBarangSuccessDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
       security:
       - BearerAuth: []
       summary: Update Item
@@ -757,7 +806,69 @@ paths:
       summary: Get Company Data
       tags:
       - Master Data
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Company payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateCompanyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.CompanySuccessDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Company Data
+      tags:
+      - Master Data
   /api/v1/master/company/{id}:
+    delete:
+      parameters:
+      - description: Company ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete Company Data
+      tags:
+      - Master Data
+    get:
+      parameters:
+      - description: Company ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CompanySuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Company Detail
+      tags:
+      - Master Data
     put:
       consumes:
       - application/json
@@ -839,6 +950,25 @@ paths:
       summary: Delete Department
       tags:
       - Master Data
+    get:
+      parameters:
+      - description: Department ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CreateDepartemenSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Department Detail
+      tags:
+      - Master Data
     put:
       consumes:
       - application/json
@@ -897,6 +1027,10 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/model.CreateJenisBarangSuccessDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
       security:
       - BearerAuth: []
       summary: Create Item Type
@@ -918,6 +1052,25 @@ paths:
       security:
       - BearerAuth: []
       summary: Delete Item Type
+      tags:
+      - Master Data
+    get:
+      parameters:
+      - description: Item Type ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CreateJenisBarangSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Item Type Detail
       tags:
       - Master Data
     put:
@@ -942,6 +1095,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/model.CreateJenisBarangSuccessDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
       security:
       - BearerAuth: []
       summary: Update Item Type
@@ -1001,6 +1158,25 @@ paths:
       summary: Delete Partner
       tags:
       - Master Data
+    get:
+      parameters:
+      - description: Partner ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CreateMitraSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Partner Detail
+      tags:
+      - Master Data
     put:
       consumes:
       - application/json
@@ -1040,6 +1216,96 @@ paths:
       security:
       - BearerAuth: []
       summary: List Available Permissions
+      tags:
+      - Master Data
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Permission payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateHakAksesRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.HakAksesSuccessDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Permission
+      tags:
+      - Master Data
+  /api/v1/master/permissions/{id}:
+    delete:
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete Permission
+      tags:
+      - Master Data
+    get:
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.HakAksesSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Permission Detail
+      tags:
+      - Master Data
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Permission payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateHakAksesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.HakAksesSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Update Permission
       tags:
       - Master Data
   /api/v1/users:
@@ -1097,6 +1363,10 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
         "503":
           description: Service Unavailable
           schema:
@@ -1201,6 +1471,10 @@ paths:
             $ref: '#/definitions/model.GetMeUnauthorizedDoc'
         "404":
           description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "409":
+          description: Conflict
           schema:
             $ref: '#/definitions/model.LoginBadRequestDoc'
       security:

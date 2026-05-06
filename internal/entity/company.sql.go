@@ -9,6 +9,60 @@ import (
 	"context"
 )
 
+const createCompany = `-- name: CreateCompany :one
+INSERT INTO COMPANY (
+    nama, alamat, email, no_telp, about, logo
+) VALUES (
+    $1, $2, $3, $4, $5, $6
+)
+RETURNING id_company, nama, alamat, email, no_telp, about, logo, created_at
+`
+
+type CreateCompanyParams struct {
+	Nama   string `json:"nama"`
+	Alamat string `json:"alamat"`
+	Email  string `json:"email"`
+	NoTelp string `json:"no_telp"`
+	About  string `json:"about"`
+	Logo   string `json:"logo"`
+}
+
+func (q *Queries) CreateCompany(ctx context.Context, arg CreateCompanyParams) (Company, error) {
+	row := q.db.QueryRow(ctx, createCompany,
+		arg.Nama,
+		arg.Alamat,
+		arg.Email,
+		arg.NoTelp,
+		arg.About,
+		arg.Logo,
+	)
+	var i Company
+	err := row.Scan(
+		&i.IDCompany,
+		&i.Nama,
+		&i.Alamat,
+		&i.Email,
+		&i.NoTelp,
+		&i.About,
+		&i.Logo,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const deleteCompany = `-- name: DeleteCompany :execrows
+DELETE FROM COMPANY
+WHERE id_company = $1
+`
+
+func (q *Queries) DeleteCompany(ctx context.Context, idCompany int32) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteCompany, idCompany)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const getCompany = `-- name: GetCompany :one
 SELECT id_company, nama, alamat, email, no_telp, about, logo, created_at FROM COMPANY
 ORDER BY created_at DESC LIMIT 1
@@ -16,6 +70,27 @@ ORDER BY created_at DESC LIMIT 1
 
 func (q *Queries) GetCompany(ctx context.Context) (Company, error) {
 	row := q.db.QueryRow(ctx, getCompany)
+	var i Company
+	err := row.Scan(
+		&i.IDCompany,
+		&i.Nama,
+		&i.Alamat,
+		&i.Email,
+		&i.NoTelp,
+		&i.About,
+		&i.Logo,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getCompanyByID = `-- name: GetCompanyByID :one
+SELECT id_company, nama, alamat, email, no_telp, about, logo, created_at FROM COMPANY
+WHERE id_company = $1 LIMIT 1
+`
+
+func (q *Queries) GetCompanyByID(ctx context.Context, idCompany int32) (Company, error) {
+	row := q.db.QueryRow(ctx, getCompanyByID, idCompany)
 	var i Company
 	err := row.Scan(
 		&i.IDCompany,
