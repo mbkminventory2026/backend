@@ -1310,6 +1310,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/reports/{divisi}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create lightweight production report for a specific division. Supported divisi: cutting, sewing, qc-finish, packing.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Work Order \u0026 Production"
+                ],
+                "summary": "Create Factory Report",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Division name",
+                        "name": "divisi",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Factory report payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateFactoryReportRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.FactoryReportSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderValidationErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users": {
             "get": {
                 "security": [
@@ -1580,6 +1638,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/work-orders": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a work order with shells, shell sizes, trims, and material list in a single transaction.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Work Order \u0026 Production"
+                ],
+                "summary": "Create Work Order",
+                "parameters": [
+                    {
+                        "description": "Work order payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateWorkOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderValidationErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Returns service health status, including database connectivity.",
@@ -1777,6 +1886,25 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CreateFactoryReportRequest": {
+            "type": "object",
+            "required": [
+                "id_wo_shell_size",
+                "qty",
+                "tanggal"
+            ],
+            "properties": {
+                "id_wo_shell_size": {
+                    "type": "integer"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
         "model.CreateHakAksesRequest": {
             "type": "object",
             "required": [
@@ -1816,6 +1944,28 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "model.CreateMaterialListRequest": {
+            "type": "object",
+            "required": [
+                "color",
+                "size",
+                "uom"
+            ],
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "string"
+                },
+                "uom": {
+                    "type": "string"
                 }
             }
         },
@@ -2153,6 +2303,162 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CreateWorkOrderRequest": {
+            "type": "object",
+            "required": [
+                "buyer",
+                "delivery",
+                "id_po_client_item",
+                "model",
+                "qty",
+                "shells",
+                "trims"
+            ],
+            "properties": {
+                "buyer": {
+                    "type": "string"
+                },
+                "delivery": {
+                    "type": "string"
+                },
+                "fob_cmt": {
+                    "type": "boolean"
+                },
+                "id_po_client_item": {
+                    "type": "integer"
+                },
+                "material_lists": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CreateMaterialListRequest"
+                    }
+                },
+                "model": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "shells": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.CreateWorkOrderShellRequest"
+                    }
+                },
+                "trims": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.CreateWorkOrderTrimRequest"
+                    }
+                }
+            }
+        },
+        "model.CreateWorkOrderShellRequest": {
+            "type": "object",
+            "required": [
+                "allow",
+                "berat_1_yd",
+                "color",
+                "cons",
+                "fabric",
+                "sizes"
+            ],
+            "properties": {
+                "allow": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "berat_1_yd": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "color": {
+                    "type": "string"
+                },
+                "cons": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "fabric": {
+                    "type": "string"
+                },
+                "sizes": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.CreateWorkOrderShellSizeRequest"
+                    }
+                }
+            }
+        },
+        "model.CreateWorkOrderShellSizeRequest": {
+            "type": "object",
+            "required": [
+                "qty",
+                "ratio",
+                "size"
+            ],
+            "properties": {
+                "qty": {
+                    "type": "integer"
+                },
+                "ratio": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "size": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.CreateWorkOrderTrimRequest": {
+            "type": "object",
+            "required": [
+                "allow",
+                "code",
+                "color",
+                "cons",
+                "item",
+                "qty",
+                "uom"
+            ],
+            "properties": {
+                "allow": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "code": {
+                    "type": "string"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "cons": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "item": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "uom": {
+                    "type": "string"
+                }
+            }
+        },
         "model.DepartemenResponse": {
             "type": "object",
             "properties": {
@@ -2164,6 +2470,45 @@ const docTemplate = `{
                 },
                 "nama_departemen": {
                     "type": "string"
+                }
+            }
+        },
+        "model.FactoryReportResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "division": {
+                    "type": "string"
+                },
+                "id_wo_shell_size": {
+                    "type": "integer"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "report_id": {
+                    "type": "integer"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.FactoryReportSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.FactoryReportResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "factory report created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -2482,6 +2827,29 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "error"
+                }
+            }
+        },
+        "model.MaterialListResponse": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id_material_list": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "string"
+                },
+                "uom": {
+                    "type": "string"
                 }
             }
         },
@@ -3065,6 +3433,206 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "model.WorkOrderErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "related_data_not_found"
+                }
+            }
+        },
+        "model.WorkOrderErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/model.WorkOrderErrorDetail"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "related data not found"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.WorkOrderResponse": {
+            "type": "object",
+            "properties": {
+                "buyer": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "delivery": {
+                    "type": "string"
+                },
+                "fob_cmt": {
+                    "type": "boolean"
+                },
+                "id_po_client_item": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "material_lists": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.MaterialListResponse"
+                    }
+                },
+                "model": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "shells": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.WorkOrderShellResponse"
+                    }
+                },
+                "trims": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.WorkOrderTrimResponse"
+                    }
+                }
+            }
+        },
+        "model.WorkOrderShellResponse": {
+            "type": "object",
+            "properties": {
+                "allow": {
+                    "type": "integer"
+                },
+                "berat_1_yd": {
+                    "type": "number"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "cons": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "fabric": {
+                    "type": "string"
+                },
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "sizes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.WorkOrderShellSizeResponse"
+                    }
+                }
+            }
+        },
+        "model.WorkOrderShellSizeResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_wo_shell_size": {
+                    "type": "integer"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "ratio": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.WorkOrderSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.WorkOrderResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "work order created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.WorkOrderTrimResponse": {
+            "type": "object",
+            "properties": {
+                "allow": {
+                    "type": "integer"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "cons": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id_wo_trim": {
+                    "type": "integer"
+                },
+                "item": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "uom": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.WorkOrderValidationErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ValidationErrorItem"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "bad request"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
                 }
             }
         },

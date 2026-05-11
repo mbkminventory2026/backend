@@ -113,6 +113,19 @@ definitions:
         example: success
         type: string
     type: object
+  model.CreateFactoryReportRequest:
+    properties:
+      id_wo_shell_size:
+        type: integer
+      qty:
+        type: integer
+      tanggal:
+        type: string
+    required:
+    - id_wo_shell_size
+    - qty
+    - tanggal
+    type: object
   model.CreateHakAksesRequest:
     properties:
       nama_halaman:
@@ -140,6 +153,21 @@ definitions:
       status:
         example: success
         type: string
+    type: object
+  model.CreateMaterialListRequest:
+    properties:
+      color:
+        type: string
+      description:
+        type: string
+      size:
+        type: string
+      uom:
+        type: string
+    required:
+    - color
+    - size
+    - uom
     type: object
   model.CreateMitraRequest:
     properties:
@@ -374,6 +402,118 @@ definitions:
     - password
     - username
     type: object
+  model.CreateWorkOrderRequest:
+    properties:
+      buyer:
+        type: string
+      delivery:
+        type: string
+      fob_cmt:
+        type: boolean
+      id_po_client_item:
+        type: integer
+      material_lists:
+        items:
+          $ref: '#/definitions/model.CreateMaterialListRequest'
+        type: array
+      model:
+        type: string
+      qty:
+        type: integer
+      shells:
+        items:
+          $ref: '#/definitions/model.CreateWorkOrderShellRequest'
+        minItems: 1
+        type: array
+      trims:
+        items:
+          $ref: '#/definitions/model.CreateWorkOrderTrimRequest'
+        minItems: 1
+        type: array
+    required:
+    - buyer
+    - delivery
+    - id_po_client_item
+    - model
+    - qty
+    - shells
+    - trims
+    type: object
+  model.CreateWorkOrderShellRequest:
+    properties:
+      allow:
+        minimum: 0
+        type: integer
+      berat_1_yd:
+        minimum: 0
+        type: number
+      color:
+        type: string
+      cons:
+        minimum: 0
+        type: number
+      fabric:
+        type: string
+      sizes:
+        items:
+          $ref: '#/definitions/model.CreateWorkOrderShellSizeRequest'
+        minItems: 1
+        type: array
+    required:
+    - allow
+    - berat_1_yd
+    - color
+    - cons
+    - fabric
+    - sizes
+    type: object
+  model.CreateWorkOrderShellSizeRequest:
+    properties:
+      qty:
+        type: integer
+      ratio:
+        minimum: 0
+        type: integer
+      size:
+        type: string
+    required:
+    - qty
+    - ratio
+    - size
+    type: object
+  model.CreateWorkOrderTrimRequest:
+    properties:
+      allow:
+        minimum: 0
+        type: integer
+      code:
+        type: string
+      color:
+        type: string
+      cons:
+        minimum: 0
+        type: number
+      created_by:
+        type: string
+      description:
+        type: string
+      item:
+        type: string
+      position:
+        type: string
+      qty:
+        type: integer
+      uom:
+        type: string
+    required:
+    - allow
+    - code
+    - color
+    - cons
+    - item
+    - qty
+    - uom
+    type: object
   model.DepartemenResponse:
     properties:
       created_at:
@@ -381,6 +521,32 @@ definitions:
       id_departemen:
         type: integer
       nama_departemen:
+        type: string
+    type: object
+  model.FactoryReportResponse:
+    properties:
+      created_at:
+        type: string
+      division:
+        type: string
+      id_wo_shell_size:
+        type: integer
+      qty:
+        type: integer
+      report_id:
+        type: integer
+      tanggal:
+        type: string
+    type: object
+  model.FactoryReportSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.FactoryReportResponse'
+      message:
+        example: factory report created
+        type: string
+      status:
+        example: success
         type: string
     type: object
   model.GetMeResponse:
@@ -598,6 +764,21 @@ definitions:
         type: string
       status:
         example: error
+        type: string
+    type: object
+  model.MaterialListResponse:
+    properties:
+      color:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id_material_list:
+        type: integer
+      size:
+        type: string
+      uom:
         type: string
     type: object
   model.MitraResponse:
@@ -986,6 +1167,139 @@ definitions:
         type: string
       status:
         example: success
+        type: string
+    type: object
+  model.WorkOrderErrorDetail:
+    properties:
+      code:
+        example: related_data_not_found
+        type: string
+    type: object
+  model.WorkOrderErrorDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.WorkOrderErrorDetail'
+      message:
+        example: related data not found
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.WorkOrderResponse:
+    properties:
+      buyer:
+        type: string
+      created_at:
+        type: string
+      delivery:
+        type: string
+      fob_cmt:
+        type: boolean
+      id_po_client_item:
+        type: integer
+      id_wo:
+        type: integer
+      material_lists:
+        items:
+          $ref: '#/definitions/model.MaterialListResponse'
+        type: array
+      model:
+        type: string
+      qty:
+        type: integer
+      shells:
+        items:
+          $ref: '#/definitions/model.WorkOrderShellResponse'
+        type: array
+      trims:
+        items:
+          $ref: '#/definitions/model.WorkOrderTrimResponse'
+        type: array
+    type: object
+  model.WorkOrderShellResponse:
+    properties:
+      allow:
+        type: integer
+      berat_1_yd:
+        type: number
+      color:
+        type: string
+      cons:
+        type: number
+      created_at:
+        type: string
+      fabric:
+        type: string
+      id_wo_shell:
+        type: integer
+      sizes:
+        items:
+          $ref: '#/definitions/model.WorkOrderShellSizeResponse'
+        type: array
+    type: object
+  model.WorkOrderShellSizeResponse:
+    properties:
+      created_at:
+        type: string
+      id_wo_shell_size:
+        type: integer
+      qty:
+        type: integer
+      ratio:
+        type: integer
+      size:
+        type: string
+    type: object
+  model.WorkOrderSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.WorkOrderResponse'
+      message:
+        example: work order created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.WorkOrderTrimResponse:
+    properties:
+      allow:
+        type: integer
+      code:
+        type: string
+      color:
+        type: string
+      cons:
+        type: number
+      created_at:
+        type: string
+      created_by:
+        type: string
+      description:
+        type: string
+      id_wo_trim:
+        type: integer
+      item:
+        type: string
+      position:
+        type: string
+      qty:
+        type: integer
+      uom:
+        type: string
+    type: object
+  model.WorkOrderValidationErrorDoc:
+    properties:
+      error:
+        items:
+          $ref: '#/definitions/response.ValidationErrorItem'
+        type: array
+      message:
+        example: bad request
+        type: string
+      status:
+        example: error
         type: string
     type: object
   response.BaseResponse:
@@ -1822,6 +2136,44 @@ paths:
       summary: Create PR Internal
       tags:
       - Transaction Documents
+  /api/v1/reports/{divisi}:
+    post:
+      consumes:
+      - application/json
+      description: 'Create lightweight production report for a specific division.
+        Supported divisi: cutting, sewing, qc-finish, packing.'
+      parameters:
+      - description: Division name
+        in: path
+        name: divisi
+        required: true
+        type: string
+      - description: Factory report payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateFactoryReportRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.FactoryReportSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WorkOrderValidationErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Factory Report
+      tags:
+      - Work Order & Production
   /api/v1/users:
     get:
       description: Returns a paginated list of users with their department and mitra
@@ -1996,6 +2348,39 @@ paths:
       summary: Update User
       tags:
       - Users
+  /api/v1/work-orders:
+    post:
+      consumes:
+      - application/json
+      description: Create a work order with shells, shell sizes, trims, and material
+        list in a single transaction.
+      parameters:
+      - description: Work order payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateWorkOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.WorkOrderSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WorkOrderValidationErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Work Order
+      tags:
+      - Work Order & Production
   /health:
     get:
       description: Returns service health status, including database connectivity.
