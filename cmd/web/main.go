@@ -124,6 +124,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	dashboardUseCase, err := usecase.NewDashboardUseCase(queries)
+	if err != nil {
+		logger.Error("failed to initialize dashboard usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	// 4. Handlers
 	authHandler, err := httpdelivery.NewAuthHandler(authUseCase)
 	if err != nil {
@@ -169,6 +176,13 @@ func main() {
 
 	healthHandler := httpdelivery.NewHealthHandler(dbPool)
 
+	dashboardHandler, err := httpdelivery.NewDashboardHandler(dashboardUseCase)
+	if err != nil {
+		logger.Error("failed to initialize dashboard handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	// 5. Routes
 	docs.SwaggerInfo.Host = "localhost:" + cfg.ServerPort
 	docs.SwaggerInfo.BasePath = "/"
@@ -196,6 +210,8 @@ func main() {
 	transactionDocumentHandler.RegisterRoutes(router, authMiddleware)
 	workOrderProductionHandler.RegisterRoutes(router, authMiddleware)
 	warehouseDeliveryHandler.RegisterRoutes(router, authMiddleware)
+
+	dashboardHandler.RegisterRoutes(router, authMiddleware)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

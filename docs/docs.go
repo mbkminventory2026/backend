@@ -117,6 +117,31 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/dashboard/ai-estimation": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mendapatkan rumus regresi linier berdasarkan data historis produksi.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "AI Delivery Date Estimation",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.AIEstimationSuccessDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/inventory/receive": {
             "post": {
                 "security": [
@@ -163,6 +188,45 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/logs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil log aktivitas sistem dengan paginasi.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "List Aktivitas Logs",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset (default 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ListLogsSuccessDoc"
                         }
                     }
                 }
@@ -1876,6 +1940,64 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "model.AIEstimationResponse": {
+            "type": "object",
+            "properties": {
+                "base_duration_days": {
+                    "description": "Nilai 'a' (Intercept)",
+                    "type": "number"
+                },
+                "days_per_item": {
+                    "description": "Nilai 'b' (Slope)",
+                    "type": "number"
+                },
+                "rumus_prediksi": {
+                    "type": "string"
+                },
+                "total_data_historis": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.AIEstimationSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.AIEstimationResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Estimasi AI berhasil dihitung"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.AktivitasLogResponse": {
+            "type": "object",
+            "properties": {
+                "aksi": {
+                    "type": "string"
+                },
+                "detail_deskripsi": {
+                    "type": "string"
+                },
+                "detail_nama": {
+                    "type": "string"
+                },
+                "detail_table": {
+                    "type": "string"
+                },
+                "id_log": {
+                    "type": "integer"
+                },
+                "waktu": {
+                    "type": "string"
+                }
+            }
+        },
         "model.AuthServiceUnavailableErrorDetail": {
             "type": "object",
             "properties": {
@@ -2912,6 +3034,25 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "jenis barang retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.ListLogsSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.AktivitasLogResponse"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Logs berhasil diambil"
                 },
                 "status": {
                     "type": "string",

@@ -1,5 +1,44 @@
 basePath: /
 definitions:
+  model.AIEstimationResponse:
+    properties:
+      base_duration_days:
+        description: Nilai 'a' (Intercept)
+        type: number
+      days_per_item:
+        description: Nilai 'b' (Slope)
+        type: number
+      rumus_prediksi:
+        type: string
+      total_data_historis:
+        type: integer
+    type: object
+  model.AIEstimationSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.AIEstimationResponse'
+      message:
+        example: Estimasi AI berhasil dihitung
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.AktivitasLogResponse:
+    properties:
+      aksi:
+        type: string
+      detail_deskripsi:
+        type: string
+      detail_nama:
+        type: string
+      detail_table:
+        type: string
+      id_log:
+        type: integer
+      waktu:
+        type: string
+    type: object
   model.AuthServiceUnavailableErrorDetail:
     properties:
       code:
@@ -715,6 +754,19 @@ definitions:
         type: array
       message:
         example: jenis barang retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.ListLogsSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.AktivitasLogResponse'
+        type: array
+      message:
+        example: Logs berhasil diambil
         type: string
       status:
         example: success
@@ -1648,6 +1700,21 @@ paths:
       summary: Get Current User Profile
       tags:
       - Auth
+  /api/v1/dashboard/ai-estimation:
+    get:
+      description: Mendapatkan rumus regresi linier berdasarkan data historis produksi.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.AIEstimationSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: AI Delivery Date Estimation
+      tags:
+      - Dashboard
   /api/v1/inventory/receive:
     post:
       consumes:
@@ -1681,6 +1748,30 @@ paths:
       summary: Receive Inventory
       tags:
       - Warehouse & Delivery
+  /api/v1/logs:
+    get:
+      description: Mengambil log aktivitas sistem dengan paginasi.
+      parameters:
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset (default 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ListLogsSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: List Aktivitas Logs
+      tags:
+      - Dashboard
   /api/v1/master/barang:
     get:
       parameters:
