@@ -56,7 +56,7 @@ func (h *WorkOrderProductionHandler) CreateWorkOrder(c *gin.Context) {
 
 // CreateFactoryReport godoc
 // @Summary      Create Factory Report
-// @Description  Create lightweight production report for a specific division. Supported divisi: cutting, sewing, qc-finish, packing.
+// @Description  Create lightweight production report for a specific division. Supported divisi: cutting, sewing, qc-finish, packing, pengiriman.
 // @Tags         Work Order & Production
 // @Accept       json
 // @Produce      json

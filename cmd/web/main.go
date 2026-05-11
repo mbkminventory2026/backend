@@ -117,6 +117,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	warehouseDeliveryUseCase, err := usecase.NewWarehouseDeliveryUseCase(queries, dbPool)
+	if err != nil {
+		logger.Error("failed to initialize warehouse delivery usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	// 4. Handlers
 	authHandler, err := httpdelivery.NewAuthHandler(authUseCase)
 	if err != nil {
@@ -153,6 +160,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	warehouseDeliveryHandler, err := httpdelivery.NewWarehouseDeliveryHandler(warehouseDeliveryUseCase)
+	if err != nil {
+		logger.Error("failed to initialize warehouse delivery handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	healthHandler := httpdelivery.NewHealthHandler(dbPool)
 
 	// 5. Routes
@@ -181,6 +195,7 @@ func main() {
 	masterDataHandler.RegisterRoutes(router, authMiddleware)
 	transactionDocumentHandler.RegisterRoutes(router, authMiddleware)
 	workOrderProductionHandler.RegisterRoutes(router, authMiddleware)
+	warehouseDeliveryHandler.RegisterRoutes(router, authMiddleware)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

@@ -45,3 +45,15 @@ INSERT INTO REPORT_PACKING (
     sqlc.arg(id_wo_shell_size)
 )
 RETURNING id_report_packing, tanggal, qty, id_wo_shell_size, created_at;
+
+-- name: CreateReportPengiriman :one
+INSERT INTO REPORT_PENGIRIMAN (
+    report_date,
+    qty,
+    id_wo_shell_size
+) VALUES (
+    sqlc.arg(report_date)::date,
+    sqlc.arg(qty),
+    sqlc.arg(id_wo_shell_size)
+)
+RETURNING id_report_pengiriman, report_date, qty, id_wo_shell_size, created_at;

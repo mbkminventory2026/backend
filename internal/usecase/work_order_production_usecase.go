@@ -278,6 +278,23 @@ func (u *WorkOrderProductionUseCase) CreateFactoryReport(ctx context.Context, di
 			IDWOShellSize: item.IDWoShellSize,
 			CreatedAt:     item.CreatedAt.Time.Format(time.RFC3339),
 		}, nil
+	case "pengiriman":
+		item, err := u.repo.CreateReportPengiriman(ctx, entity.CreateReportPengirimanParams{
+			ReportDate:    mustDate(req.Tanggal),
+			Qty:           req.Qty,
+			IDWoShellSize: req.IDWOShellSize,
+		})
+		if err != nil {
+			return nil, mapWorkOrderDBError(err)
+		}
+		return &model.FactoryReportResponse{
+			Division:      "pengiriman",
+			ReportID:      item.IDReportPengiriman,
+			Tanggal:       item.ReportDate.Time.Format("2006-01-02"),
+			Qty:           item.Qty,
+			IDWOShellSize: item.IDWoShellSize,
+			CreatedAt:     item.CreatedAt.Time.Format(time.RFC3339),
+		}, nil
 	default:
 		return nil, ErrReportDivisionUnsupported
 	}

@@ -369,6 +369,65 @@ definitions:
     - tanggal
     - vendor_name
     type: object
+  model.CreatePackingListItemRequest:
+    properties:
+      box_no_end:
+        minimum: 0
+        type: integer
+      box_no_start:
+        minimum: 0
+        type: integer
+      color:
+        type: string
+      note:
+        type: string
+      qty_box:
+        type: integer
+      qty_per_box:
+        type: integer
+      sizes:
+        items:
+          $ref: '#/definitions/model.CreatePackingListItemSizeRequest'
+        minItems: 1
+        type: array
+    required:
+    - box_no_end
+    - box_no_start
+    - color
+    - qty_box
+    - qty_per_box
+    - sizes
+    type: object
+  model.CreatePackingListItemSizeRequest:
+    properties:
+      qty:
+        type: integer
+    required:
+    - qty
+    type: object
+  model.CreatePackingListRequest:
+    properties:
+      id_surat_jalan_internal:
+        type: integer
+      id_wo:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.CreatePackingListItemRequest'
+        minItems: 1
+        type: array
+      total_garment_per_box:
+        minimum: 0
+        type: integer
+      total_reject:
+        minimum: 0
+        type: integer
+    required:
+    - id_wo
+    - items
+    - total_garment_per_box
+    - total_reject
+    type: object
   model.CreatePenanggungJawabRequest:
     properties:
       email:
@@ -380,6 +439,21 @@ definitions:
     required:
     - nama
     - no_telp
+    type: object
+  model.CreateSuratJalanClientRequest:
+    properties:
+      id_material_list:
+        type: integer
+      keterangan:
+        type: string
+      qty:
+        type: integer
+      tanggal:
+        type: string
+    required:
+    - id_material_list
+    - qty
+    - tanggal
     type: object
   model.CreateUserRequest:
     properties:
@@ -975,6 +1049,68 @@ definitions:
         example: success
         type: string
     type: object
+  model.PackingListItemResponse:
+    properties:
+      box_no_end:
+        type: integer
+      box_no_start:
+        type: integer
+      color:
+        type: string
+      created_at:
+        type: string
+      id_packing_list_item:
+        type: integer
+      note:
+        type: string
+      qty_box:
+        type: integer
+      qty_per_box:
+        type: integer
+      sizes:
+        items:
+          $ref: '#/definitions/model.PackingListItemSizeResponse'
+        type: array
+    type: object
+  model.PackingListItemSizeResponse:
+    properties:
+      created_at:
+        type: string
+      id_packing_list_item_size:
+        type: integer
+      qty:
+        type: integer
+    type: object
+  model.PackingListResponse:
+    properties:
+      created_at:
+        type: string
+      id_packing_list:
+        type: integer
+      id_surat_jalan_internal:
+        type: integer
+      id_wo:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.PackingListItemResponse'
+        type: array
+      total_garment_per_box:
+        type: integer
+      total_reject:
+        type: integer
+    type: object
+  model.PackingListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.PackingListResponse'
+      message:
+        example: packing list created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.PenanggungJawabResponse:
     properties:
       created_at:
@@ -986,6 +1122,86 @@ definitions:
       nama:
         type: string
       no_telp:
+        type: string
+    type: object
+  model.ReceiveInventoryRequest:
+    properties:
+      id_material_list:
+        type: integer
+      id_rekonsiliasi_material:
+        type: integer
+      keterangan:
+        type: string
+      qty:
+        type: integer
+      tanggal:
+        type: string
+    required:
+    - id_material_list
+    - id_rekonsiliasi_material
+    - qty
+    - tanggal
+    type: object
+  model.ReceiveInventoryResponse:
+    properties:
+      actual_kirim:
+        type: integer
+      balance:
+        type: integer
+      created_at:
+        type: string
+      id_material_list:
+        type: integer
+      id_received:
+        type: integer
+      id_rekonsiliasi_material:
+        type: integer
+      id_rekonsiliasi_material_terima:
+        type: integer
+      keterangan:
+        type: string
+      qty:
+        type: integer
+      tanggal:
+        type: string
+    type: object
+  model.ReceiveInventorySuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.ReceiveInventoryResponse'
+      message:
+        example: inventory received
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.SuratJalanResponse:
+    properties:
+      created_at:
+        type: string
+      id_material_list:
+        type: integer
+      id_surat_jalan:
+        type: integer
+      keterangan:
+        type: string
+      qty:
+        type: integer
+      tanggal:
+        type: string
+      type:
+        type: string
+    type: object
+  model.SuratJalanSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.SuratJalanResponse'
+      message:
+        example: surat jalan created
+        type: string
+      status:
+        example: success
         type: string
     type: object
   model.TransactionErrorDetail:
@@ -1167,6 +1383,36 @@ definitions:
         type: string
       status:
         example: success
+        type: string
+    type: object
+  model.WarehouseErrorDetail:
+    properties:
+      code:
+        example: related_data_not_found
+        type: string
+    type: object
+  model.WarehouseErrorDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.WarehouseErrorDetail'
+      message:
+        example: related data not found
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.WarehouseValidationErrorDoc:
+    properties:
+      error:
+        items:
+          $ref: '#/definitions/response.ValidationErrorItem'
+        type: array
+      message:
+        example: bad request
+        type: string
+      status:
+        example: error
         type: string
     type: object
   model.WorkOrderErrorDetail:
@@ -1402,6 +1648,39 @@ paths:
       summary: Get Current User Profile
       tags:
       - Auth
+  /api/v1/inventory/receive:
+    post:
+      consumes:
+      - application/json
+      description: Record received inventory, insert reconciliation receipt detail,
+        and update reconciliation balance in one database call.
+      parameters:
+      - description: Receive inventory payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.ReceiveInventoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.ReceiveInventorySuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WarehouseValidationErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Receive Inventory
+      tags:
+      - Warehouse & Delivery
   /api/v1/master/barang:
     get:
       parameters:
@@ -2035,6 +2314,39 @@ paths:
       summary: Update Permission
       tags:
       - Master Data
+  /api/v1/packing-lists:
+    post:
+      consumes:
+      - application/json
+      description: Create packing list header with nested box items and size breakdowns
+        in a single transaction.
+      parameters:
+      - description: Packing list payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreatePackingListRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.PackingListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WarehouseValidationErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Packing List
+      tags:
+      - Warehouse & Delivery
   /api/v1/po-clients:
     post:
       consumes:
@@ -2141,7 +2453,7 @@ paths:
       consumes:
       - application/json
       description: 'Create lightweight production report for a specific division.
-        Supported divisi: cutting, sewing, qc-finish, packing.'
+        Supported divisi: cutting, sewing, qc-finish, packing, pengiriman.'
       parameters:
       - description: Division name
         in: path
@@ -2174,6 +2486,42 @@ paths:
       summary: Create Factory Report
       tags:
       - Work Order & Production
+  /api/v1/surat-jalan/{type}:
+    post:
+      consumes:
+      - application/json
+      description: 'Create surat jalan document. Supported type: internal, client.'
+      parameters:
+      - description: Surat jalan type
+        in: path
+        name: type
+        required: true
+        type: string
+      - description: Surat jalan client payload
+        in: body
+        name: payload
+        schema:
+          $ref: '#/definitions/model.CreateSuratJalanClientRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.SuratJalanSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WarehouseValidationErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Surat Jalan
+      tags:
+      - Warehouse & Delivery
   /api/v1/users:
     get:
       description: Returns a paginated list of users with their department and mitra

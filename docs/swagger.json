@@ -114,6 +114,57 @@
                 }
             }
         },
+        "/api/v1/inventory/receive": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Record received inventory, insert reconciliation receipt detail, and update reconciliation balance in one database call.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Warehouse \u0026 Delivery"
+                ],
+                "summary": "Receive Inventory",
+                "parameters": [
+                    {
+                        "description": "Receive inventory payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ReceiveInventoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.ReceiveInventorySuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseValidationErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/master/barang": {
             "get": {
                 "security": [
@@ -1148,6 +1199,57 @@
                 }
             }
         },
+        "/api/v1/packing-lists": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create packing list header with nested box items and size breakdowns in a single transaction.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Warehouse \u0026 Delivery"
+                ],
+                "summary": "Create Packing List",
+                "parameters": [
+                    {
+                        "description": "Packing list payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreatePackingListRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.PackingListSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseValidationErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/po-clients": {
             "post": {
                 "security": [
@@ -1314,7 +1416,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create lightweight production report for a specific division. Supported divisi: cutting, sewing, qc-finish, packing.",
+                "description": "Create lightweight production report for a specific division. Supported divisi: cutting, sewing, qc-finish, packing, pengiriman.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1360,6 +1462,63 @@
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/surat-jalan/{type}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create surat jalan document. Supported type: internal, client.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Warehouse \u0026 Delivery"
+                ],
+                "summary": "Create Surat Jalan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Surat jalan type",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Surat jalan client payload",
+                        "name": "payload",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateSuratJalanClientRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.SuratJalanSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseValidationErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
                         }
                     }
                 }
@@ -2251,6 +2410,89 @@
                 }
             }
         },
+        "model.CreatePackingListItemRequest": {
+            "type": "object",
+            "required": [
+                "box_no_end",
+                "box_no_start",
+                "color",
+                "qty_box",
+                "qty_per_box",
+                "sizes"
+            ],
+            "properties": {
+                "box_no_end": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "box_no_start": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "color": {
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "qty_box": {
+                    "type": "integer"
+                },
+                "qty_per_box": {
+                    "type": "integer"
+                },
+                "sizes": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.CreatePackingListItemSizeRequest"
+                    }
+                }
+            }
+        },
+        "model.CreatePackingListItemSizeRequest": {
+            "type": "object",
+            "required": [
+                "qty"
+            ],
+            "properties": {
+                "qty": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.CreatePackingListRequest": {
+            "type": "object",
+            "required": [
+                "id_wo",
+                "items",
+                "total_garment_per_box",
+                "total_reject"
+            ],
+            "properties": {
+                "id_surat_jalan_internal": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.CreatePackingListItemRequest"
+                    }
+                },
+                "total_garment_per_box": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "total_reject": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
         "model.CreatePenanggungJawabRequest": {
             "type": "object",
             "required": [
@@ -2265,6 +2507,28 @@
                     "type": "string"
                 },
                 "no_telp": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.CreateSuratJalanClientRequest": {
+            "type": "object",
+            "required": [
+                "id_material_list",
+                "qty",
+                "tanggal"
+            ],
+            "properties": {
+                "id_material_list": {
+                    "type": "integer"
+                },
+                "keterangan": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "tanggal": {
                     "type": "string"
                 }
             }
@@ -3143,6 +3407,100 @@
                 }
             }
         },
+        "model.PackingListItemResponse": {
+            "type": "object",
+            "properties": {
+                "box_no_end": {
+                    "type": "integer"
+                },
+                "box_no_start": {
+                    "type": "integer"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id_packing_list_item": {
+                    "type": "integer"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "qty_box": {
+                    "type": "integer"
+                },
+                "qty_per_box": {
+                    "type": "integer"
+                },
+                "sizes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PackingListItemSizeResponse"
+                    }
+                }
+            }
+        },
+        "model.PackingListItemSizeResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_packing_list_item_size": {
+                    "type": "integer"
+                },
+                "qty": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.PackingListResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_packing_list": {
+                    "type": "integer"
+                },
+                "id_surat_jalan_internal": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PackingListItemResponse"
+                    }
+                },
+                "total_garment_per_box": {
+                    "type": "integer"
+                },
+                "total_reject": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.PackingListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.PackingListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "packing list created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.PenanggungJawabResponse": {
             "type": "object",
             "properties": {
@@ -3160,6 +3518,125 @@
                 },
                 "no_telp": {
                     "type": "string"
+                }
+            }
+        },
+        "model.ReceiveInventoryRequest": {
+            "type": "object",
+            "required": [
+                "id_material_list",
+                "id_rekonsiliasi_material",
+                "qty",
+                "tanggal"
+            ],
+            "properties": {
+                "id_material_list": {
+                    "type": "integer"
+                },
+                "id_rekonsiliasi_material": {
+                    "type": "integer"
+                },
+                "keterangan": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ReceiveInventoryResponse": {
+            "type": "object",
+            "properties": {
+                "actual_kirim": {
+                    "type": "integer"
+                },
+                "balance": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id_material_list": {
+                    "type": "integer"
+                },
+                "id_received": {
+                    "type": "integer"
+                },
+                "id_rekonsiliasi_material": {
+                    "type": "integer"
+                },
+                "id_rekonsiliasi_material_terima": {
+                    "type": "integer"
+                },
+                "keterangan": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ReceiveInventorySuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.ReceiveInventoryResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "inventory received"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.SuratJalanResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_material_list": {
+                    "type": "integer"
+                },
+                "id_surat_jalan": {
+                    "type": "integer"
+                },
+                "keterangan": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "tanggal": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SuratJalanSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.SuratJalanResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "surat jalan created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -3430,6 +3907,50 @@
                 "status": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "model.WarehouseErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "related_data_not_found"
+                }
+            }
+        },
+        "model.WarehouseErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/model.WarehouseErrorDetail"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "related data not found"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.WarehouseValidationErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ValidationErrorItem"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "bad request"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
                 }
             }
         },

@@ -75,6 +75,38 @@ func (q *Queries) CreateReportPacking(ctx context.Context, arg CreateReportPacki
 	return i, err
 }
 
+const createReportPengiriman = `-- name: CreateReportPengiriman :one
+INSERT INTO REPORT_PENGIRIMAN (
+    report_date,
+    qty,
+    id_wo_shell_size
+) VALUES (
+    $1::date,
+    $2,
+    $3
+)
+RETURNING id_report_pengiriman, report_date, qty, id_wo_shell_size, created_at
+`
+
+type CreateReportPengirimanParams struct {
+	ReportDate    pgtype.Date `json:"report_date"`
+	Qty           int32       `json:"qty"`
+	IDWoShellSize int32       `json:"id_wo_shell_size"`
+}
+
+func (q *Queries) CreateReportPengiriman(ctx context.Context, arg CreateReportPengirimanParams) (ReportPengiriman, error) {
+	row := q.db.QueryRow(ctx, createReportPengiriman, arg.ReportDate, arg.Qty, arg.IDWoShellSize)
+	var i ReportPengiriman
+	err := row.Scan(
+		&i.IDReportPengiriman,
+		&i.ReportDate,
+		&i.Qty,
+		&i.IDWoShellSize,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const createReportQCFinish = `-- name: CreateReportQCFinish :one
 INSERT INTO REPORT_QC_FINISH (
     tanggal,
