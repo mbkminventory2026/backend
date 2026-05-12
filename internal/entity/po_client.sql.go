@@ -11,6 +11,20 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countWorkOrdersByPOClientID = `-- name: CountWorkOrdersByPOClientID :one
+SELECT COUNT(*)
+FROM WORK_ORDER wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+WHERE pci.id_po_client = $1
+`
+
+func (q *Queries) CountWorkOrdersByPOClientID(ctx context.Context, idPoClient int32) (int64, error) {
+	row := q.db.QueryRow(ctx, countWorkOrdersByPOClientID, idPoClient)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createPOClient = `-- name: CreatePOClient :one
 INSERT INTO PO_CLIENT (
     po_number,
@@ -154,6 +168,77 @@ func (q *Queries) CreatePenanggungJawab(ctx context.Context, arg CreatePenanggun
 		&i.NoTelp,
 		&i.Email,
 		&i.IDPoClient,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const deletePOClientItemsByPOClientID = `-- name: DeletePOClientItemsByPOClientID :exec
+DELETE FROM PO_CLIENT_ITEM
+WHERE id_po_client = $1
+`
+
+func (q *Queries) DeletePOClientItemsByPOClientID(ctx context.Context, idPoClient int32) error {
+	_, err := q.db.Exec(ctx, deletePOClientItemsByPOClientID, idPoClient)
+	return err
+}
+
+const deletePenanggungJawabByPOClientID = `-- name: DeletePenanggungJawabByPOClientID :exec
+DELETE FROM PENANGGUNG_JAWAB
+WHERE id_po_client = $1
+`
+
+func (q *Queries) DeletePenanggungJawabByPOClientID(ctx context.Context, idPoClient int32) error {
+	_, err := q.db.Exec(ctx, deletePenanggungJawabByPOClientID, idPoClient)
+	return err
+}
+
+const updatePOClient = `-- name: UpdatePOClient :one
+UPDATE PO_CLIENT
+SET
+    po_number = $1,
+    tanggal = $2::date,
+    season = $3,
+    delivery = $4::date,
+    payment_term = $5,
+    file = $6,
+    id_mitra = $7
+WHERE id_po_client = $8
+RETURNING id_po_client, po_number, tanggal, season, delivery, payment_term, file, id_mitra, created_at
+`
+
+type UpdatePOClientParams struct {
+	PoNumber    string      `json:"po_number"`
+	Tanggal     pgtype.Date `json:"tanggal"`
+	Season      string      `json:"season"`
+	Delivery    pgtype.Date `json:"delivery"`
+	PaymentTerm string      `json:"payment_term"`
+	File        string      `json:"file"`
+	IDMitra     int32       `json:"id_mitra"`
+	IDPoClient  int32       `json:"id_po_client"`
+}
+
+func (q *Queries) UpdatePOClient(ctx context.Context, arg UpdatePOClientParams) (PoClient, error) {
+	row := q.db.QueryRow(ctx, updatePOClient,
+		arg.PoNumber,
+		arg.Tanggal,
+		arg.Season,
+		arg.Delivery,
+		arg.PaymentTerm,
+		arg.File,
+		arg.IDMitra,
+		arg.IDPoClient,
+	)
+	var i PoClient
+	err := row.Scan(
+		&i.IDPoClient,
+		&i.PoNumber,
+		&i.Tanggal,
+		&i.Season,
+		&i.Delivery,
+		&i.PaymentTerm,
+		&i.File,
+		&i.IDMitra,
 		&i.CreatedAt,
 	)
 	return i, err

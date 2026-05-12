@@ -27,6 +27,7 @@ func (h *TransactionDocumentHandler) RegisterRoutes(router gin.IRouter, authMidd
 	v1.GET("/po-clients", h.ListPOClients)
 	v1.GET("/po-clients/:id", h.GetPOClientDetail)
 	v1.POST("/po-clients", h.CreatePOClient)
+	v1.PUT("/po-clients/:id", h.UpdatePOClient)
 	v1.GET("/pr-internals", h.ListPRInternals)
 	v1.GET("/pr-internals/:id", h.GetPRInternalDetail)
 	v1.POST("/pr-internals", h.CreatePRInternal)
@@ -124,6 +125,41 @@ func (h *TransactionDocumentHandler) CreatePOClient(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusCreated, "po client created", item)
+}
+
+// UpdatePOClient godoc
+// @Summary      Update PO Client
+// @Description  Replace a PO client header, items, and penanggung jawab in a single transaction.
+// @Tags         Transaction Documents
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id       path      int                          true  "PO Client ID"
+// @Param        payload  body      model.CreatePOClientRequest  true  "PO client payload"
+// @Success      200      {object}  model.POClientSuccessDoc
+// @Failure      400      {object}  model.TransactionValidationErrorDoc
+// @Failure      404      {object}  model.TransactionErrorDoc
+// @Failure      409      {object}  model.TransactionErrorDoc
+// @Failure      500      {object}  model.TransactionErrorDoc
+// @Router       /api/v1/po-clients/{id} [put]
+func (h *TransactionDocumentHandler) UpdatePOClient(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid po client id", nil))
+		return
+	}
+
+	var req model.CreatePOClientRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+
+	item, err := h.useCase.UpdatePOClient(c.Request.Context(), id, req)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "po client updated", item)
 }
 
 // ListPRInternals godoc
@@ -316,6 +352,8 @@ func (h *TransactionDocumentHandler) handleError(c *gin.Context, err error) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), model.TransactionErrorDetail{Code: "related_data_not_found"}))
 	case errors.Is(err, usecase.ErrPOClientAlreadyExists):
 		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.TransactionErrorDetail{Code: "po_client_already_exists"}))
+	case errors.Is(err, usecase.ErrPOClientLockedForUpdate):
+		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.TransactionErrorDetail{Code: "po_client_locked_for_update"}))
 	case errors.Is(err, usecase.ErrTransactionServiceUnavailable):
 		AbortWithError(c, NewHTTPError(http.StatusInternalServerError, err.Error(), model.TransactionErrorDetail{Code: "transaction_service_unavailable"}))
 	default:

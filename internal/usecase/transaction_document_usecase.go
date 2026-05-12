@@ -21,6 +21,7 @@ var (
 	ErrTransactionServiceUnavailable = errors.New("transaction service unavailable")
 	ErrTransactionNotFound           = errors.New("transaction not found")
 	ErrPOClientAlreadyExists         = errors.New("po client number already exists")
+	ErrPOClientLockedForUpdate       = errors.New("po client cannot be updated because it is already used by work orders")
 )
 
 type TransactionDocumentUseCase struct {
@@ -111,6 +112,127 @@ func (u *TransactionDocumentUseCase) CreatePOClient(ctx context.Context, req mod
 			NoTelp:     picReq.NoTelp,
 			Email:      picReq.Email,
 			IDPoClient: header.IDPoClient,
+		})
+		if picErr != nil {
+			return nil, mapTransactionDBError(picErr)
+		}
+
+		pics = append(pics, model.PenanggungJawabResponse{
+			ID:        pic.IDPenanggungJawab,
+			Nama:      pic.Nama,
+			NoTelp:    pic.NoTelp,
+			Email:     pic.Email,
+			CreatedAt: pic.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("%w: failed to commit transaction", ErrTransactionServiceUnavailable)
+	}
+
+	return &model.POClientResponse{
+		ID:              header.IDPoClient,
+		PONumber:        header.PoNumber,
+		Tanggal:         header.Tanggal.Time.Format("2006-01-02"),
+		Season:          header.Season,
+		Delivery:        header.Delivery.Time.Format("2006-01-02"),
+		PaymentTerm:     header.PaymentTerm,
+		File:            header.File,
+		IDMitra:         header.IDMitra,
+		CreatedAt:       header.CreatedAt.Time.Format(time.RFC3339),
+		Items:           items,
+		PenanggungJawab: pics,
+	}, nil
+}
+
+func (u *TransactionDocumentUseCase) UpdatePOClient(ctx context.Context, id int32, req model.CreatePOClientRequest) (*model.POClientResponse, error) {
+	if len(req.Items) == 0 || len(req.PenanggungJawab) == 0 {
+		return nil, ErrTransactionValidation
+	}
+	if err := validateDate(req.Tanggal); err != nil {
+		return nil, err
+	}
+	if err := validateDate(req.Delivery); err != nil {
+		return nil, err
+	}
+
+	tx, err := u.dbPool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to start transaction", ErrTransactionServiceUnavailable)
+	}
+	defer func() {
+		rollbackErr := tx.Rollback(ctx)
+		if rollbackErr != nil && !errors.Is(rollbackErr, pgx.ErrTxClosed) {
+			err = rollbackErr
+		}
+	}()
+
+	qtx := entity.New(tx)
+
+	workOrderCount, err := qtx.CountWorkOrdersByPOClientID(ctx, id)
+	if err != nil {
+		return nil, mapTransactionDBError(err)
+	}
+	if workOrderCount > 0 {
+		return nil, ErrPOClientLockedForUpdate
+	}
+
+	header, err := qtx.UpdatePOClient(ctx, entity.UpdatePOClientParams{
+		IDPoClient:  id,
+		PoNumber:    req.PONumber,
+		Tanggal:     mustDate(req.Tanggal),
+		Season:      req.Season,
+		Delivery:    mustDate(req.Delivery),
+		PaymentTerm: req.PaymentTerm,
+		File:        req.File,
+		IDMitra:     req.IDMitra,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrTransactionNotFound
+		}
+		return nil, mapTransactionDBError(err)
+	}
+
+	if err := qtx.DeletePOClientItemsByPOClientID(ctx, id); err != nil {
+		return nil, mapTransactionDBError(err)
+	}
+	if err := qtx.DeletePenanggungJawabByPOClientID(ctx, id); err != nil {
+		return nil, mapTransactionDBError(err)
+	}
+
+	items := make([]model.POClientItemResponse, 0, len(req.Items))
+	for _, itemReq := range req.Items {
+		item, itemErr := qtx.CreatePOClientItem(ctx, entity.CreatePOClientItemParams{
+			IDPoClient:  id,
+			Style:       itemReq.Style,
+			Colour:      itemReq.Colour,
+			Description: itemReq.Description,
+			Qty:         itemReq.Qty,
+			Price:       mustNumeric(itemReq.Price),
+		})
+		if itemErr != nil {
+			return nil, mapTransactionDBError(itemErr)
+		}
+
+		items = append(items, model.POClientItemResponse{
+			ID:          item.IDPoClientItem,
+			Style:       item.Style,
+			Colour:      item.Colour,
+			Description: item.Description,
+			Qty:         item.Qty,
+			Price:       numericToFloat64(item.Price),
+			CreatedAt:   item.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	pics := make([]model.PenanggungJawabResponse, 0, len(req.PenanggungJawab))
+	for _, picReq := range req.PenanggungJawab {
+		pic, picErr := qtx.CreatePenanggungJawab(ctx, entity.CreatePenanggungJawabParams{
+			Nama:       picReq.Nama,
+			NoTelp:     picReq.NoTelp,
+			Email:      picReq.Email,
+			IDPoClient: id,
 		})
 		if picErr != nil {
 			return nil, mapTransactionDBError(picErr)

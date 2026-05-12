@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	CountWorkOrdersByPOClientID(ctx context.Context, idPoClient int32) (int64, error)
 	CreateBarang(ctx context.Context, arg CreateBarangParams) (Barang, error)
 	CreateCompany(ctx context.Context, arg CreateCompanyParams) (Company, error)
 	CreateDepartemen(ctx context.Context, namaDepartemen string) (Departeman, error)
@@ -45,6 +46,8 @@ type Querier interface {
 	DeleteHakAkses(ctx context.Context, idHakAkses int32) (int64, error)
 	DeleteJenisBarang(ctx context.Context, idJenisBarang int32) (int64, error)
 	DeleteMitra(ctx context.Context, idMitra int32) (int64, error)
+	DeletePOClientItemsByPOClientID(ctx context.Context, idPoClient int32) error
+	DeletePenanggungJawabByPOClientID(ctx context.Context, idPoClient int32) error
 	DeleteUser(ctx context.Context, idUser int32) (int64, error)
 	GetAktivitasLogs(ctx context.Context, arg GetAktivitasLogsParams) ([]GetAktivitasLogsRow, error)
 	GetBarangByID(ctx context.Context, idBarang int32) (GetBarangByIDRow, error)
@@ -98,6 +101,7 @@ type Querier interface {
 	UpdateHakAkses(ctx context.Context, arg UpdateHakAksesParams) (HakAkse, error)
 	UpdateJenisBarang(ctx context.Context, arg UpdateJenisBarangParams) (JenisBarang, error)
 	UpdateMitra(ctx context.Context, arg UpdateMitraParams) (Mitra, error)
+	UpdatePOClient(ctx context.Context, arg UpdatePOClientParams) (PoClient, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error)
 }
 
