@@ -23,6 +23,8 @@ type WorkOrderListItem struct {
 	FOBCMT            bool   `json:"fob_cmt"`
 	Delivery          string `json:"delivery"`
 	IDPOClientItem    int32  `json:"id_po_client_item"`
+	Status            string `json:"status"`
+	ClosedAt          string `json:"closed_at,omitempty"`
 	PONumber          string `json:"po_number"`
 	POClientItemStyle string `json:"po_client_item_style"`
 	CreatedAt         string `json:"created_at"`
@@ -36,6 +38,9 @@ type WorkOrderDetailResponse struct {
 	FOBCMT            bool                     `json:"fob_cmt"`
 	Delivery          string                   `json:"delivery"`
 	IDPOClientItem    int32                    `json:"id_po_client_item"`
+	Status            string                   `json:"status"`
+	ClosedByUserID    *int32                   `json:"closed_by_user_id,omitempty"`
+	ClosedAt          string                   `json:"closed_at,omitempty"`
 	PONumber          string                   `json:"po_number"`
 	POClientItemStyle string                   `json:"po_client_item_style"`
 	CreatedAt         string                   `json:"created_at"`
@@ -89,6 +94,8 @@ type PRInternalListItem struct {
 	Projek     string `json:"projek"`
 	IDWO       int32  `json:"id_wo"`
 	IDUser     int32  `json:"id_user"`
+	Status     string `json:"status"`
+	ApprovedAt string `json:"approved_at,omitempty"`
 	CreatedAt  string `json:"created_at"`
 }
 

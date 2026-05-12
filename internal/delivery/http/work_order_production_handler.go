@@ -27,6 +27,7 @@ func (h *WorkOrderProductionHandler) RegisterRoutes(router gin.IRouter, authMidd
 	v1.GET("/work-orders", h.ListWorkOrders)
 	v1.GET("/work-orders/:id", h.GetWorkOrderDetail)
 	v1.POST("/work-orders", h.CreateWorkOrder)
+	v1.PATCH("/work-orders/:id/close", RequirePermission(PermissionAllAccess), h.CloseWorkOrder)
 	v1.POST("/reports/:divisi", h.CreateFactoryReport)
 }
 
@@ -120,6 +121,41 @@ func (h *WorkOrderProductionHandler) CreateWorkOrder(c *gin.Context) {
 	response.Success(c, http.StatusCreated, "work order created", item)
 }
 
+// CloseWorkOrder godoc
+// @Summary      Close Work Order
+// @Description  Manager endpoint that only changes work order status and close audit fields.
+// @Tags         Work Order & Production
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Work Order ID"
+// @Success      200  {object}  model.WorkOrderStatusSuccessDoc
+// @Failure      400  {object}  model.WorkOrderErrorDoc
+// @Failure      401  {object}  model.WorkOrderErrorDoc
+// @Failure      403  {object}  model.WorkOrderErrorDoc
+// @Failure      404  {object}  model.WorkOrderErrorDoc
+// @Failure      409  {object}  model.WorkOrderErrorDoc
+// @Failure      500  {object}  model.WorkOrderErrorDoc
+// @Router       /api/v1/work-orders/{id}/close [patch]
+func (h *WorkOrderProductionHandler) CloseWorkOrder(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid work order id", nil))
+		return
+	}
+	userID, ok := GetUserIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
+	item, err := h.useCase.CloseWorkOrder(c.Request.Context(), id, userID)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "work order closed", item)
+}
+
 // CreateFactoryReport godoc
 // @Summary      Create Factory Report
 // @Description  Create lightweight production report for a specific division. Supported divisi: cutting, sewing, qc-finish, packing, pengiriman.
@@ -155,6 +191,8 @@ func (h *WorkOrderProductionHandler) handleError(c *gin.Context, err error) {
 		AbortWithError(c, NewHTTPError(http.StatusNotFound, err.Error(), model.WorkOrderErrorDetail{Code: "work_order_not_found"}))
 	case errors.Is(err, usecase.ErrWorkOrderReferenceNotFound):
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), model.WorkOrderErrorDetail{Code: "related_data_not_found"}))
+	case errors.Is(err, usecase.ErrWorkOrderAlreadyClosed):
+		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.WorkOrderErrorDetail{Code: "work_order_already_closed"}))
 	case errors.Is(err, usecase.ErrReportDivisionUnsupported):
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), model.WorkOrderErrorDetail{Code: "unsupported_report_division"}))
 	case errors.Is(err, usecase.ErrWorkOrderServiceUnavailable):

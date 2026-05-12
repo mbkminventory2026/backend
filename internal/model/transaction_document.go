@@ -127,6 +127,9 @@ type PRInternalResponse struct {
 	Projek        string                   `json:"projek"`
 	IDWO          int32                    `json:"id_wo"`
 	IDUser        int32                    `json:"id_user"`
+	Status        string                   `json:"status"`
+	ApprovedByID  *int32                   `json:"approved_by_user_id,omitempty"`
+	ApprovedAt    string                   `json:"approved_at,omitempty"`
 	CreatedAt     string                   `json:"created_at"`
 	Items         []PRInternalItemResponse `json:"items"`
 }
@@ -160,6 +163,13 @@ type POInternalResponse struct {
 	Items           []POInternalItemResponse `json:"items"`
 }
 
+type PRInternalStatusResponse struct {
+	ID           int32  `json:"id_pr_internal"`
+	Status       string `json:"status"`
+	ApprovedByID *int32 `json:"approved_by_user_id,omitempty"`
+	ApprovedAt   string `json:"approved_at,omitempty"`
+}
+
 type POClientSuccessDoc struct {
 	Status  string           `json:"status" example:"success"`
 	Message string           `json:"message" example:"po client created"`
@@ -176,6 +186,12 @@ type POInternalSuccessDoc struct {
 	Status  string             `json:"status" example:"success"`
 	Message string             `json:"message" example:"po internal created"`
 	Data    POInternalResponse `json:"data"`
+}
+
+type PRInternalStatusSuccessDoc struct {
+	Status  string                   `json:"status" example:"success"`
+	Message string                   `json:"message" example:"pr internal approved"`
+	Data    PRInternalStatusResponse `json:"data"`
 }
 
 type TransactionValidationErrorDoc struct {

@@ -175,17 +175,20 @@ type PoInternalItem struct {
 }
 
 type PrInternal struct {
-	IDPrInternal  int32              `json:"id_pr_internal"`
-	Tanggal       pgtype.Date        `json:"tanggal"`
-	Nama          string             `json:"nama"`
-	Departemen    string             `json:"departemen"`
-	VendorName    string             `json:"vendor_name"`
-	VendorAddress string             `json:"vendor_address"`
-	VendorTelp    string             `json:"vendor_telp"`
-	Projek        string             `json:"projek"`
-	IDWo          int32              `json:"id_wo"`
-	IDUser        int32              `json:"id_user"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	IDPrInternal     int32              `json:"id_pr_internal"`
+	Tanggal          pgtype.Date        `json:"tanggal"`
+	Nama             string             `json:"nama"`
+	Departemen       string             `json:"departemen"`
+	VendorName       string             `json:"vendor_name"`
+	VendorAddress    string             `json:"vendor_address"`
+	VendorTelp       string             `json:"vendor_telp"`
+	Projek           string             `json:"projek"`
+	IDWo             int32              `json:"id_wo"`
+	IDUser           int32              `json:"id_user"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	Status           string             `json:"status"`
+	ApprovedByUserID pgtype.Int4        `json:"approved_by_user_id"`
+	ApprovedAt       pgtype.Timestamptz `json:"approved_at"`
 }
 
 type PrInternalItem struct {
@@ -315,6 +318,9 @@ type WorkOrder struct {
 	Delivery       pgtype.Date        `json:"delivery"`
 	IDPoClientItem int32              `json:"id_po_client_item"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	Status         string             `json:"status"`
+	ClosedByUserID pgtype.Int4        `json:"closed_by_user_id"`
+	ClosedAt       pgtype.Timestamptz `json:"closed_at"`
 }
 
 type WorkOrderShell struct {

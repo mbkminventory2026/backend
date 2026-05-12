@@ -9,6 +9,8 @@ import (
 )
 
 type Querier interface {
+	ApprovePRInternal(ctx context.Context, arg ApprovePRInternalParams) (ApprovePRInternalRow, error)
+	CloseWorkOrder(ctx context.Context, arg CloseWorkOrderParams) (CloseWorkOrderRow, error)
 	CountWorkOrdersByPOClientID(ctx context.Context, idPoClient int32) (int64, error)
 	CreateBarang(ctx context.Context, arg CreateBarangParams) (Barang, error)
 	CreateCompany(ctx context.Context, arg CreateCompanyParams) (Company, error)
@@ -21,7 +23,7 @@ type Querier interface {
 	CreatePOClientItem(ctx context.Context, arg CreatePOClientItemParams) (PoClientItem, error)
 	CreatePOInternal(ctx context.Context, arg CreatePOInternalParams) (PoInternal, error)
 	CreatePOInternalItem(ctx context.Context, arg CreatePOInternalItemParams) (PoInternalItem, error)
-	CreatePRInternal(ctx context.Context, arg CreatePRInternalParams) (PrInternal, error)
+	CreatePRInternal(ctx context.Context, arg CreatePRInternalParams) (CreatePRInternalRow, error)
 	CreatePRInternalItem(ctx context.Context, arg CreatePRInternalItemParams) (PrInternalItem, error)
 	CreatePackingList(ctx context.Context, arg CreatePackingListParams) (PackingList, error)
 	CreatePackingListItem(ctx context.Context, arg CreatePackingListItemParams) (PackingListItem, error)
@@ -36,7 +38,7 @@ type Querier interface {
 	CreateSuratJalanInternal(ctx context.Context) (SuratJalanInternal, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	CreateUserAkses(ctx context.Context, arg CreateUserAksesParams) error
-	CreateWorkOrder(ctx context.Context, arg CreateWorkOrderParams) (WorkOrder, error)
+	CreateWorkOrder(ctx context.Context, arg CreateWorkOrderParams) (CreateWorkOrderRow, error)
 	CreateWorkOrderShell(ctx context.Context, arg CreateWorkOrderShellParams) (WorkOrderShell, error)
 	CreateWorkOrderShellSize(ctx context.Context, arg CreateWorkOrderShellSizeParams) (WorkOrderShellSize, error)
 	CreateWorkOrderTrim(ctx context.Context, arg CreateWorkOrderTrimParams) (WorkOrderTrim, error)
@@ -61,7 +63,7 @@ type Querier interface {
 	GetMitraByID(ctx context.Context, idMitra int32) (Mitra, error)
 	GetPOClientDetail(ctx context.Context, idPoClient int32) (GetPOClientDetailRow, error)
 	GetPOInternalDetail(ctx context.Context, idPoInternal int32) (PoInternal, error)
-	GetPRInternalDetail(ctx context.Context, idPrInternal int32) (PrInternal, error)
+	GetPRInternalDetail(ctx context.Context, idPrInternal int32) (GetPRInternalDetailRow, error)
 	GetPackingListDetail(ctx context.Context, idPackingList int32) (GetPackingListDetailRow, error)
 	GetSuratJalanClientDetail(ctx context.Context, idSuratJalanClient int32) (GetSuratJalanClientDetailRow, error)
 	GetSuratJalanInternalDetail(ctx context.Context, idSuratJalanInternal int32) (SuratJalanInternal, error)

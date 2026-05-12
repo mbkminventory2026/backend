@@ -85,7 +85,18 @@ type CreateWorkOrderParams struct {
 	IDPoClientItem int32       `json:"id_po_client_item"`
 }
 
-func (q *Queries) CreateWorkOrder(ctx context.Context, arg CreateWorkOrderParams) (WorkOrder, error) {
+type CreateWorkOrderRow struct {
+	IDWo           int32              `json:"id_wo"`
+	Buyer          string             `json:"buyer"`
+	Model          string             `json:"model"`
+	Qty            int32              `json:"qty"`
+	FobCmt         bool               `json:"fob_cmt"`
+	Delivery       pgtype.Date        `json:"delivery"`
+	IDPoClientItem int32              `json:"id_po_client_item"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) CreateWorkOrder(ctx context.Context, arg CreateWorkOrderParams) (CreateWorkOrderRow, error) {
 	row := q.db.QueryRow(ctx, createWorkOrder,
 		arg.Buyer,
 		arg.Model,
@@ -94,7 +105,7 @@ func (q *Queries) CreateWorkOrder(ctx context.Context, arg CreateWorkOrderParams
 		arg.Delivery,
 		arg.IDPoClientItem,
 	)
-	var i WorkOrder
+	var i CreateWorkOrderRow
 	err := row.Scan(
 		&i.IDWo,
 		&i.Buyer,

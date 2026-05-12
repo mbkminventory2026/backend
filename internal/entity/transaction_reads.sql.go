@@ -117,15 +117,35 @@ SELECT
     projek,
     id_wo,
     id_user,
+    status,
+    approved_by_user_id,
+    approved_at,
     created_at
 FROM PR_INTERNAL
 WHERE id_pr_internal = $1
 LIMIT 1
 `
 
-func (q *Queries) GetPRInternalDetail(ctx context.Context, idPrInternal int32) (PrInternal, error) {
+type GetPRInternalDetailRow struct {
+	IDPrInternal     int32              `json:"id_pr_internal"`
+	Tanggal          pgtype.Date        `json:"tanggal"`
+	Nama             string             `json:"nama"`
+	Departemen       string             `json:"departemen"`
+	VendorName       string             `json:"vendor_name"`
+	VendorAddress    string             `json:"vendor_address"`
+	VendorTelp       string             `json:"vendor_telp"`
+	Projek           string             `json:"projek"`
+	IDWo             int32              `json:"id_wo"`
+	IDUser           int32              `json:"id_user"`
+	Status           string             `json:"status"`
+	ApprovedByUserID pgtype.Int4        `json:"approved_by_user_id"`
+	ApprovedAt       pgtype.Timestamptz `json:"approved_at"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) GetPRInternalDetail(ctx context.Context, idPrInternal int32) (GetPRInternalDetailRow, error) {
 	row := q.db.QueryRow(ctx, getPRInternalDetail, idPrInternal)
-	var i PrInternal
+	var i GetPRInternalDetailRow
 	err := row.Scan(
 		&i.IDPrInternal,
 		&i.Tanggal,
@@ -137,6 +157,9 @@ func (q *Queries) GetPRInternalDetail(ctx context.Context, idPrInternal int32) (
 		&i.Projek,
 		&i.IDWo,
 		&i.IDUser,
+		&i.Status,
+		&i.ApprovedByUserID,
+		&i.ApprovedAt,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -253,6 +276,9 @@ SELECT
     wo.fob_cmt,
     wo.delivery,
     wo.id_po_client_item,
+    wo.status,
+    wo.closed_by_user_id,
+    wo.closed_at,
     wo.created_at,
     pc.po_number,
     pci.style AS po_client_item_style
@@ -271,6 +297,9 @@ type GetWorkOrderDetailRow struct {
 	FobCmt            bool               `json:"fob_cmt"`
 	Delivery          pgtype.Date        `json:"delivery"`
 	IDPoClientItem    int32              `json:"id_po_client_item"`
+	Status            string             `json:"status"`
+	ClosedByUserID    pgtype.Int4        `json:"closed_by_user_id"`
+	ClosedAt          pgtype.Timestamptz `json:"closed_at"`
 	CreatedAt         pgtype.Timestamptz `json:"created_at"`
 	PoNumber          string             `json:"po_number"`
 	PoClientItemStyle string             `json:"po_client_item_style"`
@@ -287,6 +316,9 @@ func (q *Queries) GetWorkOrderDetail(ctx context.Context, idWo int32) (GetWorkOr
 		&i.FobCmt,
 		&i.Delivery,
 		&i.IDPoClientItem,
+		&i.Status,
+		&i.ClosedByUserID,
+		&i.ClosedAt,
 		&i.CreatedAt,
 		&i.PoNumber,
 		&i.PoClientItemStyle,
@@ -648,6 +680,9 @@ SELECT
     pr.projek,
     pr.id_wo,
     pr.id_user,
+    pr.status,
+    pr.approved_by_user_id,
+    pr.approved_at,
     pr.created_at,
     COUNT(*) OVER() AS total_count
 FROM PR_INTERNAL pr
@@ -668,18 +703,21 @@ type ListPRInternalsParams struct {
 }
 
 type ListPRInternalsRow struct {
-	IDPrInternal  int32              `json:"id_pr_internal"`
-	Tanggal       pgtype.Date        `json:"tanggal"`
-	Nama          string             `json:"nama"`
-	Departemen    string             `json:"departemen"`
-	VendorName    string             `json:"vendor_name"`
-	VendorAddress string             `json:"vendor_address"`
-	VendorTelp    string             `json:"vendor_telp"`
-	Projek        string             `json:"projek"`
-	IDWo          int32              `json:"id_wo"`
-	IDUser        int32              `json:"id_user"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
-	TotalCount    int64              `json:"total_count"`
+	IDPrInternal     int32              `json:"id_pr_internal"`
+	Tanggal          pgtype.Date        `json:"tanggal"`
+	Nama             string             `json:"nama"`
+	Departemen       string             `json:"departemen"`
+	VendorName       string             `json:"vendor_name"`
+	VendorAddress    string             `json:"vendor_address"`
+	VendorTelp       string             `json:"vendor_telp"`
+	Projek           string             `json:"projek"`
+	IDWo             int32              `json:"id_wo"`
+	IDUser           int32              `json:"id_user"`
+	Status           string             `json:"status"`
+	ApprovedByUserID pgtype.Int4        `json:"approved_by_user_id"`
+	ApprovedAt       pgtype.Timestamptz `json:"approved_at"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	TotalCount       int64              `json:"total_count"`
 }
 
 func (q *Queries) ListPRInternals(ctx context.Context, arg ListPRInternalsParams) ([]ListPRInternalsRow, error) {
@@ -702,6 +740,9 @@ func (q *Queries) ListPRInternals(ctx context.Context, arg ListPRInternalsParams
 			&i.Projek,
 			&i.IDWo,
 			&i.IDUser,
+			&i.Status,
+			&i.ApprovedByUserID,
+			&i.ApprovedAt,
 			&i.CreatedAt,
 			&i.TotalCount,
 		); err != nil {
@@ -1167,6 +1208,9 @@ SELECT
     wo.fob_cmt,
     wo.delivery,
     wo.id_po_client_item,
+    wo.status,
+    wo.closed_by_user_id,
+    wo.closed_at,
     wo.created_at,
     pc.po_number,
     pci.style AS po_client_item_style,
@@ -1198,6 +1242,9 @@ type ListWorkOrdersRow struct {
 	FobCmt            bool               `json:"fob_cmt"`
 	Delivery          pgtype.Date        `json:"delivery"`
 	IDPoClientItem    int32              `json:"id_po_client_item"`
+	Status            string             `json:"status"`
+	ClosedByUserID    pgtype.Int4        `json:"closed_by_user_id"`
+	ClosedAt          pgtype.Timestamptz `json:"closed_at"`
 	CreatedAt         pgtype.Timestamptz `json:"created_at"`
 	PoNumber          string             `json:"po_number"`
 	PoClientItemStyle string             `json:"po_client_item_style"`
@@ -1221,6 +1268,9 @@ func (q *Queries) ListWorkOrders(ctx context.Context, arg ListWorkOrdersParams) 
 			&i.FobCmt,
 			&i.Delivery,
 			&i.IDPoClientItem,
+			&i.Status,
+			&i.ClosedByUserID,
+			&i.ClosedAt,
 			&i.CreatedAt,
 			&i.PoNumber,
 			&i.PoClientItemStyle,

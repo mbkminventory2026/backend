@@ -1972,6 +1972,76 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/pr-internals/{id}/approve": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Manager approval endpoint that only changes PR internal status and audit fields.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction Documents"
+                ],
+                "summary": "Approve PR Internal",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "PR Internal ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PRInternalStatusSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/reports/{divisi}": {
             "post": {
                 "security": [
@@ -2714,6 +2784,76 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/work-orders/{id}/close": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Manager endpoint that only changes work order status and close audit fields.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Work Order \u0026 Production"
+                ],
+                "summary": "Close Work Order",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Work Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderStatusSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/model.WorkOrderErrorDoc"
                         }
@@ -4525,6 +4665,9 @@ const docTemplate = `{
         "model.PRInternalListItem": {
             "type": "object",
             "properties": {
+                "approved_at": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -4544,6 +4687,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "projek": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 },
                 "tanggal": {
@@ -4587,6 +4733,12 @@ const docTemplate = `{
         "model.PRInternalResponse": {
             "type": "object",
             "properties": {
+                "approved_at": {
+                    "type": "string"
+                },
+                "approved_by_user_id": {
+                    "type": "integer"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -4614,6 +4766,9 @@ const docTemplate = `{
                 "projek": {
                     "type": "string"
                 },
+                "status": {
+                    "type": "string"
+                },
                 "tanggal": {
                     "type": "string"
                 },
@@ -4625,6 +4780,39 @@ const docTemplate = `{
                 },
                 "vendor_telp": {
                     "type": "string"
+                }
+            }
+        },
+        "model.PRInternalStatusResponse": {
+            "type": "object",
+            "properties": {
+                "approved_at": {
+                    "type": "string"
+                },
+                "approved_by_user_id": {
+                    "type": "integer"
+                },
+                "id_pr_internal": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.PRInternalStatusSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.PRInternalStatusResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "pr internal approved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -5496,6 +5684,12 @@ const docTemplate = `{
                 "buyer": {
                     "type": "string"
                 },
+                "closed_at": {
+                    "type": "string"
+                },
+                "closed_by_user_id": {
+                    "type": "integer"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -5534,6 +5728,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.WorkOrderShellResponse"
                     }
+                },
+                "status": {
+                    "type": "string"
                 },
                 "trims": {
                     "type": "array",
@@ -5590,6 +5787,9 @@ const docTemplate = `{
                 "buyer": {
                     "type": "string"
                 },
+                "closed_at": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -5616,6 +5816,9 @@ const docTemplate = `{
                 },
                 "qty": {
                     "type": "integer"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         },
@@ -5655,6 +5858,12 @@ const docTemplate = `{
                 "buyer": {
                     "type": "string"
                 },
+                "closed_at": {
+                    "type": "string"
+                },
+                "closed_by_user_id": {
+                    "type": "integer"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -5687,6 +5896,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.WorkOrderShellResponse"
                     }
+                },
+                "status": {
+                    "type": "string"
                 },
                 "trims": {
                     "type": "array",
@@ -5745,6 +5957,39 @@ const docTemplate = `{
                 },
                 "size": {
                     "type": "string"
+                }
+            }
+        },
+        "model.WorkOrderStatusResponse": {
+            "type": "object",
+            "properties": {
+                "closed_at": {
+                    "type": "string"
+                },
+                "closed_by_user_id": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.WorkOrderStatusSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.WorkOrderStatusResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "work order closed"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },

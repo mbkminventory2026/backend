@@ -31,6 +31,7 @@ func (h *TransactionDocumentHandler) RegisterRoutes(router gin.IRouter, authMidd
 	v1.GET("/pr-internals", h.ListPRInternals)
 	v1.GET("/pr-internals/:id", h.GetPRInternalDetail)
 	v1.POST("/pr-internals", h.CreatePRInternal)
+	v1.PATCH("/pr-internals/:id/approve", RequirePermission(PermissionAllAccess), h.ApprovePRInternal)
 	v1.GET("/po-internals", h.ListPOInternals)
 	v1.GET("/po-internals/:id", h.GetPOInternalDetail)
 	v1.POST("/po-internals", h.CreatePOInternal)
@@ -252,6 +253,41 @@ func (h *TransactionDocumentHandler) CreatePRInternal(c *gin.Context) {
 	response.Success(c, http.StatusCreated, "pr internal created", item)
 }
 
+// ApprovePRInternal godoc
+// @Summary      Approve PR Internal
+// @Description  Manager approval endpoint that only changes PR internal status and audit fields.
+// @Tags         Transaction Documents
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "PR Internal ID"
+// @Success      200  {object}  model.PRInternalStatusSuccessDoc
+// @Failure      400  {object}  model.TransactionErrorDoc
+// @Failure      401  {object}  model.TransactionErrorDoc
+// @Failure      403  {object}  model.TransactionErrorDoc
+// @Failure      404  {object}  model.TransactionErrorDoc
+// @Failure      409  {object}  model.TransactionErrorDoc
+// @Failure      500  {object}  model.TransactionErrorDoc
+// @Router       /api/v1/pr-internals/{id}/approve [patch]
+func (h *TransactionDocumentHandler) ApprovePRInternal(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid pr internal id", nil))
+		return
+	}
+	userID, ok := GetUserIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
+	item, err := h.useCase.ApprovePRInternal(c.Request.Context(), id, userID)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "pr internal approved", item)
+}
+
 // ListPOInternals godoc
 // @Summary      List PO Internals
 // @Description  Returns a paginated list of PO internal headers.
@@ -354,6 +390,8 @@ func (h *TransactionDocumentHandler) handleError(c *gin.Context, err error) {
 		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.TransactionErrorDetail{Code: "po_client_already_exists"}))
 	case errors.Is(err, usecase.ErrPOClientLockedForUpdate):
 		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.TransactionErrorDetail{Code: "po_client_locked_for_update"}))
+	case errors.Is(err, usecase.ErrPRInternalAlreadyApproved):
+		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.TransactionErrorDetail{Code: "pr_internal_already_approved"}))
 	case errors.Is(err, usecase.ErrTransactionServiceUnavailable):
 		AbortWithError(c, NewHTTPError(http.StatusInternalServerError, err.Error(), model.TransactionErrorDetail{Code: "transaction_service_unavailable"}))
 	default:

@@ -22,6 +22,7 @@ var (
 	ErrTransactionNotFound           = errors.New("transaction not found")
 	ErrPOClientAlreadyExists         = errors.New("po client number already exists")
 	ErrPOClientLockedForUpdate       = errors.New("po client cannot be updated because it is already used by work orders")
+	ErrPRInternalAlreadyApproved     = errors.New("pr internal is already approved")
 )
 
 type TransactionDocumentUseCase struct {
@@ -342,8 +343,37 @@ func (u *TransactionDocumentUseCase) CreatePRInternal(ctx context.Context, req m
 		Projek:        header.Projek,
 		IDWO:          header.IDWo,
 		IDUser:        header.IDUser,
+		Status:        "draft",
 		CreatedAt:     header.CreatedAt.Time.Format(time.RFC3339),
 		Items:         items,
+	}, nil
+}
+
+func (u *TransactionDocumentUseCase) ApprovePRInternal(ctx context.Context, id int32, approverUserID int32) (*model.PRInternalStatusResponse, error) {
+	current, err := u.repo.GetPRInternalDetail(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrTransactionNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to get pr internal", ErrTransactionServiceUnavailable)
+	}
+	if current.Status == "approved" {
+		return nil, ErrPRInternalAlreadyApproved
+	}
+
+	updated, err := u.repo.ApprovePRInternal(ctx, entity.ApprovePRInternalParams{
+		IDPrInternal:     id,
+		ApprovedByUserID: pgtype.Int4{Int32: approverUserID, Valid: true},
+	})
+	if err != nil {
+		return nil, mapTransactionDBError(err)
+	}
+
+	return &model.PRInternalStatusResponse{
+		ID:           updated.IDPrInternal,
+		Status:       updated.Status,
+		ApprovedByID: nullableInt32Ptr(updated.ApprovedByUserID),
+		ApprovedAt:   nullableTimestampString(updated.ApprovedAt),
 	}, nil
 }
 
@@ -554,6 +584,8 @@ func (u *TransactionDocumentUseCase) ListPRInternals(ctx context.Context, filter
 			Projek:     row.Projek,
 			IDWO:       row.IDWo,
 			IDUser:     row.IDUser,
+			Status:     row.Status,
+			ApprovedAt: nullableTimestampString(row.ApprovedAt),
 			CreatedAt:  row.CreatedAt.Time.Format(time.RFC3339),
 		})
 	}
@@ -601,6 +633,9 @@ func (u *TransactionDocumentUseCase) GetPRInternalDetail(ctx context.Context, id
 		Projek:        header.Projek,
 		IDWO:          header.IDWo,
 		IDUser:        header.IDUser,
+		Status:        header.Status,
+		ApprovedByID:  nullableInt32Ptr(header.ApprovedByUserID),
+		ApprovedAt:    nullableTimestampString(header.ApprovedAt),
 		CreatedAt:     header.CreatedAt.Time.Format(time.RFC3339),
 		Items:         items,
 	}, nil

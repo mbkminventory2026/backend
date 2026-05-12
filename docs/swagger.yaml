@@ -1207,6 +1207,8 @@ definitions:
     type: object
   model.PRInternalListItem:
     properties:
+      approved_at:
+        type: string
       created_at:
         type: string
       departemen:
@@ -1220,6 +1222,8 @@ definitions:
       nama:
         type: string
       projek:
+        type: string
+      status:
         type: string
       tanggal:
         type: string
@@ -1248,6 +1252,10 @@ definitions:
     type: object
   model.PRInternalResponse:
     properties:
+      approved_at:
+        type: string
+      approved_by_user_id:
+        type: integer
       created_at:
         type: string
       departemen:
@@ -1266,6 +1274,8 @@ definitions:
         type: string
       projek:
         type: string
+      status:
+        type: string
       tanggal:
         type: string
       vendor_address:
@@ -1273,6 +1283,28 @@ definitions:
       vendor_name:
         type: string
       vendor_telp:
+        type: string
+    type: object
+  model.PRInternalStatusResponse:
+    properties:
+      approved_at:
+        type: string
+      approved_by_user_id:
+        type: integer
+      id_pr_internal:
+        type: integer
+      status:
+        type: string
+    type: object
+  model.PRInternalStatusSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.PRInternalStatusResponse'
+      message:
+        example: pr internal approved
+        type: string
+      status:
+        example: success
         type: string
     type: object
   model.PRInternalSuccessDoc:
@@ -1854,6 +1886,10 @@ definitions:
     properties:
       buyer:
         type: string
+      closed_at:
+        type: string
+      closed_by_user_id:
+        type: integer
       created_at:
         type: string
       delivery:
@@ -1880,6 +1916,8 @@ definitions:
         items:
           $ref: '#/definitions/model.WorkOrderShellResponse'
         type: array
+      status:
+        type: string
       trims:
         items:
           $ref: '#/definitions/model.WorkOrderTrimResponse'
@@ -1917,6 +1955,8 @@ definitions:
     properties:
       buyer:
         type: string
+      closed_at:
+        type: string
       created_at:
         type: string
       delivery:
@@ -1935,6 +1975,8 @@ definitions:
         type: string
       qty:
         type: integer
+      status:
+        type: string
     type: object
   model.WorkOrderListResponse:
     properties:
@@ -1960,6 +2002,10 @@ definitions:
     properties:
       buyer:
         type: string
+      closed_at:
+        type: string
+      closed_by_user_id:
+        type: integer
       created_at:
         type: string
       delivery:
@@ -1982,6 +2028,8 @@ definitions:
         items:
           $ref: '#/definitions/model.WorkOrderShellResponse'
         type: array
+      status:
+        type: string
       trims:
         items:
           $ref: '#/definitions/model.WorkOrderTrimResponse'
@@ -2019,6 +2067,28 @@ definitions:
       ratio:
         type: integer
       size:
+        type: string
+    type: object
+  model.WorkOrderStatusResponse:
+    properties:
+      closed_at:
+        type: string
+      closed_by_user_id:
+        type: integer
+      id_wo:
+        type: integer
+      status:
+        type: string
+    type: object
+  model.WorkOrderStatusSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.WorkOrderStatusResponse'
+      message:
+        example: work order closed
+        type: string
+      status:
+        example: success
         type: string
     type: object
   model.WorkOrderSuccessDoc:
@@ -3328,6 +3398,52 @@ paths:
       summary: Get PR Internal Detail
       tags:
       - Transaction Documents
+  /api/v1/pr-internals/{id}/approve:
+    patch:
+      description: Manager approval endpoint that only changes PR internal status
+        and audit fields.
+      parameters:
+      - description: PR Internal ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.PRInternalStatusSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Approve PR Internal
+      tags:
+      - Transaction Documents
   /api/v1/reports/{divisi}:
     post:
       consumes:
@@ -3809,6 +3925,52 @@ paths:
       security:
       - BearerAuth: []
       summary: Get Work Order Detail
+      tags:
+      - Work Order & Production
+  /api/v1/work-orders/{id}/close:
+    patch:
+      description: Manager endpoint that only changes work order status and close
+        audit fields.
+      parameters:
+      - description: Work Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.WorkOrderStatusSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Close Work Order
       tags:
       - Work Order & Production
   /health:

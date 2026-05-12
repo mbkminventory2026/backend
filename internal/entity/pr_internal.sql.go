@@ -48,7 +48,21 @@ type CreatePRInternalParams struct {
 	IDUser        int32       `json:"id_user"`
 }
 
-func (q *Queries) CreatePRInternal(ctx context.Context, arg CreatePRInternalParams) (PrInternal, error) {
+type CreatePRInternalRow struct {
+	IDPrInternal  int32              `json:"id_pr_internal"`
+	Tanggal       pgtype.Date        `json:"tanggal"`
+	Nama          string             `json:"nama"`
+	Departemen    string             `json:"departemen"`
+	VendorName    string             `json:"vendor_name"`
+	VendorAddress string             `json:"vendor_address"`
+	VendorTelp    string             `json:"vendor_telp"`
+	Projek        string             `json:"projek"`
+	IDWo          int32              `json:"id_wo"`
+	IDUser        int32              `json:"id_user"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) CreatePRInternal(ctx context.Context, arg CreatePRInternalParams) (CreatePRInternalRow, error) {
 	row := q.db.QueryRow(ctx, createPRInternal,
 		arg.Tanggal,
 		arg.Nama,
@@ -60,7 +74,7 @@ func (q *Queries) CreatePRInternal(ctx context.Context, arg CreatePRInternalPara
 		arg.IDWo,
 		arg.IDUser,
 	)
-	var i PrInternal
+	var i CreatePRInternalRow
 	err := row.Scan(
 		&i.IDPrInternal,
 		&i.Tanggal,

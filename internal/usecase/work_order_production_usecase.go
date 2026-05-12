@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"permatatex-inventory/internal/entity"
@@ -21,6 +22,7 @@ var (
 	ErrWorkOrderServiceUnavailable = errors.New("work order service unavailable")
 	ErrWorkOrderNotFound           = errors.New("work order not found")
 	ErrReportDivisionUnsupported   = errors.New("unsupported report division")
+	ErrWorkOrderAlreadyClosed      = errors.New("work order is already closed")
 )
 
 type WorkOrderProductionUseCase struct {
@@ -197,10 +199,39 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, req mo
 		FOBCMT:         header.FobCmt,
 		Delivery:       header.Delivery.Time.Format("2006-01-02"),
 		IDPOClientItem: header.IDPoClientItem,
+		Status:         "open",
 		CreatedAt:      header.CreatedAt.Time.Format(time.RFC3339),
 		Shells:         shells,
 		Trims:          trims,
 		MaterialLists:  materials,
+	}, nil
+}
+
+func (u *WorkOrderProductionUseCase) CloseWorkOrder(ctx context.Context, id int32, closerUserID int32) (*model.WorkOrderStatusResponse, error) {
+	current, err := u.repo.GetWorkOrderDetail(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrWorkOrderNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to get work order", ErrWorkOrderServiceUnavailable)
+	}
+	if current.Status == "closed" {
+		return nil, ErrWorkOrderAlreadyClosed
+	}
+
+	updated, err := u.repo.CloseWorkOrder(ctx, entity.CloseWorkOrderParams{
+		IDWo:           id,
+		ClosedByUserID: pgtype.Int4{Int32: closerUserID, Valid: true},
+	})
+	if err != nil {
+		return nil, mapWorkOrderDBError(err)
+	}
+
+	return &model.WorkOrderStatusResponse{
+		ID:             updated.IDWo,
+		Status:         updated.Status,
+		ClosedByUserID: nullableInt32Ptr(updated.ClosedByUserID),
+		ClosedAt:       nullableTimestampString(updated.ClosedAt),
 	}, nil
 }
 
@@ -324,6 +355,8 @@ func (u *WorkOrderProductionUseCase) ListWorkOrders(ctx context.Context, filter 
 			FOBCMT:            row.FobCmt,
 			Delivery:          row.Delivery.Time.Format("2006-01-02"),
 			IDPOClientItem:    row.IDPoClientItem,
+			Status:            row.Status,
+			ClosedAt:          nullableTimestampString(row.ClosedAt),
 			PONumber:          row.PoNumber,
 			POClientItemStyle: row.PoClientItemStyle,
 			CreatedAt:         row.CreatedAt.Time.Format(time.RFC3339),
@@ -425,6 +458,9 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id 
 		FOBCMT:            header.FobCmt,
 		Delivery:          header.Delivery.Time.Format("2006-01-02"),
 		IDPOClientItem:    header.IDPoClientItem,
+		Status:            header.Status,
+		ClosedByUserID:    nullableInt32Ptr(header.ClosedByUserID),
+		ClosedAt:          nullableTimestampString(header.ClosedAt),
 		PONumber:          header.PoNumber,
 		POClientItemStyle: header.PoClientItemStyle,
 		CreatedAt:         header.CreatedAt.Time.Format(time.RFC3339),

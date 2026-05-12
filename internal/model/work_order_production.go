@@ -100,6 +100,9 @@ type WorkOrderResponse struct {
 	FOBCMT         bool                     `json:"fob_cmt"`
 	Delivery       string                   `json:"delivery"`
 	IDPOClientItem int32                    `json:"id_po_client_item"`
+	Status         string                   `json:"status"`
+	ClosedByUserID *int32                   `json:"closed_by_user_id,omitempty"`
+	ClosedAt       string                   `json:"closed_at,omitempty"`
 	CreatedAt      string                   `json:"created_at"`
 	Shells         []WorkOrderShellResponse `json:"shells"`
 	Trims          []WorkOrderTrimResponse  `json:"trims"`
@@ -121,6 +124,13 @@ type FactoryReportResponse struct {
 	CreatedAt     string `json:"created_at"`
 }
 
+type WorkOrderStatusResponse struct {
+	ID             int32  `json:"id_wo"`
+	Status         string `json:"status"`
+	ClosedByUserID *int32 `json:"closed_by_user_id,omitempty"`
+	ClosedAt       string `json:"closed_at,omitempty"`
+}
+
 type WorkOrderSuccessDoc struct {
 	Status  string            `json:"status" example:"success"`
 	Message string            `json:"message" example:"work order created"`
@@ -131,6 +141,12 @@ type FactoryReportSuccessDoc struct {
 	Status  string                `json:"status" example:"success"`
 	Message string                `json:"message" example:"factory report created"`
 	Data    FactoryReportResponse `json:"data"`
+}
+
+type WorkOrderStatusSuccessDoc struct {
+	Status  string                  `json:"status" example:"success"`
+	Message string                  `json:"message" example:"work order closed"`
+	Data    WorkOrderStatusResponse `json:"data"`
 }
 
 type WorkOrderValidationErrorDoc struct {

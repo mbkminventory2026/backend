@@ -7,6 +7,9 @@ SELECT
     wo.fob_cmt,
     wo.delivery,
     wo.id_po_client_item,
+    wo.status,
+    wo.closed_by_user_id,
+    wo.closed_at,
     wo.created_at,
     pc.po_number,
     pci.style AS po_client_item_style,
@@ -32,6 +35,9 @@ SELECT
     wo.fob_cmt,
     wo.delivery,
     wo.id_po_client_item,
+    wo.status,
+    wo.closed_by_user_id,
+    wo.closed_at,
     wo.created_at,
     pc.po_number,
     pci.style AS po_client_item_style
@@ -179,6 +185,9 @@ SELECT
     pr.projek,
     pr.id_wo,
     pr.id_user,
+    pr.status,
+    pr.approved_by_user_id,
+    pr.approved_at,
     pr.created_at,
     COUNT(*) OVER() AS total_count
 FROM PR_INTERNAL pr
@@ -203,6 +212,9 @@ SELECT
     projek,
     id_wo,
     id_user,
+    status,
+    approved_by_user_id,
+    approved_at,
     created_at
 FROM PR_INTERNAL
 WHERE id_pr_internal = sqlc.arg(id_pr_internal)
