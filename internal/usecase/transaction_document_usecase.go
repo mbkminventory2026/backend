@@ -19,6 +19,7 @@ var (
 	ErrTransactionValidation         = errors.New("invalid transaction payload")
 	ErrTransactionReferenceNotFound  = errors.New("related data not found")
 	ErrTransactionServiceUnavailable = errors.New("transaction service unavailable")
+	ErrTransactionNotFound           = errors.New("transaction not found")
 	ErrPOClientAlreadyExists         = errors.New("po client number already exists")
 )
 
@@ -294,6 +295,253 @@ func (u *TransactionDocumentUseCase) CreatePOInternal(ctx context.Context, req m
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("%w: failed to commit transaction", ErrTransactionServiceUnavailable)
+	}
+
+	return &model.POInternalResponse{
+		ID:              header.IDPoInternal,
+		Tanggal:         header.Tanggal.Time.Format("2006-01-02"),
+		NamaPO:          header.NamaPo,
+		SupplierName:    header.SupplierName,
+		SupplierAddr:    header.SupplierAddr,
+		SupplierContact: header.SupplierContact,
+		SupplierEmail:   header.SupplierEmail,
+		SupplierTelp:    header.SupplierTelp,
+		SupplierFax:     header.SupplierFax,
+		Currency:        header.Currency,
+		CPO:             header.Cpo,
+		Term:            header.Term,
+		ShipDate:        header.ShipDate.Time.Format("2006-01-02"),
+		IDPRInternal:    header.IDPrInternal,
+		CreatedAt:       header.CreatedAt.Time.Format(time.RFC3339),
+		Items:           items,
+	}, nil
+}
+
+func (u *TransactionDocumentUseCase) ListPOClients(ctx context.Context, filter model.TransactionListFilter) (*model.POClientListResponse, error) {
+	page, limit, offset := normalizePagination(filter)
+	rows, err := u.repo.ListPOClients(ctx, entity.ListPOClientsParams{
+		SearchTerm: filter.Search,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to list po clients", ErrTransactionServiceUnavailable)
+	}
+
+	items := make([]model.POClientListItem, 0, len(rows))
+	total := int64(0)
+	for _, row := range rows {
+		total = row.TotalCount
+		items = append(items, model.POClientListItem{
+			ID:        row.IDPoClient,
+			PONumber:  row.PoNumber,
+			Tanggal:   row.Tanggal.Time.Format("2006-01-02"),
+			Season:    row.Season,
+			Delivery:  row.Delivery.Time.Format("2006-01-02"),
+			IDMitra:   row.IDMitra,
+			MitraName: row.MitraName,
+			CreatedAt: row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	return &model.POClientListResponse{
+		Items:      items,
+		Pagination: buildPagination(total, page, limit),
+	}, nil
+}
+
+func (u *TransactionDocumentUseCase) GetPOClientDetail(ctx context.Context, id int32) (*model.POClientDetailResponse, error) {
+	header, err := u.repo.GetPOClientDetail(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrTransactionNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to get po client", ErrTransactionServiceUnavailable)
+	}
+
+	itemRows, err := u.repo.ListPOClientItemsByPOClientID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to get po client items", ErrTransactionServiceUnavailable)
+	}
+	picRows, err := u.repo.ListPenanggungJawabByPOClientID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to get po client contacts", ErrTransactionServiceUnavailable)
+	}
+
+	items := make([]model.POClientItemResponse, 0, len(itemRows))
+	for _, row := range itemRows {
+		items = append(items, model.POClientItemResponse{
+			ID:          row.IDPoClientItem,
+			Style:       row.Style,
+			Colour:      row.Colour,
+			Description: row.Description,
+			Qty:         row.Qty,
+			Price:       numericToFloat64(row.Price),
+			CreatedAt:   row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	pics := make([]model.PenanggungJawabResponse, 0, len(picRows))
+	for _, row := range picRows {
+		pics = append(pics, model.PenanggungJawabResponse{
+			ID:        row.IDPenanggungJawab,
+			Nama:      row.Nama,
+			NoTelp:    row.NoTelp,
+			Email:     row.Email,
+			CreatedAt: row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	return &model.POClientDetailResponse{
+		ID:              header.IDPoClient,
+		PONumber:        header.PoNumber,
+		Tanggal:         header.Tanggal.Time.Format("2006-01-02"),
+		Season:          header.Season,
+		Delivery:        header.Delivery.Time.Format("2006-01-02"),
+		PaymentTerm:     header.PaymentTerm,
+		File:            header.File,
+		IDMitra:         header.IDMitra,
+		MitraName:       header.MitraName,
+		CreatedAt:       header.CreatedAt.Time.Format(time.RFC3339),
+		Items:           items,
+		PenanggungJawab: pics,
+	}, nil
+}
+
+func (u *TransactionDocumentUseCase) ListPRInternals(ctx context.Context, filter model.TransactionListFilter) (*model.PRInternalListResponse, error) {
+	page, limit, offset := normalizePagination(filter)
+	rows, err := u.repo.ListPRInternals(ctx, entity.ListPRInternalsParams{
+		SearchTerm: filter.Search,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to list pr internals", ErrTransactionServiceUnavailable)
+	}
+
+	items := make([]model.PRInternalListItem, 0, len(rows))
+	total := int64(0)
+	for _, row := range rows {
+		total = row.TotalCount
+		items = append(items, model.PRInternalListItem{
+			ID:         row.IDPrInternal,
+			Tanggal:    row.Tanggal.Time.Format("2006-01-02"),
+			Nama:       row.Nama,
+			Departemen: row.Departemen,
+			VendorName: row.VendorName,
+			Projek:     row.Projek,
+			IDWO:       row.IDWo,
+			IDUser:     row.IDUser,
+			CreatedAt:  row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	return &model.PRInternalListResponse{
+		Items:      items,
+		Pagination: buildPagination(total, page, limit),
+	}, nil
+}
+
+func (u *TransactionDocumentUseCase) GetPRInternalDetail(ctx context.Context, id int32) (*model.PRInternalResponse, error) {
+	header, err := u.repo.GetPRInternalDetail(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrTransactionNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to get pr internal", ErrTransactionServiceUnavailable)
+	}
+	rows, err := u.repo.ListPRInternalItemsByPRInternalID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to get pr internal items", ErrTransactionServiceUnavailable)
+	}
+
+	items := make([]model.PRInternalItemResponse, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, model.PRInternalItemResponse{
+			ID:          row.IDPrInternalItem,
+			Item:        row.Item,
+			Description: row.Description,
+			Qty:         row.Qty,
+			Unit:        row.Unit,
+			EstPrice:    numericToFloat64(row.EstPrice),
+			CreatedAt:   row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	return &model.PRInternalResponse{
+		ID:            header.IDPrInternal,
+		Tanggal:       header.Tanggal.Time.Format("2006-01-02"),
+		Nama:          header.Nama,
+		Departemen:    header.Departemen,
+		VendorName:    header.VendorName,
+		VendorAddress: header.VendorAddress,
+		VendorTelp:    header.VendorTelp,
+		Projek:        header.Projek,
+		IDWO:          header.IDWo,
+		IDUser:        header.IDUser,
+		CreatedAt:     header.CreatedAt.Time.Format(time.RFC3339),
+		Items:         items,
+	}, nil
+}
+
+func (u *TransactionDocumentUseCase) ListPOInternals(ctx context.Context, filter model.TransactionListFilter) (*model.POInternalListResponse, error) {
+	page, limit, offset := normalizePagination(filter)
+	rows, err := u.repo.ListPOInternals(ctx, entity.ListPOInternalsParams{
+		SearchTerm: filter.Search,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to list po internals", ErrTransactionServiceUnavailable)
+	}
+
+	items := make([]model.POInternalListItem, 0, len(rows))
+	total := int64(0)
+	for _, row := range rows {
+		total = row.TotalCount
+		items = append(items, model.POInternalListItem{
+			ID:           row.IDPoInternal,
+			Tanggal:      row.Tanggal.Time.Format("2006-01-02"),
+			NamaPO:       row.NamaPo,
+			SupplierName: row.SupplierName,
+			Currency:     row.Currency,
+			CPO:          row.Cpo,
+			ShipDate:     row.ShipDate.Time.Format("2006-01-02"),
+			IDPRInternal: row.IDPrInternal,
+			CreatedAt:    row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	return &model.POInternalListResponse{
+		Items:      items,
+		Pagination: buildPagination(total, page, limit),
+	}, nil
+}
+
+func (u *TransactionDocumentUseCase) GetPOInternalDetail(ctx context.Context, id int32) (*model.POInternalResponse, error) {
+	header, err := u.repo.GetPOInternalDetail(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrTransactionNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to get po internal", ErrTransactionServiceUnavailable)
+	}
+	rows, err := u.repo.ListPOInternalItemsByPOInternalID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to get po internal items", ErrTransactionServiceUnavailable)
+	}
+
+	items := make([]model.POInternalItemResponse, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, model.POInternalItemResponse{
+			ID:          row.IDPoInternalItem,
+			Item:        row.Item,
+			Description: row.Description,
+			Qty:         row.Qty,
+			Unit:        row.Unit,
+			UnitPrice:   numericToFloat64(row.UnitPrice),
+			CreatedAt:   row.CreatedAt.Time.Format(time.RFC3339),
+		})
 	}
 
 	return &model.POInternalResponse{

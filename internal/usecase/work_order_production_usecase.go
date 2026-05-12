@@ -19,6 +19,7 @@ var (
 	ErrWorkOrderValidation         = errors.New("invalid work order payload")
 	ErrWorkOrderReferenceNotFound  = errors.New("related data not found")
 	ErrWorkOrderServiceUnavailable = errors.New("work order service unavailable")
+	ErrWorkOrderNotFound           = errors.New("work order not found")
 	ErrReportDivisionUnsupported   = errors.New("unsupported report division")
 )
 
@@ -298,6 +299,139 @@ func (u *WorkOrderProductionUseCase) CreateFactoryReport(ctx context.Context, di
 	default:
 		return nil, ErrReportDivisionUnsupported
 	}
+}
+
+func (u *WorkOrderProductionUseCase) ListWorkOrders(ctx context.Context, filter model.TransactionListFilter) (*model.WorkOrderListResponse, error) {
+	page, limit, offset := normalizePagination(filter)
+	rows, err := u.repo.ListWorkOrders(ctx, entity.ListWorkOrdersParams{
+		SearchTerm: filter.Search,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to list work orders", ErrWorkOrderServiceUnavailable)
+	}
+
+	items := make([]model.WorkOrderListItem, 0, len(rows))
+	total := int64(0)
+	for _, row := range rows {
+		total = row.TotalCount
+		items = append(items, model.WorkOrderListItem{
+			ID:                row.IDWo,
+			Buyer:             row.Buyer,
+			Model:             row.Model,
+			Qty:               row.Qty,
+			FOBCMT:            row.FobCmt,
+			Delivery:          row.Delivery.Time.Format("2006-01-02"),
+			IDPOClientItem:    row.IDPoClientItem,
+			PONumber:          row.PoNumber,
+			POClientItemStyle: row.PoClientItemStyle,
+			CreatedAt:         row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	return &model.WorkOrderListResponse{
+		Items:      items,
+		Pagination: buildPagination(total, page, limit),
+	}, nil
+}
+
+func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id int32) (*model.WorkOrderDetailResponse, error) {
+	header, err := u.repo.GetWorkOrderDetail(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrWorkOrderNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to get work order", ErrWorkOrderServiceUnavailable)
+	}
+
+	shellRows, err := u.repo.ListWorkOrderShellsByWorkOrderID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to get work order shells", ErrWorkOrderServiceUnavailable)
+	}
+	sizeRows, err := u.repo.ListWorkOrderShellSizesByWorkOrderID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to get work order shell sizes", ErrWorkOrderServiceUnavailable)
+	}
+	trimRows, err := u.repo.ListWorkOrderTrimsByWorkOrderID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to get work order trims", ErrWorkOrderServiceUnavailable)
+	}
+	materialRows, err := u.repo.ListMaterialListsByWorkOrderID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to get material lists", ErrWorkOrderServiceUnavailable)
+	}
+
+	sizeMap := make(map[int32][]model.WorkOrderShellSizeResponse)
+	for _, row := range sizeRows {
+		sizeMap[row.IDWoShell] = append(sizeMap[row.IDWoShell], model.WorkOrderShellSizeResponse{
+			ID:        row.IDWoShellSize,
+			Size:      row.Size,
+			Qty:       row.Qty,
+			Ratio:     row.Ratio,
+			CreatedAt: row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	shells := make([]model.WorkOrderShellResponse, 0, len(shellRows))
+	for _, row := range shellRows {
+		shells = append(shells, model.WorkOrderShellResponse{
+			ID:        row.IDWoShell,
+			Fabric:    row.Fabric,
+			Cons:      numericToFloat64(row.Cons),
+			Color:     row.Color,
+			Allow:     row.Allow,
+			Berat1Yd:  numericToFloat64(row.Berat1Yd),
+			CreatedAt: row.CreatedAt.Time.Format(time.RFC3339),
+			Sizes:     sizeMap[row.IDWoShell],
+		})
+	}
+
+	trims := make([]model.WorkOrderTrimResponse, 0, len(trimRows))
+	for _, row := range trimRows {
+		trims = append(trims, model.WorkOrderTrimResponse{
+			ID:          row.IDWoTrim,
+			Item:        row.Item,
+			Description: row.Description,
+			Color:       row.Color,
+			Code:        row.Code,
+			Cons:        numericToFloat64(row.Cons),
+			Qty:         row.Qty,
+			UOM:         row.Uom,
+			Position:    row.Position,
+			CreatedBy:   row.CreatedBy,
+			Allow:       row.Allow,
+			CreatedAt:   row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	materials := make([]model.MaterialListResponse, 0, len(materialRows))
+	for _, row := range materialRows {
+		materials = append(materials, model.MaterialListResponse{
+			ID:          row.IDMaterialList,
+			Description: row.Description,
+			Size:        row.Size,
+			Color:       row.Color,
+			UOM:         row.Uom,
+			CreatedAt:   row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	return &model.WorkOrderDetailResponse{
+		ID:                header.IDWo,
+		Buyer:             header.Buyer,
+		Model:             header.Model,
+		Qty:               header.Qty,
+		FOBCMT:            header.FobCmt,
+		Delivery:          header.Delivery.Time.Format("2006-01-02"),
+		IDPOClientItem:    header.IDPoClientItem,
+		PONumber:          header.PoNumber,
+		POClientItemStyle: header.PoClientItemStyle,
+		CreatedAt:         header.CreatedAt.Time.Format(time.RFC3339),
+		Shells:            shells,
+		Trims:             trims,
+		MaterialLists:     materials,
+	}, nil
 }
 
 func mapWorkOrderDBError(err error) error {

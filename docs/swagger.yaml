@@ -922,6 +922,48 @@ definitions:
       tipe_perusahaan:
         type: string
     type: object
+  model.POClientDetailResponse:
+    properties:
+      created_at:
+        type: string
+      delivery:
+        type: string
+      file:
+        type: string
+      id_mitra:
+        type: integer
+      id_po_client:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.POClientItemResponse'
+        type: array
+      mitra_name:
+        type: string
+      payment_term:
+        type: string
+      penanggung_jawab:
+        items:
+          $ref: '#/definitions/model.PenanggungJawabResponse'
+        type: array
+      po_number:
+        type: string
+      season:
+        type: string
+      tanggal:
+        type: string
+    type: object
+  model.POClientDetailSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.POClientDetailResponse'
+      message:
+        example: po client retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.POClientItemResponse:
     properties:
       colour:
@@ -937,6 +979,45 @@ definitions:
       qty:
         type: integer
       style:
+        type: string
+    type: object
+  model.POClientListItem:
+    properties:
+      created_at:
+        type: string
+      delivery:
+        type: string
+      id_mitra:
+        type: integer
+      id_po_client:
+        type: integer
+      mitra_name:
+        type: string
+      po_number:
+        type: string
+      season:
+        type: string
+      tanggal:
+        type: string
+    type: object
+  model.POClientListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.POClientListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.POClientListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.POClientListResponse'
+      message:
+        example: po clients retrieved
+        type: string
+      status:
+        example: success
         type: string
     type: object
   model.POClientResponse:
@@ -979,6 +1060,17 @@ definitions:
         example: success
         type: string
     type: object
+  model.POInternalDetailSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.POInternalResponse'
+      message:
+        example: po internal retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.POInternalItemResponse:
     properties:
       created_at:
@@ -995,6 +1087,47 @@ definitions:
         type: string
       unit_price:
         type: number
+    type: object
+  model.POInternalListItem:
+    properties:
+      cpo:
+        type: string
+      created_at:
+        type: string
+      currency:
+        type: string
+      id_po_internal:
+        type: integer
+      id_pr_internal:
+        type: integer
+      nama_po:
+        type: string
+      ship_date:
+        type: string
+      supplier_name:
+        type: string
+      tanggal:
+        type: string
+    type: object
+  model.POInternalListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.POInternalListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.POInternalListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.POInternalListResponse'
+      message:
+        example: po internals retrieved
+        type: string
+      status:
+        example: success
+        type: string
     type: object
   model.POInternalResponse:
     properties:
@@ -1044,6 +1177,17 @@ definitions:
         example: success
         type: string
     type: object
+  model.PRInternalDetailSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.PRInternalResponse'
+      message:
+        example: pr internal retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.PRInternalItemResponse:
     properties:
       created_at:
@@ -1059,6 +1203,47 @@ definitions:
       qty:
         type: integer
       unit:
+        type: string
+    type: object
+  model.PRInternalListItem:
+    properties:
+      created_at:
+        type: string
+      departemen:
+        type: string
+      id_pr_internal:
+        type: integer
+      id_user:
+        type: integer
+      id_wo:
+        type: integer
+      nama:
+        type: string
+      projek:
+        type: string
+      tanggal:
+        type: string
+      vendor_name:
+        type: string
+    type: object
+  model.PRInternalListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.PRInternalListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.PRInternalListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.PRInternalListResponse'
+      message:
+        example: pr internals retrieved
+        type: string
+      status:
+        example: success
         type: string
     type: object
   model.PRInternalResponse:
@@ -1101,6 +1286,40 @@ definitions:
         example: success
         type: string
     type: object
+  model.PackingListDetailResponse:
+    properties:
+      buyer:
+        type: string
+      created_at:
+        type: string
+      id_packing_list:
+        type: integer
+      id_surat_jalan_internal:
+        type: integer
+      id_wo:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.PackingListItemResponse'
+        type: array
+      model:
+        type: string
+      total_garment_per_box:
+        type: integer
+      total_reject:
+        type: integer
+    type: object
+  model.PackingListDetailSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.PackingListDetailResponse'
+      message:
+        example: packing list retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.PackingListItemResponse:
     properties:
       box_no_end:
@@ -1133,6 +1352,45 @@ definitions:
       qty:
         type: integer
     type: object
+  model.PackingListListItem:
+    properties:
+      buyer:
+        type: string
+      created_at:
+        type: string
+      id_packing_list:
+        type: integer
+      id_surat_jalan_internal:
+        type: integer
+      id_wo:
+        type: integer
+      model:
+        type: string
+      total_garment_per_box:
+        type: integer
+      total_reject:
+        type: integer
+    type: object
+  model.PackingListListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.PackingListListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.PackingListListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.PackingListListResponse'
+      message:
+        example: packing lists retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.PackingListResponse:
     properties:
       created_at:
@@ -1162,6 +1420,17 @@ definitions:
       status:
         example: success
         type: string
+    type: object
+  model.PaginationMeta:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total_items:
+        type: integer
+      total_pages:
+        type: integer
     type: object
   model.PenanggungJawabResponse:
     properties:
@@ -1223,6 +1492,120 @@ definitions:
         $ref: '#/definitions/model.ReceiveInventoryResponse'
       message:
         example: inventory received
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.SuratJalanClientDetailResponse:
+    properties:
+      created_at:
+        type: string
+      id_material_list:
+        type: integer
+      id_surat_jalan_client:
+        type: integer
+      id_wo:
+        type: integer
+      keterangan:
+        type: string
+      material_description:
+        type: string
+      qty:
+        type: integer
+      tanggal:
+        type: string
+    type: object
+  model.SuratJalanClientDetailSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.SuratJalanClientDetailResponse'
+      message:
+        example: surat jalan client retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.SuratJalanClientListItem:
+    properties:
+      created_at:
+        type: string
+      id_material_list:
+        type: integer
+      id_surat_jalan_client:
+        type: integer
+      id_wo:
+        type: integer
+      keterangan:
+        type: string
+      material_description:
+        type: string
+      qty:
+        type: integer
+      tanggal:
+        type: string
+    type: object
+  model.SuratJalanClientListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.SuratJalanClientListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.SuratJalanClientListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.SuratJalanClientListResponse'
+      message:
+        example: surat jalan clients retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.SuratJalanInternalDetailResponse:
+    properties:
+      created_at:
+        type: string
+      id_surat_jalan_internal:
+        type: integer
+    type: object
+  model.SuratJalanInternalDetailSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.SuratJalanInternalDetailResponse'
+      message:
+        example: surat jalan internal retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.SuratJalanInternalListItem:
+    properties:
+      created_at:
+        type: string
+      id_surat_jalan_internal:
+        type: integer
+    type: object
+  model.SuratJalanInternalListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.SuratJalanInternalListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.SuratJalanInternalListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.SuratJalanInternalListResponse'
+      message:
+        example: surat jalan internals retrieved
         type: string
       status:
         example: success
@@ -1467,6 +1850,52 @@ definitions:
         example: error
         type: string
     type: object
+  model.WorkOrderDetailResponse:
+    properties:
+      buyer:
+        type: string
+      created_at:
+        type: string
+      delivery:
+        type: string
+      fob_cmt:
+        type: boolean
+      id_po_client_item:
+        type: integer
+      id_wo:
+        type: integer
+      material_lists:
+        items:
+          $ref: '#/definitions/model.MaterialListResponse'
+        type: array
+      model:
+        type: string
+      po_client_item_style:
+        type: string
+      po_number:
+        type: string
+      qty:
+        type: integer
+      shells:
+        items:
+          $ref: '#/definitions/model.WorkOrderShellResponse'
+        type: array
+      trims:
+        items:
+          $ref: '#/definitions/model.WorkOrderTrimResponse'
+        type: array
+    type: object
+  model.WorkOrderDetailSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.WorkOrderDetailResponse'
+      message:
+        example: work order retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.WorkOrderErrorDetail:
     properties:
       code:
@@ -1482,6 +1911,49 @@ definitions:
         type: string
       status:
         example: error
+        type: string
+    type: object
+  model.WorkOrderListItem:
+    properties:
+      buyer:
+        type: string
+      created_at:
+        type: string
+      delivery:
+        type: string
+      fob_cmt:
+        type: boolean
+      id_po_client_item:
+        type: integer
+      id_wo:
+        type: integer
+      model:
+        type: string
+      po_client_item_style:
+        type: string
+      po_number:
+        type: string
+      qty:
+        type: integer
+    type: object
+  model.WorkOrderListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.WorkOrderListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.WorkOrderListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.WorkOrderListResponse'
+      message:
+        example: work orders retrieved
+        type: string
+      status:
+        example: success
         type: string
     type: object
   model.WorkOrderResponse:
@@ -2406,6 +2878,41 @@ paths:
       tags:
       - Master Data
   /api/v1/packing-lists:
+    get:
+      description: Returns a paginated list of packing list headers.
+      parameters:
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Search by buyer or model
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.PackingListListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: List Packing Lists
+      tags:
+      - Warehouse & Delivery
     post:
       consumes:
       - application/json
@@ -2438,7 +2945,75 @@ paths:
       summary: Create Packing List
       tags:
       - Warehouse & Delivery
+  /api/v1/packing-lists/{id}:
+    get:
+      description: Returns a single packing list with nested items and sizes.
+      parameters:
+      - description: Packing List ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.PackingListDetailSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Packing List Detail
+      tags:
+      - Warehouse & Delivery
   /api/v1/po-clients:
+    get:
+      description: Returns a paginated list of PO client headers for transaction screens.
+      parameters:
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Search by PO number, season, or mitra name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.POClientListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: List PO Clients
+      tags:
+      - Transaction Documents
     post:
       consumes:
       - application/json
@@ -2475,7 +3050,75 @@ paths:
       summary: Create PO Client
       tags:
       - Transaction Documents
+  /api/v1/po-clients/{id}:
+    get:
+      description: Returns a single PO client with nested items and penanggung jawab.
+      parameters:
+      - description: PO Client ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.POClientDetailSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get PO Client Detail
+      tags:
+      - Transaction Documents
   /api/v1/po-internals:
+    get:
+      description: Returns a paginated list of PO internal headers.
+      parameters:
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Search by PO name, supplier, or CPO
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.POInternalListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: List PO Internals
+      tags:
+      - Transaction Documents
     post:
       consumes:
       - application/json
@@ -2507,7 +3150,75 @@ paths:
       summary: Create PO Internal
       tags:
       - Transaction Documents
+  /api/v1/po-internals/{id}:
+    get:
+      description: Returns a single PO internal with nested items.
+      parameters:
+      - description: PO Internal ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.POInternalDetailSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get PO Internal Detail
+      tags:
+      - Transaction Documents
   /api/v1/pr-internals:
+    get:
+      description: Returns a paginated list of PR internal headers.
+      parameters:
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Search by name, vendor, or projek
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.PRInternalListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: List PR Internals
+      tags:
+      - Transaction Documents
     post:
       consumes:
       - application/json
@@ -2537,6 +3248,39 @@ paths:
       security:
       - BearerAuth: []
       summary: Create PR Internal
+      tags:
+      - Transaction Documents
+  /api/v1/pr-internals/{id}:
+    get:
+      description: Returns a single PR internal with nested items.
+      parameters:
+      - description: PR Internal ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.PRInternalDetailSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get PR Internal Detail
       tags:
       - Transaction Documents
   /api/v1/reports/{divisi}:
@@ -2577,6 +3321,140 @@ paths:
       summary: Create Factory Report
       tags:
       - Work Order & Production
+  /api/v1/surat-jalan-clients:
+    get:
+      description: Returns a paginated list of client delivery notes.
+      parameters:
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Search by description or material
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuratJalanClientListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: List Surat Jalan Clients
+      tags:
+      - Warehouse & Delivery
+  /api/v1/surat-jalan-clients/{id}:
+    get:
+      description: Returns a single client delivery note.
+      parameters:
+      - description: Surat Jalan Client ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuratJalanClientDetailSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Surat Jalan Client Detail
+      tags:
+      - Warehouse & Delivery
+  /api/v1/surat-jalan-internals:
+    get:
+      description: Returns a paginated list of internal delivery notes.
+      parameters:
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuratJalanInternalListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: List Surat Jalan Internals
+      tags:
+      - Warehouse & Delivery
+  /api/v1/surat-jalan-internals/{id}:
+    get:
+      description: Returns a single internal delivery note.
+      parameters:
+      - description: Surat Jalan Internal ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuratJalanInternalDetailSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Surat Jalan Internal Detail
+      tags:
+      - Warehouse & Delivery
   /api/v1/surat-jalan/{type}:
     post:
       consumes:
@@ -2788,6 +3666,41 @@ paths:
       tags:
       - Users
   /api/v1/work-orders:
+    get:
+      description: Returns a paginated list of work orders for transaction screens.
+      parameters:
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Search by buyer, model, or PO number
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.WorkOrderListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: List Work Orders
+      tags:
+      - Work Order & Production
     post:
       consumes:
       - application/json
@@ -2818,6 +3731,39 @@ paths:
       security:
       - BearerAuth: []
       summary: Create Work Order
+      tags:
+      - Work Order & Production
+  /api/v1/work-orders/{id}:
+    get:
+      description: Returns a single work order with shells, trims, and material lists.
+      parameters:
+      - description: Work Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.WorkOrderDetailSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Work Order Detail
       tags:
       - Work Order & Production
   /health:

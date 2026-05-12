@@ -1267,6 +1267,61 @@ const docTemplate = `{
             }
         },
         "/api/v1/packing-lists": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of packing list headers.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Warehouse \u0026 Delivery"
+                ],
+                "summary": "List Packing Lists",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by buyer or model",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PackingListListSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -1317,7 +1372,114 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/packing-lists/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a single packing list with nested items and sizes.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Warehouse \u0026 Delivery"
+                ],
+                "summary": "Get Packing List Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Packing List ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PackingListDetailSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/po-clients": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of PO client headers for transaction screens.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction Documents"
+                ],
+                "summary": "List PO Clients",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by PO number, season, or mitra name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.POClientListSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -1374,7 +1536,114 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/po-clients/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a single PO client with nested items and penanggung jawab.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction Documents"
+                ],
+                "summary": "Get PO Client Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "PO Client ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.POClientDetailSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/po-internals": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of PO internal headers.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction Documents"
+                ],
+                "summary": "List PO Internals",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by PO name, supplier, or CPO",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.POInternalListSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -1425,7 +1694,114 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/po-internals/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a single PO internal with nested items.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction Documents"
+                ],
+                "summary": "Get PO Internal Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "PO Internal ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.POInternalDetailSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/pr-internals": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of PR internal headers.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction Documents"
+                ],
+                "summary": "List PR Internals",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by name, vendor, or projek",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PRInternalListSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -1465,6 +1841,58 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/model.TransactionValidationErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/pr-internals/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a single PR internal with nested items.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction Documents"
+                ],
+                "summary": "Get PR Internal Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "PR Internal ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PRInternalDetailSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
                         }
                     },
                     "500": {
@@ -1529,6 +1957,218 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/surat-jalan-clients": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of client delivery notes.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Warehouse \u0026 Delivery"
+                ],
+                "summary": "List Surat Jalan Clients",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by description or material",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SuratJalanClientListSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/surat-jalan-clients/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a single client delivery note.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Warehouse \u0026 Delivery"
+                ],
+                "summary": "Get Surat Jalan Client Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Surat Jalan Client ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SuratJalanClientDetailSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/surat-jalan-internals": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of internal delivery notes.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Warehouse \u0026 Delivery"
+                ],
+                "summary": "List Surat Jalan Internals",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SuratJalanInternalListSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/surat-jalan-internals/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a single internal delivery note.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Warehouse \u0026 Delivery"
+                ],
+                "summary": "Get Surat Jalan Internal Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Surat Jalan Internal ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SuratJalanInternalDetailSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
                         }
                     }
                 }
@@ -1862,6 +2502,61 @@ const docTemplate = `{
             }
         },
         "/api/v1/work-orders": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of work orders for transaction screens.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Work Order \u0026 Production"
+                ],
+                "summary": "List Work Orders",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by buyer, model, or PO number",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderListSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -1901,6 +2596,58 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/model.WorkOrderValidationErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/work-orders/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a single work order with shells, trims, and material lists.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Work Order \u0026 Production"
+                ],
+                "summary": "Get Work Order Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Work Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderDetailSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
                         }
                     },
                     "500": {
@@ -3281,6 +4028,69 @@ const docTemplate = `{
                 }
             }
         },
+        "model.POClientDetailResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "delivery": {
+                    "type": "string"
+                },
+                "file": {
+                    "type": "string"
+                },
+                "id_mitra": {
+                    "type": "integer"
+                },
+                "id_po_client": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.POClientItemResponse"
+                    }
+                },
+                "mitra_name": {
+                    "type": "string"
+                },
+                "payment_term": {
+                    "type": "string"
+                },
+                "penanggung_jawab": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PenanggungJawabResponse"
+                    }
+                },
+                "po_number": {
+                    "type": "string"
+                },
+                "season": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.POClientDetailSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.POClientDetailResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "po client retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.POClientItemResponse": {
             "type": "object",
             "properties": {
@@ -3304,6 +4114,65 @@ const docTemplate = `{
                 },
                 "style": {
                     "type": "string"
+                }
+            }
+        },
+        "model.POClientListItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "delivery": {
+                    "type": "string"
+                },
+                "id_mitra": {
+                    "type": "integer"
+                },
+                "id_po_client": {
+                    "type": "integer"
+                },
+                "mitra_name": {
+                    "type": "string"
+                },
+                "po_number": {
+                    "type": "string"
+                },
+                "season": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.POClientListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.POClientListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/model.PaginationMeta"
+                }
+            }
+        },
+        "model.POClientListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.POClientListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "po clients retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -3367,6 +4236,22 @@ const docTemplate = `{
                 }
             }
         },
+        "model.POInternalDetailSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.POInternalResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "po internal retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.POInternalItemResponse": {
             "type": "object",
             "properties": {
@@ -3390,6 +4275,68 @@ const docTemplate = `{
                 },
                 "unit_price": {
                     "type": "number"
+                }
+            }
+        },
+        "model.POInternalListItem": {
+            "type": "object",
+            "properties": {
+                "cpo": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "id_po_internal": {
+                    "type": "integer"
+                },
+                "id_pr_internal": {
+                    "type": "integer"
+                },
+                "nama_po": {
+                    "type": "string"
+                },
+                "ship_date": {
+                    "type": "string"
+                },
+                "supplier_name": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.POInternalListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.POInternalListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/model.PaginationMeta"
+                }
+            }
+        },
+        "model.POInternalListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.POInternalListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "po internals retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -3465,6 +4412,22 @@ const docTemplate = `{
                 }
             }
         },
+        "model.PRInternalDetailSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.PRInternalResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "pr internal retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.PRInternalItemResponse": {
             "type": "object",
             "properties": {
@@ -3488,6 +4451,68 @@ const docTemplate = `{
                 },
                 "unit": {
                     "type": "string"
+                }
+            }
+        },
+        "model.PRInternalListItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "departemen": {
+                    "type": "string"
+                },
+                "id_pr_internal": {
+                    "type": "integer"
+                },
+                "id_user": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "nama": {
+                    "type": "string"
+                },
+                "projek": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                },
+                "vendor_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.PRInternalListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PRInternalListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/model.PaginationMeta"
+                }
+            }
+        },
+        "model.PRInternalListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.PRInternalListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "pr internals retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -3551,6 +4576,57 @@ const docTemplate = `{
                 }
             }
         },
+        "model.PackingListDetailResponse": {
+            "type": "object",
+            "properties": {
+                "buyer": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id_packing_list": {
+                    "type": "integer"
+                },
+                "id_surat_jalan_internal": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PackingListItemResponse"
+                    }
+                },
+                "model": {
+                    "type": "string"
+                },
+                "total_garment_per_box": {
+                    "type": "integer"
+                },
+                "total_reject": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.PackingListDetailSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.PackingListDetailResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "packing list retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.PackingListItemResponse": {
             "type": "object",
             "properties": {
@@ -3600,6 +4676,65 @@ const docTemplate = `{
                 }
             }
         },
+        "model.PackingListListItem": {
+            "type": "object",
+            "properties": {
+                "buyer": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id_packing_list": {
+                    "type": "integer"
+                },
+                "id_surat_jalan_internal": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "total_garment_per_box": {
+                    "type": "integer"
+                },
+                "total_reject": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.PackingListListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PackingListListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/model.PaginationMeta"
+                }
+            }
+        },
+        "model.PackingListListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.PackingListListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "packing lists retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.PackingListResponse": {
             "type": "object",
             "properties": {
@@ -3642,6 +4777,23 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "model.PaginationMeta": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total_items": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
                 }
             }
         },
@@ -3735,6 +4887,178 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "inventory received"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.SuratJalanClientDetailResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_material_list": {
+                    "type": "integer"
+                },
+                "id_surat_jalan_client": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "keterangan": {
+                    "type": "string"
+                },
+                "material_description": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SuratJalanClientDetailSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.SuratJalanClientDetailResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "surat jalan client retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.SuratJalanClientListItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_material_list": {
+                    "type": "integer"
+                },
+                "id_surat_jalan_client": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "keterangan": {
+                    "type": "string"
+                },
+                "material_description": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SuratJalanClientListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SuratJalanClientListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/model.PaginationMeta"
+                }
+            }
+        },
+        "model.SuratJalanClientListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.SuratJalanClientListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "surat jalan clients retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.SuratJalanInternalDetailResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_surat_jalan_internal": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.SuratJalanInternalDetailSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.SuratJalanInternalDetailResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "surat jalan internal retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.SuratJalanInternalListItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_surat_jalan_internal": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.SuratJalanInternalListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SuratJalanInternalListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/model.PaginationMeta"
+                }
+            }
+        },
+        "model.SuratJalanInternalListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.SuratJalanInternalListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "surat jalan internals retrieved"
                 },
                 "status": {
                     "type": "string",
@@ -4098,6 +5422,75 @@ const docTemplate = `{
                 }
             }
         },
+        "model.WorkOrderDetailResponse": {
+            "type": "object",
+            "properties": {
+                "buyer": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "delivery": {
+                    "type": "string"
+                },
+                "fob_cmt": {
+                    "type": "boolean"
+                },
+                "id_po_client_item": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "material_lists": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.MaterialListResponse"
+                    }
+                },
+                "model": {
+                    "type": "string"
+                },
+                "po_client_item_style": {
+                    "type": "string"
+                },
+                "po_number": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "shells": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.WorkOrderShellResponse"
+                    }
+                },
+                "trims": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.WorkOrderTrimResponse"
+                    }
+                }
+            }
+        },
+        "model.WorkOrderDetailSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.WorkOrderDetailResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "work order retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.WorkOrderErrorDetail": {
             "type": "object",
             "properties": {
@@ -4120,6 +5513,71 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "error"
+                }
+            }
+        },
+        "model.WorkOrderListItem": {
+            "type": "object",
+            "properties": {
+                "buyer": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "delivery": {
+                    "type": "string"
+                },
+                "fob_cmt": {
+                    "type": "boolean"
+                },
+                "id_po_client_item": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "po_client_item_style": {
+                    "type": "string"
+                },
+                "po_number": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.WorkOrderListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.WorkOrderListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/model.PaginationMeta"
+                }
+            }
+        },
+        "model.WorkOrderListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.WorkOrderListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "work orders retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },

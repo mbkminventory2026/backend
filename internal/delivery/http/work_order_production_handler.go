@@ -24,8 +24,74 @@ func NewWorkOrderProductionHandler(useCase *usecase.WorkOrderProductionUseCase) 
 
 func (h *WorkOrderProductionHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
 	v1 := router.Group("/api/v1").Use(authMiddleware)
+	v1.GET("/work-orders", h.ListWorkOrders)
+	v1.GET("/work-orders/:id", h.GetWorkOrderDetail)
 	v1.POST("/work-orders", h.CreateWorkOrder)
 	v1.POST("/reports/:divisi", h.CreateFactoryReport)
+}
+
+// ListWorkOrders godoc
+// @Summary      List Work Orders
+// @Description  Returns a paginated list of work orders for transaction screens.
+// @Tags         Work Order & Production
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page    query     int     false  "Page (default 1)"
+// @Param        limit   query     int     false  "Limit (default 20)"
+// @Param        search  query     string  false  "Search by buyer, model, or PO number"
+// @Success      200     {object}  model.WorkOrderListSuccessDoc
+// @Failure      400     {object}  model.WorkOrderErrorDoc
+// @Failure      500     {object}  model.WorkOrderErrorDoc
+// @Router       /api/v1/work-orders [get]
+func (h *WorkOrderProductionHandler) ListWorkOrders(c *gin.Context) {
+	page, err := parseQueryInt32(c, "page", 1)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid page", nil))
+		return
+	}
+	limit, err := parseQueryInt32(c, "limit", 20)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid limit", nil))
+		return
+	}
+
+	item, err := h.useCase.ListWorkOrders(c.Request.Context(), model.TransactionListFilter{
+		Page:   page,
+		Limit:  limit,
+		Search: c.Query("search"),
+	})
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "work orders retrieved", item)
+}
+
+// GetWorkOrderDetail godoc
+// @Summary      Get Work Order Detail
+// @Description  Returns a single work order with shells, trims, and material lists.
+// @Tags         Work Order & Production
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Work Order ID"
+// @Success      200  {object}  model.WorkOrderDetailSuccessDoc
+// @Failure      400  {object}  model.WorkOrderErrorDoc
+// @Failure      404  {object}  model.WorkOrderErrorDoc
+// @Failure      500  {object}  model.WorkOrderErrorDoc
+// @Router       /api/v1/work-orders/{id} [get]
+func (h *WorkOrderProductionHandler) GetWorkOrderDetail(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid work order id", nil))
+		return
+	}
+
+	item, err := h.useCase.GetWorkOrderDetail(c.Request.Context(), id)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "work order retrieved", item)
 }
 
 // CreateWorkOrder godoc
@@ -85,6 +151,8 @@ func (h *WorkOrderProductionHandler) handleError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, usecase.ErrWorkOrderValidation):
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), model.WorkOrderErrorDetail{Code: "invalid_work_order_payload"}))
+	case errors.Is(err, usecase.ErrWorkOrderNotFound):
+		AbortWithError(c, NewHTTPError(http.StatusNotFound, err.Error(), model.WorkOrderErrorDetail{Code: "work_order_not_found"}))
 	case errors.Is(err, usecase.ErrWorkOrderReferenceNotFound):
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), model.WorkOrderErrorDetail{Code: "related_data_not_found"}))
 	case errors.Is(err, usecase.ErrReportDivisionUnsupported):

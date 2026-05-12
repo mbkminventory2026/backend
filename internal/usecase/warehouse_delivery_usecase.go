@@ -20,6 +20,7 @@ var (
 	ErrWarehouseValidation         = errors.New("invalid warehouse payload")
 	ErrWarehouseReferenceNotFound  = errors.New("related data not found")
 	ErrWarehouseServiceUnavailable = errors.New("warehouse service unavailable")
+	ErrWarehouseNotFound           = errors.New("warehouse transaction not found")
 	ErrSuratJalanTypeUnsupported   = errors.New("unsupported surat jalan type")
 )
 
@@ -213,6 +214,201 @@ func (u *WarehouseDeliveryUseCase) CreateSuratJalan(ctx context.Context, suratJa
 	default:
 		return nil, ErrSuratJalanTypeUnsupported
 	}
+}
+
+func (u *WarehouseDeliveryUseCase) ListPackingLists(ctx context.Context, filter model.TransactionListFilter) (*model.PackingListListResponse, error) {
+	page, limit, offset := normalizePagination(filter)
+	rows, err := u.repo.ListPackingLists(ctx, entity.ListPackingListsParams{
+		SearchTerm: filter.Search,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to list packing lists", ErrWarehouseServiceUnavailable)
+	}
+
+	items := make([]model.PackingListListItem, 0, len(rows))
+	total := int64(0)
+	for _, row := range rows {
+		total = row.TotalCount
+		var suratJalanPtr *int32
+		if row.IDSuratJalanInternal.Valid {
+			value := row.IDSuratJalanInternal.Int32
+			suratJalanPtr = &value
+		}
+
+		items = append(items, model.PackingListListItem{
+			ID:                   row.IDPackingList,
+			TotalGarmentPerBox:   row.TotalGarmentPerBox,
+			TotalReject:          row.TotalReject,
+			IDWO:                 row.IDWo,
+			IDSuratJalanInternal: suratJalanPtr,
+			Buyer:                row.Buyer,
+			Model:                row.Model,
+			CreatedAt:            row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	return &model.PackingListListResponse{
+		Items:      items,
+		Pagination: buildPagination(total, page, limit),
+	}, nil
+}
+
+func (u *WarehouseDeliveryUseCase) GetPackingListDetail(ctx context.Context, id int32) (*model.PackingListDetailResponse, error) {
+	header, err := u.repo.GetPackingListDetail(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrWarehouseNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to get packing list", ErrWarehouseServiceUnavailable)
+	}
+
+	itemRows, err := u.repo.ListPackingListItemsByPackingListID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to get packing list items", ErrWarehouseServiceUnavailable)
+	}
+	sizeRows, err := u.repo.ListPackingListItemSizesByPackingListID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to get packing list item sizes", ErrWarehouseServiceUnavailable)
+	}
+
+	sizeMap := make(map[int32][]model.PackingListItemSizeResponse)
+	for _, row := range sizeRows {
+		sizeMap[row.IDPackingListItem] = append(sizeMap[row.IDPackingListItem], model.PackingListItemSizeResponse{
+			ID:        row.IDPackingListItemSize,
+			Qty:       row.Qty,
+			CreatedAt: row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	items := make([]model.PackingListItemResponse, 0, len(itemRows))
+	for _, row := range itemRows {
+		items = append(items, model.PackingListItemResponse{
+			ID:         row.IDPackingListItem,
+			Color:      row.Color,
+			QtyBox:     row.QtyBox,
+			QtyPerBox:  row.QtyPerBox,
+			BoxNoStart: row.BoxNoStart,
+			BoxNoEnd:   row.BoxNoEnd,
+			Note:       row.Note,
+			CreatedAt:  row.CreatedAt.Time.Format(time.RFC3339),
+			Sizes:      sizeMap[row.IDPackingListItem],
+		})
+	}
+
+	var suratJalanPtr *int32
+	if header.IDSuratJalanInternal.Valid {
+		value := header.IDSuratJalanInternal.Int32
+		suratJalanPtr = &value
+	}
+
+	return &model.PackingListDetailResponse{
+		ID:                   header.IDPackingList,
+		TotalGarmentPerBox:   header.TotalGarmentPerBox,
+		TotalReject:          header.TotalReject,
+		IDWO:                 header.IDWo,
+		IDSuratJalanInternal: suratJalanPtr,
+		Buyer:                header.Buyer,
+		Model:                header.Model,
+		CreatedAt:            header.CreatedAt.Time.Format(time.RFC3339),
+		Items:                items,
+	}, nil
+}
+
+func (u *WarehouseDeliveryUseCase) ListSuratJalanClients(ctx context.Context, filter model.TransactionListFilter) (*model.SuratJalanClientListResponse, error) {
+	page, limit, offset := normalizePagination(filter)
+	rows, err := u.repo.ListSuratJalanClients(ctx, entity.ListSuratJalanClientsParams{
+		SearchTerm: filter.Search,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to list surat jalan clients", ErrWarehouseServiceUnavailable)
+	}
+
+	items := make([]model.SuratJalanClientListItem, 0, len(rows))
+	total := int64(0)
+	for _, row := range rows {
+		total = row.TotalCount
+		items = append(items, model.SuratJalanClientListItem{
+			ID:                  row.IDSuratJalanClient,
+			Tanggal:             row.Tanggal.Time.Format("2006-01-02"),
+			Qty:                 row.Qty,
+			Keterangan:          row.Keterangan,
+			IDMaterialList:      row.IDMaterialList,
+			MaterialDescription: row.MaterialDescription,
+			IDWO:                row.IDWo,
+			CreatedAt:           row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	return &model.SuratJalanClientListResponse{
+		Items:      items,
+		Pagination: buildPagination(total, page, limit),
+	}, nil
+}
+
+func (u *WarehouseDeliveryUseCase) GetSuratJalanClientDetail(ctx context.Context, id int32) (*model.SuratJalanClientDetailResponse, error) {
+	row, err := u.repo.GetSuratJalanClientDetail(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrWarehouseNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to get surat jalan client", ErrWarehouseServiceUnavailable)
+	}
+
+	return &model.SuratJalanClientDetailResponse{
+		ID:                  row.IDSuratJalanClient,
+		Tanggal:             row.Tanggal.Time.Format("2006-01-02"),
+		Qty:                 row.Qty,
+		Keterangan:          row.Keterangan,
+		IDMaterialList:      row.IDMaterialList,
+		MaterialDescription: row.MaterialDescription,
+		IDWO:                row.IDWo,
+		CreatedAt:           row.CreatedAt.Time.Format(time.RFC3339),
+	}, nil
+}
+
+func (u *WarehouseDeliveryUseCase) ListSuratJalanInternals(ctx context.Context, filter model.TransactionListFilter) (*model.SuratJalanInternalListResponse, error) {
+	page, limit, offset := normalizePagination(filter)
+	rows, err := u.repo.ListSuratJalanInternals(ctx, entity.ListSuratJalanInternalsParams{
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to list surat jalan internals", ErrWarehouseServiceUnavailable)
+	}
+
+	items := make([]model.SuratJalanInternalListItem, 0, len(rows))
+	total := int64(0)
+	for _, row := range rows {
+		total = row.TotalCount
+		items = append(items, model.SuratJalanInternalListItem{
+			ID:        row.IDSuratJalanInternal,
+			CreatedAt: row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	return &model.SuratJalanInternalListResponse{
+		Items:      items,
+		Pagination: buildPagination(total, page, limit),
+	}, nil
+}
+
+func (u *WarehouseDeliveryUseCase) GetSuratJalanInternalDetail(ctx context.Context, id int32) (*model.SuratJalanInternalDetailResponse, error) {
+	row, err := u.repo.GetSuratJalanInternalDetail(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrWarehouseNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to get surat jalan internal", ErrWarehouseServiceUnavailable)
+	}
+
+	return &model.SuratJalanInternalDetailResponse{
+		ID:        row.IDSuratJalanInternal,
+		CreatedAt: row.CreatedAt.Time.Format(time.RFC3339),
+	}, nil
 }
 
 func mapWarehouseDBError(err error) error {
