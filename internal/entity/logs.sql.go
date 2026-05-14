@@ -11,6 +11,68 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createAktivitasLog = `-- name: CreateAktivitasLog :one
+INSERT INTO LOG_AKTIVITAS (
+    aksi
+) VALUES (
+    $1
+)
+RETURNING id_log, aksi, waktu, created_at
+`
+
+func (q *Queries) CreateAktivitasLog(ctx context.Context, aksi string) (LogAktivita, error) {
+	row := q.db.QueryRow(ctx, createAktivitasLog, aksi)
+	var i LogAktivita
+	err := row.Scan(
+		&i.IDLog,
+		&i.Aksi,
+		&i.Waktu,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const createAktivitasLogDetail = `-- name: CreateAktivitasLogDetail :one
+INSERT INTO LOG_AKTIVITAS_DETAIL (
+    nama,
+    table_name,
+    deskripsi,
+    id_log
+) VALUES (
+    $1,
+    $2,
+    $3,
+    $4
+)
+RETURNING id_log_detail, nama, table_name, deskripsi, id_log, created_at
+`
+
+type CreateAktivitasLogDetailParams struct {
+	Nama      string `json:"nama"`
+	TableName string `json:"table_name"`
+	Deskripsi string `json:"deskripsi"`
+	IDLog     int32  `json:"id_log"`
+}
+
+func (q *Queries) CreateAktivitasLogDetail(ctx context.Context, arg CreateAktivitasLogDetailParams) (LogAktivitasDetail, error) {
+	row := q.db.QueryRow(ctx, createAktivitasLogDetail,
+		arg.Nama,
+		arg.TableName,
+		arg.Deskripsi,
+		arg.IDLog,
+	)
+	var i LogAktivitasDetail
+	err := row.Scan(
+		&i.IDLogDetail,
+		&i.Nama,
+		&i.TableName,
+		&i.Deskripsi,
+		&i.IDLog,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getAktivitasLogs = `-- name: GetAktivitasLogs :many
 SELECT 
     la.ID_LOG,

@@ -183,6 +183,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	activityLogService, err := usecase.NewActivityLogService(queries, logger)
+	if err != nil {
+		logger.Error("failed to initialize activity log service", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	// 5. Routes
 	docs.SwaggerInfo.Host = "localhost:" + cfg.ServerPort
 	docs.SwaggerInfo.BasePath = "/"
@@ -191,6 +198,7 @@ func main() {
 	router := gin.New()
 	router.Use(httpdelivery.ErrorHandlerMiddleware())
 	router.Use(corsMiddleware(cfg.CORSAllowOrigin))
+	router.Use(httpdelivery.ActivityLogMiddleware(activityLogService))
 
 	healthHandler.RegisterRoutes(router)
 
@@ -239,6 +247,11 @@ func main() {
 		logger.Info("shutdown signal received", slog.String("signal", sig.String()))
 	case err := <-serverErrCh:
 		logger.Error("server stopped unexpectedly", slog.String("error", err.Error()))
+		shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), shutdownTimeout)
+		if logErr := activityLogService.Shutdown(shutdownCtx); logErr != nil {
+			logger.Error("activity log service shutdown failed", slog.String("error", logErr.Error()))
+		}
+		cancelShutdown()
 		dbPool.Close()
 		logger.Info("database pool closed")
 		os.Exit(1)
@@ -252,11 +265,17 @@ func main() {
 		if closeErr := server.Close(); closeErr != nil {
 			logger.Error("force close failed", slog.String("error", closeErr.Error()))
 		}
+		if logErr := activityLogService.Shutdown(ctx); logErr != nil {
+			logger.Error("activity log service shutdown failed", slog.String("error", logErr.Error()))
+		}
 		dbPool.Close()
 		logger.Info("database pool closed")
 		os.Exit(1)
 	}
 
+	if err := activityLogService.Shutdown(ctx); err != nil {
+		logger.Error("activity log service shutdown failed", slog.String("error", err.Error()))
+	}
 	dbPool.Close()
 	logger.Info("database pool closed")
 	logger.Info("server shutdown complete")

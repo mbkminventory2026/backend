@@ -12,6 +12,8 @@ type Querier interface {
 	ApprovePRInternal(ctx context.Context, arg ApprovePRInternalParams) (ApprovePRInternalRow, error)
 	CloseWorkOrder(ctx context.Context, arg CloseWorkOrderParams) (CloseWorkOrderRow, error)
 	CountWorkOrdersByPOClientID(ctx context.Context, idPoClient int32) (int64, error)
+	CreateAktivitasLog(ctx context.Context, aksi string) (LogAktivita, error)
+	CreateAktivitasLogDetail(ctx context.Context, arg CreateAktivitasLogDetailParams) (LogAktivitasDetail, error)
 	CreateBarang(ctx context.Context, arg CreateBarangParams) (Barang, error)
 	CreateCompany(ctx context.Context, arg CreateCompanyParams) (Company, error)
 	CreateDepartemen(ctx context.Context, namaDepartemen string) (Departeman, error)
