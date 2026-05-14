@@ -139,6 +139,69 @@
                 }
             }
         },
+        "/api/v1/inventory/issue": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Decrease reconciliation material balance when raw material is taken out from warehouse for production.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Warehouse \u0026 Delivery"
+                ],
+                "summary": "Issue Inventory",
+                "parameters": [
+                    {
+                        "description": "Issue inventory payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.IssueInventoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.IssueInventorySuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseValidationErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/inventory/receive": {
             "post": {
                 "security": [
@@ -3912,6 +3975,54 @@
                 "message": {
                     "type": "string",
                     "example": "permission created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.IssueInventoryRequest": {
+            "type": "object",
+            "required": [
+                "id_rekonsiliasi_material",
+                "qty"
+            ],
+            "properties": {
+                "id_rekonsiliasi_material": {
+                    "type": "integer"
+                },
+                "qty": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.IssueInventoryResponse": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "integer"
+                },
+                "id_rekonsiliasi_material": {
+                    "type": "integer"
+                },
+                "previous_balance": {
+                    "type": "integer"
+                },
+                "qty_issued": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.IssueInventorySuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.IssueInventoryResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "inventory issued"
                 },
                 "status": {
                     "type": "string",

@@ -189,6 +189,56 @@ func (q *Queries) CreateSuratJalanInternal(ctx context.Context) (SuratJalanInter
 	return i, err
 }
 
+const getRekonsiliasiMaterialStock = `-- name: GetRekonsiliasiMaterialStock :one
+SELECT
+    id_rekonsiliasi_material,
+    balance,
+    last_balance
+FROM REKONSILIASI_MATERIAL
+WHERE id_rekonsiliasi_material = $1
+LIMIT 1
+`
+
+type GetRekonsiliasiMaterialStockRow struct {
+	IDRekonsiliasiMaterial int32 `json:"id_rekonsiliasi_material"`
+	Balance                int32 `json:"balance"`
+	LastBalance            int32 `json:"last_balance"`
+}
+
+func (q *Queries) GetRekonsiliasiMaterialStock(ctx context.Context, idRekonsiliasiMaterial int32) (GetRekonsiliasiMaterialStockRow, error) {
+	row := q.db.QueryRow(ctx, getRekonsiliasiMaterialStock, idRekonsiliasiMaterial)
+	var i GetRekonsiliasiMaterialStockRow
+	err := row.Scan(&i.IDRekonsiliasiMaterial, &i.Balance, &i.LastBalance)
+	return i, err
+}
+
+const issueInventory = `-- name: IssueInventory :one
+UPDATE REKONSILIASI_MATERIAL
+SET
+    last_balance = balance,
+    balance = balance - $1
+WHERE id_rekonsiliasi_material = $2
+RETURNING id_rekonsiliasi_material, last_balance, balance
+`
+
+type IssueInventoryParams struct {
+	Qty                    int32 `json:"qty"`
+	IDRekonsiliasiMaterial int32 `json:"id_rekonsiliasi_material"`
+}
+
+type IssueInventoryRow struct {
+	IDRekonsiliasiMaterial int32 `json:"id_rekonsiliasi_material"`
+	LastBalance            int32 `json:"last_balance"`
+	Balance                int32 `json:"balance"`
+}
+
+func (q *Queries) IssueInventory(ctx context.Context, arg IssueInventoryParams) (IssueInventoryRow, error) {
+	row := q.db.QueryRow(ctx, issueInventory, arg.Qty, arg.IDRekonsiliasiMaterial)
+	var i IssueInventoryRow
+	err := row.Scan(&i.IDRekonsiliasiMaterial, &i.LastBalance, &i.Balance)
+	return i, err
+}
+
 const receiveInventory = `-- name: ReceiveInventory :one
 WITH inserted_received AS (
     INSERT INTO RECEIVED (

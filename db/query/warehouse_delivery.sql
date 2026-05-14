@@ -109,3 +109,20 @@ INSERT INTO SURAT_JALAN_CLIENT (
     sqlc.arg(id_material_list)
 )
 RETURNING id_surat_jalan_client, tanggal, qty, keterangan, id_material_list, created_at;
+
+-- name: GetRekonsiliasiMaterialStock :one
+SELECT
+    id_rekonsiliasi_material,
+    balance,
+    last_balance
+FROM REKONSILIASI_MATERIAL
+WHERE id_rekonsiliasi_material = sqlc.arg(id_rekonsiliasi_material)
+LIMIT 1;
+
+-- name: IssueInventory :one
+UPDATE REKONSILIASI_MATERIAL
+SET
+    last_balance = balance,
+    balance = balance - sqlc.arg(qty)
+WHERE id_rekonsiliasi_material = sqlc.arg(id_rekonsiliasi_material)
+RETURNING id_rekonsiliasi_material, last_balance, balance;

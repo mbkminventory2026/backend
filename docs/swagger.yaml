@@ -709,6 +709,38 @@ definitions:
         example: success
         type: string
     type: object
+  model.IssueInventoryRequest:
+    properties:
+      id_rekonsiliasi_material:
+        type: integer
+      qty:
+        type: integer
+    required:
+    - id_rekonsiliasi_material
+    - qty
+    type: object
+  model.IssueInventoryResponse:
+    properties:
+      balance:
+        type: integer
+      id_rekonsiliasi_material:
+        type: integer
+      previous_balance:
+        type: integer
+      qty_issued:
+        type: integer
+    type: object
+  model.IssueInventorySuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.IssueInventoryResponse'
+      message:
+        example: inventory issued
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.JenisBarangResponse:
     properties:
       created_at:
@@ -2257,6 +2289,47 @@ paths:
       summary: AI Delivery Date Estimation
       tags:
       - Dashboard
+  /api/v1/inventory/issue:
+    post:
+      consumes:
+      - application/json
+      description: Decrease reconciliation material balance when raw material is taken
+        out from warehouse for production.
+      parameters:
+      - description: Issue inventory payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.IssueInventoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.IssueInventorySuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WarehouseValidationErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Issue Inventory
+      tags:
+      - Warehouse & Delivery
   /api/v1/inventory/receive:
     post:
       consumes:

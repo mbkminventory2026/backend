@@ -10,6 +10,11 @@ type ReceiveInventoryRequest struct {
 	IDRekonsiliasiMaterial int32  `json:"id_rekonsiliasi_material" binding:"required,gt=0"`
 }
 
+type IssueInventoryRequest struct {
+	Qty                    int32 `json:"qty" binding:"required,gt=0"`
+	IDRekonsiliasiMaterial int32 `json:"id_rekonsiliasi_material" binding:"required,gt=0"`
+}
+
 type ReceiveInventoryResponse struct {
 	IDReceived                   int32  `json:"id_received"`
 	Tanggal                      string `json:"tanggal"`
@@ -21,6 +26,13 @@ type ReceiveInventoryResponse struct {
 	ActualKirim                  int32  `json:"actual_kirim"`
 	Balance                      int32  `json:"balance"`
 	CreatedAt                    string `json:"created_at"`
+}
+
+type IssueInventoryResponse struct {
+	IDRekonsiliasiMaterial int32 `json:"id_rekonsiliasi_material"`
+	QtyIssued              int32 `json:"qty_issued"`
+	PreviousBalance        int32 `json:"previous_balance"`
+	Balance                int32 `json:"balance"`
 }
 
 type CreatePackingListItemSizeRequest struct {
@@ -94,6 +106,12 @@ type ReceiveInventorySuccessDoc struct {
 	Status  string                   `json:"status" example:"success"`
 	Message string                   `json:"message" example:"inventory received"`
 	Data    ReceiveInventoryResponse `json:"data"`
+}
+
+type IssueInventorySuccessDoc struct {
+	Status  string                 `json:"status" example:"success"`
+	Message string                 `json:"message" example:"inventory issued"`
+	Data    IssueInventoryResponse `json:"data"`
 }
 
 type PackingListSuccessDoc struct {

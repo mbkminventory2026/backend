@@ -26,6 +26,7 @@ func NewWarehouseDeliveryHandler(useCase *usecase.WarehouseDeliveryUseCase) (*Wa
 func (h *WarehouseDeliveryHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
 	v1 := router.Group("/api/v1").Use(authMiddleware)
 	v1.POST("/inventory/receive", h.ReceiveInventory)
+	v1.POST("/inventory/issue", h.IssueInventory)
 	v1.GET("/packing-lists", h.ListPackingLists)
 	v1.GET("/packing-lists/:id", h.GetPackingListDetail)
 	v1.POST("/packing-lists", h.CreatePackingList)
@@ -60,6 +61,34 @@ func (h *WarehouseDeliveryHandler) ReceiveInventory(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusCreated, "inventory received", item)
+}
+
+// IssueInventory godoc
+// @Summary      Issue Inventory
+// @Description  Decrease reconciliation material balance when raw material is taken out from warehouse for production.
+// @Tags         Warehouse & Delivery
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        payload  body      model.IssueInventoryRequest  true  "Issue inventory payload"
+// @Success      200      {object}  model.IssueInventorySuccessDoc
+// @Failure      400      {object}  model.WarehouseValidationErrorDoc
+// @Failure      404      {object}  model.WarehouseErrorDoc
+// @Failure      409      {object}  model.WarehouseErrorDoc
+// @Failure      500      {object}  model.WarehouseErrorDoc
+// @Router       /api/v1/inventory/issue [post]
+func (h *WarehouseDeliveryHandler) IssueInventory(c *gin.Context) {
+	var req model.IssueInventoryRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+
+	item, err := h.useCase.IssueInventory(c.Request.Context(), req)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "inventory issued", item)
 }
 
 // CreatePackingList godoc
@@ -317,6 +346,8 @@ func (h *WarehouseDeliveryHandler) handleError(c *gin.Context, err error) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), model.WarehouseErrorDetail{Code: "invalid_warehouse_payload"}))
 	case errors.Is(err, usecase.ErrWarehouseNotFound):
 		AbortWithError(c, NewHTTPError(http.StatusNotFound, err.Error(), model.WarehouseErrorDetail{Code: "warehouse_transaction_not_found"}))
+	case errors.Is(err, usecase.ErrWarehouseInsufficientStock):
+		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.WarehouseErrorDetail{Code: "insufficient_stock_balance"}))
 	case errors.Is(err, usecase.ErrWarehouseReferenceNotFound):
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), model.WarehouseErrorDetail{Code: "related_data_not_found"}))
 	case errors.Is(err, usecase.ErrSuratJalanTypeUnsupported):

@@ -22,6 +22,7 @@ var (
 	ErrWarehouseServiceUnavailable = errors.New("warehouse service unavailable")
 	ErrWarehouseNotFound           = errors.New("warehouse transaction not found")
 	ErrSuratJalanTypeUnsupported   = errors.New("unsupported surat jalan type")
+	ErrWarehouseInsufficientStock  = errors.New("insufficient stock balance")
 )
 
 type WarehouseDeliveryUseCase struct {
@@ -70,6 +71,34 @@ func (u *WarehouseDeliveryUseCase) ReceiveInventory(ctx context.Context, req mod
 		ActualKirim:                  item.ActualKirim,
 		Balance:                      item.Balance,
 		CreatedAt:                    item.CreatedAt.Time.Format(time.RFC3339),
+	}, nil
+}
+
+func (u *WarehouseDeliveryUseCase) IssueInventory(ctx context.Context, req model.IssueInventoryRequest) (*model.IssueInventoryResponse, error) {
+	current, err := u.repo.GetRekonsiliasiMaterialStock(ctx, req.IDRekonsiliasiMaterial)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrWarehouseNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to get stock balance", ErrWarehouseServiceUnavailable)
+	}
+	if current.Balance < req.Qty {
+		return nil, ErrWarehouseInsufficientStock
+	}
+
+	item, err := u.repo.IssueInventory(ctx, entity.IssueInventoryParams{
+		Qty:                    req.Qty,
+		IDRekonsiliasiMaterial: req.IDRekonsiliasiMaterial,
+	})
+	if err != nil {
+		return nil, mapWarehouseDBError(err)
+	}
+
+	return &model.IssueInventoryResponse{
+		IDRekonsiliasiMaterial: item.IDRekonsiliasiMaterial,
+		QtyIssued:              req.Qty,
+		PreviousBalance:        item.LastBalance,
+		Balance:                item.Balance,
 	}, nil
 }
 

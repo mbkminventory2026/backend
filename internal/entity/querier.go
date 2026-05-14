@@ -65,6 +65,7 @@ type Querier interface {
 	GetPOInternalDetail(ctx context.Context, idPoInternal int32) (PoInternal, error)
 	GetPRInternalDetail(ctx context.Context, idPrInternal int32) (GetPRInternalDetailRow, error)
 	GetPackingListDetail(ctx context.Context, idPackingList int32) (GetPackingListDetailRow, error)
+	GetRekonsiliasiMaterialStock(ctx context.Context, idRekonsiliasiMaterial int32) (GetRekonsiliasiMaterialStockRow, error)
 	GetSuratJalanClientDetail(ctx context.Context, idSuratJalanClient int32) (GetSuratJalanClientDetailRow, error)
 	GetSuratJalanInternalDetail(ctx context.Context, idSuratJalanInternal int32) (SuratJalanInternal, error)
 	GetUserByID(ctx context.Context, idUser int32) (GetUserByIDRow, error)
@@ -73,6 +74,7 @@ type Querier interface {
 	GetWorkOrderDetail(ctx context.Context, idWo int32) (GetWorkOrderDetailRow, error)
 	// Mengambil data WO dan Production Internal untuk diolah model Regresi Linier di Golang
 	GetWorkOrderForAIEstimation(ctx context.Context) ([]GetWorkOrderForAIEstimationRow, error)
+	IssueInventory(ctx context.Context, arg IssueInventoryParams) (IssueInventoryRow, error)
 	ListBarang(ctx context.Context, arg ListBarangParams) ([]ListBarangRow, error)
 	ListDepartemen(ctx context.Context) ([]Departeman, error)
 	ListHakAkses(ctx context.Context) ([]HakAkse, error)
