@@ -471,8 +471,15 @@ func (u *TransactionDocumentUseCase) CreatePOInternal(ctx context.Context, req m
 
 func (u *TransactionDocumentUseCase) ListPOClients(ctx context.Context, filter model.TransactionListFilter) (*model.POClientListResponse, error) {
 	page, limit, offset := normalizePagination(filter)
+	
+	var idMitraVal interface{}
+	if filter.IDMitra != nil {
+		idMitraVal = *filter.IDMitra
+	}
+
 	rows, err := u.repo.ListPOClients(ctx, entity.ListPOClientsParams{
 		SearchTerm: filter.Search,
+		IDMitra:    idMitraVal,
 		PageLimit:  limit,
 		PageOffset: offset,
 	})

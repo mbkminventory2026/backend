@@ -80,7 +80,40 @@ func main() {
 		os.Exit(1)
 	}
 
+	// 8. Sync Sequences
+	err = syncSequences(ctx, dbPool)
+	if err != nil {
+		slog.Error("failed to sync sequences", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
 	slog.Info("seeding completed successfully")
+}
+
+func syncSequences(ctx context.Context, db *pgxpool.Pool) error {
+	queries := []struct {
+		SeqName   string
+		TableName string
+		ColName   string
+	}{
+		{"company_id_company_seq", "company", "id_company"},
+		{"mitra_id_mitra_seq", "mitra", "id_mitra"},
+		{"hak_akses_id_hak_akses_seq", "hak_akses", "id_hak_akses"},
+		{"departemen_id_departemen_seq", "departemen", "id_departemen"},
+		{"jenis_barang_id_jenis_barang_seq", "jenis_barang", "id_jenis_barang"},
+		{"barang_id_barang_seq", "barang", "id_barang"},
+		{"users_id_user_seq", "users", "id_user"},
+	}
+
+	for _, q := range queries {
+		query := fmt.Sprintf("SELECT setval('%s', COALESCE((SELECT MAX(%s) FROM %s), 1))", q.SeqName, q.ColName, q.TableName)
+		_, err := db.Exec(ctx, query)
+		if err != nil {
+			return fmt.Errorf("failed to sync sequence %s: %w", q.SeqName, err)
+		}
+		slog.Info("sequence synchronized", slog.String("sequence", q.SeqName))
+	}
+	return nil
 }
 
 func seedCompany(ctx context.Context, db *pgxpool.Pool) error {

@@ -3,9 +3,10 @@ package model
 import "permatatex-inventory/pkg/response"
 
 type TransactionListFilter struct {
-	Page   int32
-	Limit  int32
-	Search string
+	Page    int32
+	Limit   int32
+	Search  string
+	IDMitra *int32
 }
 
 type PaginationMeta struct {

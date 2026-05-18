@@ -88,7 +88,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	authUseCase := usecase.NewAuthUseCase(queries, turnstileUseCase, cfg.JWTSecret)
+	authUseCase := usecase.NewAuthUseCase(queries, dbPool, turnstileUseCase, cfg.JWTSecret)
 	userUseCase, err := usecase.NewUserUseCase(queries, dbPool)
 	if err != nil {
 		logger.Error("failed to initialize user usecase", slog.String("error", err.Error()))

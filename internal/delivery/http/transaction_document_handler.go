@@ -28,13 +28,13 @@ func (h *TransactionDocumentHandler) RegisterRoutes(router gin.IRouter, authMidd
 	v1.GET("/po-clients/:id", h.GetPOClientDetail)
 	v1.POST("/po-clients", h.CreatePOClient)
 	v1.PUT("/po-clients/:id", h.UpdatePOClient)
-	v1.GET("/pr-internals", h.ListPRInternals)
-	v1.GET("/pr-internals/:id", h.GetPRInternalDetail)
-	v1.POST("/pr-internals", h.CreatePRInternal)
+	v1.GET("/pr-internals", RequirePermission("PO_READ"), h.ListPRInternals)
+	v1.GET("/pr-internals/:id", RequirePermission("PO_READ"), h.GetPRInternalDetail)
+	v1.POST("/pr-internals", RequirePermission("PO_CREATE"), h.CreatePRInternal)
 	v1.PATCH("/pr-internals/:id/approve", RequirePermission(PermissionAllAccess), h.ApprovePRInternal)
-	v1.GET("/po-internals", h.ListPOInternals)
-	v1.GET("/po-internals/:id", h.GetPOInternalDetail)
-	v1.POST("/po-internals", h.CreatePOInternal)
+	v1.GET("/po-internals", RequirePermission("PO_READ"), h.ListPOInternals)
+	v1.GET("/po-internals/:id", RequirePermission("PO_READ"), h.GetPOInternalDetail)
+	v1.POST("/po-internals", RequirePermission("PO_CREATE"), h.CreatePOInternal)
 }
 
 // ListPOClients godoc
@@ -51,6 +51,20 @@ func (h *TransactionDocumentHandler) RegisterRoutes(router gin.IRouter, authMidd
 // @Failure      500     {object}  model.TransactionErrorDoc
 // @Router       /api/v1/po-clients [get]
 func (h *TransactionDocumentHandler) ListPOClients(c *gin.Context) {
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
+	// If the user is NOT a Mitra, they MUST have the PO_READ or ALL_ACCESS permission
+	if mitraID == nil {
+		if !HasPermission(c, "PO_READ") {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: missing required permission 'PO_READ'", nil))
+			return
+		}
+	}
+
 	page, err := parseQueryInt32(c, "page", 1)
 	if err != nil {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid page", nil))
@@ -63,9 +77,10 @@ func (h *TransactionDocumentHandler) ListPOClients(c *gin.Context) {
 	}
 
 	item, err := h.useCase.ListPOClients(c.Request.Context(), model.TransactionListFilter{
-		Page:   page,
-		Limit:  limit,
-		Search: c.Query("search"),
+		Page:    page,
+		Limit:   limit,
+		Search:  c.Query("search"),
+		IDMitra: mitraID,
 	})
 	if err != nil {
 		h.handleError(c, err)
@@ -87,6 +102,20 @@ func (h *TransactionDocumentHandler) ListPOClients(c *gin.Context) {
 // @Failure      500  {object}  model.TransactionErrorDoc
 // @Router       /api/v1/po-clients/{id} [get]
 func (h *TransactionDocumentHandler) GetPOClientDetail(c *gin.Context) {
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
+	// If the user is NOT a Mitra, they MUST have the PO_READ or ALL_ACCESS permission
+	if mitraID == nil {
+		if !HasPermission(c, "PO_READ") {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: missing required permission 'PO_READ'", nil))
+			return
+		}
+	}
+
 	id, err := parsePathInt32(c, "id")
 	if err != nil {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid po client id", nil))
@@ -98,6 +127,15 @@ func (h *TransactionDocumentHandler) GetPOClientDetail(c *gin.Context) {
 		h.handleError(c, err)
 		return
 	}
+
+	// If the user is a Mitra, they can ONLY access their own PO Client detail
+	if mitraID != nil {
+		if item.IDMitra != *mitraID {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: you do not own this PO client document", nil))
+			return
+		}
+	}
+
 	response.Success(c, http.StatusOK, "po client retrieved", item)
 }
 
@@ -115,9 +153,28 @@ func (h *TransactionDocumentHandler) GetPOClientDetail(c *gin.Context) {
 // @Failure      500      {object}  model.TransactionErrorDoc
 // @Router       /api/v1/po-clients [post]
 func (h *TransactionDocumentHandler) CreatePOClient(c *gin.Context) {
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
+	// If the user is NOT a Mitra, they MUST have the PO_CREATE or ALL_ACCESS permission
+	if mitraID == nil {
+		if !HasPermission(c, "PO_CREATE") {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: missing required permission 'PO_CREATE'", nil))
+			return
+		}
+	}
+
 	var req model.CreatePOClientRequest
 	if !BindJSON(c, &req) {
 		return
+	}
+
+	// If the user is a Mitra, we enforce that they can only create PO Clients for themselves
+	if mitraID != nil {
+		req.IDMitra = *mitraID
 	}
 
 	item, err := h.useCase.CreatePOClient(c.Request.Context(), req)
@@ -144,15 +201,47 @@ func (h *TransactionDocumentHandler) CreatePOClient(c *gin.Context) {
 // @Failure      500      {object}  model.TransactionErrorDoc
 // @Router       /api/v1/po-clients/{id} [put]
 func (h *TransactionDocumentHandler) UpdatePOClient(c *gin.Context) {
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
+	// If the user is NOT a Mitra, they MUST have the PO_CREATE or ALL_ACCESS permission
+	if mitraID == nil {
+		if !HasPermission(c, "PO_CREATE") {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: missing required permission 'PO_CREATE'", nil))
+			return
+		}
+	}
+
 	id, err := parsePathInt32(c, "id")
 	if err != nil {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid po client id", nil))
 		return
 	}
 
+	// We must fetch the existing detail first to check the owner if they are a Mitra
+	if mitraID != nil {
+		existing, err := h.useCase.GetPOClientDetail(c.Request.Context(), id)
+		if err != nil {
+			h.handleError(c, err)
+			return
+		}
+		if existing.IDMitra != *mitraID {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: you do not own this PO client document", nil))
+			return
+		}
+	}
+
 	var req model.CreatePOClientRequest
 	if !BindJSON(c, &req) {
 		return
+	}
+
+	// If the user is a Mitra, we enforce that they can only update PO Clients for themselves
+	if mitraID != nil {
+		req.IDMitra = *mitraID
 	}
 
 	item, err := h.useCase.UpdatePOClient(c.Request.Context(), id, req)

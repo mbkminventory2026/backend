@@ -51,6 +51,8 @@ func (h *AuthHandler) RegisterRoutes(
 		auth.POST("/login", h.Login)
 	}
 
+	auth.POST("/register-mitra", h.RegisterMitra)
+
 	// Protected routes
 	protected := auth.Group("").Use(authMiddleware)
 	protected.GET("/me", h.GetMe)
@@ -162,4 +164,35 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 	response.Success(c, http.StatusOK, "profile retrieved", gin.H{
 		"user_id": userID,
 	})
+}
+
+// RegisterMitra godoc
+// @Summary      Self Register Mitra
+// @Description  Allows a new partner/client to self-register an account and company profile.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        payload  body      model.RegisterMitraRequest  true  "Register payload"
+// @Success      201      {object}  response.BaseResponse
+// @Failure      400      {object}  model.LoginBadRequestDoc
+// @Failure      409      {object}  model.LoginBadRequestDoc
+// @Router       /api/v1/auth/register-mitra [post]
+func (h *AuthHandler) RegisterMitra(c *gin.Context) {
+	var req model.RegisterMitraRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+
+	err := h.authUseCase.RegisterMitra(c.Request.Context(), req, c.ClientIP())
+	if err != nil {
+		if errors.Is(err, usecase.ErrUsernameAlreadyExists) {
+			AbortWithError(c, NewHTTPError(http.StatusConflict, "username sudah digunakan", nil))
+			return
+		}
+		
+		h.handleLoginError(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusCreated, "registrasi berhasil, menunggu persetujuan admin", nil)
 }

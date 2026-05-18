@@ -71,7 +71,8 @@ type Querier interface {
 	GetSuratJalanClientDetail(ctx context.Context, idSuratJalanClient int32) (GetSuratJalanClientDetailRow, error)
 	GetSuratJalanInternalDetail(ctx context.Context, idSuratJalanInternal int32) (SuratJalanInternal, error)
 	GetUserByID(ctx context.Context, idUser int32) (GetUserByIDRow, error)
-	GetUserByUsername(ctx context.Context, username string) (User, error)
+	GetUserByUsername(ctx context.Context, username string) (GetUserByUsernameRow, error)
+	GetUserPermissionIDs(ctx context.Context, idUser int32) ([]int32, error)
 	GetUserPermissions(ctx context.Context, idUser int32) ([]string, error)
 	GetWorkOrderDetail(ctx context.Context, idWo int32) (GetWorkOrderDetailRow, error)
 	// Mengambil data WO dan Production Internal untuk diolah model Regresi Linier di Golang
@@ -109,6 +110,7 @@ type Querier interface {
 	UpdateMitra(ctx context.Context, arg UpdateMitraParams) (Mitra, error)
 	UpdatePOClient(ctx context.Context, arg UpdatePOClientParams) (PoClient, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error)
+	UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) (UpdateUserStatusRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

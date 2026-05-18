@@ -301,6 +301,7 @@ type User struct {
 	IDDepartemen pgtype.Int4        `json:"id_departemen"`
 	IDMitra      pgtype.Int4        `json:"id_mitra"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	Status       string             `json:"status"`
 }
 
 type UserAkse struct {

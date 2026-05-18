@@ -135,3 +135,70 @@ func GetUserIDFromContext(c *gin.Context) (int32, bool) {
 
 	return int32(userIDFloat), true
 }
+
+// GetMitraIDFromContext retrieves the Mitra ID from the JWT claims stored in context, if present.
+func GetMitraIDFromContext(c *gin.Context) (*int32, bool) {
+	payload, exists := c.Get(authorizationPayloadKey)
+	if !exists {
+		return nil, false
+	}
+
+	claims, ok := payload.(jwt.MapClaims)
+	if !ok {
+		return nil, false
+	}
+
+	mitraIDVal, ok := claims["id_mitra"]
+	if !ok || mitraIDVal == nil {
+		return nil, true // Successfully identified that user is NOT a Mitra
+	}
+
+	mitraIDFloat, ok := mitraIDVal.(float64)
+	if !ok {
+		return nil, false
+	}
+
+	val := int32(mitraIDFloat)
+	return &val, true
+}
+
+// HasPermission checks if the authenticated user has a specific permission.
+func HasPermission(c *gin.Context, requiredPermission string) bool {
+	payload, exists := c.Get(authorizationPayloadKey)
+	if !exists {
+		return false
+	}
+
+	claims, ok := payload.(jwt.MapClaims)
+	if !ok {
+		return false
+	}
+
+	// Managers or ALL_ACCESS always have full access
+	if isManager, ok := claims["is_manager"].(bool); ok && isManager {
+		return true
+	}
+
+	permissionsRaw, ok := claims["permissions"]
+	if !ok {
+		return false
+	}
+
+	if list, ok := permissionsRaw.([]interface{}); ok {
+		for _, p := range list {
+			if str, ok := p.(string); ok {
+				if str == PermissionAllAccess || str == requiredPermission {
+					return true
+				}
+			}
+		}
+	} else if list, ok := permissionsRaw.([]string); ok {
+		for _, s := range list {
+			if s == PermissionAllAccess || s == requiredPermission {
+				return true
+			}
+		}
+	}
+
+	return false
+}

@@ -91,3 +91,18 @@ type LoginValidationErrorDoc struct {
 	Message string                         `json:"message" example:"bad request"`
 	Error   []response.ValidationErrorItem `json:"error"`
 }
+
+type RegisterMitraRequest struct {
+	NamaPerusahaan string  `json:"nama_perusahaan" binding:"required"`
+	TipePerusahaan string  `json:"tipe_perusahaan" binding:"required,oneof=Client Supplier"`
+	Email          *string `json:"email" binding:"omitempty,email"`
+	NoTelp         *string `json:"no_telp"`
+	Alamat         *string `json:"alamat"`
+	Kota           *string `json:"kota"`
+	KodePos        *string `json:"kode_pos"`
+
+	Username       string  `json:"username" binding:"required,min=3"`
+	Password       string  `json:"password" binding:"required,min=6"`
+	TurnstileToken string  `json:"turnstile_token" binding:"required"`
+}
+

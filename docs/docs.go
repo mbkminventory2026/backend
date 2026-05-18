@@ -117,6 +117,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/auth/register-mitra": {
+            "post": {
+                "description": "Allows a new partner/client to self-register an account and company profile.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Self Register Mitra",
+                "parameters": [
+                    {
+                        "description": "Register payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RegisterMitraRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/ai-estimation": {
             "get": {
                 "security": [
@@ -2702,6 +2748,74 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/users/{id}/approve": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Approves a pending user registration, updating status to active.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Approve User Pendaftaran",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.UserSuccessDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{id}/reject": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Rejects a pending user registration, updating status to rejected.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Reject User Pendaftaran",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/work-orders": {
             "get": {
                 "security": [
@@ -3701,6 +3815,10 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "minLength": 6
+                },
+                "status": {
+                    "description": "Opsional, default 'active'",
+                    "type": "string"
                 },
                 "username": {
                     "type": "string"
@@ -5261,6 +5379,54 @@ const docTemplate = `{
                 }
             }
         },
+        "model.RegisterMitraRequest": {
+            "type": "object",
+            "required": [
+                "nama_perusahaan",
+                "password",
+                "tipe_perusahaan",
+                "turnstile_token",
+                "username"
+            ],
+            "properties": {
+                "alamat": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "kode_pos": {
+                    "type": "string"
+                },
+                "kota": {
+                    "type": "string"
+                },
+                "nama_perusahaan": {
+                    "type": "string"
+                },
+                "no_telp": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "tipe_perusahaan": {
+                    "type": "string",
+                    "enum": [
+                        "Client",
+                        "Supplier"
+                    ]
+                },
+                "turnstile_token": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string",
+                    "minLength": 3
+                }
+            }
+        },
         "model.SuratJalanClientDetailResponse": {
             "type": "object",
             "properties": {
@@ -5676,6 +5842,9 @@ const docTemplate = `{
                     "type": "string",
                     "minLength": 6
                 },
+                "status": {
+                    "type": "string"
+                },
                 "username": {
                     "type": "string"
                 }
@@ -5706,6 +5875,18 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "hak_akses_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "id_departemen": {
+                    "type": "integer"
+                },
+                "id_mitra": {
+                    "type": "integer"
+                },
                 "id_user": {
                     "type": "integer"
                 },
@@ -5723,6 +5904,9 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "status": {
+                    "type": "string"
                 },
                 "username": {
                     "type": "string"

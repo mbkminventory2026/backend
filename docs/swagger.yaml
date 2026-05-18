@@ -509,6 +509,9 @@ definitions:
       password:
         minLength: 6
         type: string
+      status:
+        description: Opsional, default 'active'
+        type: string
       username:
         type: string
     required:
@@ -1561,6 +1564,40 @@ definitions:
         example: success
         type: string
     type: object
+  model.RegisterMitraRequest:
+    properties:
+      alamat:
+        type: string
+      email:
+        type: string
+      kode_pos:
+        type: string
+      kota:
+        type: string
+      nama_perusahaan:
+        type: string
+      no_telp:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      tipe_perusahaan:
+        enum:
+        - Client
+        - Supplier
+        type: string
+      turnstile_token:
+        type: string
+      username:
+        minLength: 3
+        type: string
+    required:
+    - nama_perusahaan
+    - password
+    - tipe_perusahaan
+    - turnstile_token
+    - username
+    type: object
   model.SuratJalanClientDetailResponse:
     properties:
       created_at:
@@ -1836,6 +1873,8 @@ definitions:
       password:
         minLength: 6
         type: string
+      status:
+        type: string
       username:
         type: string
     required:
@@ -1858,6 +1897,14 @@ definitions:
     properties:
       created_at:
         type: string
+      hak_akses_ids:
+        items:
+          type: integer
+        type: array
+      id_departemen:
+        type: integer
+      id_mitra:
+        type: integer
       id_user:
         type: integer
       is_manager:
@@ -1870,6 +1917,8 @@ definitions:
         items:
           type: string
         type: array
+      status:
+        type: string
       username:
         type: string
     type: object
@@ -2272,6 +2321,37 @@ paths:
       security:
       - BearerAuth: []
       summary: Get Current User Profile
+      tags:
+      - Auth
+  /api/v1/auth/register-mitra:
+    post:
+      consumes:
+      - application/json
+      description: Allows a new partner/client to self-register an account and company
+        profile.
+      parameters:
+      - description: Register payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.RegisterMitraRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+      summary: Self Register Mitra
       tags:
       - Auth
   /api/v1/dashboard/ai-estimation:
@@ -3897,6 +3977,48 @@ paths:
       security:
       - BearerAuth: []
       summary: Update User
+      tags:
+      - Users
+  /api/v1/users/{id}/approve:
+    put:
+      description: Approves a pending user registration, updating status to active.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UserSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Approve User Pendaftaran
+      tags:
+      - Users
+  /api/v1/users/{id}/reject:
+    put:
+      description: Rejects a pending user registration, updating status to rejected.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Reject User Pendaftaran
       tags:
       - Users
   /api/v1/work-orders:

@@ -74,12 +74,18 @@ func (u *UserUseCase) Create(ctx context.Context, req model.CreateUserRequest) (
 		idMitra = pgtype.Int4{Int32: *req.IDMitra, Valid: true}
 	}
 
+	status := "active"
+	if req.Status != nil && *req.Status != "" {
+		status = *req.Status
+	}
+
 	user, err := qtx.CreateUser(ctx, entity.CreateUserParams{
 		Username:     req.Username,
 		Password:     string(hashedPassword),
 		IsManager:    req.IsManager,
 		IDDepartemen: idDept,
 		IDMitra:      idMitra,
+		Status:       status,
 	})
 	if err != nil {
 		if isUniqueViolation(err) {
@@ -104,11 +110,27 @@ func (u *UserUseCase) Create(ctx context.Context, req model.CreateUserRequest) (
 		return nil, fmt.Errorf("%w: failed to commit transaction", ErrUserServiceUnavailable)
 	}
 
+	var resDept *int32
+	if user.IDDepartemen.Valid {
+		val := user.IDDepartemen.Int32
+		resDept = &val
+	}
+
+	var resMitra *int32
+	if user.IDMitra.Valid {
+		val := user.IDMitra.Int32
+		resMitra = &val
+	}
+
 	return &model.UserResponse{
-		IDUser:    user.IDUser,
-		Username:  user.Username,
-		IsManager: user.IsManager,
-		CreatedAt: user.CreatedAt.Time.Format(time.RFC3339),
+		IDUser:       user.IDUser,
+		Username:     user.Username,
+		IsManager:    user.IsManager,
+		Status:       user.Status,
+		IDDepartemen: resDept,
+		IDMitra:      resMitra,
+		CreatedAt:    user.CreatedAt.Time.Format(time.RFC3339),
+		HakAksesIDs:  req.HakAksesIDs,
 	}, nil
 }
 
@@ -135,7 +157,16 @@ func (u *UserUseCase) List(ctx context.Context, filter model.ListUsersFilter) ([
 			IDUser:    item.IDUser,
 			Username:  item.Username,
 			IsManager: item.IsManager,
+			Status:    item.Status,
 			CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+		}
+		if item.IDDepartemen.Valid {
+			val := item.IDDepartemen.Int32
+			res.IDDepartemen = &val
+		}
+		if item.IDMitra.Valid {
+			val := item.IDMitra.Int32
+			res.IDMitra = &val
 		}
 		if item.NamaDepartemen.Valid {
 			res.NamaDepartemen = item.NamaDepartemen.String
@@ -163,12 +194,27 @@ func (u *UserUseCase) GetByID(ctx context.Context, id int32) (*model.UserRespons
 		return nil, fmt.Errorf("%w: failed to get user permissions", ErrUserServiceUnavailable)
 	}
 
+	permissionIDs, err := u.repo.GetUserPermissionIDs(ctx, user.IDUser)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to get user permission IDs", ErrUserServiceUnavailable)
+	}
+
 	res := &model.UserResponse{
 		IDUser:      user.IDUser,
 		Username:    user.Username,
 		IsManager:   user.IsManager,
+		Status:      user.Status,
 		CreatedAt:   user.CreatedAt.Time.Format(time.RFC3339),
 		Permissions: permissions,
+		HakAksesIDs: permissionIDs,
+	}
+	if user.IDDepartemen.Valid {
+		val := user.IDDepartemen.Int32
+		res.IDDepartemen = &val
+	}
+	if user.IDMitra.Valid {
+		val := user.IDMitra.Int32
+		res.IDMitra = &val
 	}
 	if user.NamaDepartemen.Valid {
 		res.NamaDepartemen = user.NamaDepartemen.String
@@ -232,6 +278,11 @@ func (u *UserUseCase) Update(ctx context.Context, id int32, req model.UpdateUser
 		idMitra = pgtype.Int4{Int32: *req.IDMitra, Valid: true}
 	}
 
+	status := userForUpdate.Status
+	if req.Status != nil && *req.Status != "" {
+		status = *req.Status
+	}
+
 	updatedUser, err := qtx.UpdateUser(ctx, entity.UpdateUserParams{
 		IDUser:       id,
 		Username:     req.Username,
@@ -239,6 +290,7 @@ func (u *UserUseCase) Update(ctx context.Context, id int32, req model.UpdateUser
 		IsManager:    req.IsManager,
 		IDDepartemen: idDept,
 		IDMitra:      idMitra,
+		Status:       status,
 	})
 	if err != nil {
 		return nil, err
@@ -265,11 +317,27 @@ func (u *UserUseCase) Update(ctx context.Context, id int32, req model.UpdateUser
 		return nil, err
 	}
 
+	var resDept *int32
+	if updatedUser.IDDepartemen.Valid {
+		val := updatedUser.IDDepartemen.Int32
+		resDept = &val
+	}
+
+	var resMitra *int32
+	if updatedUser.IDMitra.Valid {
+		val := updatedUser.IDMitra.Int32
+		resMitra = &val
+	}
+
 	return &model.UserResponse{
-		IDUser:    updatedUser.IDUser,
-		Username:  updatedUser.Username,
-		IsManager: updatedUser.IsManager,
-		CreatedAt: updatedUser.CreatedAt.Time.Format(time.RFC3339),
+		IDUser:       updatedUser.IDUser,
+		Username:     updatedUser.Username,
+		IsManager:    updatedUser.IsManager,
+		Status:       updatedUser.Status,
+		IDDepartemen: resDept,
+		IDMitra:      resMitra,
+		CreatedAt:    updatedUser.CreatedAt.Time.Format(time.RFC3339),
+		HakAksesIDs:  req.HakAksesIDs,
 	}, nil
 }
 
@@ -294,3 +362,69 @@ func isUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }
+
+func (u *UserUseCase) Approve(ctx context.Context, id int32) (*model.UserResponse, error) {
+	tx, err := u.dbPool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil && !errors.Is(rollbackErr, pgx.ErrTxClosed) {
+			err = rollbackErr
+		}
+	}()
+
+	qtx := entity.New(tx)
+	updatedUser, err := qtx.UpdateUserStatus(ctx, entity.UpdateUserStatusParams{
+		IDUser: id,
+		Status: "active",
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	return &model.UserResponse{
+		IDUser:    updatedUser.IDUser,
+		Username:  updatedUser.Username,
+		Status:    updatedUser.Status,
+	}, nil
+}
+
+func (u *UserUseCase) Reject(ctx context.Context, id int32) error {
+	tx, err := u.dbPool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil && !errors.Is(rollbackErr, pgx.ErrTxClosed) {
+			err = rollbackErr
+		}
+	}()
+
+	qtx := entity.New(tx)
+	
+	_, err = qtx.UpdateUserStatus(ctx, entity.UpdateUserStatusParams{
+		IDUser: id,
+		Status: "rejected",
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrUserNotFound
+		}
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+

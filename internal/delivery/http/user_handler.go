@@ -28,11 +28,13 @@ func NewUserHandler(useCase *usecase.UserUseCase) (*UserHandler, error) {
 func (h *UserHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/api/v1/users").Use(authMiddleware)
 
-	group.POST("", h.Create)
-	group.GET("", h.List)
-	group.GET("/:id", h.GetByID)
-	group.PUT("/:id", h.Update)
-	group.DELETE("/:id", h.Delete)
+	group.POST("", RequirePermission("USER_CREATE"), h.Create)
+	group.GET("", RequirePermission("USER_READ"), h.List)
+	group.GET("/:id", RequirePermission("USER_READ"), h.GetByID)
+	group.PUT("/:id", RequirePermission("USER_UPDATE"), h.Update)
+	group.PUT("/:id/approve", RequirePermission("USER_UPDATE"), h.Approve)
+	group.PUT("/:id/reject", RequirePermission("USER_UPDATE"), h.Reject)
+	group.DELETE("/:id", RequirePermission("USER_DELETE"), h.Delete)
 }
 
 // Create godoc
@@ -188,6 +190,56 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusOK, "user deleted", nil)
+}
+
+// Approve godoc
+// @Summary      Approve User Pendaftaran
+// @Description  Approves a pending user registration, updating status to active.
+// @Tags         Users
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "User ID"
+// @Success      200  {object}  model.UserSuccessDoc
+// @Router       /api/v1/users/{id}/approve [put]
+func (h *UserHandler) Approve(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid user id", nil))
+		return
+	}
+
+	result, err := h.useCase.Approve(c.Request.Context(), id)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "user approved", result)
+}
+
+// Reject godoc
+// @Summary      Reject User Pendaftaran
+// @Description  Rejects a pending user registration, updating status to rejected.
+// @Tags         Users
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "User ID"
+// @Success      200  {object}  response.BaseResponse
+// @Router       /api/v1/users/{id}/reject [put]
+func (h *UserHandler) Reject(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid user id", nil))
+		return
+	}
+
+	err = h.useCase.Reject(c.Request.Context(), id)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "user rejected", nil)
 }
 
 func (h *UserHandler) handleError(c *gin.Context, err error) {

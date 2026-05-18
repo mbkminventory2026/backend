@@ -13,10 +13,10 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO USERS (
-    username, password, is_manager, id_departemen, id_mitra
+    username, password, is_manager, id_departemen, id_mitra, status
 ) VALUES (
-    $1, $2, $3, $4, $5
-) RETURNING id_user, username, is_manager, id_departemen, id_mitra, created_at
+    $1, $2, $3, $4, $5, $6
+) RETURNING id_user, username, is_manager, id_departemen, id_mitra, status, created_at
 `
 
 type CreateUserParams struct {
@@ -25,6 +25,7 @@ type CreateUserParams struct {
 	IsManager    bool        `json:"is_manager"`
 	IDDepartemen pgtype.Int4 `json:"id_departemen"`
 	IDMitra      pgtype.Int4 `json:"id_mitra"`
+	Status       string      `json:"status"`
 }
 
 type CreateUserRow struct {
@@ -33,6 +34,7 @@ type CreateUserRow struct {
 	IsManager    bool               `json:"is_manager"`
 	IDDepartemen pgtype.Int4        `json:"id_departemen"`
 	IDMitra      pgtype.Int4        `json:"id_mitra"`
+	Status       string             `json:"status"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }
 
@@ -43,6 +45,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		arg.IsManager,
 		arg.IDDepartemen,
 		arg.IDMitra,
+		arg.Status,
 	)
 	var i CreateUserRow
 	err := row.Scan(
@@ -51,6 +54,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		&i.IsManager,
 		&i.IDDepartemen,
 		&i.IDMitra,
+		&i.Status,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -88,7 +92,7 @@ func (q *Queries) DeleteUser(ctx context.Context, idUser int32) (int64, error) {
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT u.id_user, u.username, u.is_manager, u.id_departemen, u.id_mitra, d.nama_departemen, m.nama_perusahaan, u.created_at
+SELECT u.id_user, u.username, u.is_manager, u.status, u.id_departemen, u.id_mitra, d.nama_departemen, m.nama_perusahaan, u.created_at
 FROM USERS u
 LEFT JOIN DEPARTEMEN d ON u.id_departemen = d.id_departemen
 LEFT JOIN MITRA m ON u.id_mitra = m.id_mitra
@@ -99,6 +103,7 @@ type GetUserByIDRow struct {
 	IDUser         int32              `json:"id_user"`
 	Username       string             `json:"username"`
 	IsManager      bool               `json:"is_manager"`
+	Status         string             `json:"status"`
 	IDDepartemen   pgtype.Int4        `json:"id_departemen"`
 	IDMitra        pgtype.Int4        `json:"id_mitra"`
 	NamaDepartemen pgtype.Text        `json:"nama_departemen"`
@@ -113,6 +118,7 @@ func (q *Queries) GetUserByID(ctx context.Context, idUser int32) (GetUserByIDRow
 		&i.IDUser,
 		&i.Username,
 		&i.IsManager,
+		&i.Status,
 		&i.IDDepartemen,
 		&i.IDMitra,
 		&i.NamaDepartemen,
@@ -123,14 +129,25 @@ func (q *Queries) GetUserByID(ctx context.Context, idUser int32) (GetUserByIDRow
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id_user, username, password, is_manager, id_departemen, id_mitra, created_at
+SELECT id_user, username, password, is_manager, id_departemen, id_mitra, status, created_at
 FROM USERS
 WHERE username = $1 LIMIT 1
 `
 
-func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
+type GetUserByUsernameRow struct {
+	IDUser       int32              `json:"id_user"`
+	Username     string             `json:"username"`
+	Password     string             `json:"password"`
+	IsManager    bool               `json:"is_manager"`
+	IDDepartemen pgtype.Int4        `json:"id_departemen"`
+	IDMitra      pgtype.Int4        `json:"id_mitra"`
+	Status       string             `json:"status"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) GetUserByUsername(ctx context.Context, username string) (GetUserByUsernameRow, error) {
 	row := q.db.QueryRow(ctx, getUserByUsername, username)
-	var i User
+	var i GetUserByUsernameRow
 	err := row.Scan(
 		&i.IDUser,
 		&i.Username,
@@ -138,9 +155,36 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.IsManager,
 		&i.IDDepartemen,
 		&i.IDMitra,
+		&i.Status,
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const getUserPermissionIDs = `-- name: GetUserPermissionIDs :many
+SELECT id_hak_akses
+FROM USER_AKSES
+WHERE id_user = $1
+`
+
+func (q *Queries) GetUserPermissionIDs(ctx context.Context, idUser int32) ([]int32, error) {
+	rows, err := q.db.Query(ctx, getUserPermissionIDs, idUser)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var id_hak_akses int32
+		if err := rows.Scan(&id_hak_akses); err != nil {
+			return nil, err
+		}
+		items = append(items, id_hak_akses)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getUserPermissions = `-- name: GetUserPermissions :many
@@ -171,7 +215,7 @@ func (q *Queries) GetUserPermissions(ctx context.Context, idUser int32) ([]strin
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT u.id_user, u.username, u.is_manager, d.nama_departemen, m.nama_perusahaan, u.created_at
+SELECT u.id_user, u.username, u.is_manager, u.status, u.id_departemen, u.id_mitra, d.nama_departemen, m.nama_perusahaan, u.created_at
 FROM USERS u
 LEFT JOIN DEPARTEMEN d ON u.id_departemen = d.id_departemen
 LEFT JOIN MITRA m ON u.id_mitra = m.id_mitra
@@ -188,6 +232,9 @@ type ListUsersRow struct {
 	IDUser         int32              `json:"id_user"`
 	Username       string             `json:"username"`
 	IsManager      bool               `json:"is_manager"`
+	Status         string             `json:"status"`
+	IDDepartemen   pgtype.Int4        `json:"id_departemen"`
+	IDMitra        pgtype.Int4        `json:"id_mitra"`
 	NamaDepartemen pgtype.Text        `json:"nama_departemen"`
 	NamaPerusahaan pgtype.Text        `json:"nama_perusahaan"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
@@ -206,6 +253,9 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUse
 			&i.IDUser,
 			&i.Username,
 			&i.IsManager,
+			&i.Status,
+			&i.IDDepartemen,
+			&i.IDMitra,
 			&i.NamaDepartemen,
 			&i.NamaPerusahaan,
 			&i.CreatedAt,
@@ -226,9 +276,10 @@ SET username = $2,
     password = $3,
     is_manager = $4,
     id_departemen = $5,
-    id_mitra = $6
+    id_mitra = $6,
+    status = $7
 WHERE id_user = $1
-RETURNING id_user, username, is_manager, id_departemen, id_mitra, created_at
+RETURNING id_user, username, is_manager, id_departemen, id_mitra, status, created_at
 `
 
 type UpdateUserParams struct {
@@ -238,6 +289,7 @@ type UpdateUserParams struct {
 	IsManager    bool        `json:"is_manager"`
 	IDDepartemen pgtype.Int4 `json:"id_departemen"`
 	IDMitra      pgtype.Int4 `json:"id_mitra"`
+	Status       string      `json:"status"`
 }
 
 type UpdateUserRow struct {
@@ -246,6 +298,7 @@ type UpdateUserRow struct {
 	IsManager    bool               `json:"is_manager"`
 	IDDepartemen pgtype.Int4        `json:"id_departemen"`
 	IDMitra      pgtype.Int4        `json:"id_mitra"`
+	Status       string             `json:"status"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }
 
@@ -257,6 +310,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateU
 		arg.IsManager,
 		arg.IDDepartemen,
 		arg.IDMitra,
+		arg.Status,
 	)
 	var i UpdateUserRow
 	err := row.Scan(
@@ -265,7 +319,33 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateU
 		&i.IsManager,
 		&i.IDDepartemen,
 		&i.IDMitra,
+		&i.Status,
 		&i.CreatedAt,
 	)
+	return i, err
+}
+
+const updateUserStatus = `-- name: UpdateUserStatus :one
+UPDATE USERS
+SET status = $2
+WHERE id_user = $1
+RETURNING id_user, username, status
+`
+
+type UpdateUserStatusParams struct {
+	IDUser int32  `json:"id_user"`
+	Status string `json:"status"`
+}
+
+type UpdateUserStatusRow struct {
+	IDUser   int32  `json:"id_user"`
+	Username string `json:"username"`
+	Status   string `json:"status"`
+}
+
+func (q *Queries) UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) (UpdateUserStatusRow, error) {
+	row := q.db.QueryRow(ctx, updateUserStatus, arg.IDUser, arg.Status)
+	var i UpdateUserStatusRow
+	err := row.Scan(&i.IDUser, &i.Username, &i.Status)
 	return i, err
 }

@@ -432,13 +432,17 @@ WHERE (
     pc.po_number ILIKE '%' || $1 || '%' OR
     pc.season ILIKE '%' || $1 || '%' OR
     m.nama_perusahaan ILIKE '%' || $1 || '%'
+) AND (
+    $2 IS NULL OR
+    pc.id_mitra = $2
 )
 ORDER BY pc.id_po_client DESC
-LIMIT $3 OFFSET $2
+LIMIT $4 OFFSET $3
 `
 
 type ListPOClientsParams struct {
 	SearchTerm interface{} `json:"search_term"`
+	IDMitra    interface{} `json:"id_mitra"`
 	PageOffset int32       `json:"page_offset"`
 	PageLimit  int32       `json:"page_limit"`
 }
@@ -458,7 +462,12 @@ type ListPOClientsRow struct {
 }
 
 func (q *Queries) ListPOClients(ctx context.Context, arg ListPOClientsParams) ([]ListPOClientsRow, error) {
-	rows, err := q.db.Query(ctx, listPOClients, arg.SearchTerm, arg.PageOffset, arg.PageLimit)
+	rows, err := q.db.Query(ctx, listPOClients,
+		arg.SearchTerm,
+		arg.IDMitra,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
