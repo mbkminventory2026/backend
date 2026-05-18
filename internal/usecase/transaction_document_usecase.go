@@ -472,9 +472,9 @@ func (u *TransactionDocumentUseCase) CreatePOInternal(ctx context.Context, req m
 func (u *TransactionDocumentUseCase) ListPOClients(ctx context.Context, filter model.TransactionListFilter) (*model.POClientListResponse, error) {
 	page, limit, offset := normalizePagination(filter)
 	
-	var idMitraVal interface{}
+	var idMitraVal pgtype.Int4
 	if filter.IDMitra != nil {
-		idMitraVal = *filter.IDMitra
+		idMitraVal = pgtype.Int4{Int32: *filter.IDMitra, Valid: true}
 	}
 
 	rows, err := u.repo.ListPOClients(ctx, entity.ListPOClientsParams{

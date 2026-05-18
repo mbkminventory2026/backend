@@ -127,8 +127,8 @@ WHERE (
     pc.season ILIKE '%' || sqlc.arg(search_term) || '%' OR
     m.nama_perusahaan ILIKE '%' || sqlc.arg(search_term) || '%'
 ) AND (
-    sqlc.narg(id_mitra) IS NULL OR
-    pc.id_mitra = sqlc.narg(id_mitra)
+    sqlc.narg(id_mitra)::integer IS NULL OR
+    pc.id_mitra = sqlc.narg(id_mitra)::integer
 )
 ORDER BY pc.id_po_client DESC
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
