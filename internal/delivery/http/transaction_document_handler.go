@@ -28,13 +28,13 @@ func (h *TransactionDocumentHandler) RegisterRoutes(router gin.IRouter, authMidd
 	v1.GET("/po-clients/:id", h.GetPOClientDetail)
 	v1.POST("/po-clients", h.CreatePOClient)
 	v1.PUT("/po-clients/:id", h.UpdatePOClient)
-	v1.GET("/pr-internals", RequirePermission("PO_READ"), h.ListPRInternals)
-	v1.GET("/pr-internals/:id", RequirePermission("PO_READ"), h.GetPRInternalDetail)
-	v1.POST("/pr-internals", RequirePermission("PO_CREATE"), h.CreatePRInternal)
-	v1.PATCH("/pr-internals/:id/approve", RequirePermission(PermissionAllAccess), h.ApprovePRInternal)
-	v1.GET("/po-internals", RequirePermission("PO_READ"), h.ListPOInternals)
-	v1.GET("/po-internals/:id", RequirePermission("PO_READ"), h.GetPOInternalDetail)
-	v1.POST("/po-internals", RequirePermission("PO_CREATE"), h.CreatePOInternal)
+	v1.GET("/pr-internals", RequirePermission(PermissionPORead), h.ListPRInternals)
+	v1.GET("/pr-internals/:id", RequirePermission(PermissionPORead), h.GetPRInternalDetail)
+	v1.POST("/pr-internals", RequirePermission(PermissionPOCreate), h.CreatePRInternal)
+	v1.PATCH("/pr-internals/:id/approve", RequirePermission(PermissionPRApprove), h.ApprovePRInternal)
+	v1.GET("/po-internals", RequirePermission(PermissionPORead), h.ListPOInternals)
+	v1.GET("/po-internals/:id", RequirePermission(PermissionPORead), h.GetPOInternalDetail)
+	v1.POST("/po-internals", RequirePermission(PermissionPOCreate), h.CreatePOInternal)
 }
 
 // ListPOClients godoc
@@ -59,8 +59,8 @@ func (h *TransactionDocumentHandler) ListPOClients(c *gin.Context) {
 
 	// If the user is NOT a Mitra, they MUST have the PO_READ or ALL_ACCESS permission
 	if mitraID == nil {
-		if !HasPermission(c, "PO_READ") {
-			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: missing required permission 'PO_READ'", nil))
+		if !HasPermission(c, PermissionPORead) {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: missing required permission '"+PermissionPORead+"'", nil))
 			return
 		}
 	}
@@ -110,8 +110,8 @@ func (h *TransactionDocumentHandler) GetPOClientDetail(c *gin.Context) {
 
 	// If the user is NOT a Mitra, they MUST have the PO_READ or ALL_ACCESS permission
 	if mitraID == nil {
-		if !HasPermission(c, "PO_READ") {
-			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: missing required permission 'PO_READ'", nil))
+		if !HasPermission(c, PermissionPORead) {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: missing required permission '"+PermissionPORead+"'", nil))
 			return
 		}
 	}
@@ -161,8 +161,8 @@ func (h *TransactionDocumentHandler) CreatePOClient(c *gin.Context) {
 
 	// If the user is NOT a Mitra, they MUST have the PO_CREATE or ALL_ACCESS permission
 	if mitraID == nil {
-		if !HasPermission(c, "PO_CREATE") {
-			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: missing required permission 'PO_CREATE'", nil))
+		if !HasPermission(c, PermissionPOCreate) {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: missing required permission '"+PermissionPOCreate+"'", nil))
 			return
 		}
 	}
@@ -209,8 +209,8 @@ func (h *TransactionDocumentHandler) UpdatePOClient(c *gin.Context) {
 
 	// If the user is NOT a Mitra, they MUST have the PO_CREATE or ALL_ACCESS permission
 	if mitraID == nil {
-		if !HasPermission(c, "PO_CREATE") {
-			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: missing required permission 'PO_CREATE'", nil))
+		if !HasPermission(c, PermissionPOCreate) {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: missing required permission '"+PermissionPOCreate+"'", nil))
 			return
 		}
 	}
@@ -333,8 +333,13 @@ func (h *TransactionDocumentHandler) CreatePRInternal(c *gin.Context) {
 	if !BindJSON(c, &req) {
 		return
 	}
+	userID, ok := GetUserIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
 
-	item, err := h.useCase.CreatePRInternal(c.Request.Context(), req)
+	item, err := h.useCase.CreatePRInternal(c.Request.Context(), userID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return

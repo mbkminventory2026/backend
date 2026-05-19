@@ -26,46 +26,46 @@ func (h *MasterDataHandler) RegisterRoutes(router gin.IRouter, authMiddleware gi
 	master := router.Group("/api/v1/master").Use(authMiddleware)
 
 	// Departemen
-	master.GET("/departemen", h.ListDepartemen)
-	master.GET("/departemen/:id", h.GetDepartemenByID)
-	master.POST("/departemen", h.CreateDepartemen)
-	master.PUT("/departemen/:id", h.UpdateDepartemen)
-	master.DELETE("/departemen/:id", h.DeleteDepartemen)
+	master.GET("/departemen", RequirePermission(PermissionMasterRead), h.ListDepartemen)
+	master.GET("/departemen/:id", RequirePermission(PermissionMasterRead), h.GetDepartemenByID)
+	master.POST("/departemen", RequirePermission(PermissionMasterCreate), h.CreateDepartemen)
+	master.PUT("/departemen/:id", RequirePermission(PermissionMasterUpdate), h.UpdateDepartemen)
+	master.DELETE("/departemen/:id", RequirePermission(PermissionMasterDelete), h.DeleteDepartemen)
 
 	// Jenis Barang
-	master.GET("/jenis-barang", h.ListJenisBarang)
-	master.GET("/jenis-barang/:id", h.GetJenisBarangByID)
-	master.POST("/jenis-barang", h.CreateJenisBarang)
-	master.PUT("/jenis-barang/:id", h.UpdateJenisBarang)
-	master.DELETE("/jenis-barang/:id", h.DeleteJenisBarang)
+	master.GET("/jenis-barang", RequirePermission(PermissionMasterRead), h.ListJenisBarang)
+	master.GET("/jenis-barang/:id", RequirePermission(PermissionMasterRead), h.GetJenisBarangByID)
+	master.POST("/jenis-barang", RequirePermission(PermissionMasterCreate), h.CreateJenisBarang)
+	master.PUT("/jenis-barang/:id", RequirePermission(PermissionMasterUpdate), h.UpdateJenisBarang)
+	master.DELETE("/jenis-barang/:id", RequirePermission(PermissionMasterDelete), h.DeleteJenisBarang)
 
 	// Mitra
-	master.GET("/mitra", h.ListMitra)
-	master.GET("/mitra/:id", h.GetMitraByID)
-	master.POST("/mitra", h.CreateMitra)
-	master.PUT("/mitra/:id", h.UpdateMitra)
-	master.DELETE("/mitra/:id", h.DeleteMitra)
+	master.GET("/mitra", RequirePermission(PermissionMasterRead), h.ListMitra)
+	master.GET("/mitra/:id", RequirePermission(PermissionMasterRead), h.GetMitraByID)
+	master.POST("/mitra", RequirePermission(PermissionMasterCreate), h.CreateMitra)
+	master.PUT("/mitra/:id", RequirePermission(PermissionMasterUpdate), h.UpdateMitra)
+	master.DELETE("/mitra/:id", RequirePermission(PermissionMasterDelete), h.DeleteMitra)
 
 	// Barang
-	master.GET("/barang", h.ListBarang)
-	master.GET("/barang/:id", h.GetBarangByID)
-	master.POST("/barang", h.CreateBarang)
-	master.PUT("/barang/:id", h.UpdateBarang)
-	master.DELETE("/barang/:id", h.DeleteBarang)
+	master.GET("/barang", RequirePermission(PermissionMasterRead), h.ListBarang)
+	master.GET("/barang/:id", RequirePermission(PermissionMasterRead), h.GetBarangByID)
+	master.POST("/barang", RequirePermission(PermissionMasterCreate), h.CreateBarang)
+	master.PUT("/barang/:id", RequirePermission(PermissionMasterUpdate), h.UpdateBarang)
+	master.DELETE("/barang/:id", RequirePermission(PermissionMasterDelete), h.DeleteBarang)
 
 	// Permissions
-	master.GET("/permissions", h.ListHakAkses)
-	master.GET("/permissions/:id", h.GetHakAksesByID)
-	master.POST("/permissions", h.CreateHakAkses)
-	master.PUT("/permissions/:id", h.UpdateHakAkses)
-	master.DELETE("/permissions/:id", h.DeleteHakAkses)
+	master.GET("/permissions", RequirePermission(PermissionMasterRead), h.ListHakAkses)
+	master.GET("/permissions/:id", RequirePermission(PermissionMasterRead), h.GetHakAksesByID)
+	master.POST("/permissions", RequirePermission(PermissionMasterCreate), h.CreateHakAkses)
+	master.PUT("/permissions/:id", RequirePermission(PermissionMasterUpdate), h.UpdateHakAkses)
+	master.DELETE("/permissions/:id", RequirePermission(PermissionMasterDelete), h.DeleteHakAkses)
 
 	// Company
-	master.GET("/company", h.GetCompany)
-	master.GET("/company/:id", h.GetCompanyByID)
-	master.POST("/company", h.CreateCompany)
-	master.PUT("/company/:id", h.UpdateCompany)
-	master.DELETE("/company/:id", h.DeleteCompany)
+	master.GET("/company", RequirePermission(PermissionMasterRead), h.GetCompany)
+	master.GET("/company/:id", RequirePermission(PermissionMasterRead), h.GetCompanyByID)
+	master.POST("/company", RequirePermission(PermissionMasterCreate), h.CreateCompany)
+	master.PUT("/company/:id", RequirePermission(PermissionMasterUpdate), h.UpdateCompany)
+	master.DELETE("/company/:id", RequirePermission(PermissionMasterDelete), h.DeleteCompany)
 }
 
 // DEPARTEMEN

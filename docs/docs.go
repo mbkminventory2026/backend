@@ -3622,7 +3622,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "departemen",
-                "id_user",
                 "id_wo",
                 "items",
                 "nama",
@@ -3633,9 +3632,6 @@ const docTemplate = `{
             "properties": {
                 "departemen": {
                     "type": "string"
-                },
-                "id_user": {
-                    "type": "integer"
                 },
                 "id_wo": {
                     "type": "integer"

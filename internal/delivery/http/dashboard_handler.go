@@ -43,12 +43,12 @@ func (h *DashboardHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin
 	// Endpoint API standard dengan proteksi Auth
 	api := router.Group("/api/v1").Use(authMiddleware)
 	{
-		api.GET("/logs", h.GetLogs)
-		api.GET("/dashboard/ai-estimation", h.GetAIEstimation)
+		api.GET("/logs", RequirePermission(PermissionLogRead), h.GetLogs)
+		api.GET("/dashboard/ai-estimation", RequirePermission(PermissionDashboardRead), h.GetAIEstimation)
 	}
 
 	// Endpoint WebSocket (URL: ws://localhost:8080/ws/alerts)
-	router.GET("/ws/alerts", h.Alerts)
+	router.GET("/ws/alerts", authMiddleware, RequirePermission(PermissionDashboardRead), h.Alerts)
 }
 
 // GetLogs godoc

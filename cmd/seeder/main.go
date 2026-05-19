@@ -235,9 +235,15 @@ func seedBarang(ctx context.Context, db *pgxpool.Pool) error {
 
 func seedHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 	permissions := []string{
-		"USER_READ", "USER_CREATE", "USER_UPDATE", "USER_DELETE",
-		"ITEM_READ", "ITEM_CREATE", "ITEM_UPDATE", "ITEM_DELETE",
-		"PO_READ", "PO_CREATE", "REPORT_READ", "ALL_ACCESS",
+		"USER_READ", "USER_CREATE", "USER_UPDATE", "USER_DELETE", "USER_APPROVE",
+		"MASTER_READ", "MASTER_CREATE", "MASTER_UPDATE", "MASTER_DELETE",
+		"PO_READ", "PO_CREATE", "PO_UPDATE", "PR_APPROVE",
+		"WO_READ", "WO_CREATE", "WO_CLOSE",
+		"REPORT_READ", "REPORT_CREATE",
+		"INVENTORY_RECEIVE", "INVENTORY_ISSUE",
+		"PACKING_LIST_CREATE", "SURAT_JALAN_CREATE",
+		"LOG_READ", "DASHBOARD_READ",
+		"ALL_ACCESS",
 	}
 
 	for _, p := range permissions {

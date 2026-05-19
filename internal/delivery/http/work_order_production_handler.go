@@ -24,11 +24,11 @@ func NewWorkOrderProductionHandler(useCase *usecase.WorkOrderProductionUseCase) 
 
 func (h *WorkOrderProductionHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
 	v1 := router.Group("/api/v1").Use(authMiddleware)
-	v1.GET("/work-orders", h.ListWorkOrders)
-	v1.GET("/work-orders/:id", h.GetWorkOrderDetail)
-	v1.POST("/work-orders", h.CreateWorkOrder)
-	v1.PATCH("/work-orders/:id/close", RequirePermission(PermissionAllAccess), h.CloseWorkOrder)
-	v1.POST("/reports/:divisi", h.CreateFactoryReport)
+	v1.GET("/work-orders", RequirePermission(PermissionWORead), h.ListWorkOrders)
+	v1.GET("/work-orders/:id", RequirePermission(PermissionWORead), h.GetWorkOrderDetail)
+	v1.POST("/work-orders", RequirePermission(PermissionWOCreate), h.CreateWorkOrder)
+	v1.PATCH("/work-orders/:id/close", RequirePermission(PermissionWOClose), h.CloseWorkOrder)
+	v1.POST("/reports/:divisi", RequirePermission(PermissionReportCreate), h.CreateFactoryReport)
 }
 
 // ListWorkOrders godoc

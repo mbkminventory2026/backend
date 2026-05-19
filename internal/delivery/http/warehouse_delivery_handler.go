@@ -25,16 +25,16 @@ func NewWarehouseDeliveryHandler(useCase *usecase.WarehouseDeliveryUseCase) (*Wa
 
 func (h *WarehouseDeliveryHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
 	v1 := router.Group("/api/v1").Use(authMiddleware)
-	v1.POST("/inventory/receive", h.ReceiveInventory)
-	v1.POST("/inventory/issue", h.IssueInventory)
+	v1.POST("/inventory/receive", RequirePermission(PermissionInventoryReceive), h.ReceiveInventory)
+	v1.POST("/inventory/issue", RequirePermission(PermissionInventoryIssue), h.IssueInventory)
 	v1.GET("/packing-lists", h.ListPackingLists)
 	v1.GET("/packing-lists/:id", h.GetPackingListDetail)
-	v1.POST("/packing-lists", h.CreatePackingList)
+	v1.POST("/packing-lists", RequirePermission(PermissionPackingListCreate), h.CreatePackingList)
 	v1.GET("/surat-jalan-clients", h.ListSuratJalanClients)
 	v1.GET("/surat-jalan-clients/:id", h.GetSuratJalanClientDetail)
 	v1.GET("/surat-jalan-internals", h.ListSuratJalanInternals)
 	v1.GET("/surat-jalan-internals/:id", h.GetSuratJalanInternalDetail)
-	v1.POST("/surat-jalan/:type", h.CreateSuratJalan)
+	v1.POST("/surat-jalan/:type", RequirePermission(PermissionSuratJalanCreate), h.CreateSuratJalan)
 }
 
 // ReceiveInventory godoc

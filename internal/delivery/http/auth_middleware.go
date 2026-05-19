@@ -14,8 +14,38 @@ const (
 	authorizationTypeBearer = "bearer"
 	authorizationPayloadKey = "authorization_payload"
 
-	// PermissionAllAccess is the special permission granted to managers.
-	PermissionAllAccess = "ALL_ACCESS"
+	// PermissionAllAccess is the special permission granted to managers/superadmin
+	PermissionAllAccess   = "ALL_ACCESS"
+	PermissionUserRead    = "USER_READ"
+	PermissionUserCreate  = "USER_CREATE"
+	PermissionUserUpdate  = "USER_UPDATE"
+	PermissionUserDelete  = "USER_DELETE"
+	PermissionUserApprove = "USER_APPROVE"
+
+	PermissionMasterRead   = "MASTER_READ"
+	PermissionMasterCreate = "MASTER_CREATE"
+	PermissionMasterUpdate = "MASTER_UPDATE"
+	PermissionMasterDelete = "MASTER_DELETE"
+
+	PermissionPORead    = "PO_READ"
+	PermissionPOCreate  = "PO_CREATE"
+	PermissionPOUpdate  = "PO_UPDATE"
+	PermissionPRApprove = "PR_APPROVE"
+
+	PermissionWORead   = "WO_READ"
+	PermissionWOCreate = "WO_CREATE"
+	PermissionWOClose  = "WO_CLOSE"
+
+	PermissionReportRead   = "REPORT_READ"
+	PermissionReportCreate = "REPORT_CREATE"
+
+	PermissionInventoryReceive  = "INVENTORY_RECEIVE"
+	PermissionInventoryIssue    = "INVENTORY_ISSUE"
+	PermissionPackingListCreate = "PACKING_LIST_CREATE"
+	PermissionSuratJalanCreate  = "SURAT_JALAN_CREATE"
+
+	PermissionLogRead       = "LOG_READ"
+	PermissionDashboardRead = "DASHBOARD_READ"
 )
 
 // AuthMiddleware validates JWT token from Authorization header.

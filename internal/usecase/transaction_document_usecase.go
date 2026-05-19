@@ -267,7 +267,7 @@ func (u *TransactionDocumentUseCase) UpdatePOClient(ctx context.Context, id int3
 	}, nil
 }
 
-func (u *TransactionDocumentUseCase) CreatePRInternal(ctx context.Context, req model.CreatePRInternalRequest) (*model.PRInternalResponse, error) {
+func (u *TransactionDocumentUseCase) CreatePRInternal(ctx context.Context, actorUserID int32, req model.CreatePRInternalRequest) (*model.PRInternalResponse, error) {
 	if len(req.Items) == 0 {
 		return nil, ErrTransactionValidation
 	}
@@ -297,7 +297,7 @@ func (u *TransactionDocumentUseCase) CreatePRInternal(ctx context.Context, req m
 		VendorTelp:    req.VendorTelp,
 		Projek:        req.Projek,
 		IDWo:          req.IDWO,
-		IDUser:        req.IDUser,
+		IDUser:        actorUserID,
 	})
 	if err != nil {
 		return nil, mapTransactionDBError(err)
@@ -471,7 +471,7 @@ func (u *TransactionDocumentUseCase) CreatePOInternal(ctx context.Context, req m
 
 func (u *TransactionDocumentUseCase) ListPOClients(ctx context.Context, filter model.TransactionListFilter) (*model.POClientListResponse, error) {
 	page, limit, offset := normalizePagination(filter)
-	
+
 	var idMitraVal pgtype.Int4
 	if filter.IDMitra != nil {
 		idMitraVal = pgtype.Int4{Int32: *filter.IDMitra, Valid: true}

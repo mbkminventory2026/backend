@@ -45,7 +45,6 @@ type CreatePRInternalRequest struct {
 	VendorTelp    string                        `json:"vendor_telp"`
 	Projek        string                        `json:"projek" binding:"required"`
 	IDWO          int32                         `json:"id_wo" binding:"required"`
-	IDUser        int32                         `json:"id_user" binding:"required"`
 	Items         []CreatePRInternalItemRequest `json:"items" binding:"required,min=1,dive"`
 }
 

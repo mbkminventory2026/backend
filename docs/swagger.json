@@ -3619,7 +3619,6 @@
             "type": "object",
             "required": [
                 "departemen",
-                "id_user",
                 "id_wo",
                 "items",
                 "nama",
@@ -3630,9 +3629,6 @@
             "properties": {
                 "departemen": {
                     "type": "string"
-                },
-                "id_user": {
-                    "type": "integer"
                 },
                 "id_wo": {
                     "type": "integer"

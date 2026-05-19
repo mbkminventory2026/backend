@@ -28,13 +28,13 @@ func NewUserHandler(useCase *usecase.UserUseCase) (*UserHandler, error) {
 func (h *UserHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/api/v1/users").Use(authMiddleware)
 
-	group.POST("", RequirePermission("USER_CREATE"), h.Create)
-	group.GET("", RequirePermission("USER_READ"), h.List)
-	group.GET("/:id", RequirePermission("USER_READ"), h.GetByID)
-	group.PUT("/:id", RequirePermission("USER_UPDATE"), h.Update)
-	group.PUT("/:id/approve", RequirePermission("USER_UPDATE"), h.Approve)
-	group.PUT("/:id/reject", RequirePermission("USER_UPDATE"), h.Reject)
-	group.DELETE("/:id", RequirePermission("USER_DELETE"), h.Delete)
+	group.POST("", RequirePermission(PermissionUserCreate), h.Create)
+	group.GET("", RequirePermission(PermissionUserRead), h.List)
+	group.GET("/:id", RequirePermission(PermissionUserRead), h.GetByID)
+	group.PUT("/:id", RequirePermission(PermissionUserUpdate), h.Update)
+	group.PUT("/:id/approve", RequirePermission(PermissionUserApprove), h.Approve)
+	group.PUT("/:id/reject", RequirePermission(PermissionUserApprove), h.Reject)
+	group.DELETE("/:id", RequirePermission(PermissionUserDelete), h.Delete)
 }
 
 // Create godoc
