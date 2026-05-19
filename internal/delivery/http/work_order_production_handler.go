@@ -26,6 +26,7 @@ func (h *WorkOrderProductionHandler) RegisterRoutes(router gin.IRouter, authMidd
 	v1 := router.Group("/api/v1").Use(authMiddleware)
 	v1.GET("/work-orders", RequirePermission(PermissionWORead), h.ListWorkOrders)
 	v1.GET("/work-orders/:id", RequirePermission(PermissionWORead), h.GetWorkOrderDetail)
+	v1.GET("/production/summary", RequirePermission(PermissionReportRead), h.ListProductionSummary)
 	v1.POST("/work-orders", RequirePermission(PermissionWOCreate), h.CreateWorkOrder)
 	v1.PATCH("/work-orders/:id/close", RequirePermission(PermissionWOClose), h.CloseWorkOrder)
 	v1.POST("/reports/:divisi", RequirePermission(PermissionReportCreate), h.CreateFactoryReport)
@@ -93,6 +94,57 @@ func (h *WorkOrderProductionHandler) GetWorkOrderDetail(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusOK, "work order retrieved", item)
+}
+
+// ListProductionSummary godoc
+// @Summary      List Production Summary
+// @Description  Returns aggregated production progress per work order shell size.
+// @Tags         Work Order & Production
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id_wo            query     int     false  "Work Order ID filter"
+// @Param        id_wo_shell_size query     int     false  "Work Order shell size ID filter"
+// @Param        search           query     string  false  "Search by model or size"
+// @Param        page             query     int     false  "Page (default 1)"
+// @Param        limit            query     int     false  "Limit (default 20)"
+// @Success      200              {object}  model.ProductionSummaryListSuccessDoc
+// @Failure      400              {object}  model.WorkOrderErrorDoc
+// @Failure      500              {object}  model.WorkOrderErrorDoc
+// @Router       /api/v1/production/summary [get]
+func (h *WorkOrderProductionHandler) ListProductionSummary(c *gin.Context) {
+	idWO, err := parseQueryInt32(c, "id_wo", 0)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id_wo", nil))
+		return
+	}
+	idWOShellSize, err := parseQueryInt32(c, "id_wo_shell_size", 0)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id_wo_shell_size", nil))
+		return
+	}
+	page, err := parseQueryInt32(c, "page", 1)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid page", nil))
+		return
+	}
+	limit, err := parseQueryInt32(c, "limit", 20)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid limit", nil))
+		return
+	}
+
+	item, err := h.useCase.ListProductionSummary(c.Request.Context(), model.ProductionSummaryFilter{
+		IDWO:          idWO,
+		IDWOShellSize: idWOShellSize,
+		Search:        c.Query("search"),
+		Page:          page,
+		Limit:         limit,
+	})
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "production summary retrieved", item)
 }
 
 // CreateWorkOrder godoc

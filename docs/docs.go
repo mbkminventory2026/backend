@@ -2151,6 +2151,75 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/production/summary": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns aggregated production progress per work order shell size.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Work Order \u0026 Production"
+                ],
+                "summary": "List Production Summary",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Work Order ID filter",
+                        "name": "id_wo",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Work Order shell size ID filter",
+                        "name": "id_wo_shell_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by model or size",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ProductionSummaryListSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/reports/{divisi}": {
             "post": {
                 "security": [
@@ -5295,6 +5364,82 @@ const docTemplate = `{
                 },
                 "no_telp": {
                     "type": "string"
+                }
+            }
+        },
+        "model.ProductionAggregateResponse": {
+            "type": "object",
+            "properties": {
+                "id_wo_shell_size": {
+                    "type": "integer"
+                },
+                "last_updated": {
+                    "type": "string"
+                },
+                "model_name": {
+                    "type": "string"
+                },
+                "production": {
+                    "$ref": "#/definitions/model.ProductionStats"
+                },
+                "size": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "target_qty": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.ProductionStats": {
+            "type": "object",
+            "properties": {
+                "cutting": {
+                    "type": "integer"
+                },
+                "packing": {
+                    "type": "integer"
+                },
+                "qc_pass": {
+                    "type": "integer"
+                },
+                "sewing": {
+                    "type": "integer"
+                },
+                "shipped": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.ProductionSummaryListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ProductionAggregateResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/model.PaginationMeta"
+                }
+            }
+        },
+        "model.ProductionSummaryListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.ProductionSummaryListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "production summary retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },

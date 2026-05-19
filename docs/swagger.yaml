@@ -1509,6 +1509,56 @@ definitions:
       no_telp:
         type: string
     type: object
+  model.ProductionAggregateResponse:
+    properties:
+      id_wo_shell_size:
+        type: integer
+      last_updated:
+        type: string
+      model_name:
+        type: string
+      production:
+        $ref: '#/definitions/model.ProductionStats'
+      size:
+        type: string
+      status:
+        type: string
+      target_qty:
+        type: integer
+    type: object
+  model.ProductionStats:
+    properties:
+      cutting:
+        type: integer
+      packing:
+        type: integer
+      qc_pass:
+        type: integer
+      sewing:
+        type: integer
+      shipped:
+        type: integer
+    type: object
+  model.ProductionSummaryListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.ProductionAggregateResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.ProductionSummaryListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.ProductionSummaryListResponse'
+      message:
+        example: production summary retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.ReceiveInventoryRequest:
     properties:
       id_material_list:
@@ -3594,6 +3644,50 @@ paths:
       summary: Approve PR Internal
       tags:
       - Transaction Documents
+  /api/v1/production/summary:
+    get:
+      description: Returns aggregated production progress per work order shell size.
+      parameters:
+      - description: Work Order ID filter
+        in: query
+        name: id_wo
+        type: integer
+      - description: Work Order shell size ID filter
+        in: query
+        name: id_wo_shell_size
+        type: integer
+      - description: Search by model or size
+        in: query
+        name: search
+        type: string
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProductionSummaryListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: List Production Summary
+      tags:
+      - Work Order & Production
   /api/v1/reports/{divisi}:
     post:
       consumes:

@@ -369,6 +369,55 @@ func (u *WorkOrderProductionUseCase) ListWorkOrders(ctx context.Context, filter 
 	}, nil
 }
 
+func (u *WorkOrderProductionUseCase) ListProductionSummary(ctx context.Context, filter model.ProductionSummaryFilter) (*model.ProductionSummaryListResponse, error) {
+	if filter.IDWO < 0 || filter.IDWOShellSize < 0 {
+		return nil, ErrWorkOrderValidation
+	}
+
+	page, limit, offset := normalizePagination(model.TransactionListFilter{
+		Page:   filter.Page,
+		Limit:  filter.Limit,
+		Search: filter.Search,
+	})
+
+	rows, err := u.repo.ListProductionSummary(ctx, entity.ListProductionSummaryParams{
+		IDWo:          filter.IDWO,
+		IDWoShellSize: filter.IDWOShellSize,
+		SearchTerm:    filter.Search,
+		PageOffset:    offset,
+		PageLimit:     limit,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to list production summary", ErrWorkOrderServiceUnavailable)
+	}
+
+	items := make([]model.ProductionAggregateResponse, 0, len(rows))
+	total := int64(0)
+	for _, row := range rows {
+		total = row.TotalCount
+		items = append(items, model.ProductionAggregateResponse{
+			IDWOShellSize: row.IDWoShellSize,
+			ModelName:     row.ModelName,
+			Size:          row.Size,
+			TargetQty:     row.TargetQty,
+			Production: model.ProductionStats{
+				Cutting: row.CuttingQty,
+				Sewing:  row.SewingQty,
+				QCPass:  row.QcPassQty,
+				Packing: row.PackingQty,
+				Shipped: row.ShippedQty,
+			},
+			LastUpdated: nullableTimestampString(row.LastUpdated),
+			Status:      deriveProductionStatus(row.TargetQty, row.CuttingQty, row.SewingQty, row.QcPassQty, row.PackingQty, row.ShippedQty),
+		})
+	}
+
+	return &model.ProductionSummaryListResponse{
+		Items:      items,
+		Pagination: buildPagination(total, page, limit),
+	}, nil
+}
+
 func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id int32) (*model.WorkOrderDetailResponse, error) {
 	header, err := u.repo.GetWorkOrderDetail(ctx, id)
 	if err != nil {
@@ -485,4 +534,23 @@ func normalizeDivision(value string) string {
 	normalized := strings.TrimSpace(strings.ToLower(value))
 	normalized = strings.ReplaceAll(normalized, "_", "-")
 	return normalized
+}
+
+func deriveProductionStatus(targetQty int32, cutting int32, sewing int32, qcPass int32, packing int32, shipped int32) string {
+	switch {
+	case targetQty > 0 && shipped >= targetQty:
+		return "Completed"
+	case shipped > 0:
+		return "Shipping Stage"
+	case packing > 0:
+		return "Packing Stage"
+	case qcPass > 0:
+		return "QC Stage"
+	case sewing > 0:
+		return "Sewing Stage"
+	case cutting > 0:
+		return "Cutting Stage"
+	default:
+		return "Not Started"
+	}
 }

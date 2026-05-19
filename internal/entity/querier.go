@@ -96,6 +96,7 @@ type Querier interface {
 	ListPenanggungJawabByPOClientID(ctx context.Context, idPoClient int32) ([]PenanggungJawab, error)
 	ListSuratJalanClients(ctx context.Context, arg ListSuratJalanClientsParams) ([]ListSuratJalanClientsRow, error)
 	ListSuratJalanInternals(ctx context.Context, arg ListSuratJalanInternalsParams) ([]ListSuratJalanInternalsRow, error)
+	ListProductionSummary(ctx context.Context, arg ListProductionSummaryParams) ([]ListProductionSummaryRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
 	ListWorkOrderShellSizesByWorkOrderID(ctx context.Context, idWo int32) ([]WorkOrderShellSize, error)
 	ListWorkOrderShellsByWorkOrderID(ctx context.Context, idWo int32) ([]WorkOrderShell, error)
