@@ -38,3 +38,41 @@ type AIEstimationSuccessDoc struct {
 	Message string               `json:"message" example:"Estimasi AI berhasil dihitung"`
 	Data    AIEstimationResponse `json:"data"`
 }
+
+// Tambahkan di internal/model/dashboard.go
+
+type AIPredictionRequest struct {
+	QtyS               float64 `json:"qty_s"`
+	QtyM               float64 `json:"qty_m"`
+	QtyL               float64 `json:"qty_l"`
+	QtyXL              float64 `json:"qty_xl"`
+	QtyXXL             float64 `json:"qty_xxl"`
+	QtyTotal           float64 `json:"qty_total"`
+	JumlahSize         float64 `json:"jumlah_size"`
+	RasioS             float64 `json:"rasio_s"`
+	RasioM             float64 `json:"rasio_m"`
+	RasioL             float64 `json:"rasio_l"`
+	RasioXL            float64 `json:"rasio_xl"`
+	RasioXXL           float64 `json:"rasio_xxl"`
+	Jenis              float64 `json:"jenis"`
+	MenWomen           float64 `json:"men_women"`
+	Panjang01          float64 `json:"panjang_01"`
+	Embro              float64 `json:"embro"`
+	Furing             float64 `json:"furing"`
+	CuttingInHouse     float64 `json:"cutting_in_house"`
+	KonsumsiKainPerPcs float64 `json:"konsumsi_kain_per_pcs"`
+	JenisKain          float64 `json:"jenis_kain"`
+}
+
+type AIPredictionResponseData struct {
+	EstimasiWaktuTotalHari   float64 `json:"estimasi_waktu_total_hari"`
+	EstimasiTahapCuttingHari float64 `json:"estimasi_tahap_cutting_hari"`
+	EstimasiTahapSewingHari  float64 `json:"estimasi_tahap_sewing_hari"`
+	EstimasiTahapQCHari      float64 `json:"estimasi_tahap_qc_hari"`
+}
+
+type AIPredictionResponse struct {
+	Status  string                   `json:"status"`
+	Message string                   `json:"message"`
+	Data    AIPredictionResponseData `json:"data"`
+}

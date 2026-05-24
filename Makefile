@@ -10,7 +10,7 @@ dev:
 	air -c .air.toml
 
 seed:
-	go run cmd/seeder/main.go
+	docker compose exec dev go run cmd/seeder/main.go
 
 db-gen:
 	sqlc generate -f $(SQLC_CONFIG)
