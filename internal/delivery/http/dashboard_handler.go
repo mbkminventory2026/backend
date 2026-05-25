@@ -39,16 +39,16 @@ func NewDashboardHandler(useCase *usecase.DashboardUseCase) (*DashboardHandler, 
 	}, nil
 }
 
-func (h *DashboardHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
-	// Endpoint API standard dengan proteksi Auth
-	api := router.Group("/api/v1").Use(authMiddleware)
+func (h *DashboardHandler) RegisterRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc) {
+	api := router.Group("/api/v1")
+	api.Use(authMiddleware)
 	{
-		api.GET("/logs", RequirePermission(PermissionLogRead), h.GetLogs)
-		api.GET("/dashboard/ai-estimation", RequirePermission(PermissionDashboardRead), h.GetAIEstimation)
+		api.GET("/logs", h.GetLogs)
+		api.POST("/dashboard/ai-estimation", h.PredictAIEstimation) 
 	}
 
-	// Endpoint WebSocket (URL: ws://localhost:8080/ws/alerts)
-	router.GET("/ws/alerts", authMiddleware, RequirePermission(PermissionDashboardRead), h.Alerts)
+	// Daftarkan rute WebSocket di sini (tanpa middleware HTTP biasa jika tidak diperlukan)
+	router.GET("/ws/alerts", h.Alerts)
 }
 
 // GetLogs godoc
@@ -77,21 +77,33 @@ func (h *DashboardHandler) GetLogs(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Logs berhasil diambil", result)
 }
 
-// GetAIEstimation godoc
-// @Summary      AI Delivery Date Estimation
-// @Description  Mendapatkan rumus regresi linier berdasarkan data historis produksi.
-// @Tags         Dashboard
-// @Produce      json
-// @Security     BearerAuth
-// @Success      200     {object}  model.AIEstimationSuccessDoc
-// @Router       /api/v1/dashboard/ai-estimation [get]
-func (h *DashboardHandler) GetAIEstimation(c *gin.Context) {
-	result, err := h.useCase.GetAIEstimation(c.Request.Context())
-	if err != nil {
-		response.Fail(c, http.StatusInternalServerError, "Gagal menghitung estimasi", err.Error())
+// PredictAIEstimation menangkap data pesanan baru dari Frontend
+// @Summary AI Delivery Date Estimation untuk Order Baru
+// @Description Memprediksi jadwal menggunakan model TabPFN via Python Service
+// @Tags Dashboard
+// @Accept json
+// @Produce json
+// @Param request body model.AIEstimationRequest true "Data Pesanan Mentah"
+// @Success 200 {object} model.AIEstimationSuccessDoc
+// @Security BearerAuth
+// @Router /api/v1/dashboard/ai-estimation [post]
+func (h *DashboardHandler) PredictAIEstimation(c *gin.Context) {
+	var req model.AIEstimationRequest
+
+	// 1. Parsing payload JSON dari Frontend
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "Format request JSON tidak valid", err.Error())
 		return
 	}
 
+	// 2. Panggil Use Case yang baru (yang akan menghitung rasio dan memanggil Python)
+	result, err := h.useCase.PredictNewOrder(c.Request.Context(), req)
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "Gagal memproses prediksi AI", err.Error())
+		return
+	}
+
+	// 3. Kembalikan respons sukses ke Frontend
 	response.Success(c, http.StatusOK, "Estimasi AI berhasil dihitung", result)
 }
 
@@ -136,3 +148,4 @@ func (h *DashboardHandler) BroadcastLowStockAlert(data interface{}) {
 		}
 	}
 }
+

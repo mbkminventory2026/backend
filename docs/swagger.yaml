@@ -1,28 +1,62 @@
 basePath: /
 definitions:
-  model.AIEstimationResponse:
+  model.AIEstimationRequest:
     properties:
-      base_duration_days:
-        description: Nilai 'a' (Intercept)
+      cutting_in_house:
         type: number
-      days_per_item:
-        description: Nilai 'b' (Slope)
+      embro:
         type: number
-      rumus_prediksi:
-        type: string
-      total_data_historis:
-        type: integer
+      furing:
+        type: number
+      jenis:
+        type: number
+      jenis_kain:
+        type: number
+      konsumsi_kain_per_pcs:
+        type: number
+      men_women:
+        type: number
+      panjang_01:
+        type: number
+      qty_l:
+        minimum: 0
+        type: number
+      qty_m:
+        minimum: 0
+        type: number
+      qty_s:
+        minimum: 0
+        type: number
+      qty_xl:
+        minimum: 0
+        type: number
+      qty_xxl:
+        minimum: 0
+        type: number
     type: object
   model.AIEstimationSuccessDoc:
     properties:
       data:
-        $ref: '#/definitions/model.AIEstimationResponse'
+        allOf:
+        - $ref: '#/definitions/model.AIPredictionResponseData'
+        description: <-- Sekarang merujuk ke data hasil Python!
       message:
         example: Estimasi AI berhasil dihitung
         type: string
       status:
         example: success
         type: string
+    type: object
+  model.AIPredictionResponseData:
+    properties:
+      estimasi_tahap_cutting_hari:
+        type: number
+      estimasi_tahap_qc_hari:
+        type: number
+      estimasi_tahap_sewing_hari:
+        type: number
+      estimasi_waktu_total_hari:
+        type: number
     type: object
   model.AktivitasLogResponse:
     properties:
@@ -2402,8 +2436,17 @@ paths:
       tags:
       - Auth
   /api/v1/dashboard/ai-estimation:
-    get:
-      description: Mendapatkan rumus regresi linier berdasarkan data historis produksi.
+    post:
+      consumes:
+      - application/json
+      description: Memprediksi jadwal menggunakan model TabPFN via Python Service
+      parameters:
+      - description: Data Pesanan Mentah
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AIEstimationRequest'
       produces:
       - application/json
       responses:
@@ -2413,7 +2456,7 @@ paths:
             $ref: '#/definitions/model.AIEstimationSuccessDoc'
       security:
       - BearerAuth: []
-      summary: AI Delivery Date Estimation
+      summary: AI Delivery Date Estimation untuk Order Baru
       tags:
       - Dashboard
   /api/v1/inventory/issue:

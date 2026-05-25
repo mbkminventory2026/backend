@@ -161,20 +161,34 @@
             }
         },
         "/api/v1/dashboard/ai-estimation": {
-            "get": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Mendapatkan rumus regresi linier berdasarkan data historis produksi.",
+                "description": "Memprediksi jadwal menggunakan model TabPFN via Python Service",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Dashboard"
                 ],
-                "summary": "AI Delivery Date Estimation",
+                "summary": "AI Delivery Date Estimation untuk Order Baru",
+                "parameters": [
+                    {
+                        "description": "Data Pesanan Mentah",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.AIEstimationRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -3138,22 +3152,52 @@
         }
     },
     "definitions": {
-        "model.AIEstimationResponse": {
+        "model.AIEstimationRequest": {
             "type": "object",
             "properties": {
-                "base_duration_days": {
-                    "description": "Nilai 'a' (Intercept)",
+                "cutting_in_house": {
                     "type": "number"
                 },
-                "days_per_item": {
-                    "description": "Nilai 'b' (Slope)",
+                "embro": {
                     "type": "number"
                 },
-                "rumus_prediksi": {
-                    "type": "string"
+                "furing": {
+                    "type": "number"
                 },
-                "total_data_historis": {
-                    "type": "integer"
+                "jenis": {
+                    "type": "number"
+                },
+                "jenis_kain": {
+                    "type": "number"
+                },
+                "konsumsi_kain_per_pcs": {
+                    "type": "number"
+                },
+                "men_women": {
+                    "type": "number"
+                },
+                "panjang_01": {
+                    "type": "number"
+                },
+                "qty_l": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "qty_m": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "qty_s": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "qty_xl": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "qty_xxl": {
+                    "type": "number",
+                    "minimum": 0
                 }
             }
         },
@@ -3161,7 +3205,12 @@
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/model.AIEstimationResponse"
+                    "description": "\u003c-- Sekarang merujuk ke data hasil Python!",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.AIPredictionResponseData"
+                        }
+                    ]
                 },
                 "message": {
                     "type": "string",
@@ -3170,6 +3219,23 @@
                 "status": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "model.AIPredictionResponseData": {
+            "type": "object",
+            "properties": {
+                "estimasi_tahap_cutting_hari": {
+                    "type": "number"
+                },
+                "estimasi_tahap_qc_hari": {
+                    "type": "number"
+                },
+                "estimasi_tahap_sewing_hari": {
+                    "type": "number"
+                },
+                "estimasi_waktu_total_hari": {
+                    "type": "number"
                 }
             }
         },

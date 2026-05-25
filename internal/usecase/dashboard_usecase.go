@@ -5,18 +5,24 @@ import (
 	"fmt"
 
 	"permatatex-inventory/internal/entity"
+	"permatatex-inventory/internal/gateway/ai"
 	"permatatex-inventory/internal/model"
 )
 
 type DashboardUseCase struct {
-	queries *entity.Queries
+	queries   *entity.Queries
+	aiGateway *ai.Gateway
 }
 
-func NewDashboardUseCase(queries *entity.Queries) (*DashboardUseCase, error) {
+// Hanya ada SATU NewDashboardUseCase di sini (Gabungan Queries & AI Gateway)
+func NewDashboardUseCase(queries *entity.Queries, aiGateway *ai.Gateway) (*DashboardUseCase, error) {
 	if queries == nil {
 		return nil, fmt.Errorf("queries is required")
 	}
-	return &DashboardUseCase{queries: queries}, nil
+	return &DashboardUseCase{
+		queries:   queries,
+		aiGateway: aiGateway,
+	}, nil
 }
 
 // Logic untuk mengambil Logs dengan Paginasi
@@ -58,56 +64,53 @@ func (u *DashboardUseCase) GetLogs(ctx context.Context, filter model.ListLogsFil
 	return result, nil
 }
 
-// Logic untuk AI Estimation menggunakan Regresi Linier Bawaan
-func (u *DashboardUseCase) GetAIEstimation(ctx context.Context) (*model.AIEstimationResponse, error) {
-	// 1. Tarik data historis yang sangat cepat via sqlc
-	wos, err := u.queries.GetWorkOrderForAIEstimation(ctx)
-	if err != nil {
-		return nil, err
+// PredictNewOrder melakukan kalkulasi rasio otomatis lalu menembak Python
+func (u *DashboardUseCase) PredictNewOrder(ctx context.Context, req model.AIEstimationRequest) (*model.AIPredictionResponseData, error) {
+	// 1. Kalkulasi Qty Total
+	totalQty := req.QtyS + req.QtyM + req.QtyL + req.QtyXL + req.QtyXXL
+
+	// 2. Kalkulasi Jumlah Size (Berapa banyak size yang jumlahnya > 0)
+	var jumlahSize float64
+	if req.QtyS > 0 { jumlahSize++ }
+	if req.QtyM > 0 { jumlahSize++ }
+	if req.QtyL > 0 { jumlahSize++ }
+	if req.QtyXL > 0 { jumlahSize++ }
+	if req.QtyXXL > 0 { jumlahSize++ }
+
+	// 3. Kalkulasi Rasio (Cegah pembagian dengan nol)
+	var rasioS, rasioM, rasioL, rasioXL, rasioXXL float64
+	if totalQty > 0 {
+		rasioS = req.QtyS / totalQty
+		rasioM = req.QtyM / totalQty
+		rasioL = req.QtyL / totalQty
+		rasioXL = req.QtyXL / totalQty
+		rasioXXL = req.QtyXXL / totalQty
 	}
 
-	totalData := len(wos)
-	if totalData == 0 {
-		return &model.AIEstimationResponse{
-			TotalDataHistoris: 0,
-			BaseDurationDays:  0,
-			DaysPerItem:       0,
-			RumusPrediksi:     "Data historis tidak cukup untuk estimasi.",
-		}, nil
+	// 4. Susun payload lengkap untuk dikirim ke Microservice Python
+	aiReq := model.AIPredictionRequest{
+		QtyS:               req.QtyS,
+		QtyM:               req.QtyM,
+		QtyL:               req.QtyL,
+		QtyXL:              req.QtyXL,
+		QtyXXL:             req.QtyXXL,
+		QtyTotal:           totalQty,
+		JumlahSize:         jumlahSize,
+		RasioS:             rasioS,
+		RasioM:             rasioM,
+		RasioL:             rasioL,
+		RasioXL:            rasioXL,
+		RasioXXL:           rasioXXL,
+		Jenis:              req.Jenis,
+		MenWomen:           req.MenWomen,
+		Panjang01:          req.Panjang01,
+		Embro:              req.Embro,
+		Furing:             req.Furing,
+		CuttingInHouse:     req.CuttingInHouse,
+		KonsumsiKainPerPcs: req.KonsumsiKainPerPcs,
+		JenisKain:          req.JenisKain,
 	}
 
-	// 2. Kalkulasi Regresi Linier: Y = a + bX
-	// X = QTY barang, Y = Durasi pengerjaan (Hari)
-	var sumX, sumY, sumXY, sumX2 float64
-	n := float64(totalData)
-
-	for _, wo := range wos {
-		x := float64(wo.Qty)
-
-		// Menghitung selisih hari antara Target Delivery dan Tanggal PR
-		durationHours := wo.TargetDelivery.Time.Sub(wo.TanggalPr.Time).Hours()
-		y := durationHours / 24.0
-
-		sumX += x
-		sumY += y
-		sumXY += x * y
-		sumX2 += x * x
-	}
-
-	// Mencegah division by zero jika data X (QTY) seragam semua
-	denominator := (n * sumX2) - (sumX * sumX)
-	var a, b float64
-	if denominator != 0 {
-		b = ((n * sumXY) - (sumX * sumY)) / denominator
-		a = (sumY - (b * sumX)) / n
-	}
-
-	rumus := fmt.Sprintf("Estimasi Hari = %.2f + (%.4f * QTY)", a, b)
-
-	return &model.AIEstimationResponse{
-		TotalDataHistoris: totalData,
-		BaseDurationDays:  a,
-		DaysPerItem:       b,
-		RumusPrediksi:     rumus,
-	}, nil
+	// 5. Eksekusi ke Python via Gateway
+	return u.aiGateway.PredictSchedule(ctx, aiReq)
 }
