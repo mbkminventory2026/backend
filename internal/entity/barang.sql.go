@@ -13,10 +13,10 @@ import (
 
 const createBarang = `-- name: CreateBarang :one
 INSERT INTO BARANG (
-    nama_barang, kode, id_jenis_barang, id_mitra
+    nama_barang, kode, id_jenis_barang, id_mitra, satuan, lokasi_rak, stok_minimum
 ) VALUES (
-    $1, $2, $3, $4
-) RETURNING id_barang, nama_barang, kode, id_jenis_barang, id_mitra, created_at
+    $1, $2, $3, $4, $5, $6, $7
+) RETURNING id_barang, nama_barang, kode, id_jenis_barang, id_mitra, created_at, satuan, lokasi_rak, stok_minimum
 `
 
 type CreateBarangParams struct {
@@ -24,6 +24,9 @@ type CreateBarangParams struct {
 	Kode          string `json:"kode"`
 	IDJenisBarang int32  `json:"id_jenis_barang"`
 	IDMitra       int32  `json:"id_mitra"`
+	Satuan        string `json:"satuan"`
+	LokasiRak     string `json:"lokasi_rak"`
+	StokMinimum   int32  `json:"stok_minimum"`
 }
 
 func (q *Queries) CreateBarang(ctx context.Context, arg CreateBarangParams) (Barang, error) {
@@ -32,6 +35,9 @@ func (q *Queries) CreateBarang(ctx context.Context, arg CreateBarangParams) (Bar
 		arg.Kode,
 		arg.IDJenisBarang,
 		arg.IDMitra,
+		arg.Satuan,
+		arg.LokasiRak,
+		arg.StokMinimum,
 	)
 	var i Barang
 	err := row.Scan(
@@ -41,6 +47,9 @@ func (q *Queries) CreateBarang(ctx context.Context, arg CreateBarangParams) (Bar
 		&i.IDJenisBarang,
 		&i.IDMitra,
 		&i.CreatedAt,
+		&i.Satuan,
+		&i.LokasiRak,
+		&i.StokMinimum,
 	)
 	return i, err
 }
@@ -59,7 +68,7 @@ func (q *Queries) DeleteBarang(ctx context.Context, idBarang int32) (int64, erro
 }
 
 const getBarangByID = `-- name: GetBarangByID :one
-SELECT b.id_barang, b.nama_barang, b.kode, b.id_jenis_barang, b.id_mitra, b.created_at, m.nama_perusahaan, j.nama_jenis_barang
+SELECT b.id_barang, b.nama_barang, b.kode, b.id_jenis_barang, b.id_mitra, b.created_at, b.satuan, b.lokasi_rak, b.stok_minimum, m.nama_perusahaan, j.nama_jenis_barang
 FROM BARANG b
 JOIN MITRA m ON b.id_mitra = m.id_mitra
 JOIN JENIS_BARANG j ON b.id_jenis_barang = j.id_jenis_barang
@@ -73,6 +82,9 @@ type GetBarangByIDRow struct {
 	IDJenisBarang   int32              `json:"id_jenis_barang"`
 	IDMitra         int32              `json:"id_mitra"`
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	Satuan          string             `json:"satuan"`
+	LokasiRak       string             `json:"lokasi_rak"`
+	StokMinimum     int32              `json:"stok_minimum"`
 	NamaPerusahaan  string             `json:"nama_perusahaan"`
 	NamaJenisBarang string             `json:"nama_jenis_barang"`
 }
@@ -87,6 +99,9 @@ func (q *Queries) GetBarangByID(ctx context.Context, idBarang int32) (GetBarangB
 		&i.IDJenisBarang,
 		&i.IDMitra,
 		&i.CreatedAt,
+		&i.Satuan,
+		&i.LokasiRak,
+		&i.StokMinimum,
 		&i.NamaPerusahaan,
 		&i.NamaJenisBarang,
 	)
@@ -94,7 +109,7 @@ func (q *Queries) GetBarangByID(ctx context.Context, idBarang int32) (GetBarangB
 }
 
 const listBarang = `-- name: ListBarang :many
-SELECT b.id_barang, b.nama_barang, b.kode, b.id_jenis_barang, b.id_mitra, b.created_at, m.nama_perusahaan, j.nama_jenis_barang
+SELECT b.id_barang, b.nama_barang, b.kode, b.id_jenis_barang, b.id_mitra, b.created_at, b.satuan, b.lokasi_rak, b.stok_minimum, m.nama_perusahaan, j.nama_jenis_barang
 FROM BARANG b
 JOIN MITRA m ON b.id_mitra = m.id_mitra
 JOIN JENIS_BARANG j ON b.id_jenis_barang = j.id_jenis_barang
@@ -114,6 +129,9 @@ type ListBarangRow struct {
 	IDJenisBarang   int32              `json:"id_jenis_barang"`
 	IDMitra         int32              `json:"id_mitra"`
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	Satuan          string             `json:"satuan"`
+	LokasiRak       string             `json:"lokasi_rak"`
+	StokMinimum     int32              `json:"stok_minimum"`
 	NamaPerusahaan  string             `json:"nama_perusahaan"`
 	NamaJenisBarang string             `json:"nama_jenis_barang"`
 }
@@ -134,6 +152,9 @@ func (q *Queries) ListBarang(ctx context.Context, arg ListBarangParams) ([]ListB
 			&i.IDJenisBarang,
 			&i.IDMitra,
 			&i.CreatedAt,
+			&i.Satuan,
+			&i.LokasiRak,
+			&i.StokMinimum,
 			&i.NamaPerusahaan,
 			&i.NamaJenisBarang,
 		); err != nil {
@@ -149,9 +170,9 @@ func (q *Queries) ListBarang(ctx context.Context, arg ListBarangParams) ([]ListB
 
 const updateBarang = `-- name: UpdateBarang :one
 UPDATE BARANG
-SET nama_barang = $2, kode = $3, id_jenis_barang = $4, id_mitra = $5
+SET nama_barang = $2, kode = $3, id_jenis_barang = $4, id_mitra = $5, satuan = $6, lokasi_rak = $7, stok_minimum = $8
 WHERE id_barang = $1
-RETURNING id_barang, nama_barang, kode, id_jenis_barang, id_mitra, created_at
+RETURNING id_barang, nama_barang, kode, id_jenis_barang, id_mitra, created_at, satuan, lokasi_rak, stok_minimum
 `
 
 type UpdateBarangParams struct {
@@ -160,6 +181,9 @@ type UpdateBarangParams struct {
 	Kode          string `json:"kode"`
 	IDJenisBarang int32  `json:"id_jenis_barang"`
 	IDMitra       int32  `json:"id_mitra"`
+	Satuan        string `json:"satuan"`
+	LokasiRak     string `json:"lokasi_rak"`
+	StokMinimum   int32  `json:"stok_minimum"`
 }
 
 func (q *Queries) UpdateBarang(ctx context.Context, arg UpdateBarangParams) (Barang, error) {
@@ -169,6 +193,9 @@ func (q *Queries) UpdateBarang(ctx context.Context, arg UpdateBarangParams) (Bar
 		arg.Kode,
 		arg.IDJenisBarang,
 		arg.IDMitra,
+		arg.Satuan,
+		arg.LokasiRak,
+		arg.StokMinimum,
 	)
 	var i Barang
 	err := row.Scan(
@@ -178,6 +205,9 @@ func (q *Queries) UpdateBarang(ctx context.Context, arg UpdateBarangParams) (Bar
 		&i.IDJenisBarang,
 		&i.IDMitra,
 		&i.CreatedAt,
+		&i.Satuan,
+		&i.LokasiRak,
+		&i.StokMinimum,
 	)
 	return i, err
 }

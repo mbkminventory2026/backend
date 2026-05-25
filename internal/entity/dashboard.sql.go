@@ -13,16 +13,19 @@ import (
 
 const getLowStockAlerts = `-- name: GetLowStockAlerts :many
 SELECT 
-    ID_REKONSILIASI_MATERIAL,
-    DESCRIPTION,
-    SIZE,
-    BALANCE,
-    LAST_BALANCE,
-    SATUAN
+    rm.ID_REKONSILIASI_MATERIAL,
+    rm.DESCRIPTION,
+    rm.SIZE,
+    rm.BALANCE,
+    rm.LAST_BALANCE,
+    rm.SATUAN,
+    COALESCE(b.stok_minimum, 50)::int AS min_stock
 FROM 
-    REKONSILIASI_MATERIAL
+    REKONSILIASI_MATERIAL rm
+LEFT JOIN 
+    BARANG b ON rm.description = b.nama_barang OR rm.description = b.kode
 WHERE 
-    BALANCE < 50
+    rm.BALANCE < COALESCE(b.stok_minimum, 50)
 `
 
 type GetLowStockAlertsRow struct {
@@ -32,6 +35,7 @@ type GetLowStockAlertsRow struct {
 	Balance                int32  `json:"balance"`
 	LastBalance            int32  `json:"last_balance"`
 	Satuan                 string `json:"satuan"`
+	MinStock               int32  `json:"min_stock"`
 }
 
 // Mengecek material yang BALANCE-nya di bawah standar untuk trigger WebSocket layar berkedip
@@ -51,6 +55,7 @@ func (q *Queries) GetLowStockAlerts(ctx context.Context) ([]GetLowStockAlertsRow
 			&i.Balance,
 			&i.LastBalance,
 			&i.Satuan,
+			&i.MinStock,
 		); err != nil {
 			return nil, err
 		}

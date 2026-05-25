@@ -12,23 +12,23 @@ import (
 )
 
 const (
-	envFileName             = ".env"
-	defaultServerPort       = "8080"
-	defaultDBPort           = "5432"
-	defaultDBSSLMode        = "disable"
-	defaultCORSAllowOrigin  = "*"
-	defaultDBMaxConns       = int32(20)
-	defaultDBMinConns       = int32(2)
-	defaultDBConnLifetime   = 30
-	defaultDBConnIdleTime   = 10
-	defaultDBHealthPeriod   = 30
-	defaultDBConnectTO      = 5
-	defaultLoginRateMax     = 5
-	defaultLoginRateWindow  = 60
-	defaultServerReadTO     = "30s"
-	defaultServerWriteTO    = "60s"
-	defaultServerIdleTO     = "120s"
-	defaultShutdownTO       = "15s"
+	envFileName            = ".env"
+	defaultServerPort      = "8080"
+	defaultDBPort          = "5432"
+	defaultDBSSLMode       = "disable"
+	defaultCORSAllowOrigin = "*"
+	defaultDBMaxConns      = int32(20)
+	defaultDBMinConns      = int32(2)
+	defaultDBConnLifetime  = 30
+	defaultDBConnIdleTime  = 10
+	defaultDBHealthPeriod  = 30
+	defaultDBConnectTO     = 5
+	defaultLoginRateMax    = 5
+	defaultLoginRateWindow = 60
+	defaultServerReadTO    = "30s"
+	defaultServerWriteTO   = "60s"
+	defaultServerIdleTO    = "120s"
+	defaultShutdownTO      = "15s"
 )
 
 // Config stores all application settings loaded from .env or system environment.

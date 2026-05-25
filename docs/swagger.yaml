@@ -87,12 +87,18 @@ definitions:
         type: integer
       kode:
         type: string
+      lokasi_rak:
+        type: string
       nama_barang:
         type: string
       nama_jenis_barang:
         type: string
       nama_perusahaan:
         type: string
+      satuan:
+        type: string
+      stok_minimum:
+        type: integer
     type: object
   model.CompanyResponse:
     properties:
@@ -132,13 +138,20 @@ definitions:
         type: integer
       kode:
         type: string
+      lokasi_rak:
+        type: string
       nama_barang:
         type: string
+      satuan:
+        type: string
+      stok_minimum:
+        type: integer
     required:
     - id_jenis_barang
     - id_mitra
     - kode
     - nama_barang
+    - satuan
     type: object
   model.CreateBarangSuccessDoc:
     properties:
@@ -988,6 +1001,39 @@ definitions:
       tipe_perusahaan:
         type: string
     type: object
+  model.MovementReportResponse:
+    properties:
+      keterangan:
+        type: string
+      nama_material:
+        type: string
+      qty:
+        type: integer
+      size:
+        type: string
+      tanggal:
+        type: string
+      tipe:
+        description: '"IN" atau "OUT"'
+        type: string
+      uom:
+        type: string
+      work_order_model:
+        type: string
+    type: object
+  model.MovementReportSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.MovementReportResponse'
+        type: array
+      message:
+        example: movement report retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.POClientDetailResponse:
     properties:
       created_at:
@@ -1679,6 +1725,58 @@ definitions:
     - turnstile_token
     - username
     type: object
+  model.StockReportPerKategoriResponse:
+    properties:
+      kategori:
+        type: string
+      nama_barang:
+        type: string
+      satuan:
+        type: string
+      size:
+        type: string
+      total_stok:
+        type: integer
+    type: object
+  model.StockReportPerKategoriSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.StockReportPerKategoriResponse'
+        type: array
+      message:
+        example: stock report per kategori retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.StockReportPerLokasiResponse:
+    properties:
+      lokasi_rak:
+        type: string
+      nama_barang:
+        type: string
+      satuan:
+        type: string
+      size:
+        type: string
+      total_stok:
+        type: integer
+    type: object
+  model.StockReportPerLokasiSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.StockReportPerLokasiResponse'
+        type: array
+      message:
+        example: stock report per lokasi retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.SuratJalanClientDetailResponse:
     properties:
       created_at:
@@ -1869,13 +1967,20 @@ definitions:
         type: integer
       kode:
         type: string
+      lokasi_rak:
+        type: string
       nama_barang:
         type: string
+      satuan:
+        type: string
+      stok_minimum:
+        type: integer
     required:
     - id_jenis_barang
     - id_mitra
     - kode
     - nama_barang
+    - satuan
     type: object
   model.UpdateCompanyRequest:
     properties:
@@ -3769,6 +3874,90 @@ paths:
       summary: Create Factory Report
       tags:
       - Work Order & Production
+  /api/v1/reports/movement:
+    get:
+      description: Mengambil laporan kronologis pergerakan stok masuk (received) dan
+        keluar (surat jalan).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MovementReportSuccessDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Laporan Riwayat Pergerakan Barang
+      tags:
+      - Reports
+  /api/v1/reports/stock/category:
+    get:
+      description: Mengambil laporan stok material yang teragregasi berdasarkan kategori
+        barang garmen.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.StockReportPerKategoriSuccessDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Laporan Stok per Kategori
+      tags:
+      - Reports
+  /api/v1/reports/stock/location:
+    get:
+      description: Mengambil laporan stok material yang teragregasi berdasarkan lokasi
+        penyimpanan rak.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.StockReportPerLokasiSuccessDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Laporan Stok per Lokasi
+      tags:
+      - Reports
   /api/v1/surat-jalan-clients:
     get:
       description: Returns a paginated list of client delivery notes.

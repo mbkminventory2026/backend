@@ -63,11 +63,17 @@ type Querier interface {
 	// Mengecek material yang BALANCE-nya di bawah standar untuk trigger WebSocket layar berkedip
 	GetLowStockAlerts(ctx context.Context) ([]GetLowStockAlertsRow, error)
 	GetMitraByID(ctx context.Context, idMitra int32) (Mitra, error)
+	// Mengambil laporan riwayat pergerakan stok masuk (received) dan keluar (surat jalan) secara kronologis
+	GetMovementReport(ctx context.Context) ([]GetMovementReportRow, error)
 	GetPOClientDetail(ctx context.Context, idPoClient int32) (GetPOClientDetailRow, error)
 	GetPOInternalDetail(ctx context.Context, idPoInternal int32) (PoInternal, error)
 	GetPRInternalDetail(ctx context.Context, idPrInternal int32) (GetPRInternalDetailRow, error)
 	GetPackingListDetail(ctx context.Context, idPackingList int32) (GetPackingListDetailRow, error)
 	GetRekonsiliasiMaterialStock(ctx context.Context, idRekonsiliasiMaterial int32) (GetRekonsiliasiMaterialStockRow, error)
+	// Mengambil laporan stok material yang teragregasi per kategori barang garmen
+	GetStockReportPerKategori(ctx context.Context) ([]GetStockReportPerKategoriRow, error)
+	// Mengambil laporan stok material yang teragregasi per lokasi penyimpanan rak
+	GetStockReportPerLokasi(ctx context.Context) ([]GetStockReportPerLokasiRow, error)
 	GetSuratJalanClientDetail(ctx context.Context, idSuratJalanClient int32) (GetSuratJalanClientDetailRow, error)
 	GetSuratJalanInternalDetail(ctx context.Context, idSuratJalanInternal int32) (SuratJalanInternal, error)
 	GetUserByID(ctx context.Context, idUser int32) (GetUserByIDRow, error)
@@ -94,9 +100,9 @@ type Querier interface {
 	ListPackingListItemsByPackingListID(ctx context.Context, idPackingList int32) ([]PackingListItem, error)
 	ListPackingLists(ctx context.Context, arg ListPackingListsParams) ([]ListPackingListsRow, error)
 	ListPenanggungJawabByPOClientID(ctx context.Context, idPoClient int32) ([]PenanggungJawab, error)
+	ListProductionSummary(ctx context.Context, arg ListProductionSummaryParams) ([]ListProductionSummaryRow, error)
 	ListSuratJalanClients(ctx context.Context, arg ListSuratJalanClientsParams) ([]ListSuratJalanClientsRow, error)
 	ListSuratJalanInternals(ctx context.Context, arg ListSuratJalanInternalsParams) ([]ListSuratJalanInternalsRow, error)
-	ListProductionSummary(ctx context.Context, arg ListProductionSummaryParams) ([]ListProductionSummaryRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
 	ListWorkOrderShellSizesByWorkOrderID(ctx context.Context, idWo int32) ([]WorkOrderShellSize, error)
 	ListWorkOrderShellsByWorkOrderID(ctx context.Context, idWo int32) ([]WorkOrderShell, error)

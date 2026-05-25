@@ -71,11 +71,21 @@ func (u *DashboardUseCase) PredictNewOrder(ctx context.Context, req model.AIEsti
 
 	// 2. Kalkulasi Jumlah Size (Berapa banyak size yang jumlahnya > 0)
 	var jumlahSize float64
-	if req.QtyS > 0 { jumlahSize++ }
-	if req.QtyM > 0 { jumlahSize++ }
-	if req.QtyL > 0 { jumlahSize++ }
-	if req.QtyXL > 0 { jumlahSize++ }
-	if req.QtyXXL > 0 { jumlahSize++ }
+	if req.QtyS > 0 {
+		jumlahSize++
+	}
+	if req.QtyM > 0 {
+		jumlahSize++
+	}
+	if req.QtyL > 0 {
+		jumlahSize++
+	}
+	if req.QtyXL > 0 {
+		jumlahSize++
+	}
+	if req.QtyXXL > 0 {
+		jumlahSize++
+	}
 
 	// 3. Kalkulasi Rasio (Cegah pembagian dengan nol)
 	var rasioS, rasioM, rasioL, rasioXL, rasioXXL float64

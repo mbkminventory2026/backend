@@ -127,6 +127,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	reportUseCase, err := usecase.NewReportUseCase(queries)
+	if err != nil {
+		logger.Error("failed to initialize report usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	// 4. Handlers
 	authHandler, err := httpdelivery.NewAuthHandler(authUseCase)
 	if err != nil {
@@ -179,6 +186,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	reportHandler, err := httpdelivery.NewReportHandler(reportUseCase)
+	if err != nil {
+		logger.Error("failed to initialize report handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	activityLogService, err := usecase.NewActivityLogService(queries, logger)
 	if err != nil {
 		logger.Error("failed to initialize activity log service", slog.String("error", err.Error()))
@@ -216,6 +230,7 @@ func main() {
 	warehouseDeliveryHandler.RegisterRoutes(router, authMiddleware)
 
 	dashboardHandler.RegisterRoutes(router, authMiddleware)
+	reportHandler.RegisterRoutes(router, authMiddleware)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

@@ -303,6 +303,9 @@ func (u *MasterDataUseCase) GetBarangByID(ctx context.Context, id int32) (model.
 		Kode:            item.Kode,
 		NamaPerusahaan:  item.NamaPerusahaan,
 		NamaJenisBarang: item.NamaJenisBarang,
+		Satuan:          item.Satuan,
+		LokasiRak:       item.LokasiRak,
+		StokMinimum:     item.StokMinimum,
 		CreatedAt:       item.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
@@ -321,6 +324,9 @@ func (u *MasterDataUseCase) ListBarang(ctx context.Context, limit, offset int32)
 			Kode:            i.Kode,
 			NamaPerusahaan:  i.NamaPerusahaan,
 			NamaJenisBarang: i.NamaJenisBarang,
+			Satuan:          i.Satuan,
+			LokasiRak:       i.LokasiRak,
+			StokMinimum:     i.StokMinimum,
 			CreatedAt:       i.CreatedAt.Time.Format(time.RFC3339),
 		})
 	}
@@ -333,16 +339,22 @@ func (u *MasterDataUseCase) CreateBarang(ctx context.Context, req model.CreateBa
 		Kode:          req.Kode,
 		IDJenisBarang: req.IDJenisBarang,
 		IDMitra:       req.IDMitra,
+		Satuan:        req.Satuan,
+		LokasiRak:     req.LokasiRak,
+		StokMinimum:   req.StokMinimum,
 	})
 	if err != nil {
 		return model.BarangResponse{}, mapMasterDataConflict(err)
 	}
 
 	return model.BarangResponse{
-		ID:        item.IDBarang,
-		Nama:      item.NamaBarang,
-		Kode:      item.Kode,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+		ID:          item.IDBarang,
+		Nama:        item.NamaBarang,
+		Kode:        item.Kode,
+		Satuan:      item.Satuan,
+		LokasiRak:   item.LokasiRak,
+		StokMinimum: item.StokMinimum,
+		CreatedAt:   item.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
 
@@ -353,16 +365,22 @@ func (u *MasterDataUseCase) UpdateBarang(ctx context.Context, id int32, req mode
 		Kode:          req.Kode,
 		IDJenisBarang: req.IDJenisBarang,
 		IDMitra:       req.IDMitra,
+		Satuan:        req.Satuan,
+		LokasiRak:     req.LokasiRak,
+		StokMinimum:   req.StokMinimum,
 	})
 	if err != nil {
 		return model.BarangResponse{}, mapMasterDataConflict(err)
 	}
 
 	return model.BarangResponse{
-		ID:        item.IDBarang,
-		Nama:      item.NamaBarang,
-		Kode:      item.Kode,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+		ID:          item.IDBarang,
+		Nama:        item.NamaBarang,
+		Kode:        item.Kode,
+		Satuan:      item.Satuan,
+		LokasiRak:   item.LokasiRak,
+		StokMinimum: item.StokMinimum,
+		CreatedAt:   item.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
 

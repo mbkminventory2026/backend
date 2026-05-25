@@ -15,6 +15,9 @@ type Barang struct {
 	IDJenisBarang int32              `json:"id_jenis_barang"`
 	IDMitra       int32              `json:"id_mitra"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	Satuan        string             `json:"satuan"`
+	LokasiRak     string             `json:"lokasi_rak"`
+	StokMinimum   int32              `json:"stok_minimum"`
 }
 
 type Company struct {

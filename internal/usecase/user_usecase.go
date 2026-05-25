@@ -391,9 +391,9 @@ func (u *UserUseCase) Approve(ctx context.Context, id int32) (*model.UserRespons
 	}
 
 	return &model.UserResponse{
-		IDUser:    updatedUser.IDUser,
-		Username:  updatedUser.Username,
-		Status:    updatedUser.Status,
+		IDUser:   updatedUser.IDUser,
+		Username: updatedUser.Username,
+		Status:   updatedUser.Status,
 	}, nil
 }
 
@@ -409,7 +409,7 @@ func (u *UserUseCase) Reject(ctx context.Context, id int32) error {
 	}()
 
 	qtx := entity.New(tx)
-	
+
 	_, err = qtx.UpdateUserStatus(ctx, entity.UpdateUserStatusParams{
 		IDUser: id,
 		Status: "rejected",
@@ -427,4 +427,3 @@ func (u *UserUseCase) Reject(ctx context.Context, id int32) error {
 
 	return nil
 }
-

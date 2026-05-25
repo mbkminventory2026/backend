@@ -44,7 +44,7 @@ func (h *DashboardHandler) RegisterRoutes(router *gin.Engine, authMiddleware gin
 	api.Use(authMiddleware)
 	{
 		api.GET("/logs", h.GetLogs)
-		api.POST("/dashboard/ai-estimation", h.PredictAIEstimation) 
+		api.POST("/dashboard/ai-estimation", h.PredictAIEstimation)
 	}
 
 	// Daftarkan rute WebSocket di sini (tanpa middleware HTTP biasa jika tidak diperlukan)
@@ -148,4 +148,3 @@ func (h *DashboardHandler) BroadcastLowStockAlert(data interface{}) {
 		}
 	}
 }
-

@@ -211,4 +211,3 @@ func (u *AuthUseCase) RegisterMitra(ctx context.Context, req model.RegisterMitra
 
 	return nil
 }
-

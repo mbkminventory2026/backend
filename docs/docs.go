@@ -2234,6 +2234,135 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/reports/movement": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil laporan kronologis pergerakan stok masuk (received) dan keluar (surat jalan).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Laporan Riwayat Pergerakan Barang",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MovementReportSuccessDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/reports/stock/category": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil laporan stok material yang teragregasi berdasarkan kategori barang garmen.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Laporan Stok per Kategori",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.StockReportPerKategoriSuccessDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/reports/stock/location": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil laporan stok material yang teragregasi berdasarkan lokasi penyimpanan rak.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Laporan Stok per Lokasi",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.StockReportPerLokasiSuccessDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/reports/{divisi}": {
             "post": {
                 "security": [
@@ -3286,6 +3415,9 @@ const docTemplate = `{
                 "kode": {
                     "type": "string"
                 },
+                "lokasi_rak": {
+                    "type": "string"
+                },
                 "nama_barang": {
                     "type": "string"
                 },
@@ -3294,6 +3426,12 @@ const docTemplate = `{
                 },
                 "nama_perusahaan": {
                     "type": "string"
+                },
+                "satuan": {
+                    "type": "string"
+                },
+                "stok_minimum": {
+                    "type": "integer"
                 }
             }
         },
@@ -3348,7 +3486,8 @@ const docTemplate = `{
                 "id_jenis_barang",
                 "id_mitra",
                 "kode",
-                "nama_barang"
+                "nama_barang",
+                "satuan"
             ],
             "properties": {
                 "id_jenis_barang": {
@@ -3360,8 +3499,17 @@ const docTemplate = `{
                 "kode": {
                     "type": "string"
                 },
+                "lokasi_rak": {
+                    "type": "string"
+                },
                 "nama_barang": {
                     "type": "string"
+                },
+                "satuan": {
+                    "type": "string"
+                },
+                "stok_minimum": {
+                    "type": "integer"
                 }
             }
         },
@@ -4596,6 +4744,55 @@ const docTemplate = `{
                 }
             }
         },
+        "model.MovementReportResponse": {
+            "type": "object",
+            "properties": {
+                "keterangan": {
+                    "type": "string"
+                },
+                "nama_material": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                },
+                "tipe": {
+                    "description": "\"IN\" atau \"OUT\"",
+                    "type": "string"
+                },
+                "uom": {
+                    "type": "string"
+                },
+                "work_order_model": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.MovementReportSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.MovementReportResponse"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "movement report retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.POClientDetailResponse": {
             "type": "object",
             "properties": {
@@ -5634,6 +5831,84 @@ const docTemplate = `{
                 }
             }
         },
+        "model.StockReportPerKategoriResponse": {
+            "type": "object",
+            "properties": {
+                "kategori": {
+                    "type": "string"
+                },
+                "nama_barang": {
+                    "type": "string"
+                },
+                "satuan": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "string"
+                },
+                "total_stok": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.StockReportPerKategoriSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.StockReportPerKategoriResponse"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "stock report per kategori retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.StockReportPerLokasiResponse": {
+            "type": "object",
+            "properties": {
+                "lokasi_rak": {
+                    "type": "string"
+                },
+                "nama_barang": {
+                    "type": "string"
+                },
+                "satuan": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "string"
+                },
+                "total_stok": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.StockReportPerLokasiSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.StockReportPerLokasiResponse"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "stock report per lokasi retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.SuratJalanClientDetailResponse": {
             "type": "object",
             "properties": {
@@ -5913,7 +6188,8 @@ const docTemplate = `{
                 "id_jenis_barang",
                 "id_mitra",
                 "kode",
-                "nama_barang"
+                "nama_barang",
+                "satuan"
             ],
             "properties": {
                 "id_jenis_barang": {
@@ -5925,8 +6201,17 @@ const docTemplate = `{
                 "kode": {
                     "type": "string"
                 },
+                "lokasi_rak": {
+                    "type": "string"
+                },
                 "nama_barang": {
                     "type": "string"
+                },
+                "satuan": {
+                    "type": "string"
+                },
+                "stok_minimum": {
+                    "type": "integer"
                 }
             }
         },

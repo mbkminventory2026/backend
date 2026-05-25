@@ -101,8 +101,7 @@ type RegisterMitraRequest struct {
 	Kota           *string `json:"kota"`
 	KodePos        *string `json:"kode_pos"`
 
-	Username       string  `json:"username" binding:"required,min=3"`
-	Password       string  `json:"password" binding:"required,min=6"`
-	TurnstileToken string  `json:"turnstile_token" binding:"required"`
+	Username       string `json:"username" binding:"required,min=3"`
+	Password       string `json:"password" binding:"required,min=6"`
+	TurnstileToken string `json:"turnstile_token" binding:"required"`
 }
-

@@ -18,13 +18,16 @@ ORDER BY
 -- name: GetLowStockAlerts :many
 -- Mengecek material yang BALANCE-nya di bawah standar untuk trigger WebSocket layar berkedip
 SELECT 
-    ID_REKONSILIASI_MATERIAL,
-    DESCRIPTION,
-    SIZE,
-    BALANCE,
-    LAST_BALANCE,
-    SATUAN
+    rm.ID_REKONSILIASI_MATERIAL,
+    rm.DESCRIPTION,
+    rm.SIZE,
+    rm.BALANCE,
+    rm.LAST_BALANCE,
+    rm.SATUAN,
+    COALESCE(b.stok_minimum, 50)::int AS min_stock
 FROM 
-    REKONSILIASI_MATERIAL
+    REKONSILIASI_MATERIAL rm
+LEFT JOIN 
+    BARANG b ON rm.description = b.nama_barang OR rm.description = b.kode
 WHERE 
-    BALANCE < 50; -- Asumsi threshold low stock adalah 50, bisa kita ubah nanti lewat argumen sqlc jika dinamis
+    rm.BALANCE < COALESCE(b.stok_minimum, 50); -- Asumsi threshold low stock adalah 50, bisa kita ubah nanti lewat argumen sqlc jika dinamis

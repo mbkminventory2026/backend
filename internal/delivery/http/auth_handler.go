@@ -189,7 +189,7 @@ func (h *AuthHandler) RegisterMitra(c *gin.Context) {
 			AbortWithError(c, NewHTTPError(http.StatusConflict, "username sudah digunakan", nil))
 			return
 		}
-		
+
 		h.handleLoginError(c, err)
 		return
 	}

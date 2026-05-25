@@ -49,6 +49,9 @@ type CreateBarangRequest struct {
 	Kode          string `json:"kode" binding:"required"`
 	IDJenisBarang int32  `json:"id_jenis_barang" binding:"required"`
 	IDMitra       int32  `json:"id_mitra" binding:"required"`
+	Satuan        string `json:"satuan" binding:"required"`
+	LokasiRak     string `json:"lokasi_rak"`
+	StokMinimum   int32  `json:"stok_minimum"`
 }
 
 type UpdateBarangRequest struct {
@@ -56,6 +59,9 @@ type UpdateBarangRequest struct {
 	Kode          string `json:"kode" binding:"required"`
 	IDJenisBarang int32  `json:"id_jenis_barang" binding:"required"`
 	IDMitra       int32  `json:"id_mitra" binding:"required"`
+	Satuan        string `json:"satuan" binding:"required"`
+	LokasiRak     string `json:"lokasi_rak"`
+	StokMinimum   int32  `json:"stok_minimum"`
 }
 
 // Company
@@ -116,6 +122,9 @@ type BarangResponse struct {
 	Kode            string `json:"kode"`
 	NamaPerusahaan  string `json:"nama_perusahaan"`
 	NamaJenisBarang string `json:"nama_jenis_barang"`
+	Satuan          string `json:"satuan"`
+	LokasiRak       string `json:"lokasi_rak"`
+	StokMinimum     int32  `json:"stok_minimum"`
 	CreatedAt       string `json:"created_at"`
 }
 
