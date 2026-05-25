@@ -6,30 +6,39 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 )
 
 const (
-	envFileName            = ".env"
-	defaultServerPort      = "8080"
-	defaultDBPort          = "5432"
-	defaultDBSSLMode       = "disable"
-	defaultCORSAllowOrigin = "*"
-	defaultDBMaxConns      = int32(20)
-	defaultDBMinConns      = int32(2)
-	defaultDBConnLifetime  = 30
-	defaultDBConnIdleTime  = 10
-	defaultDBHealthPeriod  = 30
-	defaultDBConnectTO     = 5
-	defaultLoginRateMax    = 5
-	defaultLoginRateWindow = 60
+	envFileName             = ".env"
+	defaultServerPort       = "8080"
+	defaultDBPort           = "5432"
+	defaultDBSSLMode        = "disable"
+	defaultCORSAllowOrigin  = "*"
+	defaultDBMaxConns       = int32(20)
+	defaultDBMinConns       = int32(2)
+	defaultDBConnLifetime   = 30
+	defaultDBConnIdleTime   = 10
+	defaultDBHealthPeriod   = 30
+	defaultDBConnectTO      = 5
+	defaultLoginRateMax     = 5
+	defaultLoginRateWindow  = 60
+	defaultServerReadTO     = "30s"
+	defaultServerWriteTO    = "60s"
+	defaultServerIdleTO     = "120s"
+	defaultShutdownTO       = "15s"
 )
 
 // Config stores all application settings loaded from .env or system environment.
 type Config struct {
-	ServerPort      string `mapstructure:"SERVER_PORT"`
-	CORSAllowOrigin string `mapstructure:"CORS_ALLOW_ORIGIN"`
+	ServerPort         string        `mapstructure:"SERVER_PORT"`
+	CORSAllowOrigin    string        `mapstructure:"CORS_ALLOW_ORIGIN"`
+	ServerReadTimeout  time.Duration `mapstructure:"-"`
+	ServerWriteTimeout time.Duration `mapstructure:"-"`
+	ServerIdleTimeout  time.Duration `mapstructure:"-"`
+	ShutdownTimeout    time.Duration `mapstructure:"-"`
 
 	DBURL      string `mapstructure:"DB_URL"`
 	DBHost     string `mapstructure:"DB_HOST"`
@@ -60,11 +69,9 @@ func Load() (*Config, error) {
 	viper.SetConfigType("env")
 	viper.AutomaticEnv()
 
-	// Explicitly bind all known keys so that viper.Unmarshal picks up
-	// OS environment variables even when no .env file is present.
-	// (AutomaticEnv only works with viper.Get, not with Unmarshal.)
 	for _, key := range []string{
 		"SERVER_PORT", "CORS_ALLOW_ORIGIN", "GIN_MODE",
+		"SERVER_READ_TIMEOUT", "SERVER_WRITE_TIMEOUT", "SERVER_IDLE_TIMEOUT", "SHUTDOWN_TIMEOUT",
 		"DB_URL", "DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD",
 		"DB_NAME", "DB_SSLMODE", "DB_MAX_CONNS", "DB_MIN_CONNS",
 		"DB_MAX_CONN_LIFETIME_MINUTES", "DB_MAX_CONN_IDLE_TIME_MINUTES",
@@ -89,11 +96,12 @@ func Load() (*Config, error) {
 	viper.SetDefault("DB_CONNECT_TIMEOUT_SECONDS", defaultDBConnectTO)
 	viper.SetDefault("LOGIN_RATE_LIMIT_MAX_ATTEMPTS", defaultLoginRateMax)
 	viper.SetDefault("LOGIN_RATE_LIMIT_WINDOW_SECONDS", defaultLoginRateWindow)
+	viper.SetDefault("SERVER_READ_TIMEOUT", defaultServerReadTO)
+	viper.SetDefault("SERVER_WRITE_TIMEOUT", defaultServerWriteTO)
+	viper.SetDefault("SERVER_IDLE_TIMEOUT", defaultServerIdleTO)
+	viper.SetDefault("SHUTDOWN_TIMEOUT", defaultShutdownTO)
 
 	if err := viper.ReadInConfig(); err != nil {
-		// When using SetConfigFile with an explicit path, viper returns
-		// *os.PathError (not ConfigFileNotFoundError) if the file is missing.
-		// Both cases are safe to ignore — the app will use OS env vars instead.
 		var configNotFound viper.ConfigFileNotFoundError
 		if !errors.As(err, &configNotFound) && !errors.Is(err, os.ErrNotExist) {
 			return nil, fmt.Errorf("read config file: %w", err)
@@ -112,6 +120,31 @@ func Load() (*Config, error) {
 	if strings.TrimSpace(cfg.TurnstileSecret) == "" {
 		return nil, errors.New("TURNSTILE_SECRET is required")
 	}
+
+	serverReadTimeout, err := time.ParseDuration(viper.GetString("SERVER_READ_TIMEOUT"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid SERVER_READ_TIMEOUT: %w", err)
+	}
+
+	serverWriteTimeout, err := time.ParseDuration(viper.GetString("SERVER_WRITE_TIMEOUT"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid SERVER_WRITE_TIMEOUT: %w", err)
+	}
+
+	serverIdleTimeout, err := time.ParseDuration(viper.GetString("SERVER_IDLE_TIMEOUT"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid SERVER_IDLE_TIMEOUT: %w", err)
+	}
+
+	shutdownTimeout, err := time.ParseDuration(viper.GetString("SHUTDOWN_TIMEOUT"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid SHUTDOWN_TIMEOUT: %w", err)
+	}
+
+	cfg.ServerReadTimeout = serverReadTimeout
+	cfg.ServerWriteTimeout = serverWriteTimeout
+	cfg.ServerIdleTimeout = serverIdleTimeout
+	cfg.ShutdownTimeout = shutdownTimeout
 
 	return &cfg, nil
 }

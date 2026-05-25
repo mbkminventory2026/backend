@@ -36,13 +36,6 @@ import (
 	"permatatex-inventory/internal/usecase"
 )
 
-const (
-	serverReadTimeout  = 10 * time.Second
-	serverWriteTimeout = 15 * time.Second
-	serverIdleTimeout  = 60 * time.Second
-	shutdownTimeout    = 10 * time.Second
-)
-
 func main() {
 	logger := newJSONLogger()
 	slog.SetDefault(logger)
@@ -229,9 +222,9 @@ func main() {
 	server := &stdhttp.Server{
 		Addr:         ":" + cfg.ServerPort,
 		Handler:      router,
-		ReadTimeout:  serverReadTimeout,
-		WriteTimeout: serverWriteTimeout,
-		IdleTimeout:  serverIdleTimeout,
+		ReadTimeout:  cfg.ServerReadTimeout,
+		WriteTimeout: cfg.ServerWriteTimeout,
+		IdleTimeout:  cfg.ServerIdleTimeout,
 	}
 
 	serverErrCh := make(chan error, 1)
@@ -250,17 +243,19 @@ func main() {
 		logger.Info("shutdown signal received", slog.String("signal", sig.String()))
 	case err := <-serverErrCh:
 		logger.Error("server stopped unexpectedly", slog.String("error", err.Error()))
-		shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), shutdownTimeout)
+
+		shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
 		if logErr := activityLogService.Shutdown(shutdownCtx); logErr != nil {
 			logger.Error("activity log service shutdown failed", slog.String("error", logErr.Error()))
 		}
 		cancelShutdown()
+
 		dbPool.Close()
 		logger.Info("database pool closed")
 		os.Exit(1)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
