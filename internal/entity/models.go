@@ -60,6 +60,13 @@ type JenisBarang struct {
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 }
 
+type KomponenMarkerPlan struct {
+	IDKomponenMarker int32              `json:"id_komponen_marker"`
+	IDMarkerPlan     int32              `json:"id_marker_plan"`
+	NamaKomponen     string             `json:"nama_komponen"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
 type LogAktivita struct {
 	IDLog     int32              `json:"id_log"`
 	Aksi      string             `json:"aksi"`
@@ -74,6 +81,14 @@ type LogAktivitasDetail struct {
 	Deskripsi   string             `json:"deskripsi"`
 	IDLog       int32              `json:"id_log"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
+
+type MarkerPlan struct {
+	IDMarkerPlan   int32              `json:"id_marker_plan"`
+	NoDokumen      string             `json:"no_dokumen"`
+	TanggalEfektif pgtype.Date        `json:"tanggal_efektif"`
+	IDWoShell      int32              `json:"id_wo_shell"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
 type MaterialList struct {
@@ -232,6 +247,29 @@ type PrInternalItem struct {
 	Unit             string             `json:"unit"`
 	EstPrice         pgtype.Numeric     `json:"est_price"`
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
+type RatioMarker struct {
+	IDRatioMarker        int32              `json:"id_ratio_marker"`
+	IDKomponenMarker     int32              `json:"id_komponen_marker"`
+	IDWoShell            int32              `json:"id_wo_shell"`
+	Cons                 pgtype.Numeric     `json:"cons"`
+	PlanSpreadingGelaran pgtype.Numeric     `json:"plan_spreading_gelaran"`
+	PanjangMarker        pgtype.Numeric     `json:"panjang_marker"`
+	EfficiencyMarker     pgtype.Numeric     `json:"efficiency_marker"`
+	Allowance            pgtype.Numeric     `json:"allowance"`
+	ConsBuyer            pgtype.Numeric     `json:"cons_buyer"`
+	RollQty              int32              `json:"roll_qty"`
+	SambunganRoll        int32              `json:"sambungan_roll"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+}
+
+type RatioSizeMarker struct {
+	IDRatioSizeMarker int32              `json:"id_ratio_size_marker"`
+	IDRatioMarker     int32              `json:"id_ratio_marker"`
+	IDWoShellSize     int32              `json:"id_wo_shell_size"`
+	QtyPlan           int32              `json:"qty_plan"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
 }
 
 type Received struct {

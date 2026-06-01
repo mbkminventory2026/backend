@@ -45,6 +45,40 @@ func (q *Queries) CreateApprovalDetail(ctx context.Context, arg []CreateApproval
 	return q.db.CopyFrom(ctx, []string{"otoritas_dokumen_detail"}, []string{"id_otoritas", "id_user", "tipe_peran", "is_action_done", "waktu_aksi"}, &iteratorForCreateApprovalDetail{rows: arg})
 }
 
+// iteratorForCreateRatioSizeMarker implements pgx.CopyFromSource.
+type iteratorForCreateRatioSizeMarker struct {
+	rows                 []CreateRatioSizeMarkerParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForCreateRatioSizeMarker) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForCreateRatioSizeMarker) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].IDRatioMarker,
+		r.rows[0].IDWoShellSize,
+		r.rows[0].QtyPlan,
+	}, nil
+}
+
+func (r iteratorForCreateRatioSizeMarker) Err() error {
+	return nil
+}
+
+func (q *Queries) CreateRatioSizeMarker(ctx context.Context, arg []CreateRatioSizeMarkerParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"ratio_size_marker"}, []string{"id_ratio_marker", "id_wo_shell_size", "qty_plan"}, &iteratorForCreateRatioSizeMarker{rows: arg})
+}
+
 // iteratorForCreateWOShellPlan implements pgx.CopyFromSource.
 type iteratorForCreateWOShellPlan struct {
 	rows                 []CreateWOShellPlanParams
