@@ -1,0 +1,55 @@
+-- =================================================================================
+-- 1. MARKER PLAN (Header)
+-- =================================================================================
+CREATE TABLE IF NOT EXISTS MARKER_PLAN (
+    ID_MARKER_PLAN SERIAL PRIMARY KEY,
+    NO_DOKUMEN VARCHAR(100) NOT NULL,
+    TANGGAL_EFEKTIF DATE NOT NULL,
+    ID_WO_SHELL INT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (ID_WO_SHELL) REFERENCES WORK_ORDER_SHELL(ID_WO_SHELL) ON DELETE CASCADE
+);
+
+-- =================================================================================
+-- 2. KOMPONEN MARKER PLAN (Misal: Fabric Utama, Interlining, dll)
+-- =================================================================================
+CREATE TABLE IF NOT EXISTS KOMPONEN_MARKER_PLAN (
+    ID_KOMPONEN_MARKER SERIAL PRIMARY KEY,
+    ID_MARKER_PLAN INT NOT NULL,
+    NAMA_KOMPONEN VARCHAR(150) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (ID_MARKER_PLAN) REFERENCES MARKER_PLAN(ID_MARKER_PLAN) ON DELETE CASCADE
+);
+
+-- =================================================================================
+-- 3. RATIO MARKER
+-- =================================================================================
+CREATE TABLE IF NOT EXISTS RATIO_MARKER (
+    ID_RATIO_MARKER SERIAL PRIMARY KEY,
+    ID_KOMPONEN_MARKER INT NOT NULL,
+    ID_WO_SHELL INT NOT NULL,
+    CONS DECIMAL(15,3) NOT NULL DEFAULT 0,
+    PLAN_SPREADING_GELARAN DECIMAL(15,3) NOT NULL DEFAULT 0,
+    PANJANG_MARKER DECIMAL(15,3) NOT NULL DEFAULT 0,
+    EFFICIENCY_MARKER DECIMAL(5,2) NOT NULL DEFAULT 0,
+    ALLOWANCE DECIMAL(15,3) NOT NULL DEFAULT 0,
+    CONS_BUYER DECIMAL(15,3), -- Nullable sesuai request
+    ROLL_QTY INT NOT NULL DEFAULT 0, -- Menghindari keyword ROLL
+    SAMBUNGAN_ROLL INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (ID_KOMPONEN_MARKER) REFERENCES KOMPONEN_MARKER_PLAN(ID_KOMPONEN_MARKER) ON DELETE CASCADE,
+    FOREIGN KEY (ID_WO_SHELL) REFERENCES WORK_ORDER_SHELL(ID_WO_SHELL) ON DELETE CASCADE
+);
+
+-- =================================================================================
+-- 4. RATIO SIZE MARKER
+-- =================================================================================
+CREATE TABLE IF NOT EXISTS RATIO_SIZE_MARKER (
+    ID_RATIO_SIZE_MARKER SERIAL PRIMARY KEY,
+    ID_RATIO_MARKER INT NOT NULL,
+    ID_WO_SHELL_SIZE INT NOT NULL,
+    QTY_PLAN INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (ID_RATIO_MARKER) REFERENCES RATIO_MARKER(ID_RATIO_MARKER) ON DELETE CASCADE,
+    FOREIGN KEY (ID_WO_SHELL_SIZE) REFERENCES WORK_ORDER_SHELL_SIZE(ID_WO_SHELL_SIZE) ON DELETE CASCADE
+);

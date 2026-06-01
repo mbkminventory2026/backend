@@ -8,6 +8,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type ArsipDokumenGabungan struct {
+	IDArsip        int32              `json:"id_arsip"`
+	NamaDokumen    string             `json:"nama_dokumen"`
+	TipeDokumen    string             `json:"tipe_dokumen"`
+	ParameterQuery string             `json:"parameter_query"`
+	FileUrl        string             `json:"file_url"`
+	IDPembuat      int32              `json:"id_pembuat"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
 type Barang struct {
 	IDBarang      int32              `json:"id_barang"`
 	NamaBarang    string             `json:"nama_barang"`
@@ -50,6 +60,13 @@ type JenisBarang struct {
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 }
 
+type KomponenMarkerPlan struct {
+	IDKomponenMarker int32              `json:"id_komponen_marker"`
+	IDMarkerPlan     int32              `json:"id_marker_plan"`
+	NamaKomponen     string             `json:"nama_komponen"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
 type LogAktivita struct {
 	IDLog     int32              `json:"id_log"`
 	Aksi      string             `json:"aksi"`
@@ -64,6 +81,14 @@ type LogAktivitasDetail struct {
 	Deskripsi   string             `json:"deskripsi"`
 	IDLog       int32              `json:"id_log"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
+
+type MarkerPlan struct {
+	IDMarkerPlan   int32              `json:"id_marker_plan"`
+	NoDokumen      string             `json:"no_dokumen"`
+	TanggalEfektif pgtype.Date        `json:"tanggal_efektif"`
+	IDWoShell      int32              `json:"id_wo_shell"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
 type MaterialList struct {
@@ -86,6 +111,25 @@ type Mitra struct {
 	Kota           string             `json:"kota"`
 	KodePos        string             `json:"kode_pos"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+type OtoritasDokuman struct {
+	IDOtoritas       int32              `json:"id_otoritas"`
+	NamaTabelDokumen string             `json:"nama_tabel_dokumen"`
+	IDDokumen        int32              `json:"id_dokumen"`
+	StatusGlobal     string             `json:"status_global"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
+type OtoritasDokumenDetail struct {
+	IDOtoritasDetail int32              `json:"id_otoritas_detail"`
+	IDOtoritas       int32              `json:"id_otoritas"`
+	IDUser           int32              `json:"id_user"`
+	TipePeran        string             `json:"tipe_peran"`
+	IsActionDone     bool               `json:"is_action_done"`
+	WaktuAksi        pgtype.Timestamptz `json:"waktu_aksi"`
+	Catatan          string             `json:"catatan"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 }
 
 type PackingList struct {
@@ -205,6 +249,29 @@ type PrInternalItem struct {
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 }
 
+type RatioMarker struct {
+	IDRatioMarker        int32              `json:"id_ratio_marker"`
+	IDKomponenMarker     int32              `json:"id_komponen_marker"`
+	IDWoShell            int32              `json:"id_wo_shell"`
+	Cons                 pgtype.Numeric     `json:"cons"`
+	PlanSpreadingGelaran pgtype.Numeric     `json:"plan_spreading_gelaran"`
+	PanjangMarker        pgtype.Numeric     `json:"panjang_marker"`
+	EfficiencyMarker     pgtype.Numeric     `json:"efficiency_marker"`
+	Allowance            pgtype.Numeric     `json:"allowance"`
+	ConsBuyer            pgtype.Numeric     `json:"cons_buyer"`
+	RollQty              int32              `json:"roll_qty"`
+	SambunganRoll        int32              `json:"sambungan_roll"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+}
+
+type RatioSizeMarker struct {
+	IDRatioSizeMarker int32              `json:"id_ratio_size_marker"`
+	IDRatioMarker     int32              `json:"id_ratio_marker"`
+	IDWoShellSize     int32              `json:"id_wo_shell_size"`
+	QtyPlan           int32              `json:"qty_plan"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+}
+
 type Received struct {
 	IDReceived     int32              `json:"id_received"`
 	Tanggal        pgtype.Date        `json:"tanggal"`
@@ -282,6 +349,17 @@ type ReportSewing struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
+type Role struct {
+	IDRole    int32              `json:"id_role"`
+	NamaRole  string             `json:"nama_role"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type RoleHakAkse struct {
+	IDRole     int32 `json:"id_role"`
+	IDHakAkses int32 `json:"id_hak_akses"`
+}
+
 type SuratJalanClient struct {
 	IDSuratJalanClient int32              `json:"id_surat_jalan_client"`
 	Tanggal            pgtype.Date        `json:"tanggal"`
@@ -296,6 +374,14 @@ type SuratJalanInternal struct {
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 }
 
+type TimelinePlanProduksi struct {
+	IDTimeline     int32              `json:"id_timeline"`
+	IDPoClient     int32              `json:"id_po_client"`
+	TanggalDisusun pgtype.Date        `json:"tanggal_disusun"`
+	Notes          string             `json:"notes"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
 type User struct {
 	IDUser       int32              `json:"id_user"`
 	Username     string             `json:"username"`
@@ -305,12 +391,29 @@ type User struct {
 	IDMitra      pgtype.Int4        `json:"id_mitra"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	Status       string             `json:"status"`
+	IDRole       pgtype.Int4        `json:"id_role"`
 }
 
 type UserAkse struct {
 	IDUser     int32              `json:"id_user"`
 	IDHakAkses int32              `json:"id_hak_akses"`
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+}
+
+type WoShellPlan struct {
+	IDWoShellPlan          int32              `json:"id_wo_shell_plan"`
+	IDTimeline             int32              `json:"id_timeline"`
+	IDWoShell              int32              `json:"id_wo_shell"`
+	InLine                 string             `json:"in_line"`
+	TglGelarCutting        pgtype.Date        `json:"tgl_gelar_cutting"`
+	StatusGelarCutting     string             `json:"status_gelar_cutting"`
+	TglEmbroo              pgtype.Date        `json:"tgl_embroo"`
+	StatusEmbroo           string             `json:"status_embroo"`
+	TglLoadingSewing       pgtype.Date        `json:"tgl_loading_sewing"`
+	StatusLoadingSewing    string             `json:"status_loading_sewing"`
+	TglFinishingPacking    pgtype.Date        `json:"tgl_finishing_packing"`
+	StatusFinishingPacking string             `json:"status_finishing_packing"`
+	CreatedAt              pgtype.Timestamptz `json:"created_at"`
 }
 
 type WorkOrder struct {

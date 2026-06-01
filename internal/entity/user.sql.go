@@ -209,7 +209,13 @@ func (q *Queries) GetUserPermissionIDs(ctx context.Context, idUser int32) ([]int
 }
 
 const getUserPermissions = `-- name: GetUserPermissions :many
-SELECT h.NAMA_HALAMAN
+SELECT h.NAMA_HALAMAN 
+FROM HAK_AKSES h
+JOIN ROLE_HAK_AKSES rha ON h.ID_HAK_AKSES = rha.ID_HAK_AKSES
+JOIN USERS u ON u.ID_ROLE = rha.ID_ROLE
+WHERE u.ID_USER = $1
+UNION
+SELECT h.NAMA_HALAMAN 
 FROM HAK_AKSES h
 JOIN USER_AKSES ua ON h.ID_HAK_AKSES = ua.ID_HAK_AKSES
 WHERE ua.ID_USER = $1
