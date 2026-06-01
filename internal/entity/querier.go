@@ -40,8 +40,10 @@ type Querier interface {
 	CreateReportSewing(ctx context.Context, arg CreateReportSewingParams) (ReportSewing, error)
 	CreateSuratJalanClient(ctx context.Context, arg CreateSuratJalanClientParams) (SuratJalanClient, error)
 	CreateSuratJalanInternal(ctx context.Context) (SuratJalanInternal, error)
+	CreateTimelinePlan(ctx context.Context, arg CreateTimelinePlanParams) (TimelinePlanProduksi, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	CreateUserAkses(ctx context.Context, arg CreateUserAksesParams) error
+	CreateWOShellPlan(ctx context.Context, arg []CreateWOShellPlanParams) (int64, error)
 	CreateWorkOrder(ctx context.Context, arg CreateWorkOrderParams) (CreateWorkOrderRow, error)
 	CreateWorkOrderShell(ctx context.Context, arg CreateWorkOrderShellParams) (WorkOrderShell, error)
 	CreateWorkOrderShellSize(ctx context.Context, arg CreateWorkOrderShellSizeParams) (WorkOrderShellSize, error)
@@ -79,10 +81,12 @@ type Querier interface {
 	GetStockReportPerLokasi(ctx context.Context) ([]GetStockReportPerLokasiRow, error)
 	GetSuratJalanClientDetail(ctx context.Context, idSuratJalanClient int32) (GetSuratJalanClientDetailRow, error)
 	GetSuratJalanInternalDetail(ctx context.Context, idSuratJalanInternal int32) (SuratJalanInternal, error)
+	GetTimelinePlanByID(ctx context.Context, idTimeline int32) (TimelinePlanProduksi, error)
 	GetUserByID(ctx context.Context, idUser int32) (GetUserByIDRow, error)
 	GetUserByUsername(ctx context.Context, username string) (GetUserByUsernameRow, error)
 	GetUserPermissionIDs(ctx context.Context, idUser int32) ([]int32, error)
 	GetUserPermissions(ctx context.Context, idUser int32) ([]string, error)
+	GetWOShellPlansByTimelineID(ctx context.Context, idTimeline int32) ([]GetWOShellPlansByTimelineIDRow, error)
 	GetWorkOrderDetail(ctx context.Context, idWo int32) (GetWorkOrderDetailRow, error)
 	// Mengambil data WO dan Production Internal untuk diolah model Regresi Linier di Golang
 	GetWorkOrderForAIEstimation(ctx context.Context) ([]GetWorkOrderForAIEstimationRow, error)
@@ -121,6 +125,7 @@ type Querier interface {
 	UpdatePOClient(ctx context.Context, arg UpdatePOClientParams) (PoClient, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error)
 	UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) (UpdateUserStatusRow, error)
+	UpdateWOShellPlanStatus(ctx context.Context, arg UpdateWOShellPlanStatusParams) error
 }
 
 var _ Querier = (*Queries)(nil)

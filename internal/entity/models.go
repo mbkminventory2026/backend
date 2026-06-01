@@ -336,6 +336,14 @@ type SuratJalanInternal struct {
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 }
 
+type TimelinePlanProduksi struct {
+	IDTimeline     int32              `json:"id_timeline"`
+	IDPoClient     int32              `json:"id_po_client"`
+	TanggalDisusun pgtype.Date        `json:"tanggal_disusun"`
+	Notes          string             `json:"notes"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
 type User struct {
 	IDUser       int32              `json:"id_user"`
 	Username     string             `json:"username"`
@@ -352,6 +360,22 @@ type UserAkse struct {
 	IDUser     int32              `json:"id_user"`
 	IDHakAkses int32              `json:"id_hak_akses"`
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+}
+
+type WoShellPlan struct {
+	IDWoShellPlan          int32              `json:"id_wo_shell_plan"`
+	IDTimeline             int32              `json:"id_timeline"`
+	IDWoShell              int32              `json:"id_wo_shell"`
+	InLine                 string             `json:"in_line"`
+	TglGelarCutting        pgtype.Date        `json:"tgl_gelar_cutting"`
+	StatusGelarCutting     string             `json:"status_gelar_cutting"`
+	TglEmbroo              pgtype.Date        `json:"tgl_embroo"`
+	StatusEmbroo           string             `json:"status_embroo"`
+	TglLoadingSewing       pgtype.Date        `json:"tgl_loading_sewing"`
+	StatusLoadingSewing    string             `json:"status_loading_sewing"`
+	TglFinishingPacking    pgtype.Date        `json:"tgl_finishing_packing"`
+	StatusFinishingPacking string             `json:"status_finishing_packing"`
+	CreatedAt              pgtype.Timestamptz `json:"created_at"`
 }
 
 type WorkOrder struct {

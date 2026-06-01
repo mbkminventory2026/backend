@@ -44,3 +44,45 @@ func (r iteratorForCreateApprovalDetail) Err() error {
 func (q *Queries) CreateApprovalDetail(ctx context.Context, arg []CreateApprovalDetailParams) (int64, error) {
 	return q.db.CopyFrom(ctx, []string{"otoritas_dokumen_detail"}, []string{"id_otoritas", "id_user", "tipe_peran", "is_action_done", "waktu_aksi"}, &iteratorForCreateApprovalDetail{rows: arg})
 }
+
+// iteratorForCreateWOShellPlan implements pgx.CopyFromSource.
+type iteratorForCreateWOShellPlan struct {
+	rows                 []CreateWOShellPlanParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForCreateWOShellPlan) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForCreateWOShellPlan) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].IDTimeline,
+		r.rows[0].IDWoShell,
+		r.rows[0].InLine,
+		r.rows[0].TglGelarCutting,
+		r.rows[0].StatusGelarCutting,
+		r.rows[0].TglEmbroo,
+		r.rows[0].StatusEmbroo,
+		r.rows[0].TglLoadingSewing,
+		r.rows[0].StatusLoadingSewing,
+		r.rows[0].TglFinishingPacking,
+		r.rows[0].StatusFinishingPacking,
+	}, nil
+}
+
+func (r iteratorForCreateWOShellPlan) Err() error {
+	return nil
+}
+
+func (q *Queries) CreateWOShellPlan(ctx context.Context, arg []CreateWOShellPlanParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"wo_shell_plan"}, []string{"id_timeline", "id_wo_shell", "in_line", "tgl_gelar_cutting", "status_gelar_cutting", "tgl_embroo", "status_embroo", "tgl_loading_sewing", "status_loading_sewing", "tgl_finishing_packing", "status_finishing_packing"}, &iteratorForCreateWOShellPlan{rows: arg})
+}
