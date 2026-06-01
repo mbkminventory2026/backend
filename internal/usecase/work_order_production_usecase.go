@@ -23,6 +23,9 @@ var (
 	ErrWorkOrderNotFound           = errors.New("work order not found")
 	ErrReportDivisionUnsupported   = errors.New("unsupported report division")
 	ErrWorkOrderAlreadyClosed      = errors.New("work order is already closed")
+
+	workOrderSortColumns         = buildSortWhitelist("created_at", "id_wo", "buyer", "model", "qty", "status", "po_number", "po_client_item_style")
+	productionSummarySortColumns = buildSortWhitelist("last_updated", "id_wo_shell_size", "model_name", "size", "target_qty", "cutting_qty", "sewing_qty", "qc_pass_qty", "packing_qty", "shipped_qty")
 )
 
 type WorkOrderProductionUseCase struct {
@@ -333,9 +336,11 @@ func (u *WorkOrderProductionUseCase) CreateFactoryReport(ctx context.Context, di
 }
 
 func (u *WorkOrderProductionUseCase) ListWorkOrders(ctx context.Context, filter model.TransactionListFilter) (*model.WorkOrderListResponse, error) {
-	page, limit, offset := normalizePagination(filter)
+	page, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "id_wo", true, workOrderSortColumns)
 	rows, err := u.repo.ListWorkOrders(ctx, entity.ListWorkOrdersParams{
-		SearchTerm: filter.Search,
+		SearchTerm: search,
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
 		PageLimit:  limit,
 		PageOffset: offset,
 	})
@@ -374,16 +379,14 @@ func (u *WorkOrderProductionUseCase) ListProductionSummary(ctx context.Context, 
 		return nil, ErrWorkOrderValidation
 	}
 
-	page, limit, offset := normalizePagination(model.TransactionListFilter{
-		Page:   filter.Page,
-		Limit:  filter.Limit,
-		Search: filter.Search,
-	})
+	page, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "last_updated", true, productionSummarySortColumns)
 
 	rows, err := u.repo.ListProductionSummary(ctx, entity.ListProductionSummaryParams{
 		IDWo:          filter.IDWO,
 		IDWoShellSize: filter.IDWOShellSize,
-		SearchTerm:    filter.Search,
+		SearchTerm:    search,
+		SortBy:        sortBy,
+		SortDesc:      sortDesc,
 		PageOffset:    offset,
 		PageLimit:     limit,
 	})

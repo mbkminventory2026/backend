@@ -21,9 +21,27 @@ WHERE (
     sqlc.arg(search_term) = '' OR
     wo.buyer ILIKE '%' || sqlc.arg(search_term) || '%' OR
     wo.model ILIKE '%' || sqlc.arg(search_term) || '%' OR
-    pc.po_number ILIKE '%' || sqlc.arg(search_term) || '%'
+    pc.po_number ILIKE '%' || sqlc.arg(search_term) || '%' OR
+    pci.style ILIKE '%' || sqlc.arg(search_term) || '%'
 )
-ORDER BY wo.id_wo DESC
+ORDER BY
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN wo.created_at END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN wo.created_at END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_wo' AND NOT sqlc.arg(sort_desc)::bool THEN wo.id_wo END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_wo' AND sqlc.arg(sort_desc)::bool THEN wo.id_wo END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'buyer' AND NOT sqlc.arg(sort_desc)::bool THEN wo.buyer END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'buyer' AND sqlc.arg(sort_desc)::bool THEN wo.buyer END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'model' AND NOT sqlc.arg(sort_desc)::bool THEN wo.model END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'model' AND sqlc.arg(sort_desc)::bool THEN wo.model END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'qty' AND NOT sqlc.arg(sort_desc)::bool THEN wo.qty END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'qty' AND sqlc.arg(sort_desc)::bool THEN wo.qty END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'status' AND NOT sqlc.arg(sort_desc)::bool THEN wo.status END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'status' AND sqlc.arg(sort_desc)::bool THEN wo.status END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'po_number' AND NOT sqlc.arg(sort_desc)::bool THEN pc.po_number END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'po_number' AND sqlc.arg(sort_desc)::bool THEN pc.po_number END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'po_client_item_style' AND NOT sqlc.arg(sort_desc)::bool THEN pci.style END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'po_client_item_style' AND sqlc.arg(sort_desc)::bool THEN pci.style END DESC,
+    wo.id_wo DESC
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 
 -- name: GetWorkOrderDetail :one
@@ -130,7 +148,22 @@ WHERE (
     sqlc.narg(id_mitra)::integer IS NULL OR
     pc.id_mitra = sqlc.narg(id_mitra)::integer
 )
-ORDER BY pc.id_po_client DESC
+ORDER BY
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN pc.created_at END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN pc.created_at END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_po_client' AND NOT sqlc.arg(sort_desc)::bool THEN pc.id_po_client END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_po_client' AND sqlc.arg(sort_desc)::bool THEN pc.id_po_client END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'po_number' AND NOT sqlc.arg(sort_desc)::bool THEN pc.po_number END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'po_number' AND sqlc.arg(sort_desc)::bool THEN pc.po_number END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'tanggal' AND NOT sqlc.arg(sort_desc)::bool THEN pc.tanggal END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'tanggal' AND sqlc.arg(sort_desc)::bool THEN pc.tanggal END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'season' AND NOT sqlc.arg(sort_desc)::bool THEN pc.season END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'season' AND sqlc.arg(sort_desc)::bool THEN pc.season END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'delivery' AND NOT sqlc.arg(sort_desc)::bool THEN pc.delivery END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'delivery' AND sqlc.arg(sort_desc)::bool THEN pc.delivery END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'mitra_name' AND NOT sqlc.arg(sort_desc)::bool THEN m.nama_perusahaan END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'mitra_name' AND sqlc.arg(sort_desc)::bool THEN m.nama_perusahaan END DESC,
+    pc.id_po_client DESC
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 
 -- name: GetPOClientDetail :one
@@ -197,10 +230,29 @@ FROM PR_INTERNAL pr
 WHERE (
     sqlc.arg(search_term) = '' OR
     pr.nama ILIKE '%' || sqlc.arg(search_term) || '%' OR
+    pr.departemen ILIKE '%' || sqlc.arg(search_term) || '%' OR
     pr.vendor_name ILIKE '%' || sqlc.arg(search_term) || '%' OR
-    pr.projek ILIKE '%' || sqlc.arg(search_term) || '%'
+    pr.projek ILIKE '%' || sqlc.arg(search_term) || '%' OR
+    pr.status ILIKE '%' || sqlc.arg(search_term) || '%'
 )
-ORDER BY pr.id_pr_internal DESC
+ORDER BY
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN pr.created_at END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN pr.created_at END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_pr_internal' AND NOT sqlc.arg(sort_desc)::bool THEN pr.id_pr_internal END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_pr_internal' AND sqlc.arg(sort_desc)::bool THEN pr.id_pr_internal END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'tanggal' AND NOT sqlc.arg(sort_desc)::bool THEN pr.tanggal END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'tanggal' AND sqlc.arg(sort_desc)::bool THEN pr.tanggal END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'nama' AND NOT sqlc.arg(sort_desc)::bool THEN pr.nama END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'nama' AND sqlc.arg(sort_desc)::bool THEN pr.nama END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'departemen' AND NOT sqlc.arg(sort_desc)::bool THEN pr.departemen END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'departemen' AND sqlc.arg(sort_desc)::bool THEN pr.departemen END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'vendor_name' AND NOT sqlc.arg(sort_desc)::bool THEN pr.vendor_name END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'vendor_name' AND sqlc.arg(sort_desc)::bool THEN pr.vendor_name END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'projek' AND NOT sqlc.arg(sort_desc)::bool THEN pr.projek END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'projek' AND sqlc.arg(sort_desc)::bool THEN pr.projek END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'status' AND NOT sqlc.arg(sort_desc)::bool THEN pr.status END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'status' AND sqlc.arg(sort_desc)::bool THEN pr.status END DESC,
+    pr.id_pr_internal DESC
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 
 -- name: GetPRInternalDetail :one
@@ -260,9 +312,27 @@ WHERE (
     sqlc.arg(search_term) = '' OR
     poi.nama_po ILIKE '%' || sqlc.arg(search_term) || '%' OR
     poi.supplier_name ILIKE '%' || sqlc.arg(search_term) || '%' OR
-    poi.cpo ILIKE '%' || sqlc.arg(search_term) || '%'
+    poi.cpo ILIKE '%' || sqlc.arg(search_term) || '%' OR
+    poi.currency ILIKE '%' || sqlc.arg(search_term) || '%'
 )
-ORDER BY poi.id_po_internal DESC
+ORDER BY
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN poi.created_at END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN poi.created_at END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_po_internal' AND NOT sqlc.arg(sort_desc)::bool THEN poi.id_po_internal END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_po_internal' AND sqlc.arg(sort_desc)::bool THEN poi.id_po_internal END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'tanggal' AND NOT sqlc.arg(sort_desc)::bool THEN poi.tanggal END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'tanggal' AND sqlc.arg(sort_desc)::bool THEN poi.tanggal END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'nama_po' AND NOT sqlc.arg(sort_desc)::bool THEN poi.nama_po END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'nama_po' AND sqlc.arg(sort_desc)::bool THEN poi.nama_po END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'supplier_name' AND NOT sqlc.arg(sort_desc)::bool THEN poi.supplier_name END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'supplier_name' AND sqlc.arg(sort_desc)::bool THEN poi.supplier_name END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'currency' AND NOT sqlc.arg(sort_desc)::bool THEN poi.currency END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'currency' AND sqlc.arg(sort_desc)::bool THEN poi.currency END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'cpo' AND NOT sqlc.arg(sort_desc)::bool THEN poi.cpo END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'cpo' AND sqlc.arg(sort_desc)::bool THEN poi.cpo END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'ship_date' AND NOT sqlc.arg(sort_desc)::bool THEN poi.ship_date END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'ship_date' AND sqlc.arg(sort_desc)::bool THEN poi.ship_date END DESC,
+    poi.id_po_internal DESC
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 
 -- name: GetPOInternalDetail :one
@@ -318,7 +388,20 @@ WHERE (
     wo.buyer ILIKE '%' || sqlc.arg(search_term) || '%' OR
     wo.model ILIKE '%' || sqlc.arg(search_term) || '%'
 )
-ORDER BY pl.id_packing_list DESC
+ORDER BY
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN pl.created_at END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN pl.created_at END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_packing_list' AND NOT sqlc.arg(sort_desc)::bool THEN pl.id_packing_list END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_packing_list' AND sqlc.arg(sort_desc)::bool THEN pl.id_packing_list END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'total_garment_per_box' AND NOT sqlc.arg(sort_desc)::bool THEN pl.total_garment_per_box END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'total_garment_per_box' AND sqlc.arg(sort_desc)::bool THEN pl.total_garment_per_box END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'total_reject' AND NOT sqlc.arg(sort_desc)::bool THEN pl.total_reject END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'total_reject' AND sqlc.arg(sort_desc)::bool THEN pl.total_reject END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'buyer' AND NOT sqlc.arg(sort_desc)::bool THEN wo.buyer END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'buyer' AND sqlc.arg(sort_desc)::bool THEN wo.buyer END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'model' AND NOT sqlc.arg(sort_desc)::bool THEN wo.model END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'model' AND sqlc.arg(sort_desc)::bool THEN wo.model END DESC,
+    pl.id_packing_list DESC
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 
 -- name: GetPackingListDetail :one
@@ -380,7 +463,22 @@ WHERE (
     sjc.keterangan ILIKE '%' || sqlc.arg(search_term) || '%' OR
     ml.description ILIKE '%' || sqlc.arg(search_term) || '%'
 )
-ORDER BY sjc.id_surat_jalan_client DESC
+ORDER BY
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN sjc.created_at END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN sjc.created_at END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_surat_jalan_client' AND NOT sqlc.arg(sort_desc)::bool THEN sjc.id_surat_jalan_client END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_surat_jalan_client' AND sqlc.arg(sort_desc)::bool THEN sjc.id_surat_jalan_client END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'tanggal' AND NOT sqlc.arg(sort_desc)::bool THEN sjc.tanggal END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'tanggal' AND sqlc.arg(sort_desc)::bool THEN sjc.tanggal END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'qty' AND NOT sqlc.arg(sort_desc)::bool THEN sjc.qty END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'qty' AND sqlc.arg(sort_desc)::bool THEN sjc.qty END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'keterangan' AND NOT sqlc.arg(sort_desc)::bool THEN sjc.keterangan END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'keterangan' AND sqlc.arg(sort_desc)::bool THEN sjc.keterangan END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'material_description' AND NOT sqlc.arg(sort_desc)::bool THEN ml.description END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'material_description' AND sqlc.arg(sort_desc)::bool THEN ml.description END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_wo' AND NOT sqlc.arg(sort_desc)::bool THEN ml.id_wo END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_wo' AND sqlc.arg(sort_desc)::bool THEN ml.id_wo END DESC,
+    sjc.id_surat_jalan_client DESC
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 
 -- name: GetSuratJalanClientDetail :one
@@ -404,7 +502,12 @@ SELECT
     sji.created_at,
     COUNT(*) OVER() AS total_count
 FROM SURAT_JALAN_INTERNAL sji
-ORDER BY sji.id_surat_jalan_internal DESC
+ORDER BY
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN sji.created_at END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN sji.created_at END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_surat_jalan_internal' AND NOT sqlc.arg(sort_desc)::bool THEN sji.id_surat_jalan_internal END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_surat_jalan_internal' AND sqlc.arg(sort_desc)::bool THEN sji.id_surat_jalan_internal END DESC,
+    sji.id_surat_jalan_internal DESC
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 
 -- name: GetSuratJalanInternalDetail :one

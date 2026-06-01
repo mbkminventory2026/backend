@@ -65,22 +65,15 @@ func (h *TransactionDocumentHandler) ListPOClients(c *gin.Context) {
 		}
 	}
 
-	page, err := parseQueryInt32(c, "page", 1)
+	filter, err := parseListQuery(c, 20)
 	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid page", nil))
-		return
-	}
-	limit, err := parseQueryInt32(c, "limit", 20)
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid limit", nil))
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
 		return
 	}
 
 	item, err := h.useCase.ListPOClients(c.Request.Context(), model.TransactionListFilter{
-		Page:    page,
-		Limit:   limit,
-		Search:  c.Query("search"),
-		IDMitra: mitraID,
+		ListQueryFilter: filter,
+		IDMitra:         mitraID,
 	})
 	if err != nil {
 		h.handleError(c, err)
@@ -266,21 +259,14 @@ func (h *TransactionDocumentHandler) UpdatePOClient(c *gin.Context) {
 // @Failure      500     {object}  model.TransactionErrorDoc
 // @Router       /api/v1/pr-internals [get]
 func (h *TransactionDocumentHandler) ListPRInternals(c *gin.Context) {
-	page, err := parseQueryInt32(c, "page", 1)
+	filter, err := parseListQuery(c, 20)
 	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid page", nil))
-		return
-	}
-	limit, err := parseQueryInt32(c, "limit", 20)
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid limit", nil))
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
 		return
 	}
 
 	item, err := h.useCase.ListPRInternals(c.Request.Context(), model.TransactionListFilter{
-		Page:   page,
-		Limit:  limit,
-		Search: c.Query("search"),
+		ListQueryFilter: filter,
 	})
 	if err != nil {
 		h.handleError(c, err)
@@ -396,21 +382,14 @@ func (h *TransactionDocumentHandler) ApprovePRInternal(c *gin.Context) {
 // @Failure      500     {object}  model.TransactionErrorDoc
 // @Router       /api/v1/po-internals [get]
 func (h *TransactionDocumentHandler) ListPOInternals(c *gin.Context) {
-	page, err := parseQueryInt32(c, "page", 1)
+	filter, err := parseListQuery(c, 20)
 	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid page", nil))
-		return
-	}
-	limit, err := parseQueryInt32(c, "limit", 20)
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid limit", nil))
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
 		return
 	}
 
 	item, err := h.useCase.ListPOInternals(c.Request.Context(), model.TransactionListFilter{
-		Page:   page,
-		Limit:  limit,
-		Search: c.Query("search"),
+		ListQueryFilter: filter,
 	})
 	if err != nil {
 		h.handleError(c, err)

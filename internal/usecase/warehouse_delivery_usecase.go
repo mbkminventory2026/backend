@@ -23,6 +23,10 @@ var (
 	ErrWarehouseNotFound           = errors.New("warehouse transaction not found")
 	ErrSuratJalanTypeUnsupported   = errors.New("unsupported surat jalan type")
 	ErrWarehouseInsufficientStock  = errors.New("insufficient stock balance")
+
+	packingListSortColumns        = buildSortWhitelist("created_at", "id_packing_list", "total_garment_per_box", "total_reject", "buyer", "model")
+	suratJalanClientSortColumns   = buildSortWhitelist("created_at", "id_surat_jalan_client", "tanggal", "qty", "keterangan", "material_description", "id_wo")
+	suratJalanInternalSortColumns = buildSortWhitelist("created_at", "id_surat_jalan_internal")
 )
 
 type WarehouseDeliveryUseCase struct {
@@ -246,9 +250,11 @@ func (u *WarehouseDeliveryUseCase) CreateSuratJalan(ctx context.Context, suratJa
 }
 
 func (u *WarehouseDeliveryUseCase) ListPackingLists(ctx context.Context, filter model.TransactionListFilter) (*model.PackingListListResponse, error) {
-	page, limit, offset := normalizePagination(filter)
+	page, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "id_packing_list", true, packingListSortColumns)
 	rows, err := u.repo.ListPackingLists(ctx, entity.ListPackingListsParams{
-		SearchTerm: filter.Search,
+		SearchTerm: search,
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
 		PageLimit:  limit,
 		PageOffset: offset,
 	})
@@ -346,9 +352,11 @@ func (u *WarehouseDeliveryUseCase) GetPackingListDetail(ctx context.Context, id 
 }
 
 func (u *WarehouseDeliveryUseCase) ListSuratJalanClients(ctx context.Context, filter model.TransactionListFilter) (*model.SuratJalanClientListResponse, error) {
-	page, limit, offset := normalizePagination(filter)
+	page, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "id_surat_jalan_client", true, suratJalanClientSortColumns)
 	rows, err := u.repo.ListSuratJalanClients(ctx, entity.ListSuratJalanClientsParams{
-		SearchTerm: filter.Search,
+		SearchTerm: search,
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
 		PageLimit:  limit,
 		PageOffset: offset,
 	})
@@ -400,8 +408,10 @@ func (u *WarehouseDeliveryUseCase) GetSuratJalanClientDetail(ctx context.Context
 }
 
 func (u *WarehouseDeliveryUseCase) ListSuratJalanInternals(ctx context.Context, filter model.TransactionListFilter) (*model.SuratJalanInternalListResponse, error) {
-	page, limit, offset := normalizePagination(filter)
+	page, limit, offset, _, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "id_surat_jalan_internal", true, suratJalanInternalSortColumns)
 	rows, err := u.repo.ListSuratJalanInternals(ctx, entity.ListSuratJalanInternalsParams{
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
 		PageLimit:  limit,
 		PageOffset: offset,
 	})

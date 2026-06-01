@@ -101,11 +101,18 @@ func (h *MasterDataHandler) GetDepartemenByID(c *gin.Context) {
 // @Success      200  {object}  model.ListDepartemenSuccessDoc
 // @Router       /api/v1/master/departemen [get]
 func (h *MasterDataHandler) ListDepartemen(c *gin.Context) {
-	items, err := h.useCase.ListDepartemen(c.Request.Context())
+	filter, err := parseListQuery(c, 20)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
+		return
+	}
+
+	items, total, err := h.useCase.ListDepartemen(c.Request.Context(), filter)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
+	setTotalCountHeader(c, total)
 	response.Success(c, http.StatusOK, "departemen retrieved", items)
 }
 
@@ -216,11 +223,18 @@ func (h *MasterDataHandler) GetJenisBarangByID(c *gin.Context) {
 // @Success      200  {object}  model.ListJenisBarangSuccessDoc
 // @Router       /api/v1/master/jenis-barang [get]
 func (h *MasterDataHandler) ListJenisBarang(c *gin.Context) {
-	items, err := h.useCase.ListJenisBarang(c.Request.Context())
+	filter, err := parseListQuery(c, 20)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
+		return
+	}
+
+	items, total, err := h.useCase.ListJenisBarang(c.Request.Context(), filter)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
+	setTotalCountHeader(c, total)
 	response.Success(c, http.StatusOK, "jenis barang retrieved", items)
 }
 
@@ -333,11 +347,18 @@ func (h *MasterDataHandler) GetMitraByID(c *gin.Context) {
 // @Success      200  {object}  model.ListMitraSuccessDoc
 // @Router       /api/v1/master/mitra [get]
 func (h *MasterDataHandler) ListMitra(c *gin.Context) {
-	items, err := h.useCase.ListMitra(c.Request.Context())
+	filter, err := parseListQuery(c, 20)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
+		return
+	}
+
+	items, total, err := h.useCase.ListMitra(c.Request.Context(), filter)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
+	setTotalCountHeader(c, total)
 	response.Success(c, http.StatusOK, "mitra retrieved", items)
 }
 
@@ -450,22 +471,18 @@ func (h *MasterDataHandler) GetBarangByID(c *gin.Context) {
 // @Success      200     {object}  model.ListBarangSuccessDoc
 // @Router       /api/v1/master/barang [get]
 func (h *MasterDataHandler) ListBarang(c *gin.Context) {
-	limit, err := parseQueryInt32(c, "limit", 20)
+	filter, err := parseListQuery(c, 20)
 	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid limit", nil))
-		return
-	}
-	offset, err := parseQueryInt32(c, "offset", 0)
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid offset", nil))
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
 		return
 	}
 
-	items, err := h.useCase.ListBarang(c.Request.Context(), limit, offset)
+	items, total, err := h.useCase.ListBarang(c.Request.Context(), filter)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
+	setTotalCountHeader(c, total)
 	response.Success(c, http.StatusOK, "barang retrieved", items)
 }
 
@@ -555,11 +572,18 @@ func (h *MasterDataHandler) DeleteBarang(c *gin.Context) {
 // @Success      200  {object}  model.ListPermissionsSuccessDoc
 // @Router       /api/v1/master/permissions [get]
 func (h *MasterDataHandler) ListHakAkses(c *gin.Context) {
-	items, err := h.useCase.ListHakAkses(c.Request.Context())
+	filter, err := parseListQuery(c, 20)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
+		return
+	}
+
+	items, total, err := h.useCase.ListHakAkses(c.Request.Context(), filter)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
+	setTotalCountHeader(c, total)
 	response.Success(c, http.StatusOK, "permissions retrieved", items)
 }
 

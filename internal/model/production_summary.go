@@ -3,9 +3,7 @@ package model
 type ProductionSummaryFilter struct {
 	IDWO          int32
 	IDWOShellSize int32
-	Search        string
-	Page          int32
-	Limit         int32
+	ListQueryFilter
 }
 
 type ProductionStats struct {

@@ -9,6 +9,22 @@ import (
 	"context"
 )
 
+const countDepartemen = `-- name: CountDepartemen :one
+SELECT COUNT(*)
+FROM DEPARTEMEN
+WHERE (
+    $1::text = '' OR
+    nama_departemen ILIKE '%' || $1::text || '%'
+)
+`
+
+func (q *Queries) CountDepartemen(ctx context.Context, searchTerm string) (int64, error) {
+	row := q.db.QueryRow(ctx, countDepartemen, searchTerm)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createDepartemen = `-- name: CreateDepartemen :one
 INSERT INTO DEPARTEMEN (nama_departemen)
 VALUES ($1)
@@ -48,12 +64,40 @@ func (q *Queries) GetDepartemenByID(ctx context.Context, idDepartemen int32) (De
 }
 
 const listDepartemen = `-- name: ListDepartemen :many
-SELECT id_departemen, nama_departemen, created_at FROM DEPARTEMEN
-ORDER BY nama_departemen ASC
+SELECT id_departemen, nama_departemen, created_at
+FROM DEPARTEMEN
+WHERE (
+    $1::text = '' OR
+    nama_departemen ILIKE '%' || $1::text || '%'
+)
+ORDER BY
+    CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN created_at END ASC,
+    CASE WHEN $2::text = 'created_at' AND $3::bool THEN created_at END DESC,
+    CASE WHEN $2::text = 'id_departemen' AND NOT $3::bool THEN id_departemen END ASC,
+    CASE WHEN $2::text = 'id_departemen' AND $3::bool THEN id_departemen END DESC,
+    CASE WHEN $2::text = 'nama_departemen' AND NOT $3::bool THEN nama_departemen END ASC,
+    CASE WHEN $2::text = 'nama_departemen' AND $3::bool THEN nama_departemen END DESC,
+    nama_departemen ASC,
+    id_departemen ASC
+LIMIT $5 OFFSET $4
 `
 
-func (q *Queries) ListDepartemen(ctx context.Context) ([]Departeman, error) {
-	rows, err := q.db.Query(ctx, listDepartemen)
+type ListDepartemenParams struct {
+	SearchTerm string `json:"search_term"`
+	SortBy     string `json:"sort_by"`
+	SortDesc   bool   `json:"sort_desc"`
+	PageOffset int32  `json:"page_offset"`
+	PageLimit  int32  `json:"page_limit"`
+}
+
+func (q *Queries) ListDepartemen(ctx context.Context, arg ListDepartemenParams) ([]Departeman, error) {
+	rows, err := q.db.Query(ctx, listDepartemen,
+		arg.SearchTerm,
+		arg.SortBy,
+		arg.SortDesc,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}

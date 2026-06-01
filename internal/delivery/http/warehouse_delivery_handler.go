@@ -131,21 +131,14 @@ func (h *WarehouseDeliveryHandler) CreatePackingList(c *gin.Context) {
 // @Failure      500     {object}  model.WarehouseErrorDoc
 // @Router       /api/v1/packing-lists [get]
 func (h *WarehouseDeliveryHandler) ListPackingLists(c *gin.Context) {
-	page, err := parseQueryInt32(c, "page", 1)
+	filter, err := parseListQuery(c, 20)
 	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid page", nil))
-		return
-	}
-	limit, err := parseQueryInt32(c, "limit", 20)
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid limit", nil))
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
 		return
 	}
 
 	item, err := h.useCase.ListPackingLists(c.Request.Context(), model.TransactionListFilter{
-		Page:   page,
-		Limit:  limit,
-		Search: c.Query("search"),
+		ListQueryFilter: filter,
 	})
 	if err != nil {
 		h.handleError(c, err)
@@ -228,21 +221,14 @@ func (h *WarehouseDeliveryHandler) CreateSuratJalan(c *gin.Context) {
 // @Failure      500     {object}  model.WarehouseErrorDoc
 // @Router       /api/v1/surat-jalan-clients [get]
 func (h *WarehouseDeliveryHandler) ListSuratJalanClients(c *gin.Context) {
-	page, err := parseQueryInt32(c, "page", 1)
+	filter, err := parseListQuery(c, 20)
 	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid page", nil))
-		return
-	}
-	limit, err := parseQueryInt32(c, "limit", 20)
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid limit", nil))
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
 		return
 	}
 
 	item, err := h.useCase.ListSuratJalanClients(c.Request.Context(), model.TransactionListFilter{
-		Page:   page,
-		Limit:  limit,
-		Search: c.Query("search"),
+		ListQueryFilter: filter,
 	})
 	if err != nil {
 		h.handleError(c, err)
@@ -291,20 +277,14 @@ func (h *WarehouseDeliveryHandler) GetSuratJalanClientDetail(c *gin.Context) {
 // @Failure      500     {object}  model.WarehouseErrorDoc
 // @Router       /api/v1/surat-jalan-internals [get]
 func (h *WarehouseDeliveryHandler) ListSuratJalanInternals(c *gin.Context) {
-	page, err := parseQueryInt32(c, "page", 1)
+	filter, err := parseListQuery(c, 20)
 	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid page", nil))
-		return
-	}
-	limit, err := parseQueryInt32(c, "limit", 20)
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid limit", nil))
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
 		return
 	}
 
 	item, err := h.useCase.ListSuratJalanInternals(c.Request.Context(), model.TransactionListFilter{
-		Page:  page,
-		Limit: limit,
+		ListQueryFilter: filter,
 	})
 	if err != nil {
 		h.handleError(c, err)

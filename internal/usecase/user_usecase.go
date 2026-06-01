@@ -22,6 +22,8 @@ var (
 	ErrUserServiceUnavailable = errors.New("user service unavailable")
 	ErrCannotDeleteSuperAdmin = errors.New("Super Admin cannot be deleted")
 	ErrUsernameAlreadyExists  = errors.New("username already exists")
+
+	userSortColumns = buildSortWhitelist("created_at", "id_user", "username", "status", "is_manager")
 )
 
 type UserUseCase struct {
@@ -134,21 +136,22 @@ func (u *UserUseCase) Create(ctx context.Context, req model.CreateUserRequest) (
 	}, nil
 }
 
-func (u *UserUseCase) List(ctx context.Context, filter model.ListUsersFilter) ([]model.UserResponse, error) {
-	limit := filter.Limit
-	if limit <= 0 {
-		limit = 20
-	}
-	if limit > 100 {
-		limit = 100
-	}
-
+func (u *UserUseCase) List(ctx context.Context, filter model.ListUsersFilter) ([]model.UserResponse, int64, error) {
+	_, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "id_user", false, userSortColumns)
 	items, err := u.repo.ListUsers(ctx, entity.ListUsersParams{
-		Limit:  limit,
-		Offset: filter.Offset,
+		SearchTerm: search,
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
+		PageLimit:  limit,
+		PageOffset: offset,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("%w: failed to list users", ErrUserServiceUnavailable)
+		return nil, 0, fmt.Errorf("%w: failed to list users", ErrUserServiceUnavailable)
+	}
+
+	total, err := u.repo.CountUsers(ctx, search)
+	if err != nil {
+		return nil, 0, fmt.Errorf("%w: failed to count users", ErrUserServiceUnavailable)
 	}
 
 	result := make([]model.UserResponse, 0, len(items))
@@ -177,7 +180,7 @@ func (u *UserUseCase) List(ctx context.Context, filter model.ListUsersFilter) ([
 		result = append(result, res)
 	}
 
-	return result, nil
+	return result, total, nil
 }
 
 func (u *UserUseCase) GetByID(ctx context.Context, id int32) (*model.UserResponse, error) {

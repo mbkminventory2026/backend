@@ -78,26 +78,19 @@ func (h *UserHandler) Create(c *gin.Context) {
 // @Failure      401     {object}  model.GetMeUnauthorizedDoc
 // @Router       /api/v1/users [get]
 func (h *UserHandler) List(c *gin.Context) {
-	limit, err := parseQueryInt32(c, "limit", 20)
+	filter, err := parseListQuery(c, 20)
 	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid limit", nil))
-		return
-	}
-	offset, err := parseQueryInt32(c, "offset", 0)
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid offset", nil))
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
 		return
 	}
 
-	result, err := h.useCase.List(c.Request.Context(), model.ListUsersFilter{
-		Limit:  limit,
-		Offset: offset,
-	})
+	result, total, err := h.useCase.List(c.Request.Context(), model.ListUsersFilter{ListQueryFilter: filter})
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
+	setTotalCountHeader(c, total)
 	response.Success(c, http.StatusOK, "users retrieved", result)
 }
 

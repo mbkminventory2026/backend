@@ -33,8 +33,39 @@ SELECT u.id_user, u.username, u.is_manager, u.status, u.id_departemen, u.id_mitr
 FROM USERS u
 LEFT JOIN DEPARTEMEN d ON u.id_departemen = d.id_departemen
 LEFT JOIN MITRA m ON u.id_mitra = m.id_mitra
-ORDER BY u.id_user ASC
-LIMIT $1 OFFSET $2;
+WHERE (
+    sqlc.arg(search_term)::text = '' OR
+    u.username ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
+    u.status ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
+    COALESCE(d.nama_departemen, '') ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
+    COALESCE(m.nama_perusahaan, '') ILIKE '%' || sqlc.arg(search_term)::text || '%'
+)
+ORDER BY
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN u.created_at END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN u.created_at END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_user' AND NOT sqlc.arg(sort_desc)::bool THEN u.id_user END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_user' AND sqlc.arg(sort_desc)::bool THEN u.id_user END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'username' AND NOT sqlc.arg(sort_desc)::bool THEN u.username END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'username' AND sqlc.arg(sort_desc)::bool THEN u.username END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'status' AND NOT sqlc.arg(sort_desc)::bool THEN u.status END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'status' AND sqlc.arg(sort_desc)::bool THEN u.status END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'is_manager' AND NOT sqlc.arg(sort_desc)::bool THEN u.is_manager END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'is_manager' AND sqlc.arg(sort_desc)::bool THEN u.is_manager END DESC,
+    u.id_user ASC
+LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
+
+-- name: CountUsers :one
+SELECT COUNT(*)
+FROM USERS u
+LEFT JOIN DEPARTEMEN d ON u.id_departemen = d.id_departemen
+LEFT JOIN MITRA m ON u.id_mitra = m.id_mitra
+WHERE (
+    sqlc.arg(search_term)::text = '' OR
+    u.username ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
+    u.status ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
+    COALESCE(d.nama_departemen, '') ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
+    COALESCE(m.nama_perusahaan, '') ILIKE '%' || sqlc.arg(search_term)::text || '%'
+);
 
 -- name: GetUserByID :one
 SELECT u.id_user, u.username, u.is_manager, u.status, u.id_departemen, u.id_mitra, d.nama_departemen, m.nama_perusahaan, u.created_at

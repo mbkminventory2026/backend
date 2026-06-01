@@ -9,6 +9,22 @@ import (
 	"context"
 )
 
+const countHakAkses = `-- name: CountHakAkses :one
+SELECT COUNT(*)
+FROM HAK_AKSES
+WHERE (
+    $1::text = '' OR
+    nama_halaman ILIKE '%' || $1::text || '%'
+)
+`
+
+func (q *Queries) CountHakAkses(ctx context.Context, searchTerm string) (int64, error) {
+	row := q.db.QueryRow(ctx, countHakAkses, searchTerm)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createHakAkses = `-- name: CreateHakAkses :one
 INSERT INTO HAK_AKSES (nama_halaman)
 VALUES ($1)
@@ -48,12 +64,40 @@ func (q *Queries) GetHakAksesByID(ctx context.Context, idHakAkses int32) (HakAks
 }
 
 const listHakAkses = `-- name: ListHakAkses :many
-SELECT id_hak_akses, nama_halaman, created_at FROM HAK_AKSES
-ORDER BY nama_halaman ASC
+SELECT id_hak_akses, nama_halaman, created_at
+FROM HAK_AKSES
+WHERE (
+    $1::text = '' OR
+    nama_halaman ILIKE '%' || $1::text || '%'
+)
+ORDER BY
+    CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN created_at END ASC,
+    CASE WHEN $2::text = 'created_at' AND $3::bool THEN created_at END DESC,
+    CASE WHEN $2::text = 'id_hak_akses' AND NOT $3::bool THEN id_hak_akses END ASC,
+    CASE WHEN $2::text = 'id_hak_akses' AND $3::bool THEN id_hak_akses END DESC,
+    CASE WHEN $2::text = 'nama_halaman' AND NOT $3::bool THEN nama_halaman END ASC,
+    CASE WHEN $2::text = 'nama_halaman' AND $3::bool THEN nama_halaman END DESC,
+    nama_halaman ASC,
+    id_hak_akses ASC
+LIMIT $5 OFFSET $4
 `
 
-func (q *Queries) ListHakAkses(ctx context.Context) ([]HakAkse, error) {
-	rows, err := q.db.Query(ctx, listHakAkses)
+type ListHakAksesParams struct {
+	SearchTerm string `json:"search_term"`
+	SortBy     string `json:"sort_by"`
+	SortDesc   bool   `json:"sort_desc"`
+	PageOffset int32  `json:"page_offset"`
+	PageLimit  int32  `json:"page_limit"`
+}
+
+func (q *Queries) ListHakAkses(ctx context.Context, arg ListHakAksesParams) ([]HakAkse, error) {
+	rows, err := q.db.Query(ctx, listHakAkses,
+		arg.SearchTerm,
+		arg.SortBy,
+		arg.SortDesc,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}

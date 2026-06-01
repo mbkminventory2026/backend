@@ -23,6 +23,10 @@ var (
 	ErrPOClientAlreadyExists         = errors.New("po client number already exists")
 	ErrPOClientLockedForUpdate       = errors.New("po client cannot be updated because it is already used by work orders")
 	ErrPRInternalAlreadyApproved     = errors.New("pr internal is already approved")
+
+	poClientSortColumns   = buildSortWhitelist("created_at", "id_po_client", "po_number", "tanggal", "season", "delivery", "mitra_name")
+	prInternalSortColumns = buildSortWhitelist("created_at", "id_pr_internal", "tanggal", "nama", "departemen", "vendor_name", "projek", "status")
+	poInternalSortColumns = buildSortWhitelist("created_at", "id_po_internal", "tanggal", "nama_po", "supplier_name", "currency", "cpo", "ship_date")
 )
 
 type TransactionDocumentUseCase struct {
@@ -470,7 +474,7 @@ func (u *TransactionDocumentUseCase) CreatePOInternal(ctx context.Context, req m
 }
 
 func (u *TransactionDocumentUseCase) ListPOClients(ctx context.Context, filter model.TransactionListFilter) (*model.POClientListResponse, error) {
-	page, limit, offset := normalizePagination(filter)
+	page, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "id_po_client", true, poClientSortColumns)
 
 	var idMitraVal pgtype.Int4
 	if filter.IDMitra != nil {
@@ -478,8 +482,10 @@ func (u *TransactionDocumentUseCase) ListPOClients(ctx context.Context, filter m
 	}
 
 	rows, err := u.repo.ListPOClients(ctx, entity.ListPOClientsParams{
-		SearchTerm: filter.Search,
+		SearchTerm: search,
 		IDMitra:    idMitraVal,
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
 		PageLimit:  limit,
 		PageOffset: offset,
 	})
@@ -568,9 +574,11 @@ func (u *TransactionDocumentUseCase) GetPOClientDetail(ctx context.Context, id i
 }
 
 func (u *TransactionDocumentUseCase) ListPRInternals(ctx context.Context, filter model.TransactionListFilter) (*model.PRInternalListResponse, error) {
-	page, limit, offset := normalizePagination(filter)
+	page, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "id_pr_internal", true, prInternalSortColumns)
 	rows, err := u.repo.ListPRInternals(ctx, entity.ListPRInternalsParams{
-		SearchTerm: filter.Search,
+		SearchTerm: search,
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
 		PageLimit:  limit,
 		PageOffset: offset,
 	})
@@ -649,9 +657,11 @@ func (u *TransactionDocumentUseCase) GetPRInternalDetail(ctx context.Context, id
 }
 
 func (u *TransactionDocumentUseCase) ListPOInternals(ctx context.Context, filter model.TransactionListFilter) (*model.POInternalListResponse, error) {
-	page, limit, offset := normalizePagination(filter)
+	page, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "id_po_internal", true, poInternalSortColumns)
 	rows, err := u.repo.ListPOInternals(ctx, entity.ListPOInternalsParams{
-		SearchTerm: filter.Search,
+		SearchTerm: search,
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
 		PageLimit:  limit,
 		PageOffset: offset,
 	})

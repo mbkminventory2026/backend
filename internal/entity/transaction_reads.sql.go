@@ -436,13 +436,30 @@ WHERE (
     $2::integer IS NULL OR
     pc.id_mitra = $2::integer
 )
-ORDER BY pc.id_po_client DESC
-LIMIT $4 OFFSET $3
+ORDER BY
+    CASE WHEN $3::text = 'created_at' AND NOT $4::bool THEN pc.created_at END ASC,
+    CASE WHEN $3::text = 'created_at' AND $4::bool THEN pc.created_at END DESC,
+    CASE WHEN $3::text = 'id_po_client' AND NOT $4::bool THEN pc.id_po_client END ASC,
+    CASE WHEN $3::text = 'id_po_client' AND $4::bool THEN pc.id_po_client END DESC,
+    CASE WHEN $3::text = 'po_number' AND NOT $4::bool THEN pc.po_number END ASC,
+    CASE WHEN $3::text = 'po_number' AND $4::bool THEN pc.po_number END DESC,
+    CASE WHEN $3::text = 'tanggal' AND NOT $4::bool THEN pc.tanggal END ASC,
+    CASE WHEN $3::text = 'tanggal' AND $4::bool THEN pc.tanggal END DESC,
+    CASE WHEN $3::text = 'season' AND NOT $4::bool THEN pc.season END ASC,
+    CASE WHEN $3::text = 'season' AND $4::bool THEN pc.season END DESC,
+    CASE WHEN $3::text = 'delivery' AND NOT $4::bool THEN pc.delivery END ASC,
+    CASE WHEN $3::text = 'delivery' AND $4::bool THEN pc.delivery END DESC,
+    CASE WHEN $3::text = 'mitra_name' AND NOT $4::bool THEN m.nama_perusahaan END ASC,
+    CASE WHEN $3::text = 'mitra_name' AND $4::bool THEN m.nama_perusahaan END DESC,
+    pc.id_po_client DESC
+LIMIT $6 OFFSET $5
 `
 
 type ListPOClientsParams struct {
 	SearchTerm interface{} `json:"search_term"`
 	IDMitra    pgtype.Int4 `json:"id_mitra"`
+	SortBy     string      `json:"sort_by"`
+	SortDesc   bool        `json:"sort_desc"`
 	PageOffset int32       `json:"page_offset"`
 	PageLimit  int32       `json:"page_limit"`
 }
@@ -465,6 +482,8 @@ func (q *Queries) ListPOClients(ctx context.Context, arg ListPOClientsParams) ([
 	rows, err := q.db.Query(ctx, listPOClients,
 		arg.SearchTerm,
 		arg.IDMitra,
+		arg.SortBy,
+		arg.SortDesc,
 		arg.PageOffset,
 		arg.PageLimit,
 	)
@@ -565,14 +584,34 @@ WHERE (
     $1 = '' OR
     poi.nama_po ILIKE '%' || $1 || '%' OR
     poi.supplier_name ILIKE '%' || $1 || '%' OR
-    poi.cpo ILIKE '%' || $1 || '%'
+    poi.cpo ILIKE '%' || $1 || '%' OR
+    poi.currency ILIKE '%' || $1 || '%'
 )
-ORDER BY poi.id_po_internal DESC
-LIMIT $3 OFFSET $2
+ORDER BY
+    CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN poi.created_at END ASC,
+    CASE WHEN $2::text = 'created_at' AND $3::bool THEN poi.created_at END DESC,
+    CASE WHEN $2::text = 'id_po_internal' AND NOT $3::bool THEN poi.id_po_internal END ASC,
+    CASE WHEN $2::text = 'id_po_internal' AND $3::bool THEN poi.id_po_internal END DESC,
+    CASE WHEN $2::text = 'tanggal' AND NOT $3::bool THEN poi.tanggal END ASC,
+    CASE WHEN $2::text = 'tanggal' AND $3::bool THEN poi.tanggal END DESC,
+    CASE WHEN $2::text = 'nama_po' AND NOT $3::bool THEN poi.nama_po END ASC,
+    CASE WHEN $2::text = 'nama_po' AND $3::bool THEN poi.nama_po END DESC,
+    CASE WHEN $2::text = 'supplier_name' AND NOT $3::bool THEN poi.supplier_name END ASC,
+    CASE WHEN $2::text = 'supplier_name' AND $3::bool THEN poi.supplier_name END DESC,
+    CASE WHEN $2::text = 'currency' AND NOT $3::bool THEN poi.currency END ASC,
+    CASE WHEN $2::text = 'currency' AND $3::bool THEN poi.currency END DESC,
+    CASE WHEN $2::text = 'cpo' AND NOT $3::bool THEN poi.cpo END ASC,
+    CASE WHEN $2::text = 'cpo' AND $3::bool THEN poi.cpo END DESC,
+    CASE WHEN $2::text = 'ship_date' AND NOT $3::bool THEN poi.ship_date END ASC,
+    CASE WHEN $2::text = 'ship_date' AND $3::bool THEN poi.ship_date END DESC,
+    poi.id_po_internal DESC
+LIMIT $5 OFFSET $4
 `
 
 type ListPOInternalsParams struct {
 	SearchTerm interface{} `json:"search_term"`
+	SortBy     string      `json:"sort_by"`
+	SortDesc   bool        `json:"sort_desc"`
 	PageOffset int32       `json:"page_offset"`
 	PageLimit  int32       `json:"page_limit"`
 }
@@ -597,7 +636,13 @@ type ListPOInternalsRow struct {
 }
 
 func (q *Queries) ListPOInternals(ctx context.Context, arg ListPOInternalsParams) ([]ListPOInternalsRow, error) {
-	rows, err := q.db.Query(ctx, listPOInternals, arg.SearchTerm, arg.PageOffset, arg.PageLimit)
+	rows, err := q.db.Query(ctx, listPOInternals,
+		arg.SearchTerm,
+		arg.SortBy,
+		arg.SortDesc,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -698,15 +743,36 @@ FROM PR_INTERNAL pr
 WHERE (
     $1 = '' OR
     pr.nama ILIKE '%' || $1 || '%' OR
+    pr.departemen ILIKE '%' || $1 || '%' OR
     pr.vendor_name ILIKE '%' || $1 || '%' OR
-    pr.projek ILIKE '%' || $1 || '%'
+    pr.projek ILIKE '%' || $1 || '%' OR
+    pr.status ILIKE '%' || $1 || '%'
 )
-ORDER BY pr.id_pr_internal DESC
-LIMIT $3 OFFSET $2
+ORDER BY
+    CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN pr.created_at END ASC,
+    CASE WHEN $2::text = 'created_at' AND $3::bool THEN pr.created_at END DESC,
+    CASE WHEN $2::text = 'id_pr_internal' AND NOT $3::bool THEN pr.id_pr_internal END ASC,
+    CASE WHEN $2::text = 'id_pr_internal' AND $3::bool THEN pr.id_pr_internal END DESC,
+    CASE WHEN $2::text = 'tanggal' AND NOT $3::bool THEN pr.tanggal END ASC,
+    CASE WHEN $2::text = 'tanggal' AND $3::bool THEN pr.tanggal END DESC,
+    CASE WHEN $2::text = 'nama' AND NOT $3::bool THEN pr.nama END ASC,
+    CASE WHEN $2::text = 'nama' AND $3::bool THEN pr.nama END DESC,
+    CASE WHEN $2::text = 'departemen' AND NOT $3::bool THEN pr.departemen END ASC,
+    CASE WHEN $2::text = 'departemen' AND $3::bool THEN pr.departemen END DESC,
+    CASE WHEN $2::text = 'vendor_name' AND NOT $3::bool THEN pr.vendor_name END ASC,
+    CASE WHEN $2::text = 'vendor_name' AND $3::bool THEN pr.vendor_name END DESC,
+    CASE WHEN $2::text = 'projek' AND NOT $3::bool THEN pr.projek END ASC,
+    CASE WHEN $2::text = 'projek' AND $3::bool THEN pr.projek END DESC,
+    CASE WHEN $2::text = 'status' AND NOT $3::bool THEN pr.status END ASC,
+    CASE WHEN $2::text = 'status' AND $3::bool THEN pr.status END DESC,
+    pr.id_pr_internal DESC
+LIMIT $5 OFFSET $4
 `
 
 type ListPRInternalsParams struct {
 	SearchTerm interface{} `json:"search_term"`
+	SortBy     string      `json:"sort_by"`
+	SortDesc   bool        `json:"sort_desc"`
 	PageOffset int32       `json:"page_offset"`
 	PageLimit  int32       `json:"page_limit"`
 }
@@ -730,7 +796,13 @@ type ListPRInternalsRow struct {
 }
 
 func (q *Queries) ListPRInternals(ctx context.Context, arg ListPRInternalsParams) ([]ListPRInternalsRow, error) {
-	rows, err := q.db.Query(ctx, listPRInternals, arg.SearchTerm, arg.PageOffset, arg.PageLimit)
+	rows, err := q.db.Query(ctx, listPRInternals,
+		arg.SearchTerm,
+		arg.SortBy,
+		arg.SortDesc,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -866,12 +938,27 @@ WHERE (
     wo.buyer ILIKE '%' || $1 || '%' OR
     wo.model ILIKE '%' || $1 || '%'
 )
-ORDER BY pl.id_packing_list DESC
-LIMIT $3 OFFSET $2
+ORDER BY
+    CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN pl.created_at END ASC,
+    CASE WHEN $2::text = 'created_at' AND $3::bool THEN pl.created_at END DESC,
+    CASE WHEN $2::text = 'id_packing_list' AND NOT $3::bool THEN pl.id_packing_list END ASC,
+    CASE WHEN $2::text = 'id_packing_list' AND $3::bool THEN pl.id_packing_list END DESC,
+    CASE WHEN $2::text = 'total_garment_per_box' AND NOT $3::bool THEN pl.total_garment_per_box END ASC,
+    CASE WHEN $2::text = 'total_garment_per_box' AND $3::bool THEN pl.total_garment_per_box END DESC,
+    CASE WHEN $2::text = 'total_reject' AND NOT $3::bool THEN pl.total_reject END ASC,
+    CASE WHEN $2::text = 'total_reject' AND $3::bool THEN pl.total_reject END DESC,
+    CASE WHEN $2::text = 'buyer' AND NOT $3::bool THEN wo.buyer END ASC,
+    CASE WHEN $2::text = 'buyer' AND $3::bool THEN wo.buyer END DESC,
+    CASE WHEN $2::text = 'model' AND NOT $3::bool THEN wo.model END ASC,
+    CASE WHEN $2::text = 'model' AND $3::bool THEN wo.model END DESC,
+    pl.id_packing_list DESC
+LIMIT $5 OFFSET $4
 `
 
 type ListPackingListsParams struct {
 	SearchTerm interface{} `json:"search_term"`
+	SortBy     string      `json:"sort_by"`
+	SortDesc   bool        `json:"sort_desc"`
 	PageOffset int32       `json:"page_offset"`
 	PageLimit  int32       `json:"page_limit"`
 }
@@ -889,7 +976,13 @@ type ListPackingListsRow struct {
 }
 
 func (q *Queries) ListPackingLists(ctx context.Context, arg ListPackingListsParams) ([]ListPackingListsRow, error) {
-	rows, err := q.db.Query(ctx, listPackingLists, arg.SearchTerm, arg.PageOffset, arg.PageLimit)
+	rows, err := q.db.Query(ctx, listPackingLists,
+		arg.SearchTerm,
+		arg.SortBy,
+		arg.SortDesc,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -976,12 +1069,29 @@ WHERE (
     sjc.keterangan ILIKE '%' || $1 || '%' OR
     ml.description ILIKE '%' || $1 || '%'
 )
-ORDER BY sjc.id_surat_jalan_client DESC
-LIMIT $3 OFFSET $2
+ORDER BY
+    CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN sjc.created_at END ASC,
+    CASE WHEN $2::text = 'created_at' AND $3::bool THEN sjc.created_at END DESC,
+    CASE WHEN $2::text = 'id_surat_jalan_client' AND NOT $3::bool THEN sjc.id_surat_jalan_client END ASC,
+    CASE WHEN $2::text = 'id_surat_jalan_client' AND $3::bool THEN sjc.id_surat_jalan_client END DESC,
+    CASE WHEN $2::text = 'tanggal' AND NOT $3::bool THEN sjc.tanggal END ASC,
+    CASE WHEN $2::text = 'tanggal' AND $3::bool THEN sjc.tanggal END DESC,
+    CASE WHEN $2::text = 'qty' AND NOT $3::bool THEN sjc.qty END ASC,
+    CASE WHEN $2::text = 'qty' AND $3::bool THEN sjc.qty END DESC,
+    CASE WHEN $2::text = 'keterangan' AND NOT $3::bool THEN sjc.keterangan END ASC,
+    CASE WHEN $2::text = 'keterangan' AND $3::bool THEN sjc.keterangan END DESC,
+    CASE WHEN $2::text = 'material_description' AND NOT $3::bool THEN ml.description END ASC,
+    CASE WHEN $2::text = 'material_description' AND $3::bool THEN ml.description END DESC,
+    CASE WHEN $2::text = 'id_wo' AND NOT $3::bool THEN ml.id_wo END ASC,
+    CASE WHEN $2::text = 'id_wo' AND $3::bool THEN ml.id_wo END DESC,
+    sjc.id_surat_jalan_client DESC
+LIMIT $5 OFFSET $4
 `
 
 type ListSuratJalanClientsParams struct {
 	SearchTerm interface{} `json:"search_term"`
+	SortBy     string      `json:"sort_by"`
+	SortDesc   bool        `json:"sort_desc"`
 	PageOffset int32       `json:"page_offset"`
 	PageLimit  int32       `json:"page_limit"`
 }
@@ -999,7 +1109,13 @@ type ListSuratJalanClientsRow struct {
 }
 
 func (q *Queries) ListSuratJalanClients(ctx context.Context, arg ListSuratJalanClientsParams) ([]ListSuratJalanClientsRow, error) {
-	rows, err := q.db.Query(ctx, listSuratJalanClients, arg.SearchTerm, arg.PageOffset, arg.PageLimit)
+	rows, err := q.db.Query(ctx, listSuratJalanClients,
+		arg.SearchTerm,
+		arg.SortBy,
+		arg.SortDesc,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -1034,13 +1150,20 @@ SELECT
     sji.created_at,
     COUNT(*) OVER() AS total_count
 FROM SURAT_JALAN_INTERNAL sji
-ORDER BY sji.id_surat_jalan_internal DESC
-LIMIT $2 OFFSET $1
+ORDER BY
+    CASE WHEN $1::text = 'created_at' AND NOT $2::bool THEN sji.created_at END ASC,
+    CASE WHEN $1::text = 'created_at' AND $2::bool THEN sji.created_at END DESC,
+    CASE WHEN $1::text = 'id_surat_jalan_internal' AND NOT $2::bool THEN sji.id_surat_jalan_internal END ASC,
+    CASE WHEN $1::text = 'id_surat_jalan_internal' AND $2::bool THEN sji.id_surat_jalan_internal END DESC,
+    sji.id_surat_jalan_internal DESC
+LIMIT $4 OFFSET $3
 `
 
 type ListSuratJalanInternalsParams struct {
-	PageOffset int32 `json:"page_offset"`
-	PageLimit  int32 `json:"page_limit"`
+	SortBy     string `json:"sort_by"`
+	SortDesc   bool   `json:"sort_desc"`
+	PageOffset int32  `json:"page_offset"`
+	PageLimit  int32  `json:"page_limit"`
 }
 
 type ListSuratJalanInternalsRow struct {
@@ -1050,7 +1173,12 @@ type ListSuratJalanInternalsRow struct {
 }
 
 func (q *Queries) ListSuratJalanInternals(ctx context.Context, arg ListSuratJalanInternalsParams) ([]ListSuratJalanInternalsRow, error) {
-	rows, err := q.db.Query(ctx, listSuratJalanInternals, arg.PageOffset, arg.PageLimit)
+	rows, err := q.db.Query(ctx, listSuratJalanInternals,
+		arg.SortBy,
+		arg.SortDesc,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -1231,14 +1359,34 @@ WHERE (
     $1 = '' OR
     wo.buyer ILIKE '%' || $1 || '%' OR
     wo.model ILIKE '%' || $1 || '%' OR
-    pc.po_number ILIKE '%' || $1 || '%'
+    pc.po_number ILIKE '%' || $1 || '%' OR
+    pci.style ILIKE '%' || $1 || '%'
 )
-ORDER BY wo.id_wo DESC
-LIMIT $3 OFFSET $2
+ORDER BY
+    CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN wo.created_at END ASC,
+    CASE WHEN $2::text = 'created_at' AND $3::bool THEN wo.created_at END DESC,
+    CASE WHEN $2::text = 'id_wo' AND NOT $3::bool THEN wo.id_wo END ASC,
+    CASE WHEN $2::text = 'id_wo' AND $3::bool THEN wo.id_wo END DESC,
+    CASE WHEN $2::text = 'buyer' AND NOT $3::bool THEN wo.buyer END ASC,
+    CASE WHEN $2::text = 'buyer' AND $3::bool THEN wo.buyer END DESC,
+    CASE WHEN $2::text = 'model' AND NOT $3::bool THEN wo.model END ASC,
+    CASE WHEN $2::text = 'model' AND $3::bool THEN wo.model END DESC,
+    CASE WHEN $2::text = 'qty' AND NOT $3::bool THEN wo.qty END ASC,
+    CASE WHEN $2::text = 'qty' AND $3::bool THEN wo.qty END DESC,
+    CASE WHEN $2::text = 'status' AND NOT $3::bool THEN wo.status END ASC,
+    CASE WHEN $2::text = 'status' AND $3::bool THEN wo.status END DESC,
+    CASE WHEN $2::text = 'po_number' AND NOT $3::bool THEN pc.po_number END ASC,
+    CASE WHEN $2::text = 'po_number' AND $3::bool THEN pc.po_number END DESC,
+    CASE WHEN $2::text = 'po_client_item_style' AND NOT $3::bool THEN pci.style END ASC,
+    CASE WHEN $2::text = 'po_client_item_style' AND $3::bool THEN pci.style END DESC,
+    wo.id_wo DESC
+LIMIT $5 OFFSET $4
 `
 
 type ListWorkOrdersParams struct {
 	SearchTerm interface{} `json:"search_term"`
+	SortBy     string      `json:"sort_by"`
+	SortDesc   bool        `json:"sort_desc"`
 	PageOffset int32       `json:"page_offset"`
 	PageLimit  int32       `json:"page_limit"`
 }
@@ -1261,7 +1409,13 @@ type ListWorkOrdersRow struct {
 }
 
 func (q *Queries) ListWorkOrders(ctx context.Context, arg ListWorkOrdersParams) ([]ListWorkOrdersRow, error) {
-	rows, err := q.db.Query(ctx, listWorkOrders, arg.SearchTerm, arg.PageOffset, arg.PageLimit)
+	rows, err := q.db.Query(ctx, listWorkOrders,
+		arg.SearchTerm,
+		arg.SortBy,
+		arg.SortDesc,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}

@@ -11,6 +11,29 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countBarang = `-- name: CountBarang :one
+SELECT COUNT(*)
+FROM BARANG b
+JOIN MITRA m ON b.id_mitra = m.id_mitra
+JOIN JENIS_BARANG j ON b.id_jenis_barang = j.id_jenis_barang
+WHERE (
+    $1::text = '' OR
+    b.nama_barang ILIKE '%' || $1::text || '%' OR
+    b.kode ILIKE '%' || $1::text || '%' OR
+    j.nama_jenis_barang ILIKE '%' || $1::text || '%' OR
+    m.nama_perusahaan ILIKE '%' || $1::text || '%' OR
+    b.satuan ILIKE '%' || $1::text || '%' OR
+    b.lokasi_rak ILIKE '%' || $1::text || '%'
+)
+`
+
+func (q *Queries) CountBarang(ctx context.Context, searchTerm string) (int64, error) {
+	row := q.db.QueryRow(ctx, countBarang, searchTerm)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createBarang = `-- name: CreateBarang :one
 INSERT INTO BARANG (
     nama_barang, kode, id_jenis_barang, id_mitra, satuan, lokasi_rak, stok_minimum
@@ -113,13 +136,39 @@ SELECT b.id_barang, b.nama_barang, b.kode, b.id_jenis_barang, b.id_mitra, b.crea
 FROM BARANG b
 JOIN MITRA m ON b.id_mitra = m.id_mitra
 JOIN JENIS_BARANG j ON b.id_jenis_barang = j.id_jenis_barang
-ORDER BY b.created_at DESC
-LIMIT $1 OFFSET $2
+WHERE (
+    $1::text = '' OR
+    b.nama_barang ILIKE '%' || $1::text || '%' OR
+    b.kode ILIKE '%' || $1::text || '%' OR
+    j.nama_jenis_barang ILIKE '%' || $1::text || '%' OR
+    m.nama_perusahaan ILIKE '%' || $1::text || '%' OR
+    b.satuan ILIKE '%' || $1::text || '%' OR
+    b.lokasi_rak ILIKE '%' || $1::text || '%'
+)
+ORDER BY
+    CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN b.created_at END ASC,
+    CASE WHEN $2::text = 'created_at' AND $3::bool THEN b.created_at END DESC,
+    CASE WHEN $2::text = 'id_barang' AND NOT $3::bool THEN b.id_barang END ASC,
+    CASE WHEN $2::text = 'id_barang' AND $3::bool THEN b.id_barang END DESC,
+    CASE WHEN $2::text = 'kode' AND NOT $3::bool THEN b.kode END ASC,
+    CASE WHEN $2::text = 'kode' AND $3::bool THEN b.kode END DESC,
+    CASE WHEN $2::text = 'nama_barang' AND NOT $3::bool THEN b.nama_barang END ASC,
+    CASE WHEN $2::text = 'nama_barang' AND $3::bool THEN b.nama_barang END DESC,
+    CASE WHEN $2::text = 'nama_jenis_barang' AND NOT $3::bool THEN j.nama_jenis_barang END ASC,
+    CASE WHEN $2::text = 'nama_jenis_barang' AND $3::bool THEN j.nama_jenis_barang END DESC,
+    CASE WHEN $2::text = 'nama_perusahaan' AND NOT $3::bool THEN m.nama_perusahaan END ASC,
+    CASE WHEN $2::text = 'nama_perusahaan' AND $3::bool THEN m.nama_perusahaan END DESC,
+    b.created_at DESC,
+    b.id_barang DESC
+LIMIT $5 OFFSET $4
 `
 
 type ListBarangParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	SearchTerm string `json:"search_term"`
+	SortBy     string `json:"sort_by"`
+	SortDesc   bool   `json:"sort_desc"`
+	PageOffset int32  `json:"page_offset"`
+	PageLimit  int32  `json:"page_limit"`
 }
 
 type ListBarangRow struct {
@@ -137,7 +186,13 @@ type ListBarangRow struct {
 }
 
 func (q *Queries) ListBarang(ctx context.Context, arg ListBarangParams) ([]ListBarangRow, error) {
-	rows, err := q.db.Query(ctx, listBarang, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listBarang,
+		arg.SearchTerm,
+		arg.SortBy,
+		arg.SortDesc,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}

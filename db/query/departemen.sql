@@ -3,8 +3,30 @@ SELECT * FROM DEPARTEMEN
 WHERE id_departemen = $1 LIMIT 1;
 
 -- name: ListDepartemen :many
-SELECT * FROM DEPARTEMEN
-ORDER BY nama_departemen ASC;
+SELECT *
+FROM DEPARTEMEN
+WHERE (
+    sqlc.arg(search_term)::text = '' OR
+    nama_departemen ILIKE '%' || sqlc.arg(search_term)::text || '%'
+)
+ORDER BY
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN created_at END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN created_at END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_departemen' AND NOT sqlc.arg(sort_desc)::bool THEN id_departemen END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_departemen' AND sqlc.arg(sort_desc)::bool THEN id_departemen END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'nama_departemen' AND NOT sqlc.arg(sort_desc)::bool THEN nama_departemen END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'nama_departemen' AND sqlc.arg(sort_desc)::bool THEN nama_departemen END DESC,
+    nama_departemen ASC,
+    id_departemen ASC
+LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
+
+-- name: CountDepartemen :one
+SELECT COUNT(*)
+FROM DEPARTEMEN
+WHERE (
+    sqlc.arg(search_term)::text = '' OR
+    nama_departemen ILIKE '%' || sqlc.arg(search_term)::text || '%'
+);
 
 -- name: CreateDepartemen :one
 INSERT INTO DEPARTEMEN (nama_departemen)

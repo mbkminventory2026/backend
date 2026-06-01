@@ -11,6 +11,27 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countUsers = `-- name: CountUsers :one
+SELECT COUNT(*)
+FROM USERS u
+LEFT JOIN DEPARTEMEN d ON u.id_departemen = d.id_departemen
+LEFT JOIN MITRA m ON u.id_mitra = m.id_mitra
+WHERE (
+    $1::text = '' OR
+    u.username ILIKE '%' || $1::text || '%' OR
+    u.status ILIKE '%' || $1::text || '%' OR
+    COALESCE(d.nama_departemen, '') ILIKE '%' || $1::text || '%' OR
+    COALESCE(m.nama_perusahaan, '') ILIKE '%' || $1::text || '%'
+)
+`
+
+func (q *Queries) CountUsers(ctx context.Context, searchTerm string) (int64, error) {
+	row := q.db.QueryRow(ctx, countUsers, searchTerm)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO USERS (
     username, password, is_manager, id_departemen, id_mitra, status
@@ -219,13 +240,34 @@ SELECT u.id_user, u.username, u.is_manager, u.status, u.id_departemen, u.id_mitr
 FROM USERS u
 LEFT JOIN DEPARTEMEN d ON u.id_departemen = d.id_departemen
 LEFT JOIN MITRA m ON u.id_mitra = m.id_mitra
-ORDER BY u.id_user ASC
-LIMIT $1 OFFSET $2
+WHERE (
+    $1::text = '' OR
+    u.username ILIKE '%' || $1::text || '%' OR
+    u.status ILIKE '%' || $1::text || '%' OR
+    COALESCE(d.nama_departemen, '') ILIKE '%' || $1::text || '%' OR
+    COALESCE(m.nama_perusahaan, '') ILIKE '%' || $1::text || '%'
+)
+ORDER BY
+    CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN u.created_at END ASC,
+    CASE WHEN $2::text = 'created_at' AND $3::bool THEN u.created_at END DESC,
+    CASE WHEN $2::text = 'id_user' AND NOT $3::bool THEN u.id_user END ASC,
+    CASE WHEN $2::text = 'id_user' AND $3::bool THEN u.id_user END DESC,
+    CASE WHEN $2::text = 'username' AND NOT $3::bool THEN u.username END ASC,
+    CASE WHEN $2::text = 'username' AND $3::bool THEN u.username END DESC,
+    CASE WHEN $2::text = 'status' AND NOT $3::bool THEN u.status END ASC,
+    CASE WHEN $2::text = 'status' AND $3::bool THEN u.status END DESC,
+    CASE WHEN $2::text = 'is_manager' AND NOT $3::bool THEN u.is_manager END ASC,
+    CASE WHEN $2::text = 'is_manager' AND $3::bool THEN u.is_manager END DESC,
+    u.id_user ASC
+LIMIT $5 OFFSET $4
 `
 
 type ListUsersParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	SearchTerm string `json:"search_term"`
+	SortBy     string `json:"sort_by"`
+	SortDesc   bool   `json:"sort_desc"`
+	PageOffset int32  `json:"page_offset"`
+	PageLimit  int32  `json:"page_limit"`
 }
 
 type ListUsersRow struct {
@@ -241,7 +283,13 @@ type ListUsersRow struct {
 }
 
 func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error) {
-	rows, err := q.db.Query(ctx, listUsers, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listUsers,
+		arg.SearchTerm,
+		arg.SortBy,
+		arg.SortDesc,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}

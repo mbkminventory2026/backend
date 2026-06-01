@@ -9,6 +9,25 @@ import (
 	"context"
 )
 
+const countMitra = `-- name: CountMitra :one
+SELECT COUNT(*)
+FROM MITRA
+WHERE (
+    $1::text = '' OR
+    nama_perusahaan ILIKE '%' || $1::text || '%' OR
+    tipe_perusahaan ILIKE '%' || $1::text || '%' OR
+    email ILIKE '%' || $1::text || '%' OR
+    no_telp ILIKE '%' || $1::text || '%'
+)
+`
+
+func (q *Queries) CountMitra(ctx context.Context, searchTerm string) (int64, error) {
+	row := q.db.QueryRow(ctx, countMitra, searchTerm)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createMitra = `-- name: CreateMitra :one
 INSERT INTO MITRA (
     nama_perusahaan, tipe_perusahaan, email, no_telp, alamat, kota, kode_pos
@@ -88,12 +107,49 @@ func (q *Queries) GetMitraByID(ctx context.Context, idMitra int32) (Mitra, error
 }
 
 const listMitra = `-- name: ListMitra :many
-SELECT id_mitra, nama_perusahaan, tipe_perusahaan, email, no_telp, alamat, kota, kode_pos, created_at FROM MITRA
-ORDER BY nama_perusahaan ASC
+SELECT id_mitra, nama_perusahaan, tipe_perusahaan, email, no_telp, alamat, kota, kode_pos, created_at
+FROM MITRA
+WHERE (
+    $1::text = '' OR
+    nama_perusahaan ILIKE '%' || $1::text || '%' OR
+    tipe_perusahaan ILIKE '%' || $1::text || '%' OR
+    email ILIKE '%' || $1::text || '%' OR
+    no_telp ILIKE '%' || $1::text || '%'
+)
+ORDER BY
+    CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN created_at END ASC,
+    CASE WHEN $2::text = 'created_at' AND $3::bool THEN created_at END DESC,
+    CASE WHEN $2::text = 'id_mitra' AND NOT $3::bool THEN id_mitra END ASC,
+    CASE WHEN $2::text = 'id_mitra' AND $3::bool THEN id_mitra END DESC,
+    CASE WHEN $2::text = 'nama_perusahaan' AND NOT $3::bool THEN nama_perusahaan END ASC,
+    CASE WHEN $2::text = 'nama_perusahaan' AND $3::bool THEN nama_perusahaan END DESC,
+    CASE WHEN $2::text = 'email' AND NOT $3::bool THEN email END ASC,
+    CASE WHEN $2::text = 'email' AND $3::bool THEN email END DESC,
+    CASE WHEN $2::text = 'no_telp' AND NOT $3::bool THEN no_telp END ASC,
+    CASE WHEN $2::text = 'no_telp' AND $3::bool THEN no_telp END DESC,
+    CASE WHEN $2::text = 'tipe_perusahaan' AND NOT $3::bool THEN tipe_perusahaan END ASC,
+    CASE WHEN $2::text = 'tipe_perusahaan' AND $3::bool THEN tipe_perusahaan END DESC,
+    nama_perusahaan ASC,
+    id_mitra ASC
+LIMIT $5 OFFSET $4
 `
 
-func (q *Queries) ListMitra(ctx context.Context) ([]Mitra, error) {
-	rows, err := q.db.Query(ctx, listMitra)
+type ListMitraParams struct {
+	SearchTerm string `json:"search_term"`
+	SortBy     string `json:"sort_by"`
+	SortDesc   bool   `json:"sort_desc"`
+	PageOffset int32  `json:"page_offset"`
+	PageLimit  int32  `json:"page_limit"`
+}
+
+func (q *Queries) ListMitra(ctx context.Context, arg ListMitraParams) ([]Mitra, error) {
+	rows, err := q.db.Query(ctx, listMitra,
+		arg.SearchTerm,
+		arg.SortBy,
+		arg.SortDesc,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}

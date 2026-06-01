@@ -78,5 +78,41 @@ WHERE (
     wo.model ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
     woss.size ILIKE '%' || sqlc.arg(search_term)::text || '%'
 )
-ORDER BY last_updated DESC, woss.id_wo_shell_size DESC
+ORDER BY
+    CASE WHEN sqlc.arg(sort_by)::text = 'last_updated' AND NOT sqlc.arg(sort_desc)::bool THEN GREATEST(
+        woss.created_at,
+        COALESCE(ca.last_created_at, woss.created_at),
+        COALESCE(sa.last_created_at, woss.created_at),
+        COALESCE(qa.last_created_at, woss.created_at),
+        COALESCE(pa.last_created_at, woss.created_at),
+        COALESCE(sha.last_created_at, woss.created_at)
+    ) END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'last_updated' AND sqlc.arg(sort_desc)::bool THEN GREATEST(
+        woss.created_at,
+        COALESCE(ca.last_created_at, woss.created_at),
+        COALESCE(sa.last_created_at, woss.created_at),
+        COALESCE(qa.last_created_at, woss.created_at),
+        COALESCE(pa.last_created_at, woss.created_at),
+        COALESCE(sha.last_created_at, woss.created_at)
+    ) END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_wo_shell_size' AND NOT sqlc.arg(sort_desc)::bool THEN woss.id_wo_shell_size END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_wo_shell_size' AND sqlc.arg(sort_desc)::bool THEN woss.id_wo_shell_size END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'model_name' AND NOT sqlc.arg(sort_desc)::bool THEN wo.model END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'model_name' AND sqlc.arg(sort_desc)::bool THEN wo.model END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'size' AND NOT sqlc.arg(sort_desc)::bool THEN woss.size END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'size' AND sqlc.arg(sort_desc)::bool THEN woss.size END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'target_qty' AND NOT sqlc.arg(sort_desc)::bool THEN woss.qty END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'target_qty' AND sqlc.arg(sort_desc)::bool THEN woss.qty END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'cutting_qty' AND NOT sqlc.arg(sort_desc)::bool THEN COALESCE(ca.cutting_qty, 0)::int END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'cutting_qty' AND sqlc.arg(sort_desc)::bool THEN COALESCE(ca.cutting_qty, 0)::int END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'sewing_qty' AND NOT sqlc.arg(sort_desc)::bool THEN COALESCE(sa.sewing_qty, 0)::int END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'sewing_qty' AND sqlc.arg(sort_desc)::bool THEN COALESCE(sa.sewing_qty, 0)::int END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'qc_pass_qty' AND NOT sqlc.arg(sort_desc)::bool THEN COALESCE(qa.qc_pass_qty, 0)::int END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'qc_pass_qty' AND sqlc.arg(sort_desc)::bool THEN COALESCE(qa.qc_pass_qty, 0)::int END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'packing_qty' AND NOT sqlc.arg(sort_desc)::bool THEN COALESCE(pa.packing_qty, 0)::int END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'packing_qty' AND sqlc.arg(sort_desc)::bool THEN COALESCE(pa.packing_qty, 0)::int END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'shipped_qty' AND NOT sqlc.arg(sort_desc)::bool THEN COALESCE(sha.shipped_qty, 0)::int END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'shipped_qty' AND sqlc.arg(sort_desc)::bool THEN COALESCE(sha.shipped_qty, 0)::int END DESC,
+    last_updated DESC,
+    woss.id_wo_shell_size DESC
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);

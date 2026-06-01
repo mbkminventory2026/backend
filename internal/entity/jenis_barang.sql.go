@@ -9,6 +9,23 @@ import (
 	"context"
 )
 
+const countJenisBarang = `-- name: CountJenisBarang :one
+SELECT COUNT(*)
+FROM JENIS_BARANG
+WHERE (
+    $1::text = '' OR
+    nama_jenis_barang ILIKE '%' || $1::text || '%' OR
+    kode ILIKE '%' || $1::text || '%'
+)
+`
+
+func (q *Queries) CountJenisBarang(ctx context.Context, searchTerm string) (int64, error) {
+	row := q.db.QueryRow(ctx, countJenisBarang, searchTerm)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createJenisBarang = `-- name: CreateJenisBarang :one
 INSERT INTO JENIS_BARANG (nama_jenis_barang, kode)
 VALUES ($1, $2)
@@ -63,12 +80,43 @@ func (q *Queries) GetJenisBarangByID(ctx context.Context, idJenisBarang int32) (
 }
 
 const listJenisBarang = `-- name: ListJenisBarang :many
-SELECT id_jenis_barang, nama_jenis_barang, kode, created_at FROM JENIS_BARANG
-ORDER BY nama_jenis_barang ASC
+SELECT id_jenis_barang, nama_jenis_barang, kode, created_at
+FROM JENIS_BARANG
+WHERE (
+    $1::text = '' OR
+    nama_jenis_barang ILIKE '%' || $1::text || '%' OR
+    kode ILIKE '%' || $1::text || '%'
+)
+ORDER BY
+    CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN created_at END ASC,
+    CASE WHEN $2::text = 'created_at' AND $3::bool THEN created_at END DESC,
+    CASE WHEN $2::text = 'id_jenis_barang' AND NOT $3::bool THEN id_jenis_barang END ASC,
+    CASE WHEN $2::text = 'id_jenis_barang' AND $3::bool THEN id_jenis_barang END DESC,
+    CASE WHEN $2::text = 'kode' AND NOT $3::bool THEN kode END ASC,
+    CASE WHEN $2::text = 'kode' AND $3::bool THEN kode END DESC,
+    CASE WHEN $2::text = 'nama_jenis_barang' AND NOT $3::bool THEN nama_jenis_barang END ASC,
+    CASE WHEN $2::text = 'nama_jenis_barang' AND $3::bool THEN nama_jenis_barang END DESC,
+    nama_jenis_barang ASC,
+    id_jenis_barang ASC
+LIMIT $5 OFFSET $4
 `
 
-func (q *Queries) ListJenisBarang(ctx context.Context) ([]JenisBarang, error) {
-	rows, err := q.db.Query(ctx, listJenisBarang)
+type ListJenisBarangParams struct {
+	SearchTerm string `json:"search_term"`
+	SortBy     string `json:"sort_by"`
+	SortDesc   bool   `json:"sort_desc"`
+	PageOffset int32  `json:"page_offset"`
+	PageLimit  int32  `json:"page_limit"`
+}
+
+func (q *Queries) ListJenisBarang(ctx context.Context, arg ListJenisBarangParams) ([]JenisBarang, error) {
+	rows, err := q.db.Query(ctx, listJenisBarang,
+		arg.SearchTerm,
+		arg.SortBy,
+		arg.SortDesc,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}

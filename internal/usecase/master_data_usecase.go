@@ -18,6 +18,12 @@ var (
 	ErrMasterDataConflict      = errors.New("master data already exists")
 	ErrMasterDataDuplicateCode = errors.New("master data code already exists")
 	ErrCompanyAlreadyExists    = errors.New("company data already exists")
+
+	departemenSortColumns  = buildSortWhitelist("created_at", "id_departemen", "nama_departemen")
+	jenisBarangSortColumns = buildSortWhitelist("created_at", "id_jenis_barang", "kode", "nama_jenis_barang")
+	mitraSortColumns       = buildSortWhitelist("created_at", "id_mitra", "nama_perusahaan", "email", "no_telp", "tipe_perusahaan")
+	barangSortColumns      = buildSortWhitelist("created_at", "id_barang", "kode", "nama_barang", "nama_jenis_barang", "nama_perusahaan")
+	hakAksesSortColumns    = buildSortWhitelist("created_at", "id_hak_akses", "nama_halaman")
 )
 
 type MasterDataUseCase struct {
@@ -48,10 +54,23 @@ func (u *MasterDataUseCase) GetDepartemenByID(ctx context.Context, id int32) (mo
 	}, nil
 }
 
-func (u *MasterDataUseCase) ListDepartemen(ctx context.Context) ([]model.DepartemenResponse, error) {
-	items, err := u.repo.ListDepartemen(ctx)
+func (u *MasterDataUseCase) ListDepartemen(ctx context.Context, filter model.ListQueryFilter) ([]model.DepartemenResponse, int64, error) {
+	_, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter, "nama_departemen", false, departemenSortColumns)
+
+	items, err := u.repo.ListDepartemen(ctx, entity.ListDepartemenParams{
+		SearchTerm: search,
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	total, err := u.repo.CountDepartemen(ctx, search)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	res := make([]model.DepartemenResponse, 0, len(items))
@@ -62,7 +81,7 @@ func (u *MasterDataUseCase) ListDepartemen(ctx context.Context) ([]model.Departe
 			CreatedAt: i.CreatedAt.Time.Format(time.RFC3339),
 		})
 	}
-	return res, nil
+	return res, total, nil
 }
 
 func (u *MasterDataUseCase) CreateDepartemen(ctx context.Context, req model.CreateDepartemenRequest) (model.DepartemenResponse, error) {
@@ -123,10 +142,23 @@ func (u *MasterDataUseCase) GetJenisBarangByID(ctx context.Context, id int32) (m
 	}, nil
 }
 
-func (u *MasterDataUseCase) ListJenisBarang(ctx context.Context) ([]model.JenisBarangResponse, error) {
-	items, err := u.repo.ListJenisBarang(ctx)
+func (u *MasterDataUseCase) ListJenisBarang(ctx context.Context, filter model.ListQueryFilter) ([]model.JenisBarangResponse, int64, error) {
+	_, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter, "nama_jenis_barang", false, jenisBarangSortColumns)
+
+	items, err := u.repo.ListJenisBarang(ctx, entity.ListJenisBarangParams{
+		SearchTerm: search,
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	total, err := u.repo.CountJenisBarang(ctx, search)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	res := make([]model.JenisBarangResponse, 0, len(items))
@@ -138,7 +170,7 @@ func (u *MasterDataUseCase) ListJenisBarang(ctx context.Context) ([]model.JenisB
 			CreatedAt: i.CreatedAt.Time.Format(time.RFC3339),
 		})
 	}
-	return res, nil
+	return res, total, nil
 }
 
 func (u *MasterDataUseCase) CreateJenisBarang(ctx context.Context, req model.CreateJenisBarangRequest) (model.JenisBarangResponse, error) {
@@ -207,10 +239,23 @@ func (u *MasterDataUseCase) GetMitraByID(ctx context.Context, id int32) (model.M
 	}, nil
 }
 
-func (u *MasterDataUseCase) ListMitra(ctx context.Context) ([]model.MitraResponse, error) {
-	items, err := u.repo.ListMitra(ctx)
+func (u *MasterDataUseCase) ListMitra(ctx context.Context, filter model.ListQueryFilter) ([]model.MitraResponse, int64, error) {
+	_, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter, "nama_perusahaan", false, mitraSortColumns)
+
+	items, err := u.repo.ListMitra(ctx, entity.ListMitraParams{
+		SearchTerm: search,
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	total, err := u.repo.CountMitra(ctx, search)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	res := make([]model.MitraResponse, 0, len(items))
@@ -224,7 +269,7 @@ func (u *MasterDataUseCase) ListMitra(ctx context.Context) ([]model.MitraRespons
 			CreatedAt:      i.CreatedAt.Time.Format(time.RFC3339),
 		})
 	}
-	return res, nil
+	return res, total, nil
 }
 
 func (u *MasterDataUseCase) CreateMitra(ctx context.Context, req model.CreateMitraRequest) (model.MitraResponse, error) {
@@ -310,10 +355,23 @@ func (u *MasterDataUseCase) GetBarangByID(ctx context.Context, id int32) (model.
 	}, nil
 }
 
-func (u *MasterDataUseCase) ListBarang(ctx context.Context, limit, offset int32) ([]model.BarangResponse, error) {
-	items, err := u.repo.ListBarang(ctx, entity.ListBarangParams{Limit: limit, Offset: offset})
+func (u *MasterDataUseCase) ListBarang(ctx context.Context, filter model.ListQueryFilter) ([]model.BarangResponse, int64, error) {
+	_, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter, "created_at", true, barangSortColumns)
+
+	items, err := u.repo.ListBarang(ctx, entity.ListBarangParams{
+		SearchTerm: search,
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	total, err := u.repo.CountBarang(ctx, search)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	res := make([]model.BarangResponse, 0, len(items))
@@ -330,7 +388,7 @@ func (u *MasterDataUseCase) ListBarang(ctx context.Context, limit, offset int32)
 			CreatedAt:       i.CreatedAt.Time.Format(time.RFC3339),
 		})
 	}
-	return res, nil
+	return res, total, nil
 }
 
 func (u *MasterDataUseCase) CreateBarang(ctx context.Context, req model.CreateBarangRequest) (model.BarangResponse, error) {
@@ -412,10 +470,23 @@ func (u *MasterDataUseCase) GetHakAksesByID(ctx context.Context, id int32) (mode
 	}, nil
 }
 
-func (u *MasterDataUseCase) ListHakAkses(ctx context.Context) ([]model.HakAksesResponse, error) {
-	items, err := u.repo.ListHakAkses(ctx)
+func (u *MasterDataUseCase) ListHakAkses(ctx context.Context, filter model.ListQueryFilter) ([]model.HakAksesResponse, int64, error) {
+	_, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter, "nama_halaman", false, hakAksesSortColumns)
+
+	items, err := u.repo.ListHakAkses(ctx, entity.ListHakAksesParams{
+		SearchTerm: search,
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	total, err := u.repo.CountHakAkses(ctx, search)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	res := make([]model.HakAksesResponse, 0, len(items))
@@ -427,7 +498,7 @@ func (u *MasterDataUseCase) ListHakAkses(ctx context.Context) ([]model.HakAksesR
 		})
 	}
 
-	return res, nil
+	return res, total, nil
 }
 
 func (u *MasterDataUseCase) CreateHakAkses(ctx context.Context, req model.CreateHakAksesRequest) (model.HakAksesResponse, error) {
