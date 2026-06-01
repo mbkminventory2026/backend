@@ -8,6 +8,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type ArsipDokumenGabungan struct {
+	IDArsip        int32              `json:"id_arsip"`
+	NamaDokumen    string             `json:"nama_dokumen"`
+	TipeDokumen    string             `json:"tipe_dokumen"`
+	ParameterQuery string             `json:"parameter_query"`
+	FileUrl        string             `json:"file_url"`
+	IDPembuat      int32              `json:"id_pembuat"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
 type Barang struct {
 	IDBarang      int32              `json:"id_barang"`
 	NamaBarang    string             `json:"nama_barang"`
@@ -86,6 +96,25 @@ type Mitra struct {
 	Kota           string             `json:"kota"`
 	KodePos        string             `json:"kode_pos"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+type OtoritasDokuman struct {
+	IDOtoritas       int32              `json:"id_otoritas"`
+	NamaTabelDokumen string             `json:"nama_tabel_dokumen"`
+	IDDokumen        int32              `json:"id_dokumen"`
+	StatusGlobal     string             `json:"status_global"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
+type OtoritasDokumenDetail struct {
+	IDOtoritasDetail int32              `json:"id_otoritas_detail"`
+	IDOtoritas       int32              `json:"id_otoritas"`
+	IDUser           int32              `json:"id_user"`
+	TipePeran        string             `json:"tipe_peran"`
+	IsActionDone     bool               `json:"is_action_done"`
+	WaktuAksi        pgtype.Timestamptz `json:"waktu_aksi"`
+	Catatan          string             `json:"catatan"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 }
 
 type PackingList struct {
@@ -282,6 +311,17 @@ type ReportSewing struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
+type Role struct {
+	IDRole    int32              `json:"id_role"`
+	NamaRole  string             `json:"nama_role"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type RoleHakAkse struct {
+	IDRole     int32 `json:"id_role"`
+	IDHakAkses int32 `json:"id_hak_akses"`
+}
+
 type SuratJalanClient struct {
 	IDSuratJalanClient int32              `json:"id_surat_jalan_client"`
 	Tanggal            pgtype.Date        `json:"tanggal"`
@@ -305,6 +345,7 @@ type User struct {
 	IDMitra      pgtype.Int4        `json:"id_mitra"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	Status       string             `json:"status"`
+	IDRole       pgtype.Int4        `json:"id_role"`
 }
 
 type UserAkse struct {

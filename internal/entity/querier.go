@@ -14,6 +14,8 @@ type Querier interface {
 	CountWorkOrdersByPOClientID(ctx context.Context, idPoClient int32) (int64, error)
 	CreateAktivitasLog(ctx context.Context, aksi string) (LogAktivita, error)
 	CreateAktivitasLogDetail(ctx context.Context, arg CreateAktivitasLogDetailParams) (LogAktivitasDetail, error)
+	CreateApprovalDetail(ctx context.Context, arg []CreateApprovalDetailParams) (int64, error)
+	CreateApprovalHeader(ctx context.Context, arg CreateApprovalHeaderParams) (int32, error)
 	CreateBarang(ctx context.Context, arg CreateBarangParams) (Barang, error)
 	CreateCompany(ctx context.Context, arg CreateCompanyParams) (Company, error)
 	CreateDepartemen(ctx context.Context, namaDepartemen string) (Departeman, error)
@@ -69,6 +71,7 @@ type Querier interface {
 	GetPOInternalDetail(ctx context.Context, idPoInternal int32) (PoInternal, error)
 	GetPRInternalDetail(ctx context.Context, idPrInternal int32) (GetPRInternalDetailRow, error)
 	GetPackingListDetail(ctx context.Context, idPackingList int32) (GetPackingListDetailRow, error)
+	GetPendingApprovalsByUser(ctx context.Context, idUser int32) ([]GetPendingApprovalsByUserRow, error)
 	GetRekonsiliasiMaterialStock(ctx context.Context, idRekonsiliasiMaterial int32) (GetRekonsiliasiMaterialStockRow, error)
 	// Mengambil laporan stok material yang teragregasi per kategori barang garmen
 	GetStockReportPerKategori(ctx context.Context) ([]GetStockReportPerKategoriRow, error)
