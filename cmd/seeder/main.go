@@ -80,7 +80,28 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 8. Sync Sequences
+	// 8. Seed PO Client & Items
+	err = seedPOClient(ctx, dbPool)
+	if err != nil {
+		slog.Error("failed to seed PO Client", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	// 9. Seed Work Order
+	err = seedWorkOrder(ctx, dbPool)
+	if err != nil {
+		slog.Error("failed to seed Work Order", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	// 10. Seed Production Reports
+	err = seedProductionReports(ctx, dbPool)
+	if err != nil {
+		slog.Error("failed to seed Production Reports", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	// 11. Sync Sequences
 	err = syncSequences(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to sync sequences", slog.String("error", err.Error()))
@@ -103,6 +124,18 @@ func syncSequences(ctx context.Context, db *pgxpool.Pool) error {
 		{"jenis_barang_id_jenis_barang_seq", "jenis_barang", "id_jenis_barang"},
 		{"barang_id_barang_seq", "barang", "id_barang"},
 		{"users_id_user_seq", "users", "id_user"},
+		{"po_client_id_po_client_seq", "po_client", "id_po_client"},
+		{"po_client_item_id_po_client_item_seq", "po_client_item", "id_po_client_item"},
+		{"work_order_id_wo_seq", "work_order", "id_wo"},
+		{"work_order_shell_id_wo_shell_seq", "work_order_shell", "id_wo_shell"},
+		{"work_order_shell_size_id_wo_shell_size_seq", "work_order_shell_size", "id_wo_shell_size"},
+		{"work_order_trim_id_wo_trim_seq", "work_order_trim", "id_wo_trim"},
+		{"material_list_id_material_list_seq", "material_list", "id_material_list"},
+		{"report_cutting_id_report_cutting_seq", "report_cutting", "id_report_cutting"},
+		{"report_sewing_id_report_sewing_seq", "report_sewing", "id_report_sewing"},
+		{"report_qc_finish_id_report_qc_finishing_seq", "report_qc_finish", "id_report_qc_finishing"},
+		{"report_packing_id_report_packing_seq", "report_packing", "id_report_packing"},
+		{"report_pengiriman_id_report_pengiriman_seq", "report_pengiriman", "id_report_pengiriman"},
 	}
 
 	for _, q := range queries {
@@ -304,5 +337,317 @@ func seedUser(ctx context.Context, db *pgxpool.Pool) error {
 		}
 		slog.Info("user seeded", slog.String("username", username))
 	}
+	return nil
+}
+
+func seedPOClient(ctx context.Context, db *pgxpool.Pool) error {
+	// 1. PO-CLI-2026-001 (Mitra ID 4 = Garment Client Global)
+	var exists bool
+	err := db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM PO_CLIENT WHERE PO_NUMBER = 'PO-CLI-2026-001')`).Scan(&exists)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		// Insert PO Client
+		var idPoClient int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO PO_CLIENT (PO_NUMBER, TANGGAL, SEASON, DELIVERY, PAYMENT_TERM, FILE, ID_MITRA)
+			VALUES ('PO-CLI-2026-001', '2026-06-01', 'Summer 2026', '2026-08-30', 'Net 30', 'po_file_001.pdf', 4)
+			RETURNING ID_PO_CLIENT
+		`).Scan(&idPoClient)
+		if err != nil {
+			return err
+		}
+		slog.Info("po client seeded: PO-CLI-2026-001", slog.Int("id", int(idPoClient)))
+
+		// Insert PO Client Items
+		_, err = db.Exec(ctx, `
+			INSERT INTO PO_CLIENT_ITEM (ID_PO_CLIENT, STYLE, COLOUR, DESCRIPTION, QTY, PRICE)
+			VALUES 
+			($1, 'TSH-BASIC-01', 'Black', 'Basic Crewneck Cotton T-Shirt Black', 1000, 5.50),
+			($1, 'TSH-BASIC-02', 'White', 'Basic Crewneck Cotton T-Shirt White', 500, 5.50)
+		`, idPoClient)
+		if err != nil {
+			return err
+		}
+		slog.Info("po client items seeded for PO-CLI-2026-001")
+	}
+
+	// 2. PO-CLI-2026-002 (Mitra ID 5 = Fashion Brand Indonesia)
+	err = db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM PO_CLIENT WHERE PO_NUMBER = 'PO-CLI-2026-002')`).Scan(&exists)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		var idPoClient int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO PO_CLIENT (PO_NUMBER, TANGGAL, SEASON, DELIVERY, PAYMENT_TERM, FILE, ID_MITRA)
+			VALUES ('PO-CLI-2026-002', '2026-06-02', 'Summer 2026', '2026-09-15', 'Net 30', 'po_file_002.pdf', 5)
+			RETURNING ID_PO_CLIENT
+		`).Scan(&idPoClient)
+		if err != nil {
+			return err
+		}
+		slog.Info("po client seeded: PO-CLI-2026-002", slog.Int("id", int(idPoClient)))
+
+		_, err = db.Exec(ctx, `
+			INSERT INTO PO_CLIENT_ITEM (ID_PO_CLIENT, STYLE, COLOUR, DESCRIPTION, QTY, PRICE)
+			VALUES ($1, 'HOO-OVER-01', 'Misty Grey', 'Oversized Hoodie Misty Grey', 800, 12.00)
+		`, idPoClient)
+		if err != nil {
+			return err
+		}
+		slog.Info("po client items seeded for PO-CLI-2026-002")
+	}
+
+	return nil
+}
+
+func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
+	// Check if we already have Work Orders
+	var exists bool
+	err := db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM WORK_ORDER WHERE MODEL IN ('Basic Crewneck T-Shirt Black', 'Basic Crewneck T-Shirt White'))`).Scan(&exists)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		// 1. Get PO Client Item IDs
+		var idItem1, idItem2 int32
+		err = db.QueryRow(ctx, `SELECT ID_PO_CLIENT_ITEM FROM PO_CLIENT_ITEM WHERE STYLE = 'TSH-BASIC-01' LIMIT 1`).Scan(&idItem1)
+		if err != nil {
+			return fmt.Errorf("failed to find PO Item TSH-BASIC-01: %w", err)
+		}
+		err = db.QueryRow(ctx, `SELECT ID_PO_CLIENT_ITEM FROM PO_CLIENT_ITEM WHERE STYLE = 'TSH-BASIC-02' LIMIT 1`).Scan(&idItem2)
+		if err != nil {
+			return fmt.Errorf("failed to find PO Item TSH-BASIC-02: %w", err)
+		}
+
+		// WO 1: Basic Crewneck T-Shirt Black
+		var idWo1 int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO WORK_ORDER (BUYER, MODEL, QTY, FOB_CMT, DELIVERY, ID_PO_CLIENT_ITEM)
+			VALUES ('Garment Client Global', 'Basic Crewneck T-Shirt Black', 1000, true, '2026-08-30', $1)
+			RETURNING ID_WO
+		`, idItem1).Scan(&idWo1)
+		if err != nil {
+			return err
+		}
+		slog.Info("work order 1 seeded: Basic Crewneck T-Shirt Black", slog.Int("id", int(idWo1)))
+
+		// WO 1 Details: Shell
+		var idShell1 int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO WORK_ORDER_SHELL (FABRIC, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO)
+			VALUES ('Cotton Combed 30s', 0.35, 'Black', 3, 0.22, $1)
+			RETURNING ID_WO_SHELL
+		`, idWo1).Scan(&idShell1)
+		if err != nil {
+			return err
+		}
+
+		// WO 1 Details: Sizes
+		_, err = db.Exec(ctx, `
+			INSERT INTO WORK_ORDER_SHELL_SIZE (SIZE, QTY, RATIO, ID_WO_SHELL)
+			VALUES 
+			('S', 200, 2, $1),
+			('M', 300, 3, $1),
+			('L', 300, 3, $1),
+			('XL', 200, 2, $1)
+		`, idShell1)
+		if err != nil {
+			return err
+		}
+
+		// WO 1 Details: Trims
+		_, err = db.Exec(ctx, `
+			INSERT INTO WORK_ORDER_TRIM (ITEM, DESCRIPTION, COLOR, CODE, CONS, QTY, UOM, POSITION, CREATED_BY, ALLOW, ID_WO)
+			VALUES 
+			('Label Leher', 'Satin Label', 'Black', 'TRM-LBL-01', 1.0, 1030, 'pcs', 'Neck', 'super-admin', 3, $1),
+			('Thread 120', 'Sewing Thread', 'Black', 'TRM-THR-01', 0.05, 50, 'cones', 'Seam', 'super-admin', 0, $1)
+		`, idWo1)
+		if err != nil {
+			return err
+		}
+
+		// WO 1 Details: Material List
+		_, err = db.Exec(ctx, `
+			INSERT INTO MATERIAL_LIST (DESCRIPTION, SIZE, COLOR, UOM, ID_WO)
+			VALUES 
+			('Cotton Combed 30s Fabric', 'All Size', 'Black', 'kg', $1),
+			('Satin Neck Label', 'Standard', 'Black', 'pcs', $1)
+		`, idWo1)
+		if err != nil {
+			return err
+		}
+
+		// WO 2: Basic Crewneck T-Shirt White
+		var idWo2 int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO WORK_ORDER (BUYER, MODEL, QTY, FOB_CMT, DELIVERY, ID_PO_CLIENT_ITEM)
+			VALUES ('Garment Client Global', 'Basic Crewneck T-Shirt White', 500, true, '2026-08-30', $1)
+			RETURNING ID_WO
+		`, idItem2).Scan(&idWo2)
+		if err != nil {
+			return err
+		}
+		slog.Info("work order 2 seeded: Basic Crewneck T-Shirt White", slog.Int("id", int(idWo2)))
+
+		// WO 2 Details: Shell
+		var idShell2 int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO WORK_ORDER_SHELL (FABRIC, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO)
+			VALUES ('Cotton Combed 30s', 0.35, 'White', 3, 0.22, $1)
+			RETURNING ID_WO_SHELL
+		`, idWo2).Scan(&idShell2)
+		if err != nil {
+			return err
+		}
+
+		// WO 2 Details: Sizes
+		_, err = db.Exec(ctx, `
+			INSERT INTO WORK_ORDER_SHELL_SIZE (SIZE, QTY, RATIO, ID_WO_SHELL)
+			VALUES 
+			('M', 200, 2, $1),
+			('L', 200, 2, $1),
+			('XL', 100, 1, $1)
+		`, idShell2)
+		if err != nil {
+			return err
+		}
+
+		// WO 2 Details: Trims
+		_, err = db.Exec(ctx, `
+			INSERT INTO WORK_ORDER_TRIM (ITEM, DESCRIPTION, COLOR, CODE, CONS, QTY, UOM, POSITION, CREATED_BY, ALLOW, ID_WO)
+			VALUES ('Label Leher', 'Satin Label', 'White', 'TRM-LBL-02', 1.0, 515, 'pcs', 'Neck', 'super-admin', 3, $1)
+		`, idWo2)
+		if err != nil {
+			return err
+		}
+
+		// WO 2 Details: Material List
+		_, err = db.Exec(ctx, `
+			INSERT INTO MATERIAL_LIST (DESCRIPTION, SIZE, COLOR, UOM, ID_WO)
+			VALUES ('Cotton Combed 30s Fabric', 'All Size', 'White', 'kg', $1)
+		`, idWo2)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func seedProductionReports(ctx context.Context, db *pgxpool.Pool) error {
+	// Check if reports already exist
+	var exists bool
+	err := db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM REPORT_CUTTING)`).Scan(&exists)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		// Get shell sizes of WO 1 (Black: S, M, L, XL)
+		type ShellSize struct {
+			ID   int32
+			Size string
+			Qty  int32
+		}
+		rows, err := db.Query(ctx, `
+			SELECT woss.ID_WO_SHELL_SIZE, woss.SIZE, woss.QTY
+			FROM WORK_ORDER_SHELL_SIZE woss
+			JOIN WORK_ORDER_SHELL wos ON wos.ID_WO_SHELL = woss.ID_WO_SHELL
+			JOIN WORK_ORDER wo ON wo.ID_WO = wos.ID_WO
+			WHERE wo.MODEL = 'Basic Crewneck T-Shirt Black'
+		`)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		var sizes []ShellSize
+		for rows.Next() {
+			var sz ShellSize
+			if err := rows.Scan(&sz.ID, &sz.Size, &sz.Qty); err != nil {
+				return err
+			}
+			sizes = append(sizes, sz)
+		}
+
+		// Insert report history per size
+		for _, sz := range sizes {
+			switch sz.Size {
+			case "S": // target 200
+				// Cutting: 200
+				_, err = db.Exec(ctx, `INSERT INTO REPORT_CUTTING (TANGGAL, QTY, ID_WO_SHELL_SIZE) VALUES ('2026-06-01', 200, $1)`, sz.ID)
+				if err != nil {
+					return err
+				}
+				// Sewing: 180
+				_, err = db.Exec(ctx, `INSERT INTO REPORT_SEWING (TANGGAL, QTY, ID_WO_SHELL_SIZE) VALUES ('2026-06-02', 180, $1)`, sz.ID)
+				if err != nil {
+					return err
+				}
+				// QC: 150
+				_, err = db.Exec(ctx, `INSERT INTO REPORT_QC_FINISH (TANGGAL, QTY, ID_WO_SHELL_SIZE) VALUES ('2026-06-03', 150, $1)`, sz.ID)
+				if err != nil {
+					return err
+				}
+				// Packing: 120
+				_, err = db.Exec(ctx, `INSERT INTO REPORT_PACKING (TANGGAL, QTY, ID_WO_SHELL_SIZE) VALUES ('2026-06-03', 120, $1)`, sz.ID)
+				if err != nil {
+					return err
+				}
+				// Shipping: 100
+				_, err = db.Exec(ctx, `INSERT INTO REPORT_PENGIRIMAN (REPORT_DATE, QTY, ID_WO_SHELL_SIZE) VALUES ('2026-06-03', 100, $1)`, sz.ID)
+				if err != nil {
+					return err
+				}
+			case "M": // target 300
+				// Cutting: 300
+				_, err = db.Exec(ctx, `INSERT INTO REPORT_CUTTING (TANGGAL, QTY, ID_WO_SHELL_SIZE) VALUES ('2026-06-01', 300, $1)`, sz.ID)
+				if err != nil {
+					return err
+				}
+				// Sewing: 250
+				_, err = db.Exec(ctx, `INSERT INTO REPORT_SEWING (TANGGAL, QTY, ID_WO_SHELL_SIZE) VALUES ('2026-06-02', 250, $1)`, sz.ID)
+				if err != nil {
+					return err
+				}
+				// QC: 200
+				_, err = db.Exec(ctx, `INSERT INTO REPORT_QC_FINISH (TANGGAL, QTY, ID_WO_SHELL_SIZE) VALUES ('2026-06-03', 200, $1)`, sz.ID)
+				if err != nil {
+					return err
+				}
+				// Packing: 150
+				_, err = db.Exec(ctx, `INSERT INTO REPORT_PACKING (TANGGAL, QTY, ID_WO_SHELL_SIZE) VALUES ('2026-06-03', 150, $1)`, sz.ID)
+				if err != nil {
+					return err
+				}
+				// Shipping: 0
+			case "L": // target 300
+				// Cutting: 280
+				_, err = db.Exec(ctx, `INSERT INTO REPORT_CUTTING (TANGGAL, QTY, ID_WO_SHELL_SIZE) VALUES ('2026-06-02', 280, $1)`, sz.ID)
+				if err != nil {
+					return err
+				}
+				// Sewing: 100
+				_, err = db.Exec(ctx, `INSERT INTO REPORT_SEWING (TANGGAL, QTY, ID_WO_SHELL_SIZE) VALUES ('2026-06-03', 100, $1)`, sz.ID)
+				if err != nil {
+					return err
+				}
+			case "XL": // target 200
+				// Cutting: 100
+				_, err = db.Exec(ctx, `INSERT INTO REPORT_CUTTING (TANGGAL, QTY, ID_WO_SHELL_SIZE) VALUES ('2026-06-03', 100, $1)`, sz.ID)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		slog.Info("production reports seeded successfully for Basic Crewneck T-Shirt Black")
+	}
+
 	return nil
 }
