@@ -43,12 +43,11 @@ func (h *DashboardHandler) RegisterRoutes(router *gin.Engine, authMiddleware gin
 	api := router.Group("/api/v1")
 	api.Use(authMiddleware)
 	{
-		api.GET("/logs", h.GetLogs)
-		api.POST("/dashboard/ai-estimation", h.PredictAIEstimation)
+		api.GET("/logs", RequirePermission(PermissionLogRead), h.GetLogs)
+		api.POST("/dashboard/ai-estimation", RequirePermission(PermissionDashboardRead), h.PredictAIEstimation)
 	}
 
-	// Daftarkan rute WebSocket di sini (tanpa middleware HTTP biasa jika tidak diperlukan)
-	router.GET("/ws/alerts", h.Alerts)
+	router.GET("/ws/alerts", authMiddleware, RequirePermission(PermissionDashboardRead), h.Alerts)
 }
 
 // GetLogs godoc

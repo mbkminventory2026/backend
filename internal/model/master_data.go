@@ -85,11 +85,19 @@ type UpdateCompanyRequest struct {
 
 // Hak Akses
 type CreateHakAksesRequest struct {
-	NamaHalaman string `json:"nama_halaman" binding:"required"`
+	KodePermission   string `json:"kode_permission" binding:"required"`
+	NamaHalaman      string `json:"nama_halaman" binding:"required"`
+	Deskripsi        string `json:"deskripsi"`
+	DomainPermission string `json:"domain_permission" binding:"required"`
+	AksiPermission   string `json:"aksi_permission" binding:"required"`
 }
 
 type UpdateHakAksesRequest struct {
-	NamaHalaman string `json:"nama_halaman" binding:"required"`
+	KodePermission   string `json:"kode_permission" binding:"required"`
+	NamaHalaman      string `json:"nama_halaman" binding:"required"`
+	Deskripsi        string `json:"deskripsi"`
+	DomainPermission string `json:"domain_permission" binding:"required"`
+	AksiPermission   string `json:"aksi_permission" binding:"required"`
 }
 
 // --- RESPONSES ---
@@ -140,9 +148,13 @@ type CompanyResponse struct {
 }
 
 type HakAksesResponse struct {
-	ID        int32  `json:"id_hak_akses"`
-	Nama      string `json:"nama_halaman"`
-	CreatedAt string `json:"created_at"`
+	ID               int32  `json:"id_hak_akses"`
+	KodePermission   string `json:"kode_permission"`
+	Nama             string `json:"nama_halaman"`
+	Deskripsi        string `json:"deskripsi"`
+	DomainPermission string `json:"domain_permission"`
+	AksiPermission   string `json:"aksi_permission"`
+	CreatedAt        string `json:"created_at"`
 }
 
 // --- SWAGGER SUCCESS DOCS ---

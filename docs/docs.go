@@ -2421,6 +2421,324 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/roles": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of roles.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "List Roles",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by role name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RoleListSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeUnauthorizedDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new role and assigns permission overrides for the role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Create Role",
+                "parameters": [
+                    {
+                        "description": "Create role payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.RoleSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeUnauthorizedDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/roles/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a single role with assigned permissions.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Get Role Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RoleSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeUnauthorizedDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates role metadata and replaces assigned permissions.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Update Role",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update role payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RoleSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeUnauthorizedDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes a role if it is not currently assigned to users.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Delete Role",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeUnauthorizedDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/surat-jalan-clients": {
             "get": {
                 "security": [
@@ -2994,6 +3312,76 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/users/{id}/permissions": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Replaces additive USER_AKSES overrides for a user without changing the primary role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Replace User Permission Overrides",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Assign permissions payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.AssignUserPermissionsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.UserSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeUnauthorizedDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users/{id}/reject": {
             "put": {
                 "security": [
@@ -3023,6 +3411,76 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{id}/role": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates only the user's primary role assignment.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Assign Role to User",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Assign role payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.AssignUserRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.UserSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeUnauthorizedDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
                         }
                     }
                 }
@@ -3394,6 +3852,28 @@ const docTemplate = `{
                 }
             }
         },
+        "model.AssignUserPermissionsRequest": {
+            "type": "object",
+            "properties": {
+                "hak_akses_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "model.AssignUserRoleRequest": {
+            "type": "object",
+            "required": [
+                "id_role"
+            ],
+            "properties": {
+                "id_role": {
+                    "type": "integer"
+                }
+            }
+        },
         "model.AuthServiceUnavailableErrorDetail": {
             "type": "object",
             "properties": {
@@ -3604,9 +4084,24 @@ const docTemplate = `{
         "model.CreateHakAksesRequest": {
             "type": "object",
             "required": [
+                "aksi_permission",
+                "domain_permission",
+                "kode_permission",
                 "nama_halaman"
             ],
             "properties": {
+                "aksi_permission": {
+                    "type": "string"
+                },
+                "deskripsi": {
+                    "type": "string"
+                },
+                "domain_permission": {
+                    "type": "string"
+                },
+                "kode_permission": {
+                    "type": "string"
+                },
                 "nama_halaman": {
                     "type": "string"
                 }
@@ -4047,6 +4542,23 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CreateRoleRequest": {
+            "type": "object",
+            "required": [
+                "nama_role"
+            ],
+            "properties": {
+                "hak_akses_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "nama_role": {
+                    "type": "string"
+                }
+            }
+        },
         "model.CreateSuratJalanClientRequest": {
             "type": "object",
             "required": [
@@ -4072,6 +4584,7 @@ const docTemplate = `{
         "model.CreateUserRequest": {
             "type": "object",
             "required": [
+                "id_role",
                 "password",
                 "username"
             ],
@@ -4088,8 +4601,8 @@ const docTemplate = `{
                 "id_mitra": {
                     "type": "integer"
                 },
-                "is_manager": {
-                    "type": "boolean"
+                "id_role": {
+                    "type": "integer"
                 },
                 "password": {
                     "type": "string",
@@ -4316,6 +4829,14 @@ const docTemplate = `{
         "model.GetMeResponse": {
             "type": "object",
             "properties": {
+                "id_role": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "role_name": {
+                    "type": "string",
+                    "example": "OPERATOR"
+                },
                 "user_id": {
                     "type": "integer",
                     "example": 1
@@ -4355,11 +4876,23 @@ const docTemplate = `{
         "model.HakAksesResponse": {
             "type": "object",
             "properties": {
+                "aksi_permission": {
+                    "type": "string"
+                },
                 "created_at": {
+                    "type": "string"
+                },
+                "deskripsi": {
+                    "type": "string"
+                },
+                "domain_permission": {
                     "type": "string"
                 },
                 "id_hak_akses": {
                     "type": "integer"
+                },
+                "kode_permission": {
+                    "type": "string"
                 },
                 "nama_halaman": {
                     "type": "string"
@@ -5831,6 +6364,92 @@ const docTemplate = `{
                 }
             }
         },
+        "model.RoleListItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_role": {
+                    "type": "integer"
+                },
+                "nama_role": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.RoleListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RoleListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/model.PaginationMeta"
+                }
+            }
+        },
+        "model.RoleListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.RoleListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "roles retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.RoleResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "hak_akses_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "id_role": {
+                    "type": "integer"
+                },
+                "nama_role": {
+                    "type": "string"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "model.RoleSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.RoleResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "role created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.StockReportPerKategoriResponse": {
             "type": "object",
             "properties": {
@@ -6255,9 +6874,24 @@ const docTemplate = `{
         "model.UpdateHakAksesRequest": {
             "type": "object",
             "required": [
+                "aksi_permission",
+                "domain_permission",
+                "kode_permission",
                 "nama_halaman"
             ],
             "properties": {
+                "aksi_permission": {
+                    "type": "string"
+                },
+                "deskripsi": {
+                    "type": "string"
+                },
+                "domain_permission": {
+                    "type": "string"
+                },
+                "kode_permission": {
+                    "type": "string"
+                },
                 "nama_halaman": {
                     "type": "string"
                 }
@@ -6309,10 +6943,10 @@ const docTemplate = `{
                 }
             }
         },
-        "model.UpdateUserRequest": {
+        "model.UpdateRoleRequest": {
             "type": "object",
             "required": [
-                "username"
+                "nama_role"
             ],
             "properties": {
                 "hak_akses_ids": {
@@ -6321,14 +6955,22 @@ const docTemplate = `{
                         "type": "integer"
                     }
                 },
+                "nama_role": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.UpdateUserRequest": {
+            "type": "object",
+            "required": [
+                "username"
+            ],
+            "properties": {
                 "id_departemen": {
                     "type": "integer"
                 },
                 "id_mitra": {
                     "type": "integer"
-                },
-                "is_manager": {
-                    "type": "boolean"
                 },
                 "password": {
                     "type": "string",
@@ -6379,16 +7021,19 @@ const docTemplate = `{
                 "id_mitra": {
                     "type": "integer"
                 },
-                "id_user": {
+                "id_role": {
                     "type": "integer"
                 },
-                "is_manager": {
-                    "type": "boolean"
+                "id_user": {
+                    "type": "integer"
                 },
                 "nama_departemen": {
                     "type": "string"
                 },
                 "nama_perusahaan": {
+                    "type": "string"
+                },
+                "nama_role": {
                     "type": "string"
                 },
                 "permissions": {

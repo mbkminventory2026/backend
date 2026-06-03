@@ -25,7 +25,7 @@ type Querier interface {
 	CreateBarang(ctx context.Context, arg CreateBarangParams) (Barang, error)
 	CreateCompany(ctx context.Context, arg CreateCompanyParams) (Company, error)
 	CreateDepartemen(ctx context.Context, namaDepartemen string) (Departeman, error)
-	CreateHakAkses(ctx context.Context, namaHalaman string) (HakAkse, error)
+	CreateHakAkses(ctx context.Context, arg CreateHakAksesParams) (HakAkse, error)
 	CreateJenisBarang(ctx context.Context, arg CreateJenisBarangParams) (JenisBarang, error)
 	CreateKomponenMarkerPlan(ctx context.Context, arg CreateKomponenMarkerPlanParams) (KomponenMarkerPlan, error)
 	CreateMarkerPlan(ctx context.Context, arg CreateMarkerPlanParams) (MarkerPlan, error)
@@ -48,6 +48,8 @@ type Querier interface {
 	CreateReportPengiriman(ctx context.Context, arg CreateReportPengirimanParams) (ReportPengiriman, error)
 	CreateReportQCFinish(ctx context.Context, arg CreateReportQCFinishParams) (ReportQcFinish, error)
 	CreateReportSewing(ctx context.Context, arg CreateReportSewingParams) (ReportSewing, error)
+	CreateRole(ctx context.Context, namaRole string) (Role, error)
+	CreateRoleHakAkses(ctx context.Context, arg CreateRoleHakAksesParams) error
 	CreateSuratJalanClient(ctx context.Context, arg CreateSuratJalanClientParams) (SuratJalanClient, error)
 	CreateSuratJalanInternal(ctx context.Context) (SuratJalanInternal, error)
 	CreateTimelinePlan(ctx context.Context, arg CreateTimelinePlanParams) (TimelinePlanProduksi, error)
@@ -66,7 +68,10 @@ type Querier interface {
 	DeleteMitra(ctx context.Context, idMitra int32) (int64, error)
 	DeletePOClientItemsByPOClientID(ctx context.Context, idPoClient int32) error
 	DeletePenanggungJawabByPOClientID(ctx context.Context, idPoClient int32) error
+	DeleteRole(ctx context.Context, idRole int32) (int64, error)
+	DeleteRoleHakAksesByRoleID(ctx context.Context, idRole int32) (int64, error)
 	DeleteUser(ctx context.Context, idUser int32) (int64, error)
+	DeleteUserAksesByUserID(ctx context.Context, idUser int32) (int64, error)
 	GetAktivitasLogs(ctx context.Context, arg GetAktivitasLogsParams) ([]GetAktivitasLogsRow, error)
 	GetBarangByID(ctx context.Context, idBarang int32) (GetBarangByIDRow, error)
 	GetCompany(ctx context.Context) (Company, error)
@@ -83,14 +88,16 @@ type Querier interface {
 	GetPOClientDetail(ctx context.Context, idPoClient int32) (GetPOClientDetailRow, error)
 	GetPOInternalDetail(ctx context.Context, idPoInternal int32) (PoInternal, error)
 	GetPRInternalDetail(ctx context.Context, idPrInternal int32) (GetPRInternalDetailRow, error)
-	GetPackingListDetail(ctx context.Context, idPackingList int32) (GetPackingListDetailRow, error)
+	GetPackingListDetail(ctx context.Context, arg GetPackingListDetailParams) (GetPackingListDetailRow, error)
 	GetPendingApprovalsByUser(ctx context.Context, idUser int32) ([]GetPendingApprovalsByUserRow, error)
 	GetRekonsiliasiMaterialStock(ctx context.Context, idRekonsiliasiMaterial int32) (GetRekonsiliasiMaterialStockRow, error)
+	GetRoleByID(ctx context.Context, idRole int32) (Role, error)
+	GetRoleByName(ctx context.Context, namaRole string) (Role, error)
 	// Mengambil laporan stok material yang teragregasi per kategori barang garmen
 	GetStockReportPerKategori(ctx context.Context) ([]GetStockReportPerKategoriRow, error)
 	// Mengambil laporan stok material yang teragregasi per lokasi penyimpanan rak
 	GetStockReportPerLokasi(ctx context.Context) ([]GetStockReportPerLokasiRow, error)
-	GetSuratJalanClientDetail(ctx context.Context, idSuratJalanClient int32) (GetSuratJalanClientDetailRow, error)
+	GetSuratJalanClientDetail(ctx context.Context, arg GetSuratJalanClientDetailParams) (GetSuratJalanClientDetailRow, error)
 	GetSuratJalanInternalDetail(ctx context.Context, idSuratJalanInternal int32) (SuratJalanInternal, error)
 	GetTimelinePlanByID(ctx context.Context, idTimeline int32) (TimelinePlanProduksi, error)
 	GetUserByID(ctx context.Context, idUser int32) (GetUserByIDRow, error)
@@ -98,7 +105,7 @@ type Querier interface {
 	GetUserPermissionIDs(ctx context.Context, idUser int32) ([]int32, error)
 	GetUserPermissions(ctx context.Context, idUser int32) ([]string, error)
 	GetWOShellPlansByTimelineID(ctx context.Context, idTimeline int32) ([]GetWOShellPlansByTimelineIDRow, error)
-	GetWorkOrderDetail(ctx context.Context, idWo int32) (GetWorkOrderDetailRow, error)
+	GetWorkOrderDetail(ctx context.Context, arg GetWorkOrderDetailParams) (GetWorkOrderDetailRow, error)
 	// Mengambil data WO dan Production Internal untuk diolah model Regresi Linier di Golang
 	GetWorkOrderForAIEstimation(ctx context.Context) ([]GetWorkOrderForAIEstimationRow, error)
 	IssueInventory(ctx context.Context, arg IssueInventoryParams) (IssueInventoryRow, error)
@@ -122,6 +129,9 @@ type Querier interface {
 	ListProductionSummary(ctx context.Context, arg ListProductionSummaryParams) ([]ListProductionSummaryRow, error)
 	ListRatioByKomponenID(ctx context.Context, idKomponenMarker int32) ([]RatioMarker, error)
 	ListRatioSizeByRatioID(ctx context.Context, idRatioMarker int32) ([]ListRatioSizeByRatioIDRow, error)
+	ListRolePermissionIDs(ctx context.Context, idRole int32) ([]int32, error)
+	ListRolePermissions(ctx context.Context, idRole int32) ([]string, error)
+	ListRoles(ctx context.Context, arg ListRolesParams) ([]ListRolesRow, error)
 	ListSuratJalanClients(ctx context.Context, arg ListSuratJalanClientsParams) ([]ListSuratJalanClientsRow, error)
 	ListSuratJalanInternals(ctx context.Context, arg ListSuratJalanInternalsParams) ([]ListSuratJalanInternalsRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
@@ -137,7 +147,9 @@ type Querier interface {
 	UpdateJenisBarang(ctx context.Context, arg UpdateJenisBarangParams) (JenisBarang, error)
 	UpdateMitra(ctx context.Context, arg UpdateMitraParams) (Mitra, error)
 	UpdatePOClient(ctx context.Context, arg UpdatePOClientParams) (PoClient, error)
+	UpdateRole(ctx context.Context, arg UpdateRoleParams) (Role, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error)
+	UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) (UpdateUserRoleRow, error)
 	UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) (UpdateUserStatusRow, error)
 	UpdateWOShellPlanStatus(ctx context.Context, arg UpdateWOShellPlanStatusParams) error
 }

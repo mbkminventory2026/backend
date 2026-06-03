@@ -14,36 +14,101 @@ const (
 	authorizationTypeBearer = "bearer"
 	authorizationPayloadKey = "authorization_payload"
 
-	// PermissionAllAccess is the special permission granted to managers/superadmin
-	PermissionAllAccess   = "ALL_ACCESS"
+	// PermissionAllAccess is the special permission granted to super admin/emergency access
+	PermissionAllAccess = "ALL_ACCESS"
+
 	PermissionUserRead    = "USER_READ"
 	PermissionUserCreate  = "USER_CREATE"
 	PermissionUserUpdate  = "USER_UPDATE"
 	PermissionUserDelete  = "USER_DELETE"
 	PermissionUserApprove = "USER_APPROVE"
 
-	PermissionMasterRead   = "MASTER_READ"
-	PermissionMasterCreate = "MASTER_CREATE"
-	PermissionMasterUpdate = "MASTER_UPDATE"
-	PermissionMasterDelete = "MASTER_DELETE"
+	PermissionRoleRead       = "ROLE_READ"
+	PermissionRoleCreate     = "ROLE_CREATE"
+	PermissionRoleUpdate     = "ROLE_UPDATE"
+	PermissionRoleDelete     = "ROLE_DELETE"
+	PermissionUserRoleAssign = "USER_ROLE_ASSIGN"
 
-	PermissionPORead    = "PO_READ"
-	PermissionPOCreate  = "PO_CREATE"
-	PermissionPOUpdate  = "PO_UPDATE"
-	PermissionPRApprove = "PR_APPROVE"
+	PermissionPermissionRead   = "PERMISSION_READ"
+	PermissionPermissionCreate = "PERMISSION_CREATE"
+	PermissionPermissionUpdate = "PERMISSION_UPDATE"
+	PermissionPermissionDelete = "PERMISSION_DELETE"
+
+	PermissionMasterBarangRead   = "MASTER_BARANG_READ"
+	PermissionMasterBarangCreate = "MASTER_BARANG_CREATE"
+	PermissionMasterBarangUpdate = "MASTER_BARANG_UPDATE"
+	PermissionMasterBarangDelete = "MASTER_BARANG_DELETE"
+
+	PermissionMasterMitraRead   = "MASTER_MITRA_READ"
+	PermissionMasterMitraCreate = "MASTER_MITRA_CREATE"
+	PermissionMasterMitraUpdate = "MASTER_MITRA_UPDATE"
+	PermissionMasterMitraDelete = "MASTER_MITRA_DELETE"
+
+	PermissionMasterJenisBarangRead   = "MASTER_JENIS_BARANG_READ"
+	PermissionMasterJenisBarangCreate = "MASTER_JENIS_BARANG_CREATE"
+	PermissionMasterJenisBarangUpdate = "MASTER_JENIS_BARANG_UPDATE"
+	PermissionMasterJenisBarangDelete = "MASTER_JENIS_BARANG_DELETE"
+
+	PermissionMasterCompanyRead   = "MASTER_COMPANY_READ"
+	PermissionMasterCompanyCreate = "MASTER_COMPANY_CREATE"
+	PermissionMasterCompanyUpdate = "MASTER_COMPANY_UPDATE"
+	PermissionMasterCompanyDelete = "MASTER_COMPANY_DELETE"
+
+	PermissionMasterDepartemenRead   = "MASTER_DEPARTEMEN_READ"
+	PermissionMasterDepartemenCreate = "MASTER_DEPARTEMEN_CREATE"
+	PermissionMasterDepartemenUpdate = "MASTER_DEPARTEMEN_UPDATE"
+	PermissionMasterDepartemenDelete = "MASTER_DEPARTEMEN_DELETE"
+
+	PermissionPOClientRead   = "PO_CLIENT_READ"
+	PermissionPOClientCreate = "PO_CLIENT_CREATE"
+	PermissionPOClientUpdate = "PO_CLIENT_UPDATE"
+
+	PermissionPRInternalRead    = "PR_INTERNAL_READ"
+	PermissionPRInternalCreate  = "PR_INTERNAL_CREATE"
+	PermissionPRInternalUpdate  = "PR_INTERNAL_UPDATE"
+	PermissionPRInternalApprove = "PR_INTERNAL_APPROVE"
+
+	PermissionPOInternalRead    = "PO_INTERNAL_READ"
+	PermissionPOInternalCreate  = "PO_INTERNAL_CREATE"
+	PermissionPOInternalUpdate  = "PO_INTERNAL_UPDATE"
+	PermissionPOInternalApprove = "PO_INTERNAL_APPROVE"
 
 	PermissionWORead   = "WO_READ"
 	PermissionWOCreate = "WO_CREATE"
+	PermissionWOUpdate = "WO_UPDATE"
 	PermissionWOClose  = "WO_CLOSE"
 
-	PermissionReportRead   = "REPORT_READ"
-	PermissionReportCreate = "REPORT_CREATE"
+	PermissionProductionSummaryRead  = "PRODUCTION_SUMMARY_READ"
+	PermissionProductionReportRead   = "PRODUCTION_REPORT_READ"
+	PermissionProductionReportCreate = "PRODUCTION_REPORT_CREATE"
+	PermissionProductionReportUpdate = "PRODUCTION_REPORT_UPDATE"
 
-	PermissionInventoryReceive  = "INVENTORY_RECEIVE"
-	PermissionInventoryIssue    = "INVENTORY_ISSUE"
-	PermissionPackingListCreate = "PACKING_LIST_CREATE"
-	PermissionSuratJalanCreate  = "SURAT_JALAN_CREATE"
+	PermissionTimelineRead   = "TIMELINE_READ"
+	PermissionTimelineCreate = "TIMELINE_CREATE"
+	PermissionTimelineUpdate = "TIMELINE_UPDATE"
 
+	PermissionMarkerPlanRead   = "MARKER_PLAN_READ"
+	PermissionMarkerPlanCreate = "MARKER_PLAN_CREATE"
+	PermissionMarkerPlanUpdate = "MARKER_PLAN_UPDATE"
+
+	PermissionCuttingPlanRead   = "CUTTING_PLAN_READ"
+	PermissionCuttingPlanCreate = "CUTTING_PLAN_CREATE"
+	PermissionCuttingPlanUpdate = "CUTTING_PLAN_UPDATE"
+
+	PermissionInventoryReceive = "INVENTORY_RECEIVE"
+	PermissionInventoryIssue   = "INVENTORY_ISSUE"
+
+	PermissionPackingListRead    = "PACKING_LIST_READ"
+	PermissionPackingListCreate  = "PACKING_LIST_CREATE"
+	PermissionPackingListUpdate  = "PACKING_LIST_UPDATE"
+	PermissionPackingListApprove = "PACKING_LIST_APPROVE"
+
+	PermissionSuratJalanClientRead   = "SURAT_JALAN_CLIENT_READ"
+	PermissionSuratJalanInternalRead = "SURAT_JALAN_INTERNAL_READ"
+	PermissionSuratJalanCreate       = "SURAT_JALAN_CREATE"
+	PermissionSuratJalanUpdate       = "SURAT_JALAN_UPDATE"
+
+	PermissionReportRead    = "REPORT_READ"
 	PermissionLogRead       = "LOG_READ"
 	PermissionDashboardRead = "DASHBOARD_READ"
 )
@@ -202,11 +267,6 @@ func HasPermission(c *gin.Context, requiredPermission string) bool {
 	claims, ok := payload.(jwt.MapClaims)
 	if !ok {
 		return false
-	}
-
-	// Managers or ALL_ACCESS always have full access
-	if isManager, ok := claims["is_manager"].(bool); ok && isManager {
-		return true
 	}
 
 	permissionsRaw, ok := claims["permissions"]

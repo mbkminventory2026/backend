@@ -3,6 +3,7 @@ package model
 type ProductionSummaryFilter struct {
 	IDWO          int32
 	IDWOShellSize int32
+	IDMitra       *int32
 	ListQueryFilter
 }
 

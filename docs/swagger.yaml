@@ -73,6 +73,20 @@ definitions:
       waktu:
         type: string
     type: object
+  model.AssignUserPermissionsRequest:
+    properties:
+      hak_akses_ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  model.AssignUserRoleRequest:
+    properties:
+      id_role:
+        type: integer
+    required:
+    - id_role
+    type: object
   model.AuthServiceUnavailableErrorDetail:
     properties:
       code:
@@ -214,9 +228,20 @@ definitions:
     type: object
   model.CreateHakAksesRequest:
     properties:
+      aksi_permission:
+        type: string
+      deskripsi:
+        type: string
+      domain_permission:
+        type: string
+      kode_permission:
+        type: string
       nama_halaman:
         type: string
     required:
+    - aksi_permission
+    - domain_permission
+    - kode_permission
     - nama_halaman
     type: object
   model.CreateJenisBarangRequest:
@@ -523,6 +548,17 @@ definitions:
     - nama
     - no_telp
     type: object
+  model.CreateRoleRequest:
+    properties:
+      hak_akses_ids:
+        items:
+          type: integer
+        type: array
+      nama_role:
+        type: string
+    required:
+    - nama_role
+    type: object
   model.CreateSuratJalanClientRequest:
     properties:
       id_material_list:
@@ -548,8 +584,8 @@ definitions:
         type: integer
       id_mitra:
         type: integer
-      is_manager:
-        type: boolean
+      id_role:
+        type: integer
       password:
         minLength: 6
         type: string
@@ -559,6 +595,7 @@ definitions:
       username:
         type: string
     required:
+    - id_role
     - password
     - username
     type: object
@@ -711,6 +748,12 @@ definitions:
     type: object
   model.GetMeResponse:
     properties:
+      id_role:
+        example: 1
+        type: integer
+      role_name:
+        example: OPERATOR
+        type: string
       user_id:
         example: 1
         type: integer
@@ -738,10 +781,18 @@ definitions:
     type: object
   model.HakAksesResponse:
     properties:
+      aksi_permission:
+        type: string
       created_at:
+        type: string
+      deskripsi:
+        type: string
+      domain_permission:
         type: string
       id_hak_akses:
         type: integer
+      kode_permission:
+        type: string
       nama_halaman:
         type: string
     type: object
@@ -1725,6 +1776,63 @@ definitions:
     - turnstile_token
     - username
     type: object
+  model.RoleListItem:
+    properties:
+      created_at:
+        type: string
+      id_role:
+        type: integer
+      nama_role:
+        type: string
+    type: object
+  model.RoleListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.RoleListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.RoleListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.RoleListResponse'
+      message:
+        example: roles retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.RoleResponse:
+    properties:
+      created_at:
+        type: string
+      hak_akses_ids:
+        items:
+          type: integer
+        type: array
+      id_role:
+        type: integer
+      nama_role:
+        type: string
+      permissions:
+        items:
+          type: string
+        type: array
+    type: object
+  model.RoleSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.RoleResponse'
+      message:
+        example: role created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.StockReportPerKategoriResponse:
     properties:
       kategori:
@@ -2008,9 +2116,20 @@ definitions:
     type: object
   model.UpdateHakAksesRequest:
     properties:
+      aksi_permission:
+        type: string
+      deskripsi:
+        type: string
+      domain_permission:
+        type: string
+      kode_permission:
+        type: string
       nama_halaman:
         type: string
     required:
+    - aksi_permission
+    - domain_permission
+    - kode_permission
     - nama_halaman
     type: object
   model.UpdateJenisBarangRequest:
@@ -2044,18 +2163,23 @@ definitions:
     - no_telp
     - tipe_perusahaan
     type: object
-  model.UpdateUserRequest:
+  model.UpdateRoleRequest:
     properties:
       hak_akses_ids:
         items:
           type: integer
         type: array
+      nama_role:
+        type: string
+    required:
+    - nama_role
+    type: object
+  model.UpdateUserRequest:
+    properties:
       id_departemen:
         type: integer
       id_mitra:
         type: integer
-      is_manager:
-        type: boolean
       password:
         minLength: 6
         type: string
@@ -2091,13 +2215,15 @@ definitions:
         type: integer
       id_mitra:
         type: integer
+      id_role:
+        type: integer
       id_user:
         type: integer
-      is_manager:
-        type: boolean
       nama_departemen:
         type: string
       nama_perusahaan:
+        type: string
+      nama_role:
         type: string
       permissions:
         items:
@@ -3958,6 +4084,210 @@ paths:
       summary: Laporan Stok per Lokasi
       tags:
       - Reports
+  /api/v1/roles:
+    get:
+      description: Returns a paginated list of roles.
+      parameters:
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Search by role name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.RoleListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: List Roles
+      tags:
+      - Roles
+    post:
+      consumes:
+      - application/json
+      description: Creates a new role and assigns permission overrides for the role.
+      parameters:
+      - description: Create role payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.RoleSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Role
+      tags:
+      - Roles
+  /api/v1/roles/{id}:
+    delete:
+      description: Deletes a role if it is not currently assigned to users.
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Delete Role
+      tags:
+      - Roles
+    get:
+      description: Returns a single role with assigned permissions.
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.RoleSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Role Detail
+      tags:
+      - Roles
+    put:
+      consumes:
+      - application/json
+      description: Updates role metadata and replaces assigned permissions.
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update role payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.RoleSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Update Role
+      tags:
+      - Roles
   /api/v1/surat-jalan-clients:
     get:
       description: Returns a paginated list of client delivery notes.
@@ -4323,6 +4653,52 @@ paths:
       summary: Approve User Pendaftaran
       tags:
       - Users
+  /api/v1/users/{id}/permissions:
+    put:
+      consumes:
+      - application/json
+      description: Replaces additive USER_AKSES overrides for a user without changing
+        the primary role.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Assign permissions payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.AssignUserPermissionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UserSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Replace User Permission Overrides
+      tags:
+      - Users
   /api/v1/users/{id}/reject:
     put:
       description: Rejects a pending user registration, updating status to rejected.
@@ -4342,6 +4718,51 @@ paths:
       security:
       - BearerAuth: []
       summary: Reject User Pendaftaran
+      tags:
+      - Users
+  /api/v1/users/{id}/role:
+    put:
+      consumes:
+      - application/json
+      description: Updates only the user's primary role assignment.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Assign role payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.AssignUserRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UserSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Assign Role to User
       tags:
       - Users
   /api/v1/work-orders:

@@ -92,6 +92,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	roleUseCase, err := usecase.NewRoleUseCase(queries, dbPool)
+	if err != nil {
+		logger.Error("failed to initialize role usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	masterDataUseCase, err := usecase.NewMasterDataUseCase(queries)
 	if err != nil {
 		logger.Error("failed to initialize master data usecase", slog.String("error", err.Error()))
@@ -145,6 +152,13 @@ func main() {
 	userHandler, err := httpdelivery.NewUserHandler(userUseCase)
 	if err != nil {
 		logger.Error("failed to initialize user handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	roleHandler, err := httpdelivery.NewRoleHandler(roleUseCase)
+	if err != nil {
+		logger.Error("failed to initialize role handler", slog.String("error", err.Error()))
 		dbPool.Close()
 		os.Exit(1)
 	}
@@ -224,6 +238,7 @@ func main() {
 	)
 
 	userHandler.RegisterRoutes(router, authMiddleware)
+	roleHandler.RegisterRoutes(router, authMiddleware)
 	masterDataHandler.RegisterRoutes(router, authMiddleware)
 	transactionDocumentHandler.RegisterRoutes(router, authMiddleware)
 	workOrderProductionHandler.RegisterRoutes(router, authMiddleware)

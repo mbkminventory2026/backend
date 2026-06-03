@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 
 	"permatatex-inventory/internal/model"
 	"permatatex-inventory/internal/usecase"
@@ -24,17 +25,17 @@ func NewTransactionDocumentHandler(useCase *usecase.TransactionDocumentUseCase) 
 
 func (h *TransactionDocumentHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
 	v1 := router.Group("/api/v1").Use(authMiddleware)
-	v1.GET("/po-clients", h.ListPOClients)
-	v1.GET("/po-clients/:id", h.GetPOClientDetail)
-	v1.POST("/po-clients", h.CreatePOClient)
-	v1.PUT("/po-clients/:id", h.UpdatePOClient)
-	v1.GET("/pr-internals", RequirePermission(PermissionPORead), h.ListPRInternals)
-	v1.GET("/pr-internals/:id", RequirePermission(PermissionPORead), h.GetPRInternalDetail)
-	v1.POST("/pr-internals", RequirePermission(PermissionPOCreate), h.CreatePRInternal)
-	v1.PATCH("/pr-internals/:id/approve", RequirePermission(PermissionPRApprove), h.ApprovePRInternal)
-	v1.GET("/po-internals", RequirePermission(PermissionPORead), h.ListPOInternals)
-	v1.GET("/po-internals/:id", RequirePermission(PermissionPORead), h.GetPOInternalDetail)
-	v1.POST("/po-internals", RequirePermission(PermissionPOCreate), h.CreatePOInternal)
+	v1.GET("/po-clients", RequirePermission(PermissionPOClientRead), h.ListPOClients)
+	v1.GET("/po-clients/:id", RequirePermission(PermissionPOClientRead), h.GetPOClientDetail)
+	v1.POST("/po-clients", RequirePermission(PermissionPOClientCreate), h.CreatePOClient)
+	v1.PUT("/po-clients/:id", RequirePermission(PermissionPOClientUpdate), h.UpdatePOClient)
+	v1.GET("/pr-internals", RequirePermission(PermissionPRInternalRead), h.ListPRInternals)
+	v1.GET("/pr-internals/:id", RequirePermission(PermissionPRInternalRead), h.GetPRInternalDetail)
+	v1.POST("/pr-internals", RequirePermission(PermissionPRInternalCreate), h.CreatePRInternal)
+	v1.PATCH("/pr-internals/:id/approve", RequirePermission(PermissionPRInternalApprove), h.ApprovePRInternal)
+	v1.GET("/po-internals", RequirePermission(PermissionPOInternalRead), h.ListPOInternals)
+	v1.GET("/po-internals/:id", RequirePermission(PermissionPOInternalRead), h.GetPOInternalDetail)
+	v1.POST("/po-internals", RequirePermission(PermissionPOInternalCreate), h.CreatePOInternal)
 }
 
 // ListPOClients godoc
@@ -55,14 +56,6 @@ func (h *TransactionDocumentHandler) ListPOClients(c *gin.Context) {
 	if !ok {
 		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
 		return
-	}
-
-	// If the user is NOT a Mitra, they MUST have the PO_READ or ALL_ACCESS permission
-	if mitraID == nil {
-		if !HasPermission(c, PermissionPORead) {
-			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: missing required permission '"+PermissionPORead+"'", nil))
-			return
-		}
 	}
 
 	filter, err := parseListQuery(c, 20)
@@ -101,14 +94,6 @@ func (h *TransactionDocumentHandler) GetPOClientDetail(c *gin.Context) {
 		return
 	}
 
-	// If the user is NOT a Mitra, they MUST have the PO_READ or ALL_ACCESS permission
-	if mitraID == nil {
-		if !HasPermission(c, PermissionPORead) {
-			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: missing required permission '"+PermissionPORead+"'", nil))
-			return
-		}
-	}
-
 	id, err := parsePathInt32(c, "id")
 	if err != nil {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid po client id", nil))
@@ -126,6 +111,15 @@ func (h *TransactionDocumentHandler) GetPOClientDetail(c *gin.Context) {
 		if item.IDMitra != *mitraID {
 			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: you do not own this PO client document", nil))
 			return
+		}
+	}
+
+	payload, exists := c.Get(authorizationPayloadKey)
+	if exists {
+		if claims, ok := payload.(jwt.MapClaims); ok {
+			if !hasPricingVisibility(claims) {
+				sanitizePOClientDetail(item)
+			}
 		}
 	}
 
@@ -152,12 +146,9 @@ func (h *TransactionDocumentHandler) CreatePOClient(c *gin.Context) {
 		return
 	}
 
-	// If the user is NOT a Mitra, they MUST have the PO_CREATE or ALL_ACCESS permission
-	if mitraID == nil {
-		if !HasPermission(c, PermissionPOCreate) {
-			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: missing required permission '"+PermissionPOCreate+"'", nil))
-			return
-		}
+	if mitraID != nil {
+		AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: client is read-only", nil))
+		return
 	}
 
 	var req model.CreatePOClientRequest
@@ -165,16 +156,21 @@ func (h *TransactionDocumentHandler) CreatePOClient(c *gin.Context) {
 		return
 	}
 
-	// If the user is a Mitra, we enforce that they can only create PO Clients for themselves
-	if mitraID != nil {
-		req.IDMitra = *mitraID
-	}
-
 	item, err := h.useCase.CreatePOClient(c.Request.Context(), req)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
+
+	payload, exists := c.Get(authorizationPayloadKey)
+	if exists {
+		if claims, ok := payload.(jwt.MapClaims); ok {
+			if !hasPricingVisibility(claims) {
+				sanitizePOClient(item)
+			}
+		}
+	}
+
 	response.Success(c, http.StatusCreated, "po client created", item)
 }
 
@@ -200,12 +196,9 @@ func (h *TransactionDocumentHandler) UpdatePOClient(c *gin.Context) {
 		return
 	}
 
-	// If the user is NOT a Mitra, they MUST have the PO_CREATE or ALL_ACCESS permission
-	if mitraID == nil {
-		if !HasPermission(c, PermissionPOCreate) {
-			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: missing required permission '"+PermissionPOCreate+"'", nil))
-			return
-		}
+	if mitraID != nil {
+		AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: client is read-only", nil))
+		return
 	}
 
 	id, err := parsePathInt32(c, "id")
@@ -214,27 +207,9 @@ func (h *TransactionDocumentHandler) UpdatePOClient(c *gin.Context) {
 		return
 	}
 
-	// We must fetch the existing detail first to check the owner if they are a Mitra
-	if mitraID != nil {
-		existing, err := h.useCase.GetPOClientDetail(c.Request.Context(), id)
-		if err != nil {
-			h.handleError(c, err)
-			return
-		}
-		if existing.IDMitra != *mitraID {
-			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: you do not own this PO client document", nil))
-			return
-		}
-	}
-
 	var req model.CreatePOClientRequest
 	if !BindJSON(c, &req) {
 		return
-	}
-
-	// If the user is a Mitra, we enforce that they can only update PO Clients for themselves
-	if mitraID != nil {
-		req.IDMitra = *mitraID
 	}
 
 	item, err := h.useCase.UpdatePOClient(c.Request.Context(), id, req)
@@ -242,6 +217,16 @@ func (h *TransactionDocumentHandler) UpdatePOClient(c *gin.Context) {
 		h.handleError(c, err)
 		return
 	}
+
+	payload, exists := c.Get(authorizationPayloadKey)
+	if exists {
+		if claims, ok := payload.(jwt.MapClaims); ok {
+			if !hasPricingVisibility(claims) {
+				sanitizePOClient(item)
+			}
+		}
+	}
+
 	response.Success(c, http.StatusOK, "po client updated", item)
 }
 
@@ -422,6 +407,16 @@ func (h *TransactionDocumentHandler) GetPOInternalDetail(c *gin.Context) {
 		h.handleError(c, err)
 		return
 	}
+
+	payload, exists := c.Get(authorizationPayloadKey)
+	if exists {
+		if claims, ok := payload.(jwt.MapClaims); ok {
+			if !hasPricingVisibility(claims) {
+				sanitizePOInternal(item)
+			}
+		}
+	}
+
 	response.Success(c, http.StatusOK, "po internal retrieved", item)
 }
 
@@ -448,6 +443,16 @@ func (h *TransactionDocumentHandler) CreatePOInternal(c *gin.Context) {
 		h.handleError(c, err)
 		return
 	}
+
+	payload, exists := c.Get(authorizationPayloadKey)
+	if exists {
+		if claims, ok := payload.(jwt.MapClaims); ok {
+			if !hasPricingVisibility(claims) {
+				sanitizePOInternal(item)
+			}
+		}
+	}
+
 	response.Success(c, http.StatusCreated, "po internal created", item)
 }
 
@@ -469,5 +474,46 @@ func (h *TransactionDocumentHandler) handleError(c *gin.Context, err error) {
 		AbortWithError(c, NewHTTPError(http.StatusInternalServerError, err.Error(), model.TransactionErrorDetail{Code: "transaction_service_unavailable"}))
 	default:
 		AbortWithError(c, err)
+	}
+}
+
+func hasPricingVisibility(claims jwt.MapClaims) bool {
+	roleName, ok := claims["role_name"].(string)
+	if !ok {
+		return false
+	}
+	return roleName == "SUPER_ADMIN" || roleName == "MANAGER" || roleName == "ADMIN_KEUANGAN"
+}
+
+func sanitizePOClientDetail(res *model.POClientDetailResponse) {
+	if res == nil {
+		return
+	}
+	res.PenanggungJawab = nil
+	for i := range res.Items {
+		res.Items[i].Price = 0.0
+	}
+}
+
+func sanitizePOClient(res *model.POClientResponse) {
+	if res == nil {
+		return
+	}
+	res.PenanggungJawab = nil
+	for i := range res.Items {
+		res.Items[i].Price = 0.0
+	}
+}
+
+func sanitizePOInternal(res *model.POInternalResponse) {
+	if res == nil {
+		return
+	}
+	res.SupplierContact = ""
+	res.SupplierEmail = ""
+	res.SupplierTelp = ""
+	res.SupplierFax = ""
+	for i := range res.Items {
+		res.Items[i].UnitPrice = 0.0
 	}
 }

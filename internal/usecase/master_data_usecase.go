@@ -23,7 +23,7 @@ var (
 	jenisBarangSortColumns = buildSortWhitelist("created_at", "id_jenis_barang", "kode", "nama_jenis_barang")
 	mitraSortColumns       = buildSortWhitelist("created_at", "id_mitra", "nama_perusahaan", "email", "no_telp", "tipe_perusahaan")
 	barangSortColumns      = buildSortWhitelist("created_at", "id_barang", "kode", "nama_barang", "nama_jenis_barang", "nama_perusahaan")
-	hakAksesSortColumns    = buildSortWhitelist("created_at", "id_hak_akses", "nama_halaman")
+	hakAksesSortColumns    = buildSortWhitelist("created_at", "id_hak_akses", "nama_halaman", "kode_permission", "domain_permission", "aksi_permission")
 )
 
 type MasterDataUseCase struct {
@@ -464,9 +464,13 @@ func (u *MasterDataUseCase) GetHakAksesByID(ctx context.Context, id int32) (mode
 	}
 
 	return model.HakAksesResponse{
-		ID:        item.IDHakAkses,
-		Nama:      item.NamaHalaman,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+		ID:               item.IDHakAkses,
+		KodePermission:   item.KodePermission,
+		Nama:             item.NamaHalaman,
+		Deskripsi:        item.Deskripsi,
+		DomainPermission: item.DomainPermission,
+		AksiPermission:   item.AksiPermission,
+		CreatedAt:        item.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
 
@@ -492,9 +496,13 @@ func (u *MasterDataUseCase) ListHakAkses(ctx context.Context, filter model.ListQ
 	res := make([]model.HakAksesResponse, 0, len(items))
 	for _, i := range items {
 		res = append(res, model.HakAksesResponse{
-			ID:        i.IDHakAkses,
-			Nama:      i.NamaHalaman,
-			CreatedAt: i.CreatedAt.Time.Format(time.RFC3339),
+			ID:               i.IDHakAkses,
+			KodePermission:   i.KodePermission,
+			Nama:             i.NamaHalaman,
+			Deskripsi:        i.Deskripsi,
+			DomainPermission: i.DomainPermission,
+			AksiPermission:   i.AksiPermission,
+			CreatedAt:        i.CreatedAt.Time.Format(time.RFC3339),
 		})
 	}
 
@@ -502,22 +510,36 @@ func (u *MasterDataUseCase) ListHakAkses(ctx context.Context, filter model.ListQ
 }
 
 func (u *MasterDataUseCase) CreateHakAkses(ctx context.Context, req model.CreateHakAksesRequest) (model.HakAksesResponse, error) {
-	item, err := u.repo.CreateHakAkses(ctx, req.NamaHalaman)
+	item, err := u.repo.CreateHakAkses(ctx, entity.CreateHakAksesParams{
+		KodePermission:   req.KodePermission,
+		NamaHalaman:      req.NamaHalaman,
+		Deskripsi:        req.Deskripsi,
+		DomainPermission: req.DomainPermission,
+		AksiPermission:   req.AksiPermission,
+	})
 	if err != nil {
 		return model.HakAksesResponse{}, mapMasterDataConflict(err)
 	}
 
 	return model.HakAksesResponse{
-		ID:        item.IDHakAkses,
-		Nama:      item.NamaHalaman,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+		ID:               item.IDHakAkses,
+		KodePermission:   item.KodePermission,
+		Nama:             item.NamaHalaman,
+		Deskripsi:        item.Deskripsi,
+		DomainPermission: item.DomainPermission,
+		AksiPermission:   item.AksiPermission,
+		CreatedAt:        item.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
 
 func (u *MasterDataUseCase) UpdateHakAkses(ctx context.Context, id int32, req model.UpdateHakAksesRequest) (model.HakAksesResponse, error) {
 	item, err := u.repo.UpdateHakAkses(ctx, entity.UpdateHakAksesParams{
-		IDHakAkses:  id,
-		NamaHalaman: req.NamaHalaman,
+		IDHakAkses:       id,
+		KodePermission:   req.KodePermission,
+		NamaHalaman:      req.NamaHalaman,
+		Deskripsi:        req.Deskripsi,
+		DomainPermission: req.DomainPermission,
+		AksiPermission:   req.AksiPermission,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -527,9 +549,13 @@ func (u *MasterDataUseCase) UpdateHakAkses(ctx context.Context, id int32, req mo
 	}
 
 	return model.HakAksesResponse{
-		ID:        item.IDHakAkses,
-		Nama:      item.NamaHalaman,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+		ID:               item.IDHakAkses,
+		KodePermission:   item.KodePermission,
+		Nama:             item.NamaHalaman,
+		Deskripsi:        item.Deskripsi,
+		DomainPermission: item.DomainPermission,
+		AksiPermission:   item.AksiPermission,
+		CreatedAt:        item.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
 

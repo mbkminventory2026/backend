@@ -26,10 +26,10 @@ func (h *WorkOrderProductionHandler) RegisterRoutes(router gin.IRouter, authMidd
 	v1 := router.Group("/api/v1").Use(authMiddleware)
 	v1.GET("/work-orders", RequirePermission(PermissionWORead), h.ListWorkOrders)
 	v1.GET("/work-orders/:id", RequirePermission(PermissionWORead), h.GetWorkOrderDetail)
-	v1.GET("/production/summary", RequirePermission(PermissionReportRead), h.ListProductionSummary)
+	v1.GET("/production/summary", RequirePermission(PermissionProductionSummaryRead), h.ListProductionSummary)
 	v1.POST("/work-orders", RequirePermission(PermissionWOCreate), h.CreateWorkOrder)
 	v1.PATCH("/work-orders/:id/close", RequirePermission(PermissionWOClose), h.CloseWorkOrder)
-	v1.POST("/reports/:divisi", RequirePermission(PermissionReportCreate), h.CreateFactoryReport)
+	v1.POST("/reports/:divisi", RequirePermission(PermissionProductionReportCreate), h.CreateFactoryReport)
 }
 
 // ListWorkOrders godoc
@@ -51,9 +51,15 @@ func (h *WorkOrderProductionHandler) ListWorkOrders(c *gin.Context) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
 		return
 	}
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid authentication context", nil))
+		return
+	}
 
 	item, err := h.useCase.ListWorkOrders(c.Request.Context(), model.TransactionListFilter{
 		ListQueryFilter: filter,
+		IDMitra:         mitraID,
 	})
 	if err != nil {
 		h.handleError(c, err)
@@ -80,8 +86,13 @@ func (h *WorkOrderProductionHandler) GetWorkOrderDetail(c *gin.Context) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid work order id", nil))
 		return
 	}
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid authentication context", nil))
+		return
+	}
 
-	item, err := h.useCase.GetWorkOrderDetail(c.Request.Context(), id)
+	item, err := h.useCase.GetWorkOrderDetail(c.Request.Context(), id, mitraID)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -120,10 +131,16 @@ func (h *WorkOrderProductionHandler) ListProductionSummary(c *gin.Context) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
 		return
 	}
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid authentication context", nil))
+		return
+	}
 
 	item, err := h.useCase.ListProductionSummary(c.Request.Context(), model.ProductionSummaryFilter{
 		IDWO:            idWO,
 		IDWOShellSize:   idWOShellSize,
+		IDMitra:         mitraID,
 		ListQueryFilter: filter,
 	})
 	if err != nil {
