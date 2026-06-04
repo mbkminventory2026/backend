@@ -127,6 +127,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	markerPlanUseCase, err := usecase.NewMarkerPlanUseCase(queries, dbPool)
+	if err != nil {
+		logger.Error("failed to initialize marker plan usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	warehouseDeliveryUseCase, err := usecase.NewWarehouseDeliveryUseCase(queries, dbPool)
 	if err != nil {
 		logger.Error("failed to initialize warehouse delivery usecase", slog.String("error", err.Error()))
@@ -198,6 +205,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	markerPlanHandler, err := httpdelivery.NewMarkerPlanHandler(markerPlanUseCase)
+	if err != nil {
+		logger.Error("failed to initialize marker plan handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	warehouseDeliveryHandler, err := httpdelivery.NewWarehouseDeliveryHandler(warehouseDeliveryUseCase)
 	if err != nil {
 		logger.Error("failed to initialize warehouse delivery handler", slog.String("error", err.Error()))
@@ -257,6 +271,7 @@ func main() {
 	transactionDocumentHandler.RegisterRoutes(router, authMiddleware)
 	workOrderProductionHandler.RegisterRoutes(router, authMiddleware)
 	timelineProduksiHandler.RegisterRoutes(router, authMiddleware)
+	markerPlanHandler.RegisterRoutes(router, authMiddleware)
 	warehouseDeliveryHandler.RegisterRoutes(router, authMiddleware)
 
 	dashboardHandler.RegisterRoutes(router, authMiddleware)

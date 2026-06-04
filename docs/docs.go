@@ -355,6 +355,109 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/marker-plans": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a marker plan with components, ratios, and ratio size markers in a single transaction.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marker Plan"
+                ],
+                "summary": "Create Marker Plan",
+                "parameters": [
+                    {
+                        "description": "Marker plan payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateMarkerPlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanValidationErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/marker-plans/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a single marker plan with components, ratios, and size breakdown.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marker Plan"
+                ],
+                "summary": "Get Marker Plan Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Marker Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/master/barang": {
             "get": {
                 "security": [
@@ -4535,6 +4638,52 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CreateKomponenMarkerPlanRequest": {
+            "type": "object",
+            "required": [
+                "nama_komponen",
+                "ratios"
+            ],
+            "properties": {
+                "nama_komponen": {
+                    "type": "string"
+                },
+                "ratios": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.CreateRatioMarkerRequest"
+                    }
+                }
+            }
+        },
+        "model.CreateMarkerPlanRequest": {
+            "type": "object",
+            "required": [
+                "components",
+                "id_wo_shell",
+                "no_dokumen",
+                "tanggal_efektif"
+            ],
+            "properties": {
+                "components": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.CreateKomponenMarkerPlanRequest"
+                    }
+                },
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "no_dokumen": {
+                    "type": "string"
+                },
+                "tanggal_efektif": {
+                    "type": "string"
+                }
+            }
+        },
         "model.CreateMaterialListRequest": {
             "type": "object",
             "required": [
@@ -4936,6 +5085,80 @@ const docTemplate = `{
                 },
                 "no_telp": {
                     "type": "string"
+                }
+            }
+        },
+        "model.CreateRatioMarkerRequest": {
+            "type": "object",
+            "required": [
+                "allowance",
+                "cons",
+                "efficiency_marker",
+                "id_wo_shell",
+                "panjang_marker",
+                "plan_spreading_gelaran",
+                "roll_qty",
+                "sambungan_roll",
+                "sizes"
+            ],
+            "properties": {
+                "allowance": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "cons": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "cons_buyer": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "efficiency_marker": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "panjang_marker": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "plan_spreading_gelaran": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "roll_qty": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "sambungan_roll": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "sizes": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.CreateRatioSizeMarkerRequest"
+                    }
+                }
+            }
+        },
+        "model.CreateRatioSizeMarkerRequest": {
+            "type": "object",
+            "required": [
+                "id_wo_shell_size",
+                "qty_plan"
+            ],
+            "properties": {
+                "id_wo_shell_size": {
+                    "type": "integer"
+                },
+                "qty_plan": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
@@ -5457,6 +5680,29 @@ const docTemplate = `{
                 }
             }
         },
+        "model.KomponenMarkerPlanResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_komponen_marker": {
+                    "type": "integer"
+                },
+                "id_marker_plan": {
+                    "type": "integer"
+                },
+                "nama_komponen": {
+                    "type": "string"
+                },
+                "ratios": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RatioMarkerResponse"
+                    }
+                }
+            }
+        },
         "model.ListBarangSuccessDoc": {
             "type": "object",
             "properties": {
@@ -5720,6 +5966,92 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "invalid username or password"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.MarkerPlanErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "related_data_not_found"
+                }
+            }
+        },
+        "model.MarkerPlanErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/model.MarkerPlanErrorDetail"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "related data not found"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.MarkerPlanResponse": {
+            "type": "object",
+            "properties": {
+                "components": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KomponenMarkerPlanResponse"
+                    }
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id_marker_plan": {
+                    "type": "integer"
+                },
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "no_dokumen": {
+                    "type": "string"
+                },
+                "tanggal_efektif": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.MarkerPlanSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.MarkerPlanResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "marker plan created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.MarkerPlanValidationErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ValidationErrorItem"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "bad request"
                 },
                 "status": {
                     "type": "string",
@@ -6732,6 +7064,73 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "model.RatioMarkerResponse": {
+            "type": "object",
+            "properties": {
+                "allowance": {
+                    "type": "number"
+                },
+                "cons": {
+                    "type": "number"
+                },
+                "cons_buyer": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "efficiency_marker": {
+                    "type": "number"
+                },
+                "id_komponen_marker": {
+                    "type": "integer"
+                },
+                "id_ratio_marker": {
+                    "type": "integer"
+                },
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "panjang_marker": {
+                    "type": "number"
+                },
+                "plan_spreading_gelaran": {
+                    "type": "number"
+                },
+                "roll_qty": {
+                    "type": "integer"
+                },
+                "sambungan_roll": {
+                    "type": "integer"
+                },
+                "sizes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RatioSizeMarkerResponse"
+                    }
+                }
+            }
+        },
+        "model.RatioSizeMarkerResponse": {
+            "type": "object",
+            "properties": {
+                "id_ratio_marker": {
+                    "type": "integer"
+                },
+                "id_ratio_size_marker": {
+                    "type": "integer"
+                },
+                "id_wo_shell_size": {
+                    "type": "integer"
+                },
+                "qty_plan": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "string"
                 }
             }
         },
