@@ -91,3 +91,8 @@ INSERT INTO MATERIAL_LIST (
     sqlc.arg(id_wo)
 )
 RETURNING id_material_list, description, size, color, uom, id_wo, created_at;
+
+-- name: WorkOrderShellTotalQty :one
+SELECT COALESCE(SUM(qty), 0)::bigint AS total_qty
+FROM WORK_ORDER_SHELL_SIZE
+WHERE id_wo_shell = sqlc.arg(id_wo_shell);
