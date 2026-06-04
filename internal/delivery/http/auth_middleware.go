@@ -116,6 +116,10 @@ const (
 	PermissionReportRead    = "REPORT_READ"
 	PermissionLogRead       = "LOG_READ"
 	PermissionDashboardRead = "DASHBOARD_READ"
+
+	PermissionPasswordResetRequestRead    = "PASSWORD_RESET_REQUEST_READ"
+	PermissionPasswordResetRequestApprove = "PASSWORD_RESET_REQUEST_APPROVE"
+	PermissionPasswordResetRequestReject  = "PASSWORD_RESET_REQUEST_REJECT"
 )
 
 // AuthMiddleware validates JWT token from Authorization header.

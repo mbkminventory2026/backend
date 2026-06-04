@@ -10,6 +10,7 @@ import (
 
 type Querier interface {
 	ApprovePRInternal(ctx context.Context, arg ApprovePRInternalParams) (ApprovePRInternalRow, error)
+	ApprovePasswordResetRequest(ctx context.Context, arg ApprovePasswordResetRequestParams) (ApprovePasswordResetRequestRow, error)
 	CloseWorkOrder(ctx context.Context, arg CloseWorkOrderParams) (CloseWorkOrderRow, error)
 	CountBarang(ctx context.Context, searchTerm string) (int64, error)
 	CountDepartemen(ctx context.Context, searchTerm string) (int64, error)
@@ -41,6 +42,7 @@ type Querier interface {
 	CreatePackingList(ctx context.Context, arg CreatePackingListParams) (PackingList, error)
 	CreatePackingListItem(ctx context.Context, arg CreatePackingListItemParams) (PackingListItem, error)
 	CreatePackingListItemSize(ctx context.Context, arg CreatePackingListItemSizeParams) (PackingListItemSize, error)
+	CreatePasswordResetRequest(ctx context.Context, arg CreatePasswordResetRequestParams) (CreatePasswordResetRequestRow, error)
 	CreatePenanggungJawab(ctx context.Context, arg CreatePenanggungJawabParams) (PenanggungJawab, error)
 	CreateRatioMarker(ctx context.Context, arg CreateRatioMarkerParams) (RatioMarker, error)
 	CreateRatioSizeMarker(ctx context.Context, arg []CreateRatioSizeMarkerParams) (int64, error)
@@ -112,6 +114,7 @@ type Querier interface {
 	GetWorkOrderDetail(ctx context.Context, arg GetWorkOrderDetailParams) (GetWorkOrderDetailRow, error)
 	// Mengambil data WO dan Production Internal untuk diolah model Regresi Linier di Golang
 	GetWorkOrderForAIEstimation(ctx context.Context) ([]GetWorkOrderForAIEstimationRow, error)
+	HasPendingPasswordResetRequest(ctx context.Context, idUser int32) (bool, error)
 	IssueInventory(ctx context.Context, arg IssueInventoryParams) (IssueInventoryRow, error)
 	ListBarang(ctx context.Context, arg ListBarangParams) ([]ListBarangRow, error)
 	ListDepartemen(ctx context.Context, arg ListDepartemenParams) ([]Departeman, error)
@@ -129,6 +132,7 @@ type Querier interface {
 	ListPackingListItemSizesByPackingListID(ctx context.Context, idPackingList int32) ([]PackingListItemSize, error)
 	ListPackingListItemsByPackingListID(ctx context.Context, idPackingList int32) ([]PackingListItem, error)
 	ListPackingLists(ctx context.Context, arg ListPackingListsParams) ([]ListPackingListsRow, error)
+	ListPasswordResetRequests(ctx context.Context) ([]ListPasswordResetRequestsRow, error)
 	ListPenanggungJawabByPOClientID(ctx context.Context, idPoClient int32) ([]PenanggungJawab, error)
 	ListProductionSummary(ctx context.Context, arg ListProductionSummaryParams) ([]ListProductionSummaryRow, error)
 	ListRatioByKomponenID(ctx context.Context, idKomponenMarker int32) ([]RatioMarker, error)
@@ -145,6 +149,8 @@ type Querier interface {
 	ListWorkOrderTrimsByWorkOrderID(ctx context.Context, idWo int32) ([]WorkOrderTrim, error)
 	ListWorkOrders(ctx context.Context, arg ListWorkOrdersParams) ([]ListWorkOrdersRow, error)
 	ReceiveInventory(ctx context.Context, arg ReceiveInventoryParams) (ReceiveInventoryRow, error)
+	RejectPasswordResetRequest(ctx context.Context, arg RejectPasswordResetRequestParams) (RejectPasswordResetRequestRow, error)
+	ResetUserPasswordTemporary(ctx context.Context, arg ResetUserPasswordTemporaryParams) (int64, error)
 	UpdateBarang(ctx context.Context, arg UpdateBarangParams) (Barang, error)
 	UpdateCompany(ctx context.Context, arg UpdateCompanyParams) (Company, error)
 	UpdateDepartemen(ctx context.Context, arg UpdateDepartemenParams) (Departeman, error)
@@ -154,6 +160,7 @@ type Querier interface {
 	UpdatePOClient(ctx context.Context, arg UpdatePOClientParams) (PoClient, error)
 	UpdateRole(ctx context.Context, arg UpdateRoleParams) (Role, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error)
+	UpdateUserPasswordForChange(ctx context.Context, arg UpdateUserPasswordForChangeParams) (int64, error)
 	UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) (UpdateUserRoleRow, error)
 	UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) (UpdateUserStatusRow, error)
 	UpdateWOShellPlanStatus(ctx context.Context, arg UpdateWOShellPlanStatusParams) error

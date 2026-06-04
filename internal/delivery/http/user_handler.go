@@ -59,7 +59,12 @@ func (h *UserHandler) Create(c *gin.Context) {
 		return
 	}
 
-	result, err := h.useCase.Create(c.Request.Context(), req)
+	var actorUserID *int32
+	if userID, ok := GetUserIDFromContext(c); ok {
+		actorUserID = &userID
+	}
+
+	result, err := h.useCase.Create(c.Request.Context(), actorUserID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -150,7 +155,12 @@ func (h *UserHandler) Update(c *gin.Context) {
 		return
 	}
 
-	result, err := h.useCase.Update(c.Request.Context(), id, req)
+	var actorUserID *int32
+	if userID, ok := GetUserIDFromContext(c); ok {
+		actorUserID = &userID
+	}
+
+	result, err := h.useCase.Update(c.Request.Context(), id, actorUserID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return

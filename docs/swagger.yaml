@@ -73,6 +73,54 @@ definitions:
       waktu:
         type: string
     type: object
+  model.ApprovePasswordResetResponse:
+    properties:
+      approved_at:
+        type: string
+      approved_by:
+        type: integer
+      approved_by_username:
+        type: string
+      completed_at:
+        type: string
+      id_password_reset_request:
+        type: integer
+      id_role:
+        type: integer
+      id_user:
+        type: integer
+      nama_role:
+        type: string
+      reason:
+        type: string
+      rejected_at:
+        type: string
+      rejected_by:
+        type: integer
+      rejected_by_username:
+        type: string
+      rejected_reason:
+        type: string
+      requested_at:
+        type: string
+      status:
+        type: string
+      temporary_password:
+        type: string
+      username:
+        type: string
+    type: object
+  model.ApprovePasswordResetSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.ApprovePasswordResetResponse'
+      message:
+        example: password reset request approved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.AssignUserPermissionsRequest:
     properties:
       hak_akses_ids:
@@ -113,6 +161,33 @@ definitions:
         type: string
       stok_minimum:
         type: integer
+    type: object
+  model.ChangePasswordRequest:
+    properties:
+      confirm_new_password:
+        minLength: 6
+        type: string
+      current_password:
+        minLength: 6
+        type: string
+      new_password:
+        minLength: 6
+        type: string
+    required:
+    - confirm_new_password
+    - current_password
+    - new_password
+    type: object
+  model.ChangePasswordSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.LoginResponse'
+      message:
+        example: password changed successfully
+        type: string
+      status:
+        example: success
+        type: string
     type: object
   model.CompanyResponse:
     properties:
@@ -614,7 +689,6 @@ definitions:
         type: string
     required:
     - id_role
-    - password
     - username
     type: object
   model.CreateWOShellPlanRequest:
@@ -800,11 +874,23 @@ definitions:
         example: success
         type: string
     type: object
+  model.ForgotPasswordRequestCreateRequest:
+    properties:
+      reason:
+        type: string
+      username:
+        type: string
+    required:
+    - username
+    type: object
   model.GetMeResponse:
     properties:
       id_role:
         example: 1
         type: integer
+      must_change_password:
+        example: false
+        type: boolean
       role_name:
         example: OPERATOR
         type: string
@@ -1044,6 +1130,12 @@ definitions:
         type: string
       expires_in:
         type: integer
+      id_role:
+        type: integer
+      must_change_password:
+        type: boolean
+      role_name:
+        type: string
       token_type:
         type: string
     type: object
@@ -1694,6 +1786,54 @@ definitions:
       total_pages:
         type: integer
     type: object
+  model.PasswordResetRequestListSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.PasswordResetRequestResponse'
+        type: array
+      message:
+        example: password reset requests retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.PasswordResetRequestResponse:
+    properties:
+      approved_at:
+        type: string
+      approved_by:
+        type: integer
+      approved_by_username:
+        type: string
+      completed_at:
+        type: string
+      id_password_reset_request:
+        type: integer
+      id_role:
+        type: integer
+      id_user:
+        type: integer
+      nama_role:
+        type: string
+      reason:
+        type: string
+      rejected_at:
+        type: string
+      rejected_by:
+        type: integer
+      rejected_by_username:
+        type: string
+      rejected_reason:
+        type: string
+      requested_at:
+        type: string
+      status:
+        type: string
+      username:
+        type: string
+    type: object
   model.PenanggungJawabResponse:
     properties:
       created_at:
@@ -1842,6 +1982,11 @@ definitions:
     - tipe_perusahaan
     - turnstile_token
     - username
+    type: object
+  model.RejectPasswordResetRequestRequest:
+    properties:
+      rejected_reason:
+        type: string
     type: object
   model.RoleListItem:
     properties:
@@ -2374,17 +2519,23 @@ definitions:
         type: integer
       id_user:
         type: integer
+      must_change_password:
+        type: boolean
       nama_departemen:
         type: string
       nama_perusahaan:
         type: string
       nama_role:
         type: string
+      password_changed_at:
+        type: string
       permissions:
         items:
           type: string
         type: array
       status:
+        type: string
+      temporary_password:
         type: string
       username:
         type: string
@@ -2799,6 +2950,189 @@ info:
   title: Permatatex IT Inventory API
   version: "1.0"
 paths:
+  /api/v1/auth/change-password:
+    post:
+      consumes:
+      - application/json
+      description: Allows an authenticated user to change their password and refresh
+        their session token.
+      parameters:
+      - description: Change password payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ChangePasswordSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Change Password
+      tags:
+      - Auth
+  /api/v1/auth/forgot-password-requests:
+    get:
+      description: Returns all password reset requests for operator review.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.PasswordResetRequestListSuccessDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: List Forgot Password Requests
+      tags:
+      - Auth
+    post:
+      consumes:
+      - application/json
+      description: Allows a user to request a manual password reset without email.
+      parameters:
+      - description: Forgot password request payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.ForgotPasswordRequestCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      summary: Create Forgot Password Request
+      tags:
+      - Auth
+  /api/v1/auth/forgot-password-requests/{id}/approve:
+    patch:
+      description: Approves a pending password reset request and issues a temporary
+        password.
+      parameters:
+      - description: Password reset request ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ApprovePasswordResetSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Approve Forgot Password Request
+      tags:
+      - Auth
+  /api/v1/auth/forgot-password-requests/{id}/reject:
+    patch:
+      consumes:
+      - application/json
+      description: Rejects a pending password reset request.
+      parameters:
+      - description: Password reset request ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Reject payload
+        in: body
+        name: payload
+        schema:
+          $ref: '#/definitions/model.RejectPasswordResetRequestRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Reject Forgot Password Request
+      tags:
+      - Auth
   /api/v1/auth/login:
     post:
       consumes:

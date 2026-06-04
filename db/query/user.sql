@@ -1,5 +1,5 @@
 -- name: GetUserByUsername :one
-SELECT u.id_user, u.username, u.password, u.id_role, r.nama_role, u.id_departemen, u.id_mitra, u.status, u.created_at
+SELECT u.id_user, u.username, u.password, u.id_role, r.nama_role, u.id_departemen, u.id_mitra, u.status, u.must_change_password, u.password_changed_at, u.created_at
 FROM USERS u
 JOIN ROLES r ON r.id_role = u.id_role
 WHERE u.username = $1 LIMIT 1;
@@ -23,10 +23,10 @@ WHERE id_user = $1;
 
 -- name: CreateUser :one
 INSERT INTO USERS (
-    username, password, id_role, id_departemen, id_mitra, status
+    username, password, id_role, id_departemen, id_mitra, status, must_change_password, created_by, updated_by
 ) VALUES (
-    $1, $2, $3, $4, $5, $6
-) RETURNING id_user, username, id_role, id_departemen, id_mitra, status, created_at;
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
+) RETURNING id_user, username, id_role, id_departemen, id_mitra, status, must_change_password, created_at;
 
 -- name: CreateUserAkses :exec
 INSERT INTO USER_AKSES (
@@ -40,7 +40,7 @@ DELETE FROM USER_AKSES
 WHERE id_user = $1;
 
 -- name: ListUsers :many
-SELECT u.id_user, u.username, u.status, u.id_role, r.nama_role, u.id_departemen, u.id_mitra, d.nama_departemen, m.nama_perusahaan, u.created_at
+SELECT u.id_user, u.username, u.status, u.id_role, r.nama_role, u.id_departemen, u.id_mitra, d.nama_departemen, m.nama_perusahaan, u.must_change_password, u.created_at
 FROM USERS u
 JOIN ROLES r ON r.id_role = u.id_role
 LEFT JOIN DEPARTEMEN d ON u.id_departemen = d.id_departemen
@@ -85,7 +85,7 @@ WHERE (
 );
 
 -- name: GetUserByID :one
-SELECT u.id_user, u.username, u.status, u.id_role, r.nama_role, u.id_departemen, u.id_mitra, d.nama_departemen, m.nama_perusahaan, u.created_at
+SELECT u.id_user, u.username, u.status, u.id_role, r.nama_role, u.id_departemen, u.id_mitra, d.nama_departemen, m.nama_perusahaan, u.must_change_password, u.password_changed_at, u.created_at
 FROM USERS u
 JOIN ROLES r ON r.id_role = u.id_role
 LEFT JOIN DEPARTEMEN d ON u.id_departemen = d.id_departemen
@@ -99,15 +99,34 @@ SET username = $2,
     id_role = $4,
     id_departemen = $5,
     id_mitra = $6,
-    status = $7
+    status = $7,
+    must_change_password = $8,
+    password_changed_at = $9,
+    updated_by = $10
 WHERE id_user = $1
-RETURNING id_user, username, id_role, id_departemen, id_mitra, status, created_at;
+RETURNING id_user, username, id_role, id_departemen, id_mitra, status, must_change_password, created_at;
 
 -- name: UpdateUserStatus :one
 UPDATE USERS
 SET status = $2
 WHERE id_user = $1
 RETURNING id_user, username, status;
+
+-- name: UpdateUserPasswordForChange :execrows
+UPDATE USERS
+SET password = $2,
+    must_change_password = FALSE,
+    password_changed_at = NOW(),
+    updated_by = $3
+WHERE id_user = $1;
+
+-- name: ResetUserPasswordTemporary :execrows
+UPDATE USERS
+SET password = $2,
+    must_change_password = TRUE,
+    password_changed_at = NULL,
+    updated_by = $3
+WHERE id_user = $1;
 
 -- name: DeleteUser :execrows
 DELETE FROM USERS

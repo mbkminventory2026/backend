@@ -164,6 +164,21 @@ type PackingListItemSize struct {
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
 }
 
+type PasswordResetRequest struct {
+	IDPasswordResetRequest int32              `json:"id_password_reset_request"`
+	IDUser                 int32              `json:"id_user"`
+	Reason                 string             `json:"reason"`
+	Status                 string             `json:"status"`
+	ApprovedBy             pgtype.Int4        `json:"approved_by"`
+	ApprovedAt             pgtype.Timestamptz `json:"approved_at"`
+	RejectedBy             pgtype.Int4        `json:"rejected_by"`
+	RejectedAt             pgtype.Timestamptz `json:"rejected_at"`
+	CompletedAt            pgtype.Timestamptz `json:"completed_at"`
+	RejectedReason         string             `json:"rejected_reason"`
+	RequestedAt            pgtype.Timestamptz `json:"requested_at"`
+	CreatedAt              pgtype.Timestamptz `json:"created_at"`
+}
+
 type PenanggungJawab struct {
 	IDPenanggungJawab int32              `json:"id_penanggung_jawab"`
 	Nama              string             `json:"nama"`
@@ -387,14 +402,18 @@ type TimelinePlanProduksi struct {
 }
 
 type User struct {
-	IDUser       int32              `json:"id_user"`
-	Username     string             `json:"username"`
-	Password     string             `json:"password"`
-	IDDepartemen pgtype.Int4        `json:"id_departemen"`
-	IDMitra      pgtype.Int4        `json:"id_mitra"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	Status       string             `json:"status"`
-	IDRole       int32              `json:"id_role"`
+	IDUser             int32              `json:"id_user"`
+	Username           string             `json:"username"`
+	Password           string             `json:"password"`
+	IDDepartemen       pgtype.Int4        `json:"id_departemen"`
+	IDMitra            pgtype.Int4        `json:"id_mitra"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	Status             string             `json:"status"`
+	IDRole             int32              `json:"id_role"`
+	MustChangePassword bool               `json:"must_change_password"`
+	PasswordChangedAt  pgtype.Timestamptz `json:"password_changed_at"`
+	CreatedBy          pgtype.Int4        `json:"created_by"`
+	UpdatedBy          pgtype.Int4        `json:"updated_by"`
 }
 
 type UserAkse struct {

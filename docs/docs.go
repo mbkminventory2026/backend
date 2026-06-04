@@ -22,6 +22,289 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/auth/change-password": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows an authenticated user to change their password and refresh their session token.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Change Password",
+                "parameters": [
+                    {
+                        "description": "Change password payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ChangePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ChangePasswordSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeUnauthorizedDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/forgot-password-requests": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns all password reset requests for operator review.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "List Forgot Password Requests",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PasswordResetRequestListSuccessDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeUnauthorizedDoc"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Allows a user to request a manual password reset without email.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Create Forgot Password Request",
+                "parameters": [
+                    {
+                        "description": "Forgot password request payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ForgotPasswordRequestCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/forgot-password-requests/{id}/approve": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Approves a pending password reset request and issues a temporary password.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Approve Forgot Password Request",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Password reset request ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ApprovePasswordResetSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeUnauthorizedDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/forgot-password-requests/{id}/reject": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Rejects a pending password reset request.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Reject Forgot Password Request",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Password reset request ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Reject payload",
+                        "name": "payload",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/model.RejectPasswordResetRequestRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeUnauthorizedDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/login": {
             "post": {
                 "description": "Authenticates user using username, password, and Turnstile token, then returns JWT access token.",
@@ -4249,6 +4532,78 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ApprovePasswordResetResponse": {
+            "type": "object",
+            "properties": {
+                "approved_at": {
+                    "type": "string"
+                },
+                "approved_by": {
+                    "type": "integer"
+                },
+                "approved_by_username": {
+                    "type": "string"
+                },
+                "completed_at": {
+                    "type": "string"
+                },
+                "id_password_reset_request": {
+                    "type": "integer"
+                },
+                "id_role": {
+                    "type": "integer"
+                },
+                "id_user": {
+                    "type": "integer"
+                },
+                "nama_role": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "rejected_at": {
+                    "type": "string"
+                },
+                "rejected_by": {
+                    "type": "integer"
+                },
+                "rejected_by_username": {
+                    "type": "string"
+                },
+                "rejected_reason": {
+                    "type": "string"
+                },
+                "requested_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "temporary_password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ApprovePasswordResetSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.ApprovePasswordResetResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "password reset request approved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.AssignUserPermissionsRequest": {
             "type": "object",
             "properties": {
@@ -4309,6 +4664,44 @@ const docTemplate = `{
                 },
                 "stok_minimum": {
                     "type": "integer"
+                }
+            }
+        },
+        "model.ChangePasswordRequest": {
+            "type": "object",
+            "required": [
+                "confirm_new_password",
+                "current_password",
+                "new_password"
+            ],
+            "properties": {
+                "confirm_new_password": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "current_password": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "new_password": {
+                    "type": "string",
+                    "minLength": 6
+                }
+            }
+        },
+        "model.ChangePasswordSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.LoginResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "password changed successfully"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -5008,7 +5401,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "id_role",
-                "password",
                 "username"
             ],
             "properties": {
@@ -5303,12 +5695,30 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ForgotPasswordRequestCreateRequest": {
+            "type": "object",
+            "required": [
+                "username"
+            ],
+            "properties": {
+                "reason": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "model.GetMeResponse": {
             "type": "object",
             "properties": {
                 "id_role": {
                     "type": "integer",
                     "example": 1
+                },
+                "must_change_password": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "role_name": {
                     "type": "string",
@@ -5660,6 +6070,15 @@ const docTemplate = `{
                 },
                 "expires_in": {
                     "type": "integer"
+                },
+                "id_role": {
+                    "type": "integer"
+                },
+                "must_change_password": {
+                    "type": "boolean"
+                },
+                "role_name": {
+                    "type": "string"
                 },
                 "token_type": {
                     "type": "string"
@@ -6639,6 +7058,78 @@ const docTemplate = `{
                 }
             }
         },
+        "model.PasswordResetRequestListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PasswordResetRequestResponse"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "password reset requests retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.PasswordResetRequestResponse": {
+            "type": "object",
+            "properties": {
+                "approved_at": {
+                    "type": "string"
+                },
+                "approved_by": {
+                    "type": "integer"
+                },
+                "approved_by_username": {
+                    "type": "string"
+                },
+                "completed_at": {
+                    "type": "string"
+                },
+                "id_password_reset_request": {
+                    "type": "integer"
+                },
+                "id_role": {
+                    "type": "integer"
+                },
+                "id_user": {
+                    "type": "integer"
+                },
+                "nama_role": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "rejected_at": {
+                    "type": "string"
+                },
+                "rejected_by": {
+                    "type": "integer"
+                },
+                "rejected_by_username": {
+                    "type": "string"
+                },
+                "rejected_reason": {
+                    "type": "string"
+                },
+                "requested_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "model.PenanggungJawabResponse": {
             "type": "object",
             "properties": {
@@ -6857,6 +7348,14 @@ const docTemplate = `{
                 "username": {
                     "type": "string",
                     "minLength": 3
+                }
+            }
+        },
+        "model.RejectPasswordResetRequestRequest": {
+            "type": "object",
+            "properties": {
+                "rejected_reason": {
+                    "type": "string"
                 }
             }
         },
@@ -7654,6 +8153,9 @@ const docTemplate = `{
                 "id_user": {
                     "type": "integer"
                 },
+                "must_change_password": {
+                    "type": "boolean"
+                },
                 "nama_departemen": {
                     "type": "string"
                 },
@@ -7663,6 +8165,9 @@ const docTemplate = `{
                 "nama_role": {
                     "type": "string"
                 },
+                "password_changed_at": {
+                    "type": "string"
+                },
                 "permissions": {
                     "type": "array",
                     "items": {
@@ -7670,6 +8175,9 @@ const docTemplate = `{
                     }
                 },
                 "status": {
+                    "type": "string"
+                },
+                "temporary_password": {
                     "type": "string"
                 },
                 "username": {

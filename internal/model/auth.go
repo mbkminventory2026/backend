@@ -9,9 +9,12 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int64  `json:"expires_in"`
+	AccessToken        string `json:"access_token"`
+	TokenType          string `json:"token_type"`
+	ExpiresIn          int64  `json:"expires_in"`
+	IDRole             int32  `json:"id_role"`
+	RoleName           string `json:"role_name"`
+	MustChangePassword bool   `json:"must_change_password"`
 }
 
 // LoginSuccessDoc is the Swagger schema for successful login.
@@ -68,9 +71,10 @@ type LoginServiceUnavailableDoc struct {
 
 // GetMeResponse is the profile payload returned by /api/v1/auth/me.
 type GetMeResponse struct {
-	UserID   int32  `json:"user_id" example:"1"`
-	IDRole   int32  `json:"id_role" example:"1"`
-	RoleName string `json:"role_name" example:"OPERATOR"`
+	UserID             int32  `json:"user_id" example:"1"`
+	IDRole             int32  `json:"id_role" example:"1"`
+	RoleName           string `json:"role_name" example:"OPERATOR"`
+	MustChangePassword bool   `json:"must_change_password" example:"false"`
 }
 
 // GetMeSuccessDoc is the Swagger schema for successful profile retrieval.
@@ -106,4 +110,61 @@ type RegisterMitraRequest struct {
 	Username       string `json:"username" binding:"required,min=3"`
 	Password       string `json:"password" binding:"required,min=6"`
 	TurnstileToken string `json:"turnstile_token" binding:"required"`
+}
+
+type ChangePasswordRequest struct {
+	CurrentPassword    string `json:"current_password" binding:"required,min=6"`
+	NewPassword        string `json:"new_password" binding:"required,min=6"`
+	ConfirmNewPassword string `json:"confirm_new_password" binding:"required,min=6"`
+}
+
+type ChangePasswordSuccessDoc struct {
+	Status  string        `json:"status" example:"success"`
+	Message string        `json:"message" example:"password changed successfully"`
+	Data    LoginResponse `json:"data"`
+}
+
+type ForgotPasswordRequestCreateRequest struct {
+	Username string `json:"username" binding:"required"`
+	Reason   string `json:"reason"`
+}
+
+type RejectPasswordResetRequestRequest struct {
+	RejectedReason string `json:"rejected_reason"`
+}
+
+type PasswordResetRequestResponse struct {
+	IDPasswordResetRequest int32  `json:"id_password_reset_request"`
+	IDUser                 int32  `json:"id_user"`
+	Username               string `json:"username"`
+	IDRole                 int32  `json:"id_role"`
+	NamaRole               string `json:"nama_role"`
+	Reason                 string `json:"reason"`
+	Status                 string `json:"status"`
+	RequestedAt            string `json:"requested_at"`
+	ApprovedAt             string `json:"approved_at,omitempty"`
+	RejectedAt             string `json:"rejected_at,omitempty"`
+	CompletedAt            string `json:"completed_at,omitempty"`
+	RejectedReason         string `json:"rejected_reason,omitempty"`
+	ApprovedBy             *int32 `json:"approved_by,omitempty"`
+	ApprovedByUsername     string `json:"approved_by_username,omitempty"`
+	RejectedBy             *int32 `json:"rejected_by,omitempty"`
+	RejectedByUsername     string `json:"rejected_by_username,omitempty"`
+}
+
+type PasswordResetRequestListSuccessDoc struct {
+	Status  string                         `json:"status" example:"success"`
+	Message string                         `json:"message" example:"password reset requests retrieved"`
+	Data    []PasswordResetRequestResponse `json:"data"`
+}
+
+type ApprovePasswordResetResponse struct {
+	PasswordResetRequestResponse
+	TemporaryPassword string `json:"temporary_password"`
+}
+
+type ApprovePasswordResetSuccessDoc struct {
+	Status  string                       `json:"status" example:"success"`
+	Message string                       `json:"message" example:"password reset request approved"`
+	Data    ApprovePasswordResetResponse `json:"data"`
 }

@@ -1,0 +1,102 @@
+-- name: HasPendingPasswordResetRequest :one
+SELECT EXISTS (
+    SELECT 1
+    FROM PASSWORD_RESET_REQUESTS
+    WHERE ID_USER = $1
+      AND STATUS = 'pending'
+);
+
+-- name: CreatePasswordResetRequest :one
+INSERT INTO PASSWORD_RESET_REQUESTS (
+    ID_USER,
+    REASON,
+    STATUS
+) VALUES (
+    $1,
+    $2,
+    'pending'
+)
+RETURNING
+    ID_PASSWORD_RESET_REQUEST,
+    ID_USER,
+    REASON,
+    STATUS,
+    REQUESTED_AT,
+    APPROVED_AT,
+    REJECTED_AT,
+    COMPLETED_AT,
+    REJECTED_REASON,
+    APPROVED_BY,
+    REJECTED_BY,
+    created_at;
+
+-- name: ListPasswordResetRequests :many
+SELECT
+    pr.ID_PASSWORD_RESET_REQUEST,
+    pr.ID_USER,
+    u.USERNAME,
+    u.ID_ROLE,
+    r.NAMA_ROLE,
+    pr.REASON,
+    pr.STATUS,
+    pr.REQUESTED_AT,
+    pr.APPROVED_AT,
+    pr.REJECTED_AT,
+    pr.COMPLETED_AT,
+    pr.REJECTED_REASON,
+    pr.APPROVED_BY,
+    approver.USERNAME AS APPROVED_BY_USERNAME,
+    pr.REJECTED_BY,
+    rejector.USERNAME AS REJECTED_BY_USERNAME,
+    pr.created_at
+FROM PASSWORD_RESET_REQUESTS pr
+JOIN USERS u ON u.ID_USER = pr.ID_USER
+JOIN ROLES r ON r.ID_ROLE = u.ID_ROLE
+LEFT JOIN USERS approver ON approver.ID_USER = pr.APPROVED_BY
+LEFT JOIN USERS rejector ON rejector.ID_USER = pr.REJECTED_BY
+ORDER BY pr.REQUESTED_AT DESC, pr.ID_PASSWORD_RESET_REQUEST DESC;
+
+-- name: ApprovePasswordResetRequest :one
+UPDATE PASSWORD_RESET_REQUESTS
+SET STATUS = 'completed',
+    APPROVED_BY = $2,
+    APPROVED_AT = NOW(),
+    COMPLETED_AT = NOW(),
+    REJECTED_REASON = ''
+WHERE ID_PASSWORD_RESET_REQUEST = $1
+  AND STATUS = 'pending'
+RETURNING
+    ID_PASSWORD_RESET_REQUEST,
+    ID_USER,
+    REASON,
+    STATUS,
+    REQUESTED_AT,
+    APPROVED_AT,
+    REJECTED_AT,
+    COMPLETED_AT,
+    REJECTED_REASON,
+    APPROVED_BY,
+    REJECTED_BY,
+    created_at;
+
+-- name: RejectPasswordResetRequest :one
+UPDATE PASSWORD_RESET_REQUESTS
+SET STATUS = 'rejected',
+    REJECTED_BY = $2,
+    REJECTED_AT = NOW(),
+    REJECTED_REASON = $3
+WHERE ID_PASSWORD_RESET_REQUEST = $1
+  AND STATUS = 'pending'
+RETURNING
+    ID_PASSWORD_RESET_REQUEST,
+    ID_USER,
+    REASON,
+    STATUS,
+    REQUESTED_AT,
+    APPROVED_AT,
+    REJECTED_AT,
+    COMPLETED_AT,
+    REJECTED_REASON,
+    APPROVED_BY,
+    REJECTED_BY,
+    created_at;
