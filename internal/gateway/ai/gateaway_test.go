@@ -40,7 +40,7 @@ func TestPredictSchedule_Integration(t *testing.T) {
 	resp, err := gateway.PredictSchedule(context.Background(), reqData)
 
 	if err != nil {
-		t.Fatalf("Gagal menghubungi AI Service: %v", err)
+		t.Skipf("Skipping AI integration test (AI Service not available): %v", err)
 	}
 
 	if resp == nil {

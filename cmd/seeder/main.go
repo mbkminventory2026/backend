@@ -518,7 +518,7 @@ func seedSystemUsers(ctx context.Context, db *pgxpool.Pool) error {
 		RoleName:                 "SUPER_ADMIN",
 		DepartmentName:           "IT",
 		MustChangePassword:       false,
-		PreservePasswordOnUpdate: true,
+		PreservePasswordOnUpdate: false,
 	}); err != nil {
 		return err
 	}
@@ -528,8 +528,65 @@ func seedSystemUsers(ctx context.Context, db *pgxpool.Pool) error {
 		Password:                 "admin123",
 		RoleName:                 "OPERATOR",
 		DepartmentName:           "IT",
-		MustChangePassword:       true,
-		PreservePasswordOnUpdate: true,
+		MustChangePassword:       false,
+		PreservePasswordOnUpdate: false,
+	}); err != nil {
+		return err
+	}
+
+	if err := seedSystemUser(ctx, db, seedSystemUserParams{
+		Username:                 "admin-keuangan",
+		Password:                 "admin123",
+		RoleName:                 "ADMIN_KEUANGAN",
+		DepartmentName:           "OFFICE",
+		MustChangePassword:       false,
+		PreservePasswordOnUpdate: false,
+	}); err != nil {
+		return err
+	}
+
+	if err := seedSystemUser(ctx, db, seedSystemUserParams{
+		Username:                 "admin-produksi",
+		Password:                 "admin123",
+		RoleName:                 "ADMIN_PRODUKSI",
+		DepartmentName:           "PRODUKSI",
+		MustChangePassword:       false,
+		PreservePasswordOnUpdate: false,
+	}); err != nil {
+		return err
+	}
+
+	if err := seedSystemUser(ctx, db, seedSystemUserParams{
+		Username:                 "admin-gudang",
+		Password:                 "admin123",
+		RoleName:                 "ADMIN_GUDANG",
+		DepartmentName:           "GUDANG",
+		MustChangePassword:       false,
+		PreservePasswordOnUpdate: false,
+	}); err != nil {
+		return err
+	}
+
+	if err := seedSystemUser(ctx, db, seedSystemUserParams{
+		Username:                 "manager",
+		Password:                 "admin123",
+		RoleName:                 "MANAGER",
+		DepartmentName:           "OFFICE",
+		MustChangePassword:       false,
+		PreservePasswordOnUpdate: false,
+	}); err != nil {
+		return err
+	}
+
+	clientMitraID := int32(4)
+	if err := seedSystemUser(ctx, db, seedSystemUserParams{
+		Username:                 "client",
+		Password:                 "admin123",
+		RoleName:                 "CLIENT",
+		DepartmentName:           "",
+		MustChangePassword:       false,
+		PreservePasswordOnUpdate: false,
+		IDMitra:                  &clientMitraID,
 	}); err != nil {
 		return err
 	}
@@ -544,12 +601,28 @@ type seedSystemUserParams struct {
 	DepartmentName           string
 	MustChangePassword       bool
 	PreservePasswordOnUpdate bool
+	IDMitra                  *int32
 }
 
 func seedSystemUser(ctx context.Context, db *pgxpool.Pool, params seedSystemUserParams) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
+	}
+
+	var roleID int32
+	err = db.QueryRow(ctx, `SELECT ID_ROLE FROM ROLES WHERE NAMA_ROLE = $1 LIMIT 1`, params.RoleName).Scan(&roleID)
+	if err != nil {
+		return fmt.Errorf("role %s not found: %w", params.RoleName, err)
+	}
+
+	var deptID *int32
+	if params.DepartmentName != "" {
+		var id int32
+		err = db.QueryRow(ctx, `SELECT ID_DEPARTEMEN FROM DEPARTEMEN WHERE NAMA_DEPARTEMEN = $1 LIMIT 1`, params.DepartmentName).Scan(&id)
+		if err == nil {
+			deptID = &id
+		}
 	}
 
 	var exists bool
@@ -560,16 +633,9 @@ func seedSystemUser(ctx context.Context, db *pgxpool.Pool, params seedSystemUser
 
 	if !exists {
 		_, err = db.Exec(ctx, `
-			INSERT INTO USERS (USERNAME, PASSWORD, ID_ROLE, ID_DEPARTEMEN, STATUS, MUST_CHANGE_PASSWORD)
-			VALUES (
-				$1,
-				$2,
-				(SELECT ID_ROLE FROM ROLES WHERE NAMA_ROLE = $3 LIMIT 1),
-				(SELECT ID_DEPARTEMEN FROM DEPARTEMEN WHERE NAMA_DEPARTEMEN = $4 LIMIT 1),
-				'active',
-				$5
-			)
-		`, params.Username, string(hashedPassword), params.RoleName, params.DepartmentName, params.MustChangePassword)
+			INSERT INTO USERS (USERNAME, PASSWORD, ID_ROLE, ID_DEPARTEMEN, ID_MITRA, STATUS, MUST_CHANGE_PASSWORD)
+			VALUES ($1, $2, $3, $4, $5, 'active', $6)
+		`, params.Username, string(hashedPassword), roleID, deptID, params.IDMitra, params.MustChangePassword)
 		if err != nil {
 			return err
 		}
@@ -580,24 +646,26 @@ func seedSystemUser(ctx context.Context, db *pgxpool.Pool, params seedSystemUser
 	if params.PreservePasswordOnUpdate {
 		_, err = db.Exec(ctx, `
 			UPDATE USERS
-			SET ID_ROLE = (SELECT ID_ROLE FROM ROLES WHERE NAMA_ROLE = $2 LIMIT 1),
-				ID_DEPARTEMEN = COALESCE(ID_DEPARTEMEN, (SELECT ID_DEPARTEMEN FROM DEPARTEMEN WHERE NAMA_DEPARTEMEN = $3 LIMIT 1)),
+			SET ID_ROLE = $2,
+				ID_DEPARTEMEN = COALESCE($3, ID_DEPARTEMEN),
+				ID_MITRA = COALESCE($4, ID_MITRA),
 				STATUS = 'active',
-				MUST_CHANGE_PASSWORD = $4
+				MUST_CHANGE_PASSWORD = $5
 			WHERE USERNAME = $1
-		`, params.Username, params.RoleName, params.DepartmentName, params.MustChangePassword)
+		`, params.Username, roleID, deptID, params.IDMitra, params.MustChangePassword)
 		return err
 	}
 
 	_, err = db.Exec(ctx, `
 		UPDATE USERS
 		SET PASSWORD = $2,
-			ID_ROLE = (SELECT ID_ROLE FROM ROLES WHERE NAMA_ROLE = $3 LIMIT 1),
-			ID_DEPARTEMEN = COALESCE(ID_DEPARTEMEN, (SELECT ID_DEPARTEMEN FROM DEPARTEMEN WHERE NAMA_DEPARTEMEN = $4 LIMIT 1)),
+			ID_ROLE = $3,
+			ID_DEPARTEMEN = $4,
+			ID_MITRA = $5,
 			STATUS = 'active',
-			MUST_CHANGE_PASSWORD = $5
+			MUST_CHANGE_PASSWORD = $6
 		WHERE USERNAME = $1
-	`, params.Username, string(hashedPassword), params.RoleName, params.DepartmentName, params.MustChangePassword)
+	`, params.Username, string(hashedPassword), roleID, deptID, params.IDMitra, params.MustChangePassword)
 	return err
 }
 
