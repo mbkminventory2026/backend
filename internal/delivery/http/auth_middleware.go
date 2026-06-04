@@ -120,9 +120,10 @@ const (
 	PermissionSuratJalanCreate       = "SURAT_JALAN_CREATE"
 	PermissionSuratJalanUpdate       = "SURAT_JALAN_UPDATE"
 
-	PermissionReportRead    = "REPORT_READ"
-	PermissionLogRead       = "LOG_READ"
-	PermissionDashboardRead = "DASHBOARD_READ"
+	PermissionReportRead       = "REPORT_READ"
+	PermissionLogRead          = "LOG_READ"
+	PermissionDashboardRead    = "DASHBOARD_READ"
+	PermissionAIEstimationRead = "AI_ESTIMATION_READ"
 
 	PermissionPasswordResetRequestRead    = "PASSWORD_RESET_REQUEST_READ"
 	PermissionPasswordResetRequestApprove = "PASSWORD_RESET_REQUEST_APPROVE"

@@ -44,7 +44,7 @@ func (h *DashboardHandler) RegisterRoutes(router *gin.Engine, authMiddleware gin
 	api.Use(authMiddleware, RequireInternalUser())
 	{
 		api.GET("/logs", RequirePermission(PermissionLogRead), h.GetLogs)
-		api.POST("/dashboard/ai-estimation", RequirePermission(PermissionDashboardRead), h.PredictAIEstimation)
+		api.POST("/dashboard/ai-estimation", RequirePermission(PermissionAIEstimationRead), h.PredictAIEstimation)
 	}
 
 	router.GET("/ws/alerts", authMiddleware, RequireInternalUser(), RequirePermission(PermissionDashboardRead), h.Alerts)
