@@ -340,6 +340,38 @@ definitions:
         example: success
         type: string
     type: object
+  model.CreateKomponenMarkerPlanRequest:
+    properties:
+      nama_komponen:
+        type: string
+      ratios:
+        items:
+          $ref: '#/definitions/model.CreateRatioMarkerRequest'
+        minItems: 1
+        type: array
+    required:
+    - nama_komponen
+    - ratios
+    type: object
+  model.CreateMarkerPlanRequest:
+    properties:
+      components:
+        items:
+          $ref: '#/definitions/model.CreateKomponenMarkerPlanRequest'
+        minItems: 1
+        type: array
+      id_wo_shell:
+        type: integer
+      no_dokumen:
+        type: string
+      tanggal_efektif:
+        type: string
+    required:
+    - components
+    - id_wo_shell
+    - no_dokumen
+    - tanggal_efektif
+    type: object
   model.CreateMaterialListRequest:
     properties:
       color:
@@ -622,6 +654,61 @@ definitions:
     required:
     - nama
     - no_telp
+    type: object
+  model.CreateRatioMarkerRequest:
+    properties:
+      allowance:
+        minimum: 0
+        type: number
+      cons:
+        minimum: 0
+        type: number
+      cons_buyer:
+        minimum: 0
+        type: number
+      efficiency_marker:
+        minimum: 0
+        type: number
+      id_wo_shell:
+        type: integer
+      panjang_marker:
+        minimum: 0
+        type: number
+      plan_spreading_gelaran:
+        minimum: 0
+        type: number
+      roll_qty:
+        minimum: 0
+        type: integer
+      sambungan_roll:
+        minimum: 0
+        type: integer
+      sizes:
+        items:
+          $ref: '#/definitions/model.CreateRatioSizeMarkerRequest'
+        minItems: 1
+        type: array
+    required:
+    - allowance
+    - cons
+    - efficiency_marker
+    - id_wo_shell
+    - panjang_marker
+    - plan_spreading_gelaran
+    - roll_qty
+    - sambungan_roll
+    - sizes
+    type: object
+  model.CreateRatioSizeMarkerRequest:
+    properties:
+      id_wo_shell_size:
+        type: integer
+      qty_plan:
+        minimum: 0
+        type: integer
+    required:
+    - id_wo_shell_size
+    - qty_plan
     type: object
   model.CreateRoleRequest:
     properties:
@@ -990,6 +1077,21 @@ definitions:
       nama_jenis_barang:
         type: string
     type: object
+  model.KomponenMarkerPlanResponse:
+    properties:
+      created_at:
+        type: string
+      id_komponen_marker:
+        type: integer
+      id_marker_plan:
+        type: integer
+      nama_komponen:
+        type: string
+      ratios:
+        items:
+          $ref: '#/definitions/model.RatioMarkerResponse'
+        type: array
+    type: object
   model.ListBarangSuccessDoc:
     properties:
       data:
@@ -1176,6 +1278,64 @@ definitions:
     properties:
       message:
         example: invalid username or password
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.MarkerPlanErrorDetail:
+    properties:
+      code:
+        example: related_data_not_found
+        type: string
+    type: object
+  model.MarkerPlanErrorDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.MarkerPlanErrorDetail'
+      message:
+        example: related data not found
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.MarkerPlanResponse:
+    properties:
+      components:
+        items:
+          $ref: '#/definitions/model.KomponenMarkerPlanResponse'
+        type: array
+      created_at:
+        type: string
+      id_marker_plan:
+        type: integer
+      id_wo_shell:
+        type: integer
+      no_dokumen:
+        type: string
+      tanggal_efektif:
+        type: string
+    type: object
+  model.MarkerPlanSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.MarkerPlanResponse'
+      message:
+        example: marker plan created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.MarkerPlanValidationErrorDoc:
+    properties:
+      error:
+        items:
+          $ref: '#/definitions/response.ValidationErrorItem'
+        type: array
+      message:
+        example: bad request
         type: string
       status:
         example: error
@@ -1895,6 +2055,50 @@ definitions:
         type: string
       status:
         example: success
+        type: string
+    type: object
+  model.RatioMarkerResponse:
+    properties:
+      allowance:
+        type: number
+      cons:
+        type: number
+      cons_buyer:
+        type: number
+      created_at:
+        type: string
+      efficiency_marker:
+        type: number
+      id_komponen_marker:
+        type: integer
+      id_ratio_marker:
+        type: integer
+      id_wo_shell:
+        type: integer
+      panjang_marker:
+        type: number
+      plan_spreading_gelaran:
+        type: number
+      roll_qty:
+        type: integer
+      sambungan_roll:
+        type: integer
+      sizes:
+        items:
+          $ref: '#/definitions/model.RatioSizeMarkerResponse'
+        type: array
+    type: object
+  model.RatioSizeMarkerResponse:
+    properties:
+      id_ratio_marker:
+        type: integer
+      id_ratio_size_marker:
+        type: integer
+      id_wo_shell_size:
+        type: integer
+      qty_plan:
+        type: integer
+      size:
         type: string
     type: object
   model.ReceiveInventoryRequest:
@@ -3348,6 +3552,73 @@ paths:
       summary: List Aktivitas Logs
       tags:
       - Dashboard
+  /api/v1/marker-plans:
+    post:
+      consumes:
+      - application/json
+      description: Create a marker plan with components, ratios, and ratio size markers
+        in a single transaction.
+      parameters:
+      - description: Marker plan payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateMarkerPlanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.MarkerPlanSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.MarkerPlanValidationErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.MarkerPlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Marker Plan
+      tags:
+      - Marker Plan
+  /api/v1/marker-plans/{id}:
+    get:
+      description: Returns a single marker plan with components, ratios, and size
+        breakdown.
+      parameters:
+      - description: Marker Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MarkerPlanSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.MarkerPlanErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.MarkerPlanErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.MarkerPlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Marker Plan Detail
+      tags:
+      - Marker Plan
   /api/v1/master/barang:
     get:
       parameters:
