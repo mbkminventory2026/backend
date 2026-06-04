@@ -236,5 +236,3 @@ func mapMarkerDBError(err error) error {
 	}
 	return fmt.Errorf("%w: %s", ErrWorkOrderServiceUnavailable, err.Error())
 }
-
-

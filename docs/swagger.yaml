@@ -1,5 +1,13 @@
 basePath: /
 definitions:
+  httpdelivery.ApproveUserRequest:
+    properties:
+      username:
+        minLength: 3
+        type: string
+    required:
+    - username
+    type: object
   model.AIEstimationRequest:
     properties:
       cutting_in_house:
@@ -1358,12 +1366,18 @@ definitions:
     type: object
   model.MitraResponse:
     properties:
+      alamat:
+        type: string
       created_at:
         type: string
       email:
         type: string
       id_mitra:
         type: integer
+      kode_pos:
+        type: string
+      kota:
+        type: string
       nama_perusahaan:
         type: string
       no_telp:
@@ -2167,9 +2181,6 @@ definitions:
         type: string
       no_telp:
         type: string
-      password:
-        minLength: 6
-        type: string
       tipe_perusahaan:
         enum:
         - Client
@@ -2177,15 +2188,10 @@ definitions:
         type: string
       turnstile_token:
         type: string
-      username:
-        minLength: 3
-        type: string
     required:
     - nama_perusahaan
-    - password
     - tipe_perusahaan
     - turnstile_token
-    - username
     type: object
   model.RejectPasswordResetRequestRequest:
     properties:
@@ -5685,13 +5691,22 @@ paths:
       - Users
   /api/v1/users/{id}/approve:
     put:
-      description: Approves a pending user registration, updating status to active.
+      consumes:
+      - application/json
+      description: Approves a pending user registration, updating status to active
+        and setting username/password.
       parameters:
       - description: User ID
         in: path
         name: id
         required: true
         type: integer
+      - description: Approval payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/httpdelivery.ApproveUserRequest'
       produces:
       - application/json
       responses:

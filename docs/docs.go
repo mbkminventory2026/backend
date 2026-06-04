@@ -4022,7 +4022,10 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Approves a pending user registration, updating status to active.",
+                "description": "Approves a pending user registration, updating status to active and setting username/password.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -4037,6 +4040,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Approval payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httpdelivery.ApproveUserRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -4525,6 +4537,18 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "httpdelivery.ApproveUserRequest": {
+            "type": "object",
+            "required": [
+                "username"
+            ],
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "minLength": 3
+                }
+            }
+        },
         "model.AIEstimationRequest": {
             "type": "object",
             "properties": {
@@ -6504,6 +6528,9 @@ const docTemplate = `{
         "model.MitraResponse": {
             "type": "object",
             "properties": {
+                "alamat": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -6512,6 +6539,12 @@ const docTemplate = `{
                 },
                 "id_mitra": {
                     "type": "integer"
+                },
+                "kode_pos": {
+                    "type": "string"
+                },
+                "kota": {
+                    "type": "string"
                 },
                 "nama_perusahaan": {
                     "type": "string"
@@ -7706,10 +7739,8 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "nama_perusahaan",
-                "password",
                 "tipe_perusahaan",
-                "turnstile_token",
-                "username"
+                "turnstile_token"
             ],
             "properties": {
                 "alamat": {
@@ -7730,10 +7761,6 @@ const docTemplate = `{
                 "no_telp": {
                     "type": "string"
                 },
-                "password": {
-                    "type": "string",
-                    "minLength": 6
-                },
                 "tipe_perusahaan": {
                     "type": "string",
                     "enum": [
@@ -7743,10 +7770,6 @@ const docTemplate = `{
                 },
                 "turnstile_token": {
                     "type": "string"
-                },
-                "username": {
-                    "type": "string",
-                    "minLength": 3
                 }
             }
         },
