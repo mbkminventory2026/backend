@@ -152,6 +152,7 @@ type Querier interface {
 	UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) (UpdateUserRoleRow, error)
 	UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) (UpdateUserStatusRow, error)
 	UpdateWOShellPlanStatus(ctx context.Context, arg UpdateWOShellPlanStatusParams) error
+	WorkOrderShellTotalQty(ctx context.Context, idWoShell int32) (int64, error)
 }
 
 var _ Querier = (*Queries)(nil)

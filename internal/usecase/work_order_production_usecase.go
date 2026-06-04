@@ -565,3 +565,15 @@ func deriveProductionStatus(targetQty int32, cutting int32, sewing int32, qcPass
 		return "Not Started"
 	}
 }
+
+func (u *WorkOrderProductionUseCase) GetWorkOrderShellTotalQty(ctx context.Context, idWoShell int32) (*model.WorkOrderShellTotalQtyResponse, error) {
+	totalQty, err := u.repo.WorkOrderShellTotalQty(ctx, idWoShell)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to get work order shell total qty", ErrWorkOrderServiceUnavailable)
+	}
+
+	return &model.WorkOrderShellTotalQtyResponse{
+		IDWoShell: idWoShell,
+		TotalQty:  totalQty,
+	}, nil
+}

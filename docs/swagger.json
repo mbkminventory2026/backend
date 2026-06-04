@@ -3589,6 +3589,52 @@
                 }
             }
         },
+        "/api/v1/work-orders/shells/{id}/total-qty": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the total quantity of a work order shell from its size variations.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Work Order \u0026 Production"
+                ],
+                "summary": "Get Work Order Shell Total Qty",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Work Order Shell ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderShellTotalQtySuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/work-orders/{id}": {
             "get": {
                 "security": [
@@ -7386,6 +7432,33 @@
                 },
                 "size": {
                     "type": "string"
+                }
+            }
+        },
+        "model.WorkOrderShellTotalQtyResponse": {
+            "type": "object",
+            "properties": {
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "total_qty": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.WorkOrderShellTotalQtySuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.WorkOrderShellTotalQtyResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "total qty retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },

@@ -2462,6 +2462,24 @@ definitions:
       size:
         type: string
     type: object
+  model.WorkOrderShellTotalQtyResponse:
+    properties:
+      id_wo_shell:
+        type: integer
+      total_qty:
+        type: integer
+    type: object
+  model.WorkOrderShellTotalQtySuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.WorkOrderShellTotalQtyResponse'
+      message:
+        example: total qty retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.WorkOrderStatusResponse:
     properties:
       closed_at:
@@ -4910,6 +4928,36 @@ paths:
       security:
       - BearerAuth: []
       summary: Close Work Order
+      tags:
+      - Work Order & Production
+  /api/v1/work-orders/shells/{id}/total-qty:
+    get:
+      description: Returns the total quantity of a work order shell from its size
+        variations.
+      parameters:
+      - description: Work Order Shell ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.WorkOrderShellTotalQtySuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Work Order Shell Total Qty
       tags:
       - Work Order & Production
   /health:
