@@ -17,6 +17,13 @@ const (
 	// PermissionAllAccess is the special permission granted to super admin/emergency access
 	PermissionAllAccess = "ALL_ACCESS"
 
+	//nolint:gosec // permission code constants are identifiers, not credentials
+	PermissionAuthChangePassword = "AUTH_CHANGE_PASSWORD"
+	//nolint:gosec // permission code constants are identifiers, not credentials
+	PermissionPasswordResetRequestCreate = "PASSWORD_RESET_REQUEST_CREATE"
+	//nolint:gosec // permission code constants are identifiers, not credentials
+	PermissionUserTempPasswordCreate = "USER_TEMP_PASSWORD_CREATE"
+
 	PermissionUserRead    = "USER_READ"
 	PermissionUserCreate  = "USER_CREATE"
 	PermissionUserUpdate  = "USER_UPDATE"

@@ -89,10 +89,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 9. Seed Super Admin User
-	err = seedUser(ctx, dbPool)
+	// 9. Seed bootstrap users
+	err = seedSystemUsers(ctx, dbPool)
 	if err != nil {
-		slog.Error("failed to seed user", slog.String("error", err.Error()))
+		slog.Error("failed to seed system users", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
@@ -285,10 +285,13 @@ func seedBarang(ctx context.Context, db *pgxpool.Pool) error {
 
 func seedHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 	permissionCodes := []string{
+		"AUTH_CHANGE_PASSWORD",
 		"USER_READ", "USER_CREATE", "USER_UPDATE", "USER_DELETE", "USER_APPROVE",
+		"USER_TEMP_PASSWORD_CREATE",
 		"ROLE_READ", "ROLE_CREATE", "ROLE_UPDATE", "ROLE_DELETE", "USER_ROLE_ASSIGN",
 		"PERMISSION_READ", "PERMISSION_CREATE", "PERMISSION_UPDATE", "PERMISSION_DELETE",
 		"MASTER_BARANG_READ", "MASTER_BARANG_CREATE", "MASTER_BARANG_UPDATE", "MASTER_BARANG_DELETE",
+		"MASTER_WARNA_READ", "MASTER_WARNA_CREATE", "MASTER_WARNA_UPDATE", "MASTER_WARNA_DELETE",
 		"MASTER_MITRA_READ", "MASTER_MITRA_CREATE", "MASTER_MITRA_UPDATE", "MASTER_MITRA_DELETE",
 		"MASTER_JENIS_BARANG_READ", "MASTER_JENIS_BARANG_CREATE", "MASTER_JENIS_BARANG_UPDATE", "MASTER_JENIS_BARANG_DELETE",
 		"MASTER_COMPANY_READ", "MASTER_COMPANY_CREATE", "MASTER_COMPANY_UPDATE", "MASTER_COMPANY_DELETE",
@@ -305,6 +308,7 @@ func seedHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 		"INVENTORY_RECEIVE", "INVENTORY_ISSUE",
 		"PACKING_LIST_READ", "PACKING_LIST_CREATE", "PACKING_LIST_UPDATE", "PACKING_LIST_APPROVE",
 		"SURAT_JALAN_CLIENT_READ", "SURAT_JALAN_INTERNAL_READ", "SURAT_JALAN_CREATE", "SURAT_JALAN_UPDATE",
+		"PASSWORD_RESET_REQUEST_CREATE",
 		"PASSWORD_RESET_REQUEST_READ", "PASSWORD_RESET_REQUEST_APPROVE", "PASSWORD_RESET_REQUEST_REJECT",
 		"REPORT_READ", "LOG_READ", "DASHBOARD_READ",
 		"ALL_ACCESS",
@@ -343,8 +347,21 @@ func seedHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 }
 
 func inferPermissionMetadata(code string) (name string, description string, domain string, action string) {
-	if code == "ALL_ACCESS" {
+	switch code {
+	case "ALL_ACCESS":
 		return "All Access", "Emergency full access", "system", "access"
+	case "AUTH_CHANGE_PASSWORD":
+		return "Auth Change Password", "Allows authenticated users to change their own password", "auth", "change_password"
+	case "PASSWORD_RESET_REQUEST_CREATE":
+		return "Password Reset Request Create", "Allows users to submit a password reset request", "password_reset_request", "create"
+	case "PASSWORD_RESET_REQUEST_READ":
+		return "Password Reset Request Read", "Allows operators to read password reset requests", "password_reset_request", "read"
+	case "PASSWORD_RESET_REQUEST_APPROVE":
+		return "Password Reset Request Approve", "Allows operators to approve password reset requests", "password_reset_request", "approve"
+	case "PASSWORD_RESET_REQUEST_REJECT":
+		return "Password Reset Request Reject", "Allows operators to reject password reset requests", "password_reset_request", "reject"
+	case "USER_TEMP_PASSWORD_CREATE":
+		return "User Temporary Password Create", "Allows operators to generate a temporary password while creating or resetting users", "user_temp_password", "create"
 	}
 
 	parts := strings.Split(code, "_")
@@ -401,13 +418,17 @@ func seedRoleHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 	rolePermissions := map[string][]string{
 		"SUPER_ADMIN": {"ALL_ACCESS"},
 		"OPERATOR": {
+			"AUTH_CHANGE_PASSWORD",
 			"USER_READ", "USER_CREATE", "USER_UPDATE", "USER_DELETE", "USER_APPROVE",
+			"USER_TEMP_PASSWORD_CREATE",
 			"ROLE_READ", "ROLE_CREATE", "ROLE_UPDATE", "ROLE_DELETE", "USER_ROLE_ASSIGN",
 			"PERMISSION_READ", "PERMISSION_CREATE", "PERMISSION_UPDATE", "PERMISSION_DELETE",
+			"PASSWORD_RESET_REQUEST_CREATE",
 			"PASSWORD_RESET_REQUEST_READ", "PASSWORD_RESET_REQUEST_APPROVE", "PASSWORD_RESET_REQUEST_REJECT",
 			"LOG_READ",
 		},
 		"ADMIN_KEUANGAN": {
+			"AUTH_CHANGE_PASSWORD", "PASSWORD_RESET_REQUEST_CREATE",
 			"MASTER_MITRA_READ", "MASTER_BARANG_READ", "MASTER_JENIS_BARANG_READ", "MASTER_COMPANY_READ",
 			"PO_CLIENT_READ",
 			"PR_INTERNAL_READ", "PR_INTERNAL_APPROVE",
@@ -415,7 +436,8 @@ func seedRoleHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 			"REPORT_READ",
 		},
 		"ADMIN_PRODUKSI": {
-			"MASTER_BARANG_READ", "MASTER_MITRA_READ", "MASTER_JENIS_BARANG_READ", "MASTER_COMPANY_READ", "MASTER_DEPARTEMEN_READ",
+			"AUTH_CHANGE_PASSWORD", "PASSWORD_RESET_REQUEST_CREATE",
+			"MASTER_BARANG_READ", "MASTER_WARNA_READ", "MASTER_MITRA_READ", "MASTER_JENIS_BARANG_READ", "MASTER_COMPANY_READ", "MASTER_DEPARTEMEN_READ",
 			"PO_CLIENT_READ", "PO_CLIENT_CREATE", "PO_CLIENT_UPDATE",
 			"WO_READ", "WO_CREATE", "WO_UPDATE", "WO_CLOSE",
 			"PRODUCTION_SUMMARY_READ",
@@ -428,6 +450,7 @@ func seedRoleHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 			"REPORT_READ",
 		},
 		"ADMIN_GUDANG": {
+			"AUTH_CHANGE_PASSWORD", "PASSWORD_RESET_REQUEST_CREATE",
 			"MASTER_BARANG_READ", "MASTER_MITRA_READ", "MASTER_JENIS_BARANG_READ",
 			"PR_INTERNAL_READ", "PR_INTERNAL_CREATE", "PR_INTERNAL_UPDATE",
 			"INVENTORY_RECEIVE", "INVENTORY_ISSUE",
@@ -435,8 +458,9 @@ func seedRoleHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 			"REPORT_READ",
 		},
 		"MANAGER": {
-			"USER_READ",
-			"MASTER_BARANG_READ", "MASTER_MITRA_READ", "MASTER_JENIS_BARANG_READ", "MASTER_COMPANY_READ", "MASTER_DEPARTEMEN_READ",
+			"AUTH_CHANGE_PASSWORD", "PASSWORD_RESET_REQUEST_CREATE",
+			"USER_READ", "USER_APPROVE",
+			"MASTER_BARANG_READ", "MASTER_WARNA_READ", "MASTER_MITRA_READ", "MASTER_JENIS_BARANG_READ", "MASTER_COMPANY_READ", "MASTER_DEPARTEMEN_READ",
 			"PO_CLIENT_READ", "PR_INTERNAL_READ", "PO_INTERNAL_READ",
 			"WO_READ", "PRODUCTION_SUMMARY_READ", "PRODUCTION_REPORT_READ",
 			"TIMELINE_READ", "MARKER_PLAN_READ", "CUTTING_PLAN_READ",
@@ -445,6 +469,7 @@ func seedRoleHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 			"PR_INTERNAL_APPROVE", "PO_INTERNAL_APPROVE", "PACKING_LIST_APPROVE",
 		},
 		"CLIENT": {
+			"AUTH_CHANGE_PASSWORD", "PASSWORD_RESET_REQUEST_CREATE",
 			"PO_CLIENT_READ", "WO_READ", "PRODUCTION_SUMMARY_READ", "PACKING_LIST_READ", "SURAT_JALAN_CLIENT_READ",
 		},
 	}
@@ -486,46 +511,94 @@ func seedDepartemen(ctx context.Context, db *pgxpool.Pool) error {
 	return nil
 }
 
-func seedUser(ctx context.Context, db *pgxpool.Pool) error {
-	username := "super-admin"
-	password := "admin123"
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+func seedSystemUsers(ctx context.Context, db *pgxpool.Pool) error {
+	if err := seedSystemUser(ctx, db, seedSystemUserParams{
+		Username:                 "super-admin",
+		Password:                 "admin123",
+		RoleName:                 "SUPER_ADMIN",
+		DepartmentName:           "IT",
+		MustChangePassword:       false,
+		PreservePasswordOnUpdate: true,
+	}); err != nil {
+		return err
+	}
+
+	if err := seedSystemUser(ctx, db, seedSystemUserParams{
+		Username:                 "operator",
+		Password:                 "admin123",
+		RoleName:                 "OPERATOR",
+		DepartmentName:           "IT",
+		MustChangePassword:       true,
+		PreservePasswordOnUpdate: true,
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type seedSystemUserParams struct {
+	Username                 string
+	Password                 string
+	RoleName                 string
+	DepartmentName           string
+	MustChangePassword       bool
+	PreservePasswordOnUpdate bool
+}
+
+func seedSystemUser(ctx context.Context, db *pgxpool.Pool, params seedSystemUserParams) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
 
 	var exists bool
-	err = db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM USERS WHERE username = $1)`, username).Scan(&exists)
+	err = db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM USERS WHERE username = $1)`, params.Username).Scan(&exists)
 	if err != nil {
 		return err
 	}
 
 	if !exists {
 		_, err = db.Exec(ctx, `
-			INSERT INTO USERS (USERNAME, PASSWORD, ID_ROLE, ID_DEPARTEMEN, STATUS)
+			INSERT INTO USERS (USERNAME, PASSWORD, ID_ROLE, ID_DEPARTEMEN, STATUS, MUST_CHANGE_PASSWORD)
 			VALUES (
 				$1,
 				$2,
-				(SELECT ID_ROLE FROM ROLES WHERE NAMA_ROLE = 'SUPER_ADMIN' LIMIT 1),
-				(SELECT ID_DEPARTEMEN FROM DEPARTEMEN WHERE NAMA_DEPARTEMEN = 'IT' LIMIT 1),
-				'active'
+				(SELECT ID_ROLE FROM ROLES WHERE NAMA_ROLE = $3 LIMIT 1),
+				(SELECT ID_DEPARTEMEN FROM DEPARTEMEN WHERE NAMA_DEPARTEMEN = $4 LIMIT 1),
+				'active',
+				$5
 			)
-		`, username, string(hashedPassword))
+		`, params.Username, string(hashedPassword), params.RoleName, params.DepartmentName, params.MustChangePassword)
 		if err != nil {
 			return err
 		}
-		slog.Info("user seeded", slog.String("username", username))
-	} else {
+		slog.Info("user seeded", slog.String("username", params.Username))
+		return nil
+	}
+
+	if params.PreservePasswordOnUpdate {
 		_, err = db.Exec(ctx, `
 			UPDATE USERS
-			SET ID_ROLE = (SELECT ID_ROLE FROM ROLES WHERE NAMA_ROLE = 'SUPER_ADMIN' LIMIT 1)
+			SET ID_ROLE = (SELECT ID_ROLE FROM ROLES WHERE NAMA_ROLE = $2 LIMIT 1),
+				ID_DEPARTEMEN = COALESCE(ID_DEPARTEMEN, (SELECT ID_DEPARTEMEN FROM DEPARTEMEN WHERE NAMA_DEPARTEMEN = $3 LIMIT 1)),
+				STATUS = 'active',
+				MUST_CHANGE_PASSWORD = $4
 			WHERE USERNAME = $1
-		`, username)
-		if err != nil {
-			return err
-		}
+		`, params.Username, params.RoleName, params.DepartmentName, params.MustChangePassword)
+		return err
 	}
-	return nil
+
+	_, err = db.Exec(ctx, `
+		UPDATE USERS
+		SET PASSWORD = $2,
+			ID_ROLE = (SELECT ID_ROLE FROM ROLES WHERE NAMA_ROLE = $3 LIMIT 1),
+			ID_DEPARTEMEN = COALESCE(ID_DEPARTEMEN, (SELECT ID_DEPARTEMEN FROM DEPARTEMEN WHERE NAMA_DEPARTEMEN = $4 LIMIT 1)),
+			STATUS = 'active',
+			MUST_CHANGE_PASSWORD = $5
+		WHERE USERNAME = $1
+	`, params.Username, string(hashedPassword), params.RoleName, params.DepartmentName, params.MustChangePassword)
+	return err
 }
 
 func seedPOClient(ctx context.Context, db *pgxpool.Pool) error {
