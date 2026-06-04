@@ -17,6 +17,7 @@ type Querier interface {
 	CountJenisBarang(ctx context.Context, searchTerm string) (int64, error)
 	CountMitra(ctx context.Context, searchTerm string) (int64, error)
 	CountUsers(ctx context.Context, searchTerm string) (int64, error)
+	CountWarna(ctx context.Context, searchTerm string) (int64, error)
 	CountWorkOrdersByPOClientID(ctx context.Context, idPoClient int32) (int64, error)
 	CreateAktivitasLog(ctx context.Context, aksi string) (LogAktivita, error)
 	CreateAktivitasLogDetail(ctx context.Context, arg CreateAktivitasLogDetailParams) (LogAktivitasDetail, error)
@@ -56,6 +57,7 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	CreateUserAkses(ctx context.Context, arg CreateUserAksesParams) error
 	CreateWOShellPlan(ctx context.Context, arg []CreateWOShellPlanParams) (int64, error)
+	CreateWarna(ctx context.Context, arg CreateWarnaParams) (Warna, error)
 	CreateWorkOrder(ctx context.Context, arg CreateWorkOrderParams) (CreateWorkOrderRow, error)
 	CreateWorkOrderShell(ctx context.Context, arg CreateWorkOrderShellParams) (WorkOrderShell, error)
 	CreateWorkOrderShellSize(ctx context.Context, arg CreateWorkOrderShellSizeParams) (WorkOrderShellSize, error)
@@ -72,6 +74,7 @@ type Querier interface {
 	DeleteRoleHakAksesByRoleID(ctx context.Context, idRole int32) (int64, error)
 	DeleteUser(ctx context.Context, idUser int32) (int64, error)
 	DeleteUserAksesByUserID(ctx context.Context, idUser int32) (int64, error)
+	DeleteWarna(ctx context.Context, idWarna int32) (int64, error)
 	GetAktivitasLogs(ctx context.Context, arg GetAktivitasLogsParams) ([]GetAktivitasLogsRow, error)
 	GetBarangByID(ctx context.Context, idBarang int32) (GetBarangByIDRow, error)
 	GetCompany(ctx context.Context) (Company, error)
@@ -105,6 +108,7 @@ type Querier interface {
 	GetUserPermissionIDs(ctx context.Context, idUser int32) ([]int32, error)
 	GetUserPermissions(ctx context.Context, idUser int32) ([]string, error)
 	GetWOShellPlansByTimelineID(ctx context.Context, idTimeline int32) ([]GetWOShellPlansByTimelineIDRow, error)
+	GetWarnaByID(ctx context.Context, idWarna int32) (Warna, error)
 	GetWorkOrderDetail(ctx context.Context, arg GetWorkOrderDetailParams) (GetWorkOrderDetailRow, error)
 	// Mengambil data WO dan Production Internal untuk diolah model Regresi Linier di Golang
 	GetWorkOrderForAIEstimation(ctx context.Context) ([]GetWorkOrderForAIEstimationRow, error)
@@ -135,6 +139,7 @@ type Querier interface {
 	ListSuratJalanClients(ctx context.Context, arg ListSuratJalanClientsParams) ([]ListSuratJalanClientsRow, error)
 	ListSuratJalanInternals(ctx context.Context, arg ListSuratJalanInternalsParams) ([]ListSuratJalanInternalsRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
+	ListWarna(ctx context.Context, arg ListWarnaParams) ([]Warna, error)
 	ListWorkOrderShellSizesByWorkOrderID(ctx context.Context, idWo int32) ([]WorkOrderShellSize, error)
 	ListWorkOrderShellsByWorkOrderID(ctx context.Context, idWo int32) ([]WorkOrderShell, error)
 	ListWorkOrderTrimsByWorkOrderID(ctx context.Context, idWo int32) ([]WorkOrderTrim, error)
@@ -152,6 +157,7 @@ type Querier interface {
 	UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) (UpdateUserRoleRow, error)
 	UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) (UpdateUserStatusRow, error)
 	UpdateWOShellPlanStatus(ctx context.Context, arg UpdateWOShellPlanStatusParams) error
+	UpdateWarna(ctx context.Context, arg UpdateWarnaParams) (Warna, error)
 	WorkOrderShellTotalQty(ctx context.Context, idWoShell int32) (int64, error)
 }
 

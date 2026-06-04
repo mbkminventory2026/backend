@@ -599,6 +599,16 @@ definitions:
     - password
     - username
     type: object
+  model.CreateWarnaRequest:
+    properties:
+      kode_hex:
+        maxLength: 7
+        type: string
+      nama_warna:
+        type: string
+    required:
+    - nama_warna
+    type: object
   model.CreateWorkOrderRequest:
     properties:
       buyer:
@@ -923,6 +933,19 @@ definitions:
         type: array
       message:
         example: permissions retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.ListWarnaSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.WarnaResponse'
+        type: array
+      message:
+        example: warna retrieved
         type: string
       status:
         example: success
@@ -2190,6 +2213,16 @@ definitions:
     required:
     - username
     type: object
+  model.UpdateWarnaRequest:
+    properties:
+      kode_hex:
+        maxLength: 7
+        type: string
+      nama_warna:
+        type: string
+    required:
+    - nama_warna
+    type: object
   model.UserListSuccessDoc:
     properties:
       data:
@@ -2273,6 +2306,28 @@ definitions:
         type: string
       status:
         example: error
+        type: string
+    type: object
+  model.WarnaResponse:
+    properties:
+      created_at:
+        type: string
+      id_warna:
+        type: integer
+      kode_hex:
+        type: string
+      nama_warna:
+        type: string
+    type: object
+  model.WarnaSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.WarnaResponse'
+      message:
+        example: warna created
+        type: string
+      status:
+        example: success
         type: string
     type: object
   model.WorkOrderDetailResponse:
@@ -3437,6 +3492,119 @@ paths:
       security:
       - BearerAuth: []
       summary: Update Permission
+      tags:
+      - Master Data
+  /api/v1/master/warna:
+    get:
+      parameters:
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset (default 0)
+        in: query
+        name: offset
+        type: integer
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ListWarnaSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: List Colors
+      tags:
+      - Master Data
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Color payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateWarnaRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.WarnaSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Color
+      tags:
+      - Master Data
+  /api/v1/master/warna/{id}:
+    delete:
+      parameters:
+      - description: Color ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete Color
+      tags:
+      - Master Data
+    get:
+      parameters:
+      - description: Color ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.WarnaSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Color Detail
+      tags:
+      - Master Data
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Color ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Color payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateWarnaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.WarnaSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Update Color
       tags:
       - Master Data
   /api/v1/packing-lists:

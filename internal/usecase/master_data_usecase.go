@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"permatatex-inventory/internal/entity"
 	"permatatex-inventory/internal/model"
@@ -24,6 +25,7 @@ var (
 	mitraSortColumns       = buildSortWhitelist("created_at", "id_mitra", "nama_perusahaan", "email", "no_telp", "tipe_perusahaan")
 	barangSortColumns      = buildSortWhitelist("created_at", "id_barang", "kode", "nama_barang", "nama_jenis_barang", "nama_perusahaan")
 	hakAksesSortColumns    = buildSortWhitelist("created_at", "id_hak_akses", "nama_halaman", "kode_permission", "domain_permission", "aksi_permission")
+	warnaSortColumns       = buildSortWhitelist("created_at", "id_warna", "nama_warna")
 )
 
 type MasterDataUseCase struct {
@@ -690,4 +692,117 @@ func mapMasterDataConflict(err error) error {
 		return ErrMasterDataDuplicateCode
 	}
 	return err
+}
+
+// WARNA
+func (u *MasterDataUseCase) GetWarnaByID(ctx context.Context, id int32) (model.WarnaResponse, error) {
+	item, err := u.repo.GetWarnaByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.WarnaResponse{}, ErrMasterDataNotFound
+		}
+		return model.WarnaResponse{}, err
+	}
+
+	return model.WarnaResponse{
+		ID:        item.IDWarna,
+		NamaWarna: item.NamaWarna,
+		KodeHex:   pgTextToPtrString(item.KodeHex),
+		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+	}, nil
+}
+
+func (u *MasterDataUseCase) ListWarna(ctx context.Context, filter model.ListQueryFilter) ([]model.WarnaResponse, int64, error) {
+	_, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter, "nama_warna", false, warnaSortColumns)
+
+	items, err := u.repo.ListWarna(ctx, entity.ListWarnaParams{
+		SearchTerm: search,
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	total, err := u.repo.CountWarna(ctx, search)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	res := make([]model.WarnaResponse, 0, len(items))
+	for _, i := range items {
+		res = append(res, model.WarnaResponse{
+			ID:        i.IDWarna,
+			NamaWarna: i.NamaWarna,
+			KodeHex:   pgTextToPtrString(i.KodeHex),
+			CreatedAt: i.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+	return res, total, nil
+}
+
+func (u *MasterDataUseCase) CreateWarna(ctx context.Context, req model.CreateWarnaRequest) (model.WarnaResponse, error) {
+	item, err := u.repo.CreateWarna(ctx, entity.CreateWarnaParams{
+		NamaWarna: req.NamaWarna,
+		KodeHex:   ptrStringToPgText(req.KodeHex),
+	})
+	if err != nil {
+		return model.WarnaResponse{}, mapMasterDataConflict(err)
+	}
+
+	return model.WarnaResponse{
+		ID:        item.IDWarna,
+		NamaWarna: item.NamaWarna,
+		KodeHex:   pgTextToPtrString(item.KodeHex),
+		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+	}, nil
+}
+
+func (u *MasterDataUseCase) UpdateWarna(ctx context.Context, id int32, req model.UpdateWarnaRequest) (model.WarnaResponse, error) {
+	item, err := u.repo.UpdateWarna(ctx, entity.UpdateWarnaParams{
+		IDWarna:   id,
+		NamaWarna: req.NamaWarna,
+		KodeHex:   ptrStringToPgText(req.KodeHex),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.WarnaResponse{}, ErrMasterDataNotFound
+		}
+		return model.WarnaResponse{}, mapMasterDataConflict(err)
+	}
+
+	return model.WarnaResponse{
+		ID:        item.IDWarna,
+		NamaWarna: item.NamaWarna,
+		KodeHex:   pgTextToPtrString(item.KodeHex),
+		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+	}, nil
+}
+
+func (u *MasterDataUseCase) DeleteWarna(ctx context.Context, id int32) error {
+	affected, err := u.repo.DeleteWarna(ctx, id)
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return ErrMasterDataNotFound
+	}
+	return nil
+}
+
+func ptrStringToPgText(s *string) pgtype.Text {
+	if s == nil {
+		return pgtype.Text{Valid: false}
+	}
+	return pgtype.Text{String: *s, Valid: true}
+}
+
+func pgTextToPtrString(t pgtype.Text) *string {
+	if !t.Valid {
+		return nil
+	}
+	s := t.String
+	return &s
 }

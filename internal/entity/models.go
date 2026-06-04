@@ -403,6 +403,13 @@ type UserAkse struct {
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
 }
 
+type Warna struct {
+	IDWarna   int32              `json:"id_warna"`
+	NamaWarna string             `json:"nama_warna"`
+	KodeHex   pgtype.Text        `json:"kode_hex"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
 type WoShellPlan struct {
 	IDWoShellPlan          int32              `json:"id_wo_shell_plan"`
 	IDTimeline             int32              `json:"id_timeline"`

@@ -39,6 +39,11 @@ const (
 	PermissionMasterBarangUpdate = "MASTER_BARANG_UPDATE"
 	PermissionMasterBarangDelete = "MASTER_BARANG_DELETE"
 
+	PermissionMasterWarnaRead   = "MASTER_WARNA_READ"
+	PermissionMasterWarnaCreate = "MASTER_WARNA_CREATE"
+	PermissionMasterWarnaUpdate = "MASTER_WARNA_UPDATE"
+	PermissionMasterWarnaDelete = "MASTER_WARNA_DELETE"
+
 	PermissionMasterMitraRead   = "MASTER_MITRA_READ"
 	PermissionMasterMitraCreate = "MASTER_MITRA_CREATE"
 	PermissionMasterMitraUpdate = "MASTER_MITRA_UPDATE"

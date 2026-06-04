@@ -1389,6 +1389,190 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/master/warna": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "List Colors",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset (default 0)",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ListWarnaSuccessDoc"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Create Color",
+                "parameters": [
+                    {
+                        "description": "Color payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateWarnaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarnaSuccessDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/master/warna/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Get Color Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Color ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarnaSuccessDoc"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Update Color",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Color ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Color payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateWarnaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarnaSuccessDoc"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Delete Color",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Color ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/packing-lists": {
             "get": {
                 "security": [
@@ -4663,6 +4847,21 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CreateWarnaRequest": {
+            "type": "object",
+            "required": [
+                "nama_warna"
+            ],
+            "properties": {
+                "kode_hex": {
+                    "type": "string",
+                    "maxLength": 7
+                },
+                "nama_warna": {
+                    "type": "string"
+                }
+            }
+        },
         "model.CreateWorkOrderRequest": {
             "type": "object",
             "required": [
@@ -5133,6 +5332,25 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "permissions retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.ListWarnaSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.WarnaResponse"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "warna retrieved"
                 },
                 "status": {
                     "type": "string",
@@ -7030,6 +7248,21 @@ const docTemplate = `{
                 }
             }
         },
+        "model.UpdateWarnaRequest": {
+            "type": "object",
+            "required": [
+                "nama_warna"
+            ],
+            "properties": {
+                "kode_hex": {
+                    "type": "string",
+                    "maxLength": 7
+                },
+                "nama_warna": {
+                    "type": "string"
+                }
+            }
+        },
         "model.UserListSuccessDoc": {
             "type": "object",
             "properties": {
@@ -7153,6 +7386,39 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "error"
+                }
+            }
+        },
+        "model.WarnaResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_warna": {
+                    "type": "integer"
+                },
+                "kode_hex": {
+                    "type": "string"
+                },
+                "nama_warna": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.WarnaSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.WarnaResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "warna created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },

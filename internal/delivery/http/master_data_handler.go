@@ -2,6 +2,7 @@ package httpdelivery
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -52,6 +53,13 @@ func (h *MasterDataHandler) RegisterRoutes(router gin.IRouter, authMiddleware gi
 	master.POST("/barang", RequirePermission(PermissionMasterBarangCreate), h.CreateBarang)
 	master.PUT("/barang/:id", RequirePermission(PermissionMasterBarangUpdate), h.UpdateBarang)
 	master.DELETE("/barang/:id", RequirePermission(PermissionMasterBarangDelete), h.DeleteBarang)
+
+	// Warna
+	master.GET("/warna", RequirePermission(PermissionMasterWarnaRead), h.ListWarna)
+	master.GET("/warna/:id", RequirePermission(PermissionMasterWarnaRead), h.GetWarnaByID)
+	master.POST("/warna", RequirePermission(PermissionMasterWarnaCreate), h.CreateWarna)
+	master.PUT("/warna/:id", RequirePermission(PermissionMasterWarnaUpdate), h.UpdateWarna)
+	master.DELETE("/warna/:id", RequirePermission(PermissionMasterWarnaDelete), h.DeleteWarna)
 
 	// Permissions
 	master.GET("/permissions", RequirePermission(PermissionPermissionRead), h.ListHakAkses)
@@ -799,6 +807,130 @@ func (h *MasterDataHandler) DeleteCompany(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusOK, "company data deleted", nil)
+}
+
+// GetWarnaByID godoc
+// @Summary      Get Color Detail
+// @Tags         Master Data
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Color ID"
+// @Success      200  {object}  model.WarnaSuccessDoc
+// @Router       /api/v1/master/warna/{id} [get]
+func (h *MasterDataHandler) GetWarnaByID(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
+		return
+	}
+
+	item, err := h.useCase.GetWarnaByID(c.Request.Context(), id)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "warna retrieved", item)
+}
+
+// ListWarna godoc
+// @Summary      List Colors
+// @Tags         Master Data
+// @Produce      json
+// @Security     BearerAuth
+// @Param        limit   query     int  false  "Limit (default 20)"
+// @Param        offset  query     int  false  "Offset (default 0)"
+// @Param        search  query     string false "Search by name"
+// @Success      200     {object}  model.ListWarnaSuccessDoc
+// @Router       /api/v1/master/warna [get]
+func (h *MasterDataHandler) ListWarna(c *gin.Context) {
+	filter, err := parseListQuery(c, 20)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
+		return
+	}
+
+	items, total, err := h.useCase.ListWarna(c.Request.Context(), filter)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.Header("X-Total-Count", fmt.Sprintf("%d", total))
+	response.Success(c, http.StatusOK, "warna retrieved", items)
+}
+
+// CreateWarna godoc
+// @Summary      Create Color
+// @Tags         Master Data
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        payload  body      model.CreateWarnaRequest  true  "Color payload"
+// @Success      201      {object}  model.WarnaSuccessDoc
+// @Router       /api/v1/master/warna [post]
+func (h *MasterDataHandler) CreateWarna(c *gin.Context) {
+	var req model.CreateWarnaRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+
+	item, err := h.useCase.CreateWarna(c.Request.Context(), req)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusCreated, "warna created", item)
+}
+
+// UpdateWarna godoc
+// @Summary      Update Color
+// @Tags         Master Data
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id       path      int                       true  "Color ID"
+// @Param        payload  body      model.UpdateWarnaRequest  true  "Color payload"
+// @Success      200      {object}  model.WarnaSuccessDoc
+// @Router       /api/v1/master/warna/{id} [put]
+func (h *MasterDataHandler) UpdateWarna(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
+		return
+	}
+
+	var req model.UpdateWarnaRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+
+	item, err := h.useCase.UpdateWarna(c.Request.Context(), id, req)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "warna updated", item)
+}
+
+// DeleteWarna godoc
+// @Summary      Delete Color
+// @Tags         Master Data
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Color ID"
+// @Success      200  {object}  response.BaseResponse
+// @Router       /api/v1/master/warna/{id} [delete]
+func (h *MasterDataHandler) DeleteWarna(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
+		return
+	}
+
+	if err := h.useCase.DeleteWarna(c.Request.Context(), id); err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "warna deleted", nil)
 }
 
 func (h *MasterDataHandler) handleError(c *gin.Context, err error) {

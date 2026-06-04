@@ -100,6 +100,17 @@ type UpdateHakAksesRequest struct {
 	AksiPermission   string `json:"aksi_permission" binding:"required"`
 }
 
+// Warna
+type CreateWarnaRequest struct {
+	NamaWarna string  `json:"nama_warna" binding:"required"`
+	KodeHex   *string `json:"kode_hex" binding:"omitempty,max=7"`
+}
+
+type UpdateWarnaRequest struct {
+	NamaWarna string  `json:"nama_warna" binding:"required"`
+	KodeHex   *string `json:"kode_hex" binding:"omitempty,max=7"`
+}
+
 // --- RESPONSES ---
 
 type DepartemenResponse struct {
@@ -155,6 +166,13 @@ type HakAksesResponse struct {
 	DomainPermission string `json:"domain_permission"`
 	AksiPermission   string `json:"aksi_permission"`
 	CreatedAt        string `json:"created_at"`
+}
+
+type WarnaResponse struct {
+	ID        int32   `json:"id_warna"`
+	NamaWarna string  `json:"nama_warna"`
+	KodeHex   *string `json:"kode_hex"`
+	CreatedAt string  `json:"created_at"`
 }
 
 // --- SWAGGER SUCCESS DOCS ---
@@ -223,4 +241,16 @@ type HakAksesSuccessDoc struct {
 	Status  string           `json:"status" example:"success"`
 	Message string           `json:"message" example:"permission created"`
 	Data    HakAksesResponse `json:"data"`
+}
+
+type ListWarnaSuccessDoc struct {
+	Status  string          `json:"status" example:"success"`
+	Message string          `json:"message" example:"warna retrieved"`
+	Data    []WarnaResponse `json:"data"`
+}
+
+type WarnaSuccessDoc struct {
+	Status  string        `json:"status" example:"success"`
+	Message string        `json:"message" example:"warna created"`
+	Data    WarnaResponse `json:"data"`
 }
