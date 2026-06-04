@@ -48,9 +48,13 @@ type Departeman struct {
 }
 
 type HakAkse struct {
-	IDHakAkses  int32              `json:"id_hak_akses"`
-	NamaHalaman string             `json:"nama_halaman"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	IDHakAkses       int32              `json:"id_hak_akses"`
+	NamaHalaman      string             `json:"nama_halaman"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	KodePermission   string             `json:"kode_permission"`
+	Deskripsi        string             `json:"deskripsi"`
+	DomainPermission string             `json:"domain_permission"`
+	AksiPermission   string             `json:"aksi_permission"`
 }
 
 type JenisBarang struct {
@@ -386,18 +390,24 @@ type User struct {
 	IDUser       int32              `json:"id_user"`
 	Username     string             `json:"username"`
 	Password     string             `json:"password"`
-	IsManager    bool               `json:"is_manager"`
 	IDDepartemen pgtype.Int4        `json:"id_departemen"`
 	IDMitra      pgtype.Int4        `json:"id_mitra"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	Status       string             `json:"status"`
-	IDRole       pgtype.Int4        `json:"id_role"`
+	IDRole       int32              `json:"id_role"`
 }
 
 type UserAkse struct {
 	IDUser     int32              `json:"id_user"`
 	IDHakAkses int32              `json:"id_hak_akses"`
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+}
+
+type Warna struct {
+	IDWarna   int32              `json:"id_warna"`
+	NamaWarna string             `json:"nama_warna"`
+	KodeHex   pgtype.Text        `json:"kode_hex"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 type WoShellPlan struct {

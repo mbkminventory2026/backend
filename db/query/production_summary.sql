@@ -62,6 +62,8 @@ SELECT
 FROM WORK_ORDER_SHELL_SIZE woss
 JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = woss.id_wo_shell
 JOIN WORK_ORDER wo ON wo.id_wo = wos.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 LEFT JOIN cutting_agg ca ON ca.id_wo_shell_size = woss.id_wo_shell_size
 LEFT JOIN sewing_agg sa ON sa.id_wo_shell_size = woss.id_wo_shell_size
 LEFT JOIN qc_agg qa ON qa.id_wo_shell_size = woss.id_wo_shell_size
@@ -77,6 +79,9 @@ WHERE (
     sqlc.arg(search_term)::text = '' OR
     wo.model ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
     woss.size ILIKE '%' || sqlc.arg(search_term)::text || '%'
+ ) AND (
+    sqlc.narg(id_mitra)::integer IS NULL OR
+    pc.id_mitra = sqlc.narg(id_mitra)::integer
 )
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'last_updated' AND NOT sqlc.arg(sort_desc)::bool THEN GREATEST(

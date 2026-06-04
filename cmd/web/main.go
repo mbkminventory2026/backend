@@ -92,6 +92,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	roleUseCase, err := usecase.NewRoleUseCase(queries, dbPool)
+	if err != nil {
+		logger.Error("failed to initialize role usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	masterDataUseCase, err := usecase.NewMasterDataUseCase(queries)
 	if err != nil {
 		logger.Error("failed to initialize master data usecase", slog.String("error", err.Error()))
@@ -109,6 +116,13 @@ func main() {
 	workOrderProductionUseCase, err := usecase.NewWorkOrderProductionUseCase(queries, dbPool)
 	if err != nil {
 		logger.Error("failed to initialize work order production usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	timelineProduksiUseCase, err := usecase.NewTimelineProduksiUseCase(queries, dbPool)
+	if err != nil {
+		logger.Error("failed to initialize timeline produksi usecase", slog.String("error", err.Error()))
 		dbPool.Close()
 		os.Exit(1)
 	}
@@ -149,6 +163,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	roleHandler, err := httpdelivery.NewRoleHandler(roleUseCase)
+	if err != nil {
+		logger.Error("failed to initialize role handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	masterDataHandler, err := httpdelivery.NewMasterDataHandler(masterDataUseCase)
 	if err != nil {
 		logger.Error("failed to initialize master data handler", slog.String("error", err.Error()))
@@ -166,6 +187,13 @@ func main() {
 	workOrderProductionHandler, err := httpdelivery.NewWorkOrderProductionHandler(workOrderProductionUseCase)
 	if err != nil {
 		logger.Error("failed to initialize work order production handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	timelineProduksiHandler, err := httpdelivery.NewTimelineProduksiHandler(timelineProduksiUseCase)
+	if err != nil {
+		logger.Error("failed to initialize timeline produksi handler", slog.String("error", err.Error()))
 		dbPool.Close()
 		os.Exit(1)
 	}
@@ -224,9 +252,11 @@ func main() {
 	)
 
 	userHandler.RegisterRoutes(router, authMiddleware)
+	roleHandler.RegisterRoutes(router, authMiddleware)
 	masterDataHandler.RegisterRoutes(router, authMiddleware)
 	transactionDocumentHandler.RegisterRoutes(router, authMiddleware)
 	workOrderProductionHandler.RegisterRoutes(router, authMiddleware)
+	timelineProduksiHandler.RegisterRoutes(router, authMiddleware)
 	warehouseDeliveryHandler.RegisterRoutes(router, authMiddleware)
 
 	dashboardHandler.RegisterRoutes(router, authMiddleware)

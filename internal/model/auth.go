@@ -68,7 +68,9 @@ type LoginServiceUnavailableDoc struct {
 
 // GetMeResponse is the profile payload returned by /api/v1/auth/me.
 type GetMeResponse struct {
-	UserID int32 `json:"user_id" example:"1"`
+	UserID   int32  `json:"user_id" example:"1"`
+	IDRole   int32  `json:"id_role" example:"1"`
+	RoleName string `json:"role_name" example:"OPERATOR"`
 }
 
 // GetMeSuccessDoc is the Swagger schema for successful profile retrieval.

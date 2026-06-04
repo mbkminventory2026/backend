@@ -23,6 +23,7 @@ var (
 	ErrAuthServiceUnavailable = errors.New("authentication service unavailable")
 	ErrAccountPending         = errors.New("akun Anda sedang menunggu persetujuan admin")
 	ErrAccountRejected        = errors.New("akun Anda telah ditolak")
+	ErrRoleNotFound           = errors.New("role not found")
 )
 
 type AuthUseCase struct {
@@ -82,14 +83,9 @@ func (u *AuthUseCase) Login(ctx context.Context, req model.LoginRequest, remoteI
 	}
 
 	// 4. Handle RBAC (Permissions)
-	var permissions []string
-	if user.IsManager {
-		permissions = []string{"ALL_ACCESS"}
-	} else {
-		permissions, err = u.userRepo.GetUserPermissions(ctx, user.IDUser)
-		if err != nil {
-			return nil, fmt.Errorf("%w: get user permissions", ErrAuthServiceUnavailable)
-		}
+	permissions, err := u.userRepo.GetUserPermissions(ctx, user.IDUser)
+	if err != nil {
+		return nil, fmt.Errorf("%w: get user permissions", ErrAuthServiceUnavailable)
 	}
 
 	var idMitra *int32
@@ -102,7 +98,8 @@ func (u *AuthUseCase) Login(ctx context.Context, req model.LoginRequest, remoteI
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &jwt.MapClaims{
 		"user_id":     user.IDUser,
-		"is_manager":  user.IsManager,
+		"id_role":     user.IDRole,
+		"role_name":   user.NamaRole,
 		"permissions": permissions,
 		"id_mitra":    idMitra,
 		"exp":         expirationTime.Unix(),
@@ -185,13 +182,21 @@ func (u *AuthUseCase) RegisterMitra(ctx context.Context, req model.RegisterMitra
 	}
 
 	// 5. Create User tied to Mitra, with status 'pending'
+	clientRole, err := qtx.GetRoleByName(ctx, "CLIENT")
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrRoleNotFound
+		}
+		return fmt.Errorf("%w: failed to get client role", ErrAuthServiceUnavailable)
+	}
+
 	idMitra := pgtype.Int4{Int32: mitra.IDMitra, Valid: true}
 	idDept := pgtype.Int4{Valid: false}
 
 	_, err = qtx.CreateUser(ctx, entity.CreateUserParams{
 		Username:     req.Username,
 		Password:     string(hashedPassword),
-		IsManager:    false,
+		IDRole:       clientRole.IDRole,
 		IDDepartemen: idDept,
 		IDMitra:      idMitra,
 		Status:       "pending",

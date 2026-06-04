@@ -27,13 +27,13 @@ func (h *WarehouseDeliveryHandler) RegisterRoutes(router gin.IRouter, authMiddle
 	v1 := router.Group("/api/v1").Use(authMiddleware)
 	v1.POST("/inventory/receive", RequirePermission(PermissionInventoryReceive), h.ReceiveInventory)
 	v1.POST("/inventory/issue", RequirePermission(PermissionInventoryIssue), h.IssueInventory)
-	v1.GET("/packing-lists", h.ListPackingLists)
-	v1.GET("/packing-lists/:id", h.GetPackingListDetail)
+	v1.GET("/packing-lists", RequirePermission(PermissionPackingListRead), h.ListPackingLists)
+	v1.GET("/packing-lists/:id", RequirePermission(PermissionPackingListRead), h.GetPackingListDetail)
 	v1.POST("/packing-lists", RequirePermission(PermissionPackingListCreate), h.CreatePackingList)
-	v1.GET("/surat-jalan-clients", h.ListSuratJalanClients)
-	v1.GET("/surat-jalan-clients/:id", h.GetSuratJalanClientDetail)
-	v1.GET("/surat-jalan-internals", h.ListSuratJalanInternals)
-	v1.GET("/surat-jalan-internals/:id", h.GetSuratJalanInternalDetail)
+	v1.GET("/surat-jalan-clients", RequirePermission(PermissionSuratJalanClientRead), h.ListSuratJalanClients)
+	v1.GET("/surat-jalan-clients/:id", RequirePermission(PermissionSuratJalanClientRead), h.GetSuratJalanClientDetail)
+	v1.GET("/surat-jalan-internals", RequirePermission(PermissionSuratJalanInternalRead), h.ListSuratJalanInternals)
+	v1.GET("/surat-jalan-internals/:id", RequirePermission(PermissionSuratJalanInternalRead), h.GetSuratJalanInternalDetail)
 	v1.POST("/surat-jalan/:type", RequirePermission(PermissionSuratJalanCreate), h.CreateSuratJalan)
 }
 
@@ -136,9 +136,15 @@ func (h *WarehouseDeliveryHandler) ListPackingLists(c *gin.Context) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
 		return
 	}
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid authentication context", nil))
+		return
+	}
 
 	item, err := h.useCase.ListPackingLists(c.Request.Context(), model.TransactionListFilter{
 		ListQueryFilter: filter,
+		IDMitra:         mitraID,
 	})
 	if err != nil {
 		h.handleError(c, err)
@@ -165,8 +171,13 @@ func (h *WarehouseDeliveryHandler) GetPackingListDetail(c *gin.Context) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid packing list id", nil))
 		return
 	}
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid authentication context", nil))
+		return
+	}
 
-	item, err := h.useCase.GetPackingListDetail(c.Request.Context(), id)
+	item, err := h.useCase.GetPackingListDetail(c.Request.Context(), id, mitraID)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -226,9 +237,15 @@ func (h *WarehouseDeliveryHandler) ListSuratJalanClients(c *gin.Context) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
 		return
 	}
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid authentication context", nil))
+		return
+	}
 
 	item, err := h.useCase.ListSuratJalanClients(c.Request.Context(), model.TransactionListFilter{
 		ListQueryFilter: filter,
+		IDMitra:         mitraID,
 	})
 	if err != nil {
 		h.handleError(c, err)
@@ -255,8 +272,13 @@ func (h *WarehouseDeliveryHandler) GetSuratJalanClientDetail(c *gin.Context) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid surat jalan client id", nil))
 		return
 	}
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid authentication context", nil))
+		return
+	}
 
-	item, err := h.useCase.GetSuratJalanClientDetail(c.Request.Context(), id)
+	item, err := h.useCase.GetSuratJalanClientDetail(c.Request.Context(), id, mitraID)
 	if err != nil {
 		h.handleError(c, err)
 		return

@@ -3,7 +3,7 @@ package model
 type CreateUserRequest struct {
 	Username     string  `json:"username" binding:"required"`
 	Password     string  `json:"password" binding:"required,min=6"`
-	IsManager    bool    `json:"is_manager"`
+	IDRole       int32   `json:"id_role" binding:"required"`
 	IDDepartemen *int32  `json:"id_departemen"`
 	IDMitra      *int32  `json:"id_mitra"`
 	Status       *string `json:"status"` // Opsional, default 'active'
@@ -13,18 +13,25 @@ type CreateUserRequest struct {
 type UpdateUserRequest struct {
 	Username     string  `json:"username" binding:"required"`
 	Password     *string `json:"password" binding:"omitempty,min=6"`
-	IsManager    bool    `json:"is_manager"`
 	IDDepartemen *int32  `json:"id_departemen"`
 	IDMitra      *int32  `json:"id_mitra"`
 	Status       *string `json:"status"`
-	HakAksesIDs  []int32 `json:"hak_akses_ids"`
+}
+
+type AssignUserRoleRequest struct {
+	IDRole int32 `json:"id_role" binding:"required"`
+}
+
+type AssignUserPermissionsRequest struct {
+	HakAksesIDs []int32 `json:"hak_akses_ids"`
 }
 
 type UserResponse struct {
 	IDUser         int32    `json:"id_user"`
 	Username       string   `json:"username"`
-	IsManager      bool     `json:"is_manager"`
 	Status         string   `json:"status"`
+	IDRole         int32    `json:"id_role"`
+	NamaRole       string   `json:"nama_role"`
 	IDDepartemen   *int32   `json:"id_departemen,omitempty"`
 	IDMitra        *int32   `json:"id_mitra,omitempty"`
 	NamaDepartemen string   `json:"nama_departemen"`

@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"permatatex-inventory/internal/entity"
 	"permatatex-inventory/internal/model"
@@ -23,7 +24,8 @@ var (
 	jenisBarangSortColumns = buildSortWhitelist("created_at", "id_jenis_barang", "kode", "nama_jenis_barang")
 	mitraSortColumns       = buildSortWhitelist("created_at", "id_mitra", "nama_perusahaan", "email", "no_telp", "tipe_perusahaan")
 	barangSortColumns      = buildSortWhitelist("created_at", "id_barang", "kode", "nama_barang", "nama_jenis_barang", "nama_perusahaan")
-	hakAksesSortColumns    = buildSortWhitelist("created_at", "id_hak_akses", "nama_halaman")
+	hakAksesSortColumns    = buildSortWhitelist("created_at", "id_hak_akses", "nama_halaman", "kode_permission", "domain_permission", "aksi_permission")
+	warnaSortColumns       = buildSortWhitelist("created_at", "id_warna", "nama_warna")
 )
 
 type MasterDataUseCase struct {
@@ -464,9 +466,13 @@ func (u *MasterDataUseCase) GetHakAksesByID(ctx context.Context, id int32) (mode
 	}
 
 	return model.HakAksesResponse{
-		ID:        item.IDHakAkses,
-		Nama:      item.NamaHalaman,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+		ID:               item.IDHakAkses,
+		KodePermission:   item.KodePermission,
+		Nama:             item.NamaHalaman,
+		Deskripsi:        item.Deskripsi,
+		DomainPermission: item.DomainPermission,
+		AksiPermission:   item.AksiPermission,
+		CreatedAt:        item.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
 
@@ -492,9 +498,13 @@ func (u *MasterDataUseCase) ListHakAkses(ctx context.Context, filter model.ListQ
 	res := make([]model.HakAksesResponse, 0, len(items))
 	for _, i := range items {
 		res = append(res, model.HakAksesResponse{
-			ID:        i.IDHakAkses,
-			Nama:      i.NamaHalaman,
-			CreatedAt: i.CreatedAt.Time.Format(time.RFC3339),
+			ID:               i.IDHakAkses,
+			KodePermission:   i.KodePermission,
+			Nama:             i.NamaHalaman,
+			Deskripsi:        i.Deskripsi,
+			DomainPermission: i.DomainPermission,
+			AksiPermission:   i.AksiPermission,
+			CreatedAt:        i.CreatedAt.Time.Format(time.RFC3339),
 		})
 	}
 
@@ -502,22 +512,36 @@ func (u *MasterDataUseCase) ListHakAkses(ctx context.Context, filter model.ListQ
 }
 
 func (u *MasterDataUseCase) CreateHakAkses(ctx context.Context, req model.CreateHakAksesRequest) (model.HakAksesResponse, error) {
-	item, err := u.repo.CreateHakAkses(ctx, req.NamaHalaman)
+	item, err := u.repo.CreateHakAkses(ctx, entity.CreateHakAksesParams{
+		KodePermission:   req.KodePermission,
+		NamaHalaman:      req.NamaHalaman,
+		Deskripsi:        req.Deskripsi,
+		DomainPermission: req.DomainPermission,
+		AksiPermission:   req.AksiPermission,
+	})
 	if err != nil {
 		return model.HakAksesResponse{}, mapMasterDataConflict(err)
 	}
 
 	return model.HakAksesResponse{
-		ID:        item.IDHakAkses,
-		Nama:      item.NamaHalaman,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+		ID:               item.IDHakAkses,
+		KodePermission:   item.KodePermission,
+		Nama:             item.NamaHalaman,
+		Deskripsi:        item.Deskripsi,
+		DomainPermission: item.DomainPermission,
+		AksiPermission:   item.AksiPermission,
+		CreatedAt:        item.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
 
 func (u *MasterDataUseCase) UpdateHakAkses(ctx context.Context, id int32, req model.UpdateHakAksesRequest) (model.HakAksesResponse, error) {
 	item, err := u.repo.UpdateHakAkses(ctx, entity.UpdateHakAksesParams{
-		IDHakAkses:  id,
-		NamaHalaman: req.NamaHalaman,
+		IDHakAkses:       id,
+		KodePermission:   req.KodePermission,
+		NamaHalaman:      req.NamaHalaman,
+		Deskripsi:        req.Deskripsi,
+		DomainPermission: req.DomainPermission,
+		AksiPermission:   req.AksiPermission,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -527,9 +551,13 @@ func (u *MasterDataUseCase) UpdateHakAkses(ctx context.Context, id int32, req mo
 	}
 
 	return model.HakAksesResponse{
-		ID:        item.IDHakAkses,
-		Nama:      item.NamaHalaman,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+		ID:               item.IDHakAkses,
+		KodePermission:   item.KodePermission,
+		Nama:             item.NamaHalaman,
+		Deskripsi:        item.Deskripsi,
+		DomainPermission: item.DomainPermission,
+		AksiPermission:   item.AksiPermission,
+		CreatedAt:        item.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
 
@@ -664,4 +692,117 @@ func mapMasterDataConflict(err error) error {
 		return ErrMasterDataDuplicateCode
 	}
 	return err
+}
+
+// WARNA
+func (u *MasterDataUseCase) GetWarnaByID(ctx context.Context, id int32) (model.WarnaResponse, error) {
+	item, err := u.repo.GetWarnaByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.WarnaResponse{}, ErrMasterDataNotFound
+		}
+		return model.WarnaResponse{}, err
+	}
+
+	return model.WarnaResponse{
+		ID:        item.IDWarna,
+		NamaWarna: item.NamaWarna,
+		KodeHex:   pgTextToPtrString(item.KodeHex),
+		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+	}, nil
+}
+
+func (u *MasterDataUseCase) ListWarna(ctx context.Context, filter model.ListQueryFilter) ([]model.WarnaResponse, int64, error) {
+	_, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter, "nama_warna", false, warnaSortColumns)
+
+	items, err := u.repo.ListWarna(ctx, entity.ListWarnaParams{
+		SearchTerm: search,
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	total, err := u.repo.CountWarna(ctx, search)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	res := make([]model.WarnaResponse, 0, len(items))
+	for _, i := range items {
+		res = append(res, model.WarnaResponse{
+			ID:        i.IDWarna,
+			NamaWarna: i.NamaWarna,
+			KodeHex:   pgTextToPtrString(i.KodeHex),
+			CreatedAt: i.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+	return res, total, nil
+}
+
+func (u *MasterDataUseCase) CreateWarna(ctx context.Context, req model.CreateWarnaRequest) (model.WarnaResponse, error) {
+	item, err := u.repo.CreateWarna(ctx, entity.CreateWarnaParams{
+		NamaWarna: req.NamaWarna,
+		KodeHex:   ptrStringToPgText(req.KodeHex),
+	})
+	if err != nil {
+		return model.WarnaResponse{}, mapMasterDataConflict(err)
+	}
+
+	return model.WarnaResponse{
+		ID:        item.IDWarna,
+		NamaWarna: item.NamaWarna,
+		KodeHex:   pgTextToPtrString(item.KodeHex),
+		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+	}, nil
+}
+
+func (u *MasterDataUseCase) UpdateWarna(ctx context.Context, id int32, req model.UpdateWarnaRequest) (model.WarnaResponse, error) {
+	item, err := u.repo.UpdateWarna(ctx, entity.UpdateWarnaParams{
+		IDWarna:   id,
+		NamaWarna: req.NamaWarna,
+		KodeHex:   ptrStringToPgText(req.KodeHex),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.WarnaResponse{}, ErrMasterDataNotFound
+		}
+		return model.WarnaResponse{}, mapMasterDataConflict(err)
+	}
+
+	return model.WarnaResponse{
+		ID:        item.IDWarna,
+		NamaWarna: item.NamaWarna,
+		KodeHex:   pgTextToPtrString(item.KodeHex),
+		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+	}, nil
+}
+
+func (u *MasterDataUseCase) DeleteWarna(ctx context.Context, id int32) error {
+	affected, err := u.repo.DeleteWarna(ctx, id)
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return ErrMasterDataNotFound
+	}
+	return nil
+}
+
+func ptrStringToPgText(s *string) pgtype.Text {
+	if s == nil {
+		return pgtype.Text{Valid: false}
+	}
+	return pgtype.Text{String: *s, Valid: true}
+}
+
+func pgTextToPtrString(t pgtype.Text) *string {
+	if !t.Valid {
+		return nil
+	}
+	s := t.String
+	return &s
 }

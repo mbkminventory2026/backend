@@ -23,7 +23,7 @@ var (
 	ErrCannotDeleteSuperAdmin = errors.New("Super Admin cannot be deleted")
 	ErrUsernameAlreadyExists  = errors.New("username already exists")
 
-	userSortColumns = buildSortWhitelist("created_at", "id_user", "username", "status", "is_manager")
+	userSortColumns = buildSortWhitelist("created_at", "id_user", "username", "status", "id_role", "nama_role")
 )
 
 type UserUseCase struct {
@@ -84,7 +84,7 @@ func (u *UserUseCase) Create(ctx context.Context, req model.CreateUserRequest) (
 	user, err := qtx.CreateUser(ctx, entity.CreateUserParams{
 		Username:     req.Username,
 		Password:     string(hashedPassword),
-		IsManager:    req.IsManager,
+		IDRole:       req.IDRole,
 		IDDepartemen: idDept,
 		IDMitra:      idMitra,
 		Status:       status,
@@ -93,7 +93,18 @@ func (u *UserUseCase) Create(ctx context.Context, req model.CreateUserRequest) (
 		if isUniqueViolation(err) {
 			return nil, ErrUsernameAlreadyExists
 		}
+		if isForeignKeyViolation(err) {
+			return nil, ErrUserValidation
+		}
 		return nil, fmt.Errorf("%w: failed to create user", ErrUserServiceUnavailable)
+	}
+
+	role, err := qtx.GetRoleByID(ctx, user.IDRole)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserValidation
+		}
+		return nil, fmt.Errorf("%w: failed to get role", ErrUserServiceUnavailable)
 	}
 
 	// 4. Create User Access (Permissions)
@@ -127,8 +138,9 @@ func (u *UserUseCase) Create(ctx context.Context, req model.CreateUserRequest) (
 	return &model.UserResponse{
 		IDUser:       user.IDUser,
 		Username:     user.Username,
-		IsManager:    user.IsManager,
 		Status:       user.Status,
+		IDRole:       user.IDRole,
+		NamaRole:     role.NamaRole,
 		IDDepartemen: resDept,
 		IDMitra:      resMitra,
 		CreatedAt:    user.CreatedAt.Time.Format(time.RFC3339),
@@ -159,8 +171,9 @@ func (u *UserUseCase) List(ctx context.Context, filter model.ListUsersFilter) ([
 		res := model.UserResponse{
 			IDUser:    item.IDUser,
 			Username:  item.Username,
-			IsManager: item.IsManager,
 			Status:    item.Status,
+			IDRole:    item.IDRole,
+			NamaRole:  item.NamaRole,
 			CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
 		}
 		if item.IDDepartemen.Valid {
@@ -205,8 +218,9 @@ func (u *UserUseCase) GetByID(ctx context.Context, id int32) (*model.UserRespons
 	res := &model.UserResponse{
 		IDUser:      user.IDUser,
 		Username:    user.Username,
-		IsManager:   user.IsManager,
 		Status:      user.Status,
+		IDRole:      user.IDRole,
+		NamaRole:    user.NamaRole,
 		CreatedAt:   user.CreatedAt.Time.Format(time.RFC3339),
 		Permissions: permissions,
 		HakAksesIDs: permissionIDs,
@@ -290,29 +304,33 @@ func (u *UserUseCase) Update(ctx context.Context, id int32, req model.UpdateUser
 		IDUser:       id,
 		Username:     req.Username,
 		Password:     finalPassword,
-		IsManager:    req.IsManager,
+		IDRole:       userForUpdate.IDRole, // Use current role, ignore changes
 		IDDepartemen: idDept,
 		IDMitra:      idMitra,
 		Status:       status,
 	})
 	if err != nil {
+		if isUniqueViolation(err) {
+			return nil, ErrUsernameAlreadyExists
+		}
+		if isForeignKeyViolation(err) {
+			return nil, ErrUserValidation
+		}
 		return nil, err
 	}
 
-	// 6. Sync Permissions (Delete all current and insert new ones)
-	_, err = tx.Exec(ctx, `DELETE FROM USER_AKSES WHERE id_user = $1`, id)
+	role, err := qtx.GetRoleByID(ctx, updatedUser.IDRole)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserValidation
+		}
+		return nil, err
+	}
+
+	// 6. Get Existing Override Permissions
+	permissionIDs, err := qtx.GetUserPermissionIDs(ctx, id)
 	if err != nil {
 		return nil, err
-	}
-
-	for _, pID := range req.HakAksesIDs {
-		err = qtx.CreateUserAkses(ctx, entity.CreateUserAksesParams{
-			IDUser:     id,
-			IDHakAkses: pID,
-		})
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	// 7. Commit Transaction
@@ -335,12 +353,13 @@ func (u *UserUseCase) Update(ctx context.Context, id int32, req model.UpdateUser
 	return &model.UserResponse{
 		IDUser:       updatedUser.IDUser,
 		Username:     updatedUser.Username,
-		IsManager:    updatedUser.IsManager,
 		Status:       updatedUser.Status,
+		IDRole:       updatedUser.IDRole,
+		NamaRole:     role.NamaRole,
 		IDDepartemen: resDept,
 		IDMitra:      resMitra,
 		CreatedAt:    updatedUser.CreatedAt.Time.Format(time.RFC3339),
-		HakAksesIDs:  req.HakAksesIDs,
+		HakAksesIDs:  permissionIDs,
 	}, nil
 }
 
@@ -361,9 +380,76 @@ func (u *UserUseCase) Delete(ctx context.Context, idUser int32) error {
 	return nil
 }
 
+func (u *UserUseCase) AssignRole(ctx context.Context, idUser int32, idRole int32) (*model.UserResponse, error) {
+	_, err := u.repo.UpdateUserRole(ctx, entity.UpdateUserRoleParams{
+		IDUser: idUser,
+		IDRole: idRole,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		if isForeignKeyViolation(err) {
+			return nil, ErrUserValidation
+		}
+		return nil, fmt.Errorf("%w: failed to assign role", ErrUserServiceUnavailable)
+	}
+
+	return u.GetByID(ctx, idUser)
+}
+
+func (u *UserUseCase) ReplacePermissions(ctx context.Context, idUser int32, hakAksesIDs []int32) (*model.UserResponse, error) {
+	_, err := u.repo.GetUserByID(ctx, idUser)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to get user", ErrUserServiceUnavailable)
+	}
+
+	tx, err := u.dbPool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to start transaction", ErrUserServiceUnavailable)
+	}
+	defer func() {
+		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil && !errors.Is(rollbackErr, pgx.ErrTxClosed) {
+			err = rollbackErr
+		}
+	}()
+
+	qtx := entity.New(tx)
+	if _, err := qtx.DeleteUserAksesByUserID(ctx, idUser); err != nil {
+		return nil, fmt.Errorf("%w: failed to clear user permissions", ErrUserServiceUnavailable)
+	}
+
+	for _, hakAksesID := range hakAksesIDs {
+		err = qtx.CreateUserAkses(ctx, entity.CreateUserAksesParams{
+			IDUser:     idUser,
+			IDHakAkses: hakAksesID,
+		})
+		if err != nil {
+			if isForeignKeyViolation(err) {
+				return nil, ErrUserValidation
+			}
+			return nil, fmt.Errorf("%w: failed to assign user permissions", ErrUserServiceUnavailable)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("%w: failed to commit transaction", ErrUserServiceUnavailable)
+	}
+
+	return u.GetByID(ctx, idUser)
+}
+
 func isUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+}
+
+func isForeignKeyViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23503"
 }
 
 func (u *UserUseCase) Approve(ctx context.Context, id int32) (*model.UserResponse, error) {

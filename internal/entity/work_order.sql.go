@@ -286,3 +286,16 @@ func (q *Queries) CreateWorkOrderTrim(ctx context.Context, arg CreateWorkOrderTr
 	)
 	return i, err
 }
+
+const workOrderShellTotalQty = `-- name: WorkOrderShellTotalQty :one
+SELECT COALESCE(SUM(qty), 0)::bigint AS total_qty
+FROM WORK_ORDER_SHELL_SIZE
+WHERE id_wo_shell = $1
+`
+
+func (q *Queries) WorkOrderShellTotalQty(ctx context.Context, idWoShell int32) (int64, error) {
+	row := q.db.QueryRow(ctx, workOrderShellTotalQty, idWoShell)
+	var total_qty int64
+	err := row.Scan(&total_qty)
+	return total_qty, err
+}

@@ -2,6 +2,7 @@ package httpdelivery
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -26,46 +27,53 @@ func (h *MasterDataHandler) RegisterRoutes(router gin.IRouter, authMiddleware gi
 	master := router.Group("/api/v1/master").Use(authMiddleware)
 
 	// Departemen
-	master.GET("/departemen", RequirePermission(PermissionMasterRead), h.ListDepartemen)
-	master.GET("/departemen/:id", RequirePermission(PermissionMasterRead), h.GetDepartemenByID)
-	master.POST("/departemen", RequirePermission(PermissionMasterCreate), h.CreateDepartemen)
-	master.PUT("/departemen/:id", RequirePermission(PermissionMasterUpdate), h.UpdateDepartemen)
-	master.DELETE("/departemen/:id", RequirePermission(PermissionMasterDelete), h.DeleteDepartemen)
+	master.GET("/departemen", RequirePermission(PermissionMasterDepartemenRead), h.ListDepartemen)
+	master.GET("/departemen/:id", RequirePermission(PermissionMasterDepartemenRead), h.GetDepartemenByID)
+	master.POST("/departemen", RequirePermission(PermissionMasterDepartemenCreate), h.CreateDepartemen)
+	master.PUT("/departemen/:id", RequirePermission(PermissionMasterDepartemenUpdate), h.UpdateDepartemen)
+	master.DELETE("/departemen/:id", RequirePermission(PermissionMasterDepartemenDelete), h.DeleteDepartemen)
 
 	// Jenis Barang
-	master.GET("/jenis-barang", RequirePermission(PermissionMasterRead), h.ListJenisBarang)
-	master.GET("/jenis-barang/:id", RequirePermission(PermissionMasterRead), h.GetJenisBarangByID)
-	master.POST("/jenis-barang", RequirePermission(PermissionMasterCreate), h.CreateJenisBarang)
-	master.PUT("/jenis-barang/:id", RequirePermission(PermissionMasterUpdate), h.UpdateJenisBarang)
-	master.DELETE("/jenis-barang/:id", RequirePermission(PermissionMasterDelete), h.DeleteJenisBarang)
+	master.GET("/jenis-barang", RequirePermission(PermissionMasterJenisBarangRead), h.ListJenisBarang)
+	master.GET("/jenis-barang/:id", RequirePermission(PermissionMasterJenisBarangRead), h.GetJenisBarangByID)
+	master.POST("/jenis-barang", RequirePermission(PermissionMasterJenisBarangCreate), h.CreateJenisBarang)
+	master.PUT("/jenis-barang/:id", RequirePermission(PermissionMasterJenisBarangUpdate), h.UpdateJenisBarang)
+	master.DELETE("/jenis-barang/:id", RequirePermission(PermissionMasterJenisBarangDelete), h.DeleteJenisBarang)
 
 	// Mitra
-	master.GET("/mitra", RequirePermission(PermissionMasterRead), h.ListMitra)
-	master.GET("/mitra/:id", RequirePermission(PermissionMasterRead), h.GetMitraByID)
-	master.POST("/mitra", RequirePermission(PermissionMasterCreate), h.CreateMitra)
-	master.PUT("/mitra/:id", RequirePermission(PermissionMasterUpdate), h.UpdateMitra)
-	master.DELETE("/mitra/:id", RequirePermission(PermissionMasterDelete), h.DeleteMitra)
+	master.GET("/mitra", RequirePermission(PermissionMasterMitraRead), h.ListMitra)
+	master.GET("/mitra/:id", RequirePermission(PermissionMasterMitraRead), h.GetMitraByID)
+	master.POST("/mitra", RequirePermission(PermissionMasterMitraCreate), h.CreateMitra)
+	master.PUT("/mitra/:id", RequirePermission(PermissionMasterMitraUpdate), h.UpdateMitra)
+	master.DELETE("/mitra/:id", RequirePermission(PermissionMasterMitraDelete), h.DeleteMitra)
 
 	// Barang
-	master.GET("/barang", RequirePermission(PermissionMasterRead), h.ListBarang)
-	master.GET("/barang/:id", RequirePermission(PermissionMasterRead), h.GetBarangByID)
-	master.POST("/barang", RequirePermission(PermissionMasterCreate), h.CreateBarang)
-	master.PUT("/barang/:id", RequirePermission(PermissionMasterUpdate), h.UpdateBarang)
-	master.DELETE("/barang/:id", RequirePermission(PermissionMasterDelete), h.DeleteBarang)
+	master.GET("/barang", RequirePermission(PermissionMasterBarangRead), h.ListBarang)
+	master.GET("/barang/:id", RequirePermission(PermissionMasterBarangRead), h.GetBarangByID)
+	master.POST("/barang", RequirePermission(PermissionMasterBarangCreate), h.CreateBarang)
+	master.PUT("/barang/:id", RequirePermission(PermissionMasterBarangUpdate), h.UpdateBarang)
+	master.DELETE("/barang/:id", RequirePermission(PermissionMasterBarangDelete), h.DeleteBarang)
+
+	// Warna
+	master.GET("/warna", RequirePermission(PermissionMasterWarnaRead), h.ListWarna)
+	master.GET("/warna/:id", RequirePermission(PermissionMasterWarnaRead), h.GetWarnaByID)
+	master.POST("/warna", RequirePermission(PermissionMasterWarnaCreate), h.CreateWarna)
+	master.PUT("/warna/:id", RequirePermission(PermissionMasterWarnaUpdate), h.UpdateWarna)
+	master.DELETE("/warna/:id", RequirePermission(PermissionMasterWarnaDelete), h.DeleteWarna)
 
 	// Permissions
-	master.GET("/permissions", RequirePermission(PermissionMasterRead), h.ListHakAkses)
-	master.GET("/permissions/:id", RequirePermission(PermissionMasterRead), h.GetHakAksesByID)
-	master.POST("/permissions", RequirePermission(PermissionMasterCreate), h.CreateHakAkses)
-	master.PUT("/permissions/:id", RequirePermission(PermissionMasterUpdate), h.UpdateHakAkses)
-	master.DELETE("/permissions/:id", RequirePermission(PermissionMasterDelete), h.DeleteHakAkses)
+	master.GET("/permissions", RequirePermission(PermissionPermissionRead), h.ListHakAkses)
+	master.GET("/permissions/:id", RequirePermission(PermissionPermissionRead), h.GetHakAksesByID)
+	master.POST("/permissions", RequirePermission(PermissionPermissionCreate), h.CreateHakAkses)
+	master.PUT("/permissions/:id", RequirePermission(PermissionPermissionUpdate), h.UpdateHakAkses)
+	master.DELETE("/permissions/:id", RequirePermission(PermissionPermissionDelete), h.DeleteHakAkses)
 
 	// Company
-	master.GET("/company", RequirePermission(PermissionMasterRead), h.GetCompany)
-	master.GET("/company/:id", RequirePermission(PermissionMasterRead), h.GetCompanyByID)
-	master.POST("/company", RequirePermission(PermissionMasterCreate), h.CreateCompany)
-	master.PUT("/company/:id", RequirePermission(PermissionMasterUpdate), h.UpdateCompany)
-	master.DELETE("/company/:id", RequirePermission(PermissionMasterDelete), h.DeleteCompany)
+	master.GET("/company", RequirePermission(PermissionMasterCompanyRead), h.GetCompany)
+	master.GET("/company/:id", RequirePermission(PermissionMasterCompanyRead), h.GetCompanyByID)
+	master.POST("/company", RequirePermission(PermissionMasterCompanyCreate), h.CreateCompany)
+	master.PUT("/company/:id", RequirePermission(PermissionMasterCompanyUpdate), h.UpdateCompany)
+	master.DELETE("/company/:id", RequirePermission(PermissionMasterCompanyDelete), h.DeleteCompany)
 }
 
 // DEPARTEMEN
@@ -799,6 +807,130 @@ func (h *MasterDataHandler) DeleteCompany(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusOK, "company data deleted", nil)
+}
+
+// GetWarnaByID godoc
+// @Summary      Get Color Detail
+// @Tags         Master Data
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Color ID"
+// @Success      200  {object}  model.WarnaSuccessDoc
+// @Router       /api/v1/master/warna/{id} [get]
+func (h *MasterDataHandler) GetWarnaByID(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
+		return
+	}
+
+	item, err := h.useCase.GetWarnaByID(c.Request.Context(), id)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "warna retrieved", item)
+}
+
+// ListWarna godoc
+// @Summary      List Colors
+// @Tags         Master Data
+// @Produce      json
+// @Security     BearerAuth
+// @Param        limit   query     int  false  "Limit (default 20)"
+// @Param        offset  query     int  false  "Offset (default 0)"
+// @Param        search  query     string false "Search by name"
+// @Success      200     {object}  model.ListWarnaSuccessDoc
+// @Router       /api/v1/master/warna [get]
+func (h *MasterDataHandler) ListWarna(c *gin.Context) {
+	filter, err := parseListQuery(c, 20)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
+		return
+	}
+
+	items, total, err := h.useCase.ListWarna(c.Request.Context(), filter)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.Header("X-Total-Count", fmt.Sprintf("%d", total))
+	response.Success(c, http.StatusOK, "warna retrieved", items)
+}
+
+// CreateWarna godoc
+// @Summary      Create Color
+// @Tags         Master Data
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        payload  body      model.CreateWarnaRequest  true  "Color payload"
+// @Success      201      {object}  model.WarnaSuccessDoc
+// @Router       /api/v1/master/warna [post]
+func (h *MasterDataHandler) CreateWarna(c *gin.Context) {
+	var req model.CreateWarnaRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+
+	item, err := h.useCase.CreateWarna(c.Request.Context(), req)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusCreated, "warna created", item)
+}
+
+// UpdateWarna godoc
+// @Summary      Update Color
+// @Tags         Master Data
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id       path      int                       true  "Color ID"
+// @Param        payload  body      model.UpdateWarnaRequest  true  "Color payload"
+// @Success      200      {object}  model.WarnaSuccessDoc
+// @Router       /api/v1/master/warna/{id} [put]
+func (h *MasterDataHandler) UpdateWarna(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
+		return
+	}
+
+	var req model.UpdateWarnaRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+
+	item, err := h.useCase.UpdateWarna(c.Request.Context(), id, req)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "warna updated", item)
+}
+
+// DeleteWarna godoc
+// @Summary      Delete Color
+// @Tags         Master Data
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Color ID"
+// @Success      200  {object}  response.BaseResponse
+// @Router       /api/v1/master/warna/{id} [delete]
+func (h *MasterDataHandler) DeleteWarna(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
+		return
+	}
+
+	if err := h.useCase.DeleteWarna(c.Request.Context(), id); err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "warna deleted", nil)
 }
 
 func (h *MasterDataHandler) handleError(c *gin.Context, err error) {

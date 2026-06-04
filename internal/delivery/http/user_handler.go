@@ -32,6 +32,8 @@ func (h *UserHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.Hand
 	group.GET("", RequirePermission(PermissionUserRead), h.List)
 	group.GET("/:id", RequirePermission(PermissionUserRead), h.GetByID)
 	group.PUT("/:id", RequirePermission(PermissionUserUpdate), h.Update)
+	group.PUT("/:id/role", RequirePermission(PermissionUserRoleAssign), h.AssignRole)
+	group.PUT("/:id/permissions", RequirePermission(PermissionUserUpdate), h.AssignPermissions)
 	group.PUT("/:id/approve", RequirePermission(PermissionUserApprove), h.Approve)
 	group.PUT("/:id/reject", RequirePermission(PermissionUserApprove), h.Reject)
 	group.DELETE("/:id", RequirePermission(PermissionUserDelete), h.Delete)
@@ -155,6 +157,78 @@ func (h *UserHandler) Update(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusOK, "user updated", result)
+}
+
+// AssignRole godoc
+// @Summary      Assign Role to User
+// @Description  Updates only the user's primary role assignment.
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id       path      int                       true  "User ID"
+// @Param        payload  body      model.AssignUserRoleRequest true  "Assign role payload"
+// @Success      200      {object}  model.UserSuccessDoc
+// @Failure      400      {object}  model.LoginBadRequestDoc
+// @Failure      401      {object}  model.GetMeUnauthorizedDoc
+// @Failure      404      {object}  model.LoginBadRequestDoc
+// @Failure      503      {object}  model.LoginServiceUnavailableDoc
+// @Router       /api/v1/users/{id}/role [put]
+func (h *UserHandler) AssignRole(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid user id", nil))
+		return
+	}
+
+	var req model.AssignUserRoleRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+
+	result, err := h.useCase.AssignRole(c.Request.Context(), id, req.IDRole)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "user role assigned", result)
+}
+
+// AssignPermissions godoc
+// @Summary      Replace User Permission Overrides
+// @Description  Replaces additive USER_AKSES overrides for a user without changing the primary role.
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id       path      int                              true  "User ID"
+// @Param        payload  body      model.AssignUserPermissionsRequest true  "Assign permissions payload"
+// @Success      200      {object}  model.UserSuccessDoc
+// @Failure      400      {object}  model.LoginBadRequestDoc
+// @Failure      401      {object}  model.GetMeUnauthorizedDoc
+// @Failure      404      {object}  model.LoginBadRequestDoc
+// @Failure      503      {object}  model.LoginServiceUnavailableDoc
+// @Router       /api/v1/users/{id}/permissions [put]
+func (h *UserHandler) AssignPermissions(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid user id", nil))
+		return
+	}
+
+	var req model.AssignUserPermissionsRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+
+	result, err := h.useCase.ReplacePermissions(c.Request.Context(), id, req.HakAksesIDs)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "user permissions updated", result)
 }
 
 // Delete godoc

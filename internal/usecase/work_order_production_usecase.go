@@ -211,7 +211,10 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, req mo
 }
 
 func (u *WorkOrderProductionUseCase) CloseWorkOrder(ctx context.Context, id int32, closerUserID int32) (*model.WorkOrderStatusResponse, error) {
-	current, err := u.repo.GetWorkOrderDetail(ctx, id)
+	current, err := u.repo.GetWorkOrderDetail(ctx, entity.GetWorkOrderDetailParams{
+		IDWo:    id,
+		IDMitra: nullableInt32Param(nil),
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrWorkOrderNotFound
@@ -339,6 +342,7 @@ func (u *WorkOrderProductionUseCase) ListWorkOrders(ctx context.Context, filter 
 	page, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "id_wo", true, workOrderSortColumns)
 	rows, err := u.repo.ListWorkOrders(ctx, entity.ListWorkOrdersParams{
 		SearchTerm: search,
+		IDMitra:    nullableInt32Param(filter.IDMitra),
 		SortBy:     sortBy,
 		SortDesc:   sortDesc,
 		PageLimit:  limit,
@@ -384,6 +388,7 @@ func (u *WorkOrderProductionUseCase) ListProductionSummary(ctx context.Context, 
 	rows, err := u.repo.ListProductionSummary(ctx, entity.ListProductionSummaryParams{
 		IDWo:          filter.IDWO,
 		IDWoShellSize: filter.IDWOShellSize,
+		IDMitra:       nullableInt32Param(filter.IDMitra),
 		SearchTerm:    search,
 		SortBy:        sortBy,
 		SortDesc:      sortDesc,
@@ -421,8 +426,11 @@ func (u *WorkOrderProductionUseCase) ListProductionSummary(ctx context.Context, 
 	}, nil
 }
 
-func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id int32) (*model.WorkOrderDetailResponse, error) {
-	header, err := u.repo.GetWorkOrderDetail(ctx, id)
+func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id int32, idMitra *int32) (*model.WorkOrderDetailResponse, error) {
+	header, err := u.repo.GetWorkOrderDetail(ctx, entity.GetWorkOrderDetailParams{
+		IDWo:    id,
+		IDMitra: nullableInt32Param(idMitra),
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrWorkOrderNotFound
@@ -556,4 +564,16 @@ func deriveProductionStatus(targetQty int32, cutting int32, sewing int32, qcPass
 	default:
 		return "Not Started"
 	}
+}
+
+func (u *WorkOrderProductionUseCase) GetWorkOrderShellTotalQty(ctx context.Context, idWoShell int32) (*model.WorkOrderShellTotalQtyResponse, error) {
+	totalQty, err := u.repo.WorkOrderShellTotalQty(ctx, idWoShell)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to get work order shell total qty", ErrWorkOrderServiceUnavailable)
+	}
+
+	return &model.WorkOrderShellTotalQtyResponse{
+		IDWoShell: idWoShell,
+		TotalQty:  totalQty,
+	}, nil
 }

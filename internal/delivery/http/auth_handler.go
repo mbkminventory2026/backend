@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 
 	turnstilegateway "permatatex-inventory/internal/gateway/turnstile"
 	"permatatex-inventory/internal/model"
@@ -161,8 +162,29 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 		return
 	}
 
+	payload, exists := c.Get(authorizationPayloadKey)
+	if !exists {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
+	claims, ok := payload.(jwt.MapClaims)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid token payload", nil))
+		return
+	}
+
+	roleIDFloat, roleIDOK := claims["id_role"].(float64)
+	roleName, roleNameOK := claims["role_name"].(string)
+	if !roleIDOK || !roleNameOK {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid token payload", nil))
+		return
+	}
+
 	response.Success(c, http.StatusOK, "profile retrieved", gin.H{
-		"user_id": userID,
+		"user_id":   userID,
+		"id_role":   int32(roleIDFloat),
+		"role_name": roleName,
 	})
 }
 

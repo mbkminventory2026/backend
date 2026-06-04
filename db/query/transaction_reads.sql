@@ -23,6 +23,9 @@ WHERE (
     wo.model ILIKE '%' || sqlc.arg(search_term) || '%' OR
     pc.po_number ILIKE '%' || sqlc.arg(search_term) || '%' OR
     pci.style ILIKE '%' || sqlc.arg(search_term) || '%'
+ ) AND (
+    sqlc.narg(id_mitra)::integer IS NULL OR
+    pc.id_mitra = sqlc.narg(id_mitra)::integer
 )
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN wo.created_at END ASC,
@@ -63,6 +66,10 @@ FROM WORK_ORDER wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE wo.id_wo = sqlc.arg(id_wo)
+AND (
+    sqlc.narg(id_mitra)::integer IS NULL OR
+    pc.id_mitra = sqlc.narg(id_mitra)::integer
+)
 LIMIT 1;
 
 -- name: ListWorkOrderShellsByWorkOrderID :many
@@ -383,10 +390,15 @@ SELECT
     COUNT(*) OVER() AS total_count
 FROM PACKING_LIST pl
 JOIN WORK_ORDER wo ON wo.id_wo = pl.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE (
     sqlc.arg(search_term) = '' OR
     wo.buyer ILIKE '%' || sqlc.arg(search_term) || '%' OR
     wo.model ILIKE '%' || sqlc.arg(search_term) || '%'
+ ) AND (
+    sqlc.narg(id_mitra)::integer IS NULL OR
+    pc.id_mitra = sqlc.narg(id_mitra)::integer
 )
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN pl.created_at END ASC,
@@ -416,7 +428,13 @@ SELECT
     wo.model
 FROM PACKING_LIST pl
 JOIN WORK_ORDER wo ON wo.id_wo = pl.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE pl.id_packing_list = sqlc.arg(id_packing_list)
+AND (
+    sqlc.narg(id_mitra)::integer IS NULL OR
+    pc.id_mitra = sqlc.narg(id_mitra)::integer
+)
 LIMIT 1;
 
 -- name: ListPackingListItemsByPackingListID :many
@@ -458,10 +476,16 @@ SELECT
     COUNT(*) OVER() AS total_count
 FROM SURAT_JALAN_CLIENT sjc
 JOIN MATERIAL_LIST ml ON ml.id_material_list = sjc.id_material_list
+JOIN WORK_ORDER wo ON wo.id_wo = ml.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE (
     sqlc.arg(search_term) = '' OR
     sjc.keterangan ILIKE '%' || sqlc.arg(search_term) || '%' OR
     ml.description ILIKE '%' || sqlc.arg(search_term) || '%'
+ ) AND (
+    sqlc.narg(id_mitra)::integer IS NULL OR
+    pc.id_mitra = sqlc.narg(id_mitra)::integer
 )
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN sjc.created_at END ASC,
@@ -493,7 +517,14 @@ SELECT
     ml.id_wo
 FROM SURAT_JALAN_CLIENT sjc
 JOIN MATERIAL_LIST ml ON ml.id_material_list = sjc.id_material_list
+JOIN WORK_ORDER wo ON wo.id_wo = ml.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE sjc.id_surat_jalan_client = sqlc.arg(id_surat_jalan_client)
+AND (
+    sqlc.narg(id_mitra)::integer IS NULL OR
+    pc.id_mitra = sqlc.narg(id_mitra)::integer
+)
 LIMIT 1;
 
 -- name: ListSuratJalanInternals :many

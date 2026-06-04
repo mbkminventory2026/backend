@@ -253,6 +253,7 @@ func (u *WarehouseDeliveryUseCase) ListPackingLists(ctx context.Context, filter 
 	page, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "id_packing_list", true, packingListSortColumns)
 	rows, err := u.repo.ListPackingLists(ctx, entity.ListPackingListsParams{
 		SearchTerm: search,
+		IDMitra:    nullableInt32Param(filter.IDMitra),
 		SortBy:     sortBy,
 		SortDesc:   sortDesc,
 		PageLimit:  limit,
@@ -290,8 +291,11 @@ func (u *WarehouseDeliveryUseCase) ListPackingLists(ctx context.Context, filter 
 	}, nil
 }
 
-func (u *WarehouseDeliveryUseCase) GetPackingListDetail(ctx context.Context, id int32) (*model.PackingListDetailResponse, error) {
-	header, err := u.repo.GetPackingListDetail(ctx, id)
+func (u *WarehouseDeliveryUseCase) GetPackingListDetail(ctx context.Context, id int32, idMitra *int32) (*model.PackingListDetailResponse, error) {
+	header, err := u.repo.GetPackingListDetail(ctx, entity.GetPackingListDetailParams{
+		IDPackingList: id,
+		IDMitra:       nullableInt32Param(idMitra),
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrWarehouseNotFound
@@ -355,6 +359,7 @@ func (u *WarehouseDeliveryUseCase) ListSuratJalanClients(ctx context.Context, fi
 	page, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "id_surat_jalan_client", true, suratJalanClientSortColumns)
 	rows, err := u.repo.ListSuratJalanClients(ctx, entity.ListSuratJalanClientsParams{
 		SearchTerm: search,
+		IDMitra:    nullableInt32Param(filter.IDMitra),
 		SortBy:     sortBy,
 		SortDesc:   sortDesc,
 		PageLimit:  limit,
@@ -386,8 +391,11 @@ func (u *WarehouseDeliveryUseCase) ListSuratJalanClients(ctx context.Context, fi
 	}, nil
 }
 
-func (u *WarehouseDeliveryUseCase) GetSuratJalanClientDetail(ctx context.Context, id int32) (*model.SuratJalanClientDetailResponse, error) {
-	row, err := u.repo.GetSuratJalanClientDetail(ctx, id)
+func (u *WarehouseDeliveryUseCase) GetSuratJalanClientDetail(ctx context.Context, id int32, idMitra *int32) (*model.SuratJalanClientDetailResponse, error) {
+	row, err := u.repo.GetSuratJalanClientDetail(ctx, entity.GetSuratJalanClientDetailParams{
+		IDSuratJalanClient: id,
+		IDMitra:            nullableInt32Param(idMitra),
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrWarehouseNotFound

@@ -14,7 +14,10 @@ SELECT COUNT(*)
 FROM HAK_AKSES
 WHERE (
     $1::text = '' OR
-    nama_halaman ILIKE '%' || $1::text || '%'
+    nama_halaman ILIKE '%' || $1::text || '%' OR
+    kode_permission ILIKE '%' || $1::text || '%' OR
+    domain_permission ILIKE '%' || $1::text || '%' OR
+    aksi_permission ILIKE '%' || $1::text || '%'
 )
 `
 
@@ -26,15 +29,37 @@ func (q *Queries) CountHakAkses(ctx context.Context, searchTerm string) (int64, 
 }
 
 const createHakAkses = `-- name: CreateHakAkses :one
-INSERT INTO HAK_AKSES (nama_halaman)
-VALUES ($1)
-RETURNING id_hak_akses, nama_halaman, created_at
+INSERT INTO HAK_AKSES (kode_permission, nama_halaman, deskripsi, domain_permission, aksi_permission)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id_hak_akses, nama_halaman, created_at, kode_permission, deskripsi, domain_permission, aksi_permission
 `
 
-func (q *Queries) CreateHakAkses(ctx context.Context, namaHalaman string) (HakAkse, error) {
-	row := q.db.QueryRow(ctx, createHakAkses, namaHalaman)
+type CreateHakAksesParams struct {
+	KodePermission   string `json:"kode_permission"`
+	NamaHalaman      string `json:"nama_halaman"`
+	Deskripsi        string `json:"deskripsi"`
+	DomainPermission string `json:"domain_permission"`
+	AksiPermission   string `json:"aksi_permission"`
+}
+
+func (q *Queries) CreateHakAkses(ctx context.Context, arg CreateHakAksesParams) (HakAkse, error) {
+	row := q.db.QueryRow(ctx, createHakAkses,
+		arg.KodePermission,
+		arg.NamaHalaman,
+		arg.Deskripsi,
+		arg.DomainPermission,
+		arg.AksiPermission,
+	)
 	var i HakAkse
-	err := row.Scan(&i.IDHakAkses, &i.NamaHalaman, &i.CreatedAt)
+	err := row.Scan(
+		&i.IDHakAkses,
+		&i.NamaHalaman,
+		&i.CreatedAt,
+		&i.KodePermission,
+		&i.Deskripsi,
+		&i.DomainPermission,
+		&i.AksiPermission,
+	)
 	return i, err
 }
 
@@ -52,32 +77,49 @@ func (q *Queries) DeleteHakAkses(ctx context.Context, idHakAkses int32) (int64, 
 }
 
 const getHakAksesByID = `-- name: GetHakAksesByID :one
-SELECT id_hak_akses, nama_halaman, created_at FROM HAK_AKSES
+SELECT id_hak_akses, nama_halaman, created_at, kode_permission, deskripsi, domain_permission, aksi_permission FROM HAK_AKSES
 WHERE id_hak_akses = $1 LIMIT 1
 `
 
 func (q *Queries) GetHakAksesByID(ctx context.Context, idHakAkses int32) (HakAkse, error) {
 	row := q.db.QueryRow(ctx, getHakAksesByID, idHakAkses)
 	var i HakAkse
-	err := row.Scan(&i.IDHakAkses, &i.NamaHalaman, &i.CreatedAt)
+	err := row.Scan(
+		&i.IDHakAkses,
+		&i.NamaHalaman,
+		&i.CreatedAt,
+		&i.KodePermission,
+		&i.Deskripsi,
+		&i.DomainPermission,
+		&i.AksiPermission,
+	)
 	return i, err
 }
 
 const listHakAkses = `-- name: ListHakAkses :many
-SELECT id_hak_akses, nama_halaman, created_at
+SELECT id_hak_akses, nama_halaman, created_at, kode_permission, deskripsi, domain_permission, aksi_permission
 FROM HAK_AKSES
 WHERE (
     $1::text = '' OR
-    nama_halaman ILIKE '%' || $1::text || '%'
+    nama_halaman ILIKE '%' || $1::text || '%' OR
+    kode_permission ILIKE '%' || $1::text || '%' OR
+    domain_permission ILIKE '%' || $1::text || '%' OR
+    aksi_permission ILIKE '%' || $1::text || '%'
 )
 ORDER BY
     CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN created_at END ASC,
     CASE WHEN $2::text = 'created_at' AND $3::bool THEN created_at END DESC,
     CASE WHEN $2::text = 'id_hak_akses' AND NOT $3::bool THEN id_hak_akses END ASC,
     CASE WHEN $2::text = 'id_hak_akses' AND $3::bool THEN id_hak_akses END DESC,
+    CASE WHEN $2::text = 'kode_permission' AND NOT $3::bool THEN kode_permission END ASC,
+    CASE WHEN $2::text = 'kode_permission' AND $3::bool THEN kode_permission END DESC,
     CASE WHEN $2::text = 'nama_halaman' AND NOT $3::bool THEN nama_halaman END ASC,
     CASE WHEN $2::text = 'nama_halaman' AND $3::bool THEN nama_halaman END DESC,
-    nama_halaman ASC,
+    CASE WHEN $2::text = 'domain_permission' AND NOT $3::bool THEN domain_permission END ASC,
+    CASE WHEN $2::text = 'domain_permission' AND $3::bool THEN domain_permission END DESC,
+    CASE WHEN $2::text = 'aksi_permission' AND NOT $3::bool THEN aksi_permission END ASC,
+    CASE WHEN $2::text = 'aksi_permission' AND $3::bool THEN aksi_permission END DESC,
+    kode_permission ASC,
     id_hak_akses ASC
 LIMIT $5 OFFSET $4
 `
@@ -105,7 +147,15 @@ func (q *Queries) ListHakAkses(ctx context.Context, arg ListHakAksesParams) ([]H
 	var items []HakAkse
 	for rows.Next() {
 		var i HakAkse
-		if err := rows.Scan(&i.IDHakAkses, &i.NamaHalaman, &i.CreatedAt); err != nil {
+		if err := rows.Scan(
+			&i.IDHakAkses,
+			&i.NamaHalaman,
+			&i.CreatedAt,
+			&i.KodePermission,
+			&i.Deskripsi,
+			&i.DomainPermission,
+			&i.AksiPermission,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -118,19 +168,42 @@ func (q *Queries) ListHakAkses(ctx context.Context, arg ListHakAksesParams) ([]H
 
 const updateHakAkses = `-- name: UpdateHakAkses :one
 UPDATE HAK_AKSES
-SET nama_halaman = $2
+SET kode_permission = $2,
+    nama_halaman = $3,
+    deskripsi = $4,
+    domain_permission = $5,
+    aksi_permission = $6
 WHERE id_hak_akses = $1
-RETURNING id_hak_akses, nama_halaman, created_at
+RETURNING id_hak_akses, nama_halaman, created_at, kode_permission, deskripsi, domain_permission, aksi_permission
 `
 
 type UpdateHakAksesParams struct {
-	IDHakAkses  int32  `json:"id_hak_akses"`
-	NamaHalaman string `json:"nama_halaman"`
+	IDHakAkses       int32  `json:"id_hak_akses"`
+	KodePermission   string `json:"kode_permission"`
+	NamaHalaman      string `json:"nama_halaman"`
+	Deskripsi        string `json:"deskripsi"`
+	DomainPermission string `json:"domain_permission"`
+	AksiPermission   string `json:"aksi_permission"`
 }
 
 func (q *Queries) UpdateHakAkses(ctx context.Context, arg UpdateHakAksesParams) (HakAkse, error) {
-	row := q.db.QueryRow(ctx, updateHakAkses, arg.IDHakAkses, arg.NamaHalaman)
+	row := q.db.QueryRow(ctx, updateHakAkses,
+		arg.IDHakAkses,
+		arg.KodePermission,
+		arg.NamaHalaman,
+		arg.Deskripsi,
+		arg.DomainPermission,
+		arg.AksiPermission,
+	)
 	var i HakAkse
-	err := row.Scan(&i.IDHakAkses, &i.NamaHalaman, &i.CreatedAt)
+	err := row.Scan(
+		&i.IDHakAkses,
+		&i.NamaHalaman,
+		&i.CreatedAt,
+		&i.KodePermission,
+		&i.Deskripsi,
+		&i.DomainPermission,
+		&i.AksiPermission,
+	)
 	return i, err
 }

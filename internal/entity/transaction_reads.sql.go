@@ -177,9 +177,20 @@ SELECT
     wo.model
 FROM PACKING_LIST pl
 JOIN WORK_ORDER wo ON wo.id_wo = pl.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE pl.id_packing_list = $1
+AND (
+    $2::integer IS NULL OR
+    pc.id_mitra = $2::integer
+)
 LIMIT 1
 `
+
+type GetPackingListDetailParams struct {
+	IDPackingList int32       `json:"id_packing_list"`
+	IDMitra       pgtype.Int4 `json:"id_mitra"`
+}
 
 type GetPackingListDetailRow struct {
 	IDPackingList        int32              `json:"id_packing_list"`
@@ -192,8 +203,8 @@ type GetPackingListDetailRow struct {
 	Model                string             `json:"model"`
 }
 
-func (q *Queries) GetPackingListDetail(ctx context.Context, idPackingList int32) (GetPackingListDetailRow, error) {
-	row := q.db.QueryRow(ctx, getPackingListDetail, idPackingList)
+func (q *Queries) GetPackingListDetail(ctx context.Context, arg GetPackingListDetailParams) (GetPackingListDetailRow, error) {
+	row := q.db.QueryRow(ctx, getPackingListDetail, arg.IDPackingList, arg.IDMitra)
 	var i GetPackingListDetailRow
 	err := row.Scan(
 		&i.IDPackingList,
@@ -220,9 +231,21 @@ SELECT
     ml.id_wo
 FROM SURAT_JALAN_CLIENT sjc
 JOIN MATERIAL_LIST ml ON ml.id_material_list = sjc.id_material_list
+JOIN WORK_ORDER wo ON wo.id_wo = ml.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE sjc.id_surat_jalan_client = $1
+AND (
+    $2::integer IS NULL OR
+    pc.id_mitra = $2::integer
+)
 LIMIT 1
 `
+
+type GetSuratJalanClientDetailParams struct {
+	IDSuratJalanClient int32       `json:"id_surat_jalan_client"`
+	IDMitra            pgtype.Int4 `json:"id_mitra"`
+}
 
 type GetSuratJalanClientDetailRow struct {
 	IDSuratJalanClient  int32              `json:"id_surat_jalan_client"`
@@ -235,8 +258,8 @@ type GetSuratJalanClientDetailRow struct {
 	IDWo                int32              `json:"id_wo"`
 }
 
-func (q *Queries) GetSuratJalanClientDetail(ctx context.Context, idSuratJalanClient int32) (GetSuratJalanClientDetailRow, error) {
-	row := q.db.QueryRow(ctx, getSuratJalanClientDetail, idSuratJalanClient)
+func (q *Queries) GetSuratJalanClientDetail(ctx context.Context, arg GetSuratJalanClientDetailParams) (GetSuratJalanClientDetailRow, error) {
+	row := q.db.QueryRow(ctx, getSuratJalanClientDetail, arg.IDSuratJalanClient, arg.IDMitra)
 	var i GetSuratJalanClientDetailRow
 	err := row.Scan(
 		&i.IDSuratJalanClient,
@@ -286,8 +309,17 @@ FROM WORK_ORDER wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE wo.id_wo = $1
+AND (
+    $2::integer IS NULL OR
+    pc.id_mitra = $2::integer
+)
 LIMIT 1
 `
+
+type GetWorkOrderDetailParams struct {
+	IDWo    int32       `json:"id_wo"`
+	IDMitra pgtype.Int4 `json:"id_mitra"`
+}
 
 type GetWorkOrderDetailRow struct {
 	IDWo              int32              `json:"id_wo"`
@@ -305,8 +337,8 @@ type GetWorkOrderDetailRow struct {
 	PoClientItemStyle string             `json:"po_client_item_style"`
 }
 
-func (q *Queries) GetWorkOrderDetail(ctx context.Context, idWo int32) (GetWorkOrderDetailRow, error) {
-	row := q.db.QueryRow(ctx, getWorkOrderDetail, idWo)
+func (q *Queries) GetWorkOrderDetail(ctx context.Context, arg GetWorkOrderDetailParams) (GetWorkOrderDetailRow, error) {
+	row := q.db.QueryRow(ctx, getWorkOrderDetail, arg.IDWo, arg.IDMitra)
 	var i GetWorkOrderDetailRow
 	err := row.Scan(
 		&i.IDWo,
@@ -933,30 +965,36 @@ SELECT
     COUNT(*) OVER() AS total_count
 FROM PACKING_LIST pl
 JOIN WORK_ORDER wo ON wo.id_wo = pl.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE (
     $1 = '' OR
     wo.buyer ILIKE '%' || $1 || '%' OR
     wo.model ILIKE '%' || $1 || '%'
+ ) AND (
+    $2::integer IS NULL OR
+    pc.id_mitra = $2::integer
 )
 ORDER BY
-    CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN pl.created_at END ASC,
-    CASE WHEN $2::text = 'created_at' AND $3::bool THEN pl.created_at END DESC,
-    CASE WHEN $2::text = 'id_packing_list' AND NOT $3::bool THEN pl.id_packing_list END ASC,
-    CASE WHEN $2::text = 'id_packing_list' AND $3::bool THEN pl.id_packing_list END DESC,
-    CASE WHEN $2::text = 'total_garment_per_box' AND NOT $3::bool THEN pl.total_garment_per_box END ASC,
-    CASE WHEN $2::text = 'total_garment_per_box' AND $3::bool THEN pl.total_garment_per_box END DESC,
-    CASE WHEN $2::text = 'total_reject' AND NOT $3::bool THEN pl.total_reject END ASC,
-    CASE WHEN $2::text = 'total_reject' AND $3::bool THEN pl.total_reject END DESC,
-    CASE WHEN $2::text = 'buyer' AND NOT $3::bool THEN wo.buyer END ASC,
-    CASE WHEN $2::text = 'buyer' AND $3::bool THEN wo.buyer END DESC,
-    CASE WHEN $2::text = 'model' AND NOT $3::bool THEN wo.model END ASC,
-    CASE WHEN $2::text = 'model' AND $3::bool THEN wo.model END DESC,
+    CASE WHEN $3::text = 'created_at' AND NOT $4::bool THEN pl.created_at END ASC,
+    CASE WHEN $3::text = 'created_at' AND $4::bool THEN pl.created_at END DESC,
+    CASE WHEN $3::text = 'id_packing_list' AND NOT $4::bool THEN pl.id_packing_list END ASC,
+    CASE WHEN $3::text = 'id_packing_list' AND $4::bool THEN pl.id_packing_list END DESC,
+    CASE WHEN $3::text = 'total_garment_per_box' AND NOT $4::bool THEN pl.total_garment_per_box END ASC,
+    CASE WHEN $3::text = 'total_garment_per_box' AND $4::bool THEN pl.total_garment_per_box END DESC,
+    CASE WHEN $3::text = 'total_reject' AND NOT $4::bool THEN pl.total_reject END ASC,
+    CASE WHEN $3::text = 'total_reject' AND $4::bool THEN pl.total_reject END DESC,
+    CASE WHEN $3::text = 'buyer' AND NOT $4::bool THEN wo.buyer END ASC,
+    CASE WHEN $3::text = 'buyer' AND $4::bool THEN wo.buyer END DESC,
+    CASE WHEN $3::text = 'model' AND NOT $4::bool THEN wo.model END ASC,
+    CASE WHEN $3::text = 'model' AND $4::bool THEN wo.model END DESC,
     pl.id_packing_list DESC
-LIMIT $5 OFFSET $4
+LIMIT $6 OFFSET $5
 `
 
 type ListPackingListsParams struct {
 	SearchTerm interface{} `json:"search_term"`
+	IDMitra    pgtype.Int4 `json:"id_mitra"`
 	SortBy     string      `json:"sort_by"`
 	SortDesc   bool        `json:"sort_desc"`
 	PageOffset int32       `json:"page_offset"`
@@ -978,6 +1016,7 @@ type ListPackingListsRow struct {
 func (q *Queries) ListPackingLists(ctx context.Context, arg ListPackingListsParams) ([]ListPackingListsRow, error) {
 	rows, err := q.db.Query(ctx, listPackingLists,
 		arg.SearchTerm,
+		arg.IDMitra,
 		arg.SortBy,
 		arg.SortDesc,
 		arg.PageOffset,
@@ -1064,32 +1103,39 @@ SELECT
     COUNT(*) OVER() AS total_count
 FROM SURAT_JALAN_CLIENT sjc
 JOIN MATERIAL_LIST ml ON ml.id_material_list = sjc.id_material_list
+JOIN WORK_ORDER wo ON wo.id_wo = ml.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE (
     $1 = '' OR
     sjc.keterangan ILIKE '%' || $1 || '%' OR
     ml.description ILIKE '%' || $1 || '%'
+ ) AND (
+    $2::integer IS NULL OR
+    pc.id_mitra = $2::integer
 )
 ORDER BY
-    CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN sjc.created_at END ASC,
-    CASE WHEN $2::text = 'created_at' AND $3::bool THEN sjc.created_at END DESC,
-    CASE WHEN $2::text = 'id_surat_jalan_client' AND NOT $3::bool THEN sjc.id_surat_jalan_client END ASC,
-    CASE WHEN $2::text = 'id_surat_jalan_client' AND $3::bool THEN sjc.id_surat_jalan_client END DESC,
-    CASE WHEN $2::text = 'tanggal' AND NOT $3::bool THEN sjc.tanggal END ASC,
-    CASE WHEN $2::text = 'tanggal' AND $3::bool THEN sjc.tanggal END DESC,
-    CASE WHEN $2::text = 'qty' AND NOT $3::bool THEN sjc.qty END ASC,
-    CASE WHEN $2::text = 'qty' AND $3::bool THEN sjc.qty END DESC,
-    CASE WHEN $2::text = 'keterangan' AND NOT $3::bool THEN sjc.keterangan END ASC,
-    CASE WHEN $2::text = 'keterangan' AND $3::bool THEN sjc.keterangan END DESC,
-    CASE WHEN $2::text = 'material_description' AND NOT $3::bool THEN ml.description END ASC,
-    CASE WHEN $2::text = 'material_description' AND $3::bool THEN ml.description END DESC,
-    CASE WHEN $2::text = 'id_wo' AND NOT $3::bool THEN ml.id_wo END ASC,
-    CASE WHEN $2::text = 'id_wo' AND $3::bool THEN ml.id_wo END DESC,
+    CASE WHEN $3::text = 'created_at' AND NOT $4::bool THEN sjc.created_at END ASC,
+    CASE WHEN $3::text = 'created_at' AND $4::bool THEN sjc.created_at END DESC,
+    CASE WHEN $3::text = 'id_surat_jalan_client' AND NOT $4::bool THEN sjc.id_surat_jalan_client END ASC,
+    CASE WHEN $3::text = 'id_surat_jalan_client' AND $4::bool THEN sjc.id_surat_jalan_client END DESC,
+    CASE WHEN $3::text = 'tanggal' AND NOT $4::bool THEN sjc.tanggal END ASC,
+    CASE WHEN $3::text = 'tanggal' AND $4::bool THEN sjc.tanggal END DESC,
+    CASE WHEN $3::text = 'qty' AND NOT $4::bool THEN sjc.qty END ASC,
+    CASE WHEN $3::text = 'qty' AND $4::bool THEN sjc.qty END DESC,
+    CASE WHEN $3::text = 'keterangan' AND NOT $4::bool THEN sjc.keterangan END ASC,
+    CASE WHEN $3::text = 'keterangan' AND $4::bool THEN sjc.keterangan END DESC,
+    CASE WHEN $3::text = 'material_description' AND NOT $4::bool THEN ml.description END ASC,
+    CASE WHEN $3::text = 'material_description' AND $4::bool THEN ml.description END DESC,
+    CASE WHEN $3::text = 'id_wo' AND NOT $4::bool THEN ml.id_wo END ASC,
+    CASE WHEN $3::text = 'id_wo' AND $4::bool THEN ml.id_wo END DESC,
     sjc.id_surat_jalan_client DESC
-LIMIT $5 OFFSET $4
+LIMIT $6 OFFSET $5
 `
 
 type ListSuratJalanClientsParams struct {
 	SearchTerm interface{} `json:"search_term"`
+	IDMitra    pgtype.Int4 `json:"id_mitra"`
 	SortBy     string      `json:"sort_by"`
 	SortDesc   bool        `json:"sort_desc"`
 	PageOffset int32       `json:"page_offset"`
@@ -1111,6 +1157,7 @@ type ListSuratJalanClientsRow struct {
 func (q *Queries) ListSuratJalanClients(ctx context.Context, arg ListSuratJalanClientsParams) ([]ListSuratJalanClientsRow, error) {
 	rows, err := q.db.Query(ctx, listSuratJalanClients,
 		arg.SearchTerm,
+		arg.IDMitra,
 		arg.SortBy,
 		arg.SortDesc,
 		arg.PageOffset,
@@ -1361,30 +1408,34 @@ WHERE (
     wo.model ILIKE '%' || $1 || '%' OR
     pc.po_number ILIKE '%' || $1 || '%' OR
     pci.style ILIKE '%' || $1 || '%'
+ ) AND (
+    $2::integer IS NULL OR
+    pc.id_mitra = $2::integer
 )
 ORDER BY
-    CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN wo.created_at END ASC,
-    CASE WHEN $2::text = 'created_at' AND $3::bool THEN wo.created_at END DESC,
-    CASE WHEN $2::text = 'id_wo' AND NOT $3::bool THEN wo.id_wo END ASC,
-    CASE WHEN $2::text = 'id_wo' AND $3::bool THEN wo.id_wo END DESC,
-    CASE WHEN $2::text = 'buyer' AND NOT $3::bool THEN wo.buyer END ASC,
-    CASE WHEN $2::text = 'buyer' AND $3::bool THEN wo.buyer END DESC,
-    CASE WHEN $2::text = 'model' AND NOT $3::bool THEN wo.model END ASC,
-    CASE WHEN $2::text = 'model' AND $3::bool THEN wo.model END DESC,
-    CASE WHEN $2::text = 'qty' AND NOT $3::bool THEN wo.qty END ASC,
-    CASE WHEN $2::text = 'qty' AND $3::bool THEN wo.qty END DESC,
-    CASE WHEN $2::text = 'status' AND NOT $3::bool THEN wo.status END ASC,
-    CASE WHEN $2::text = 'status' AND $3::bool THEN wo.status END DESC,
-    CASE WHEN $2::text = 'po_number' AND NOT $3::bool THEN pc.po_number END ASC,
-    CASE WHEN $2::text = 'po_number' AND $3::bool THEN pc.po_number END DESC,
-    CASE WHEN $2::text = 'po_client_item_style' AND NOT $3::bool THEN pci.style END ASC,
-    CASE WHEN $2::text = 'po_client_item_style' AND $3::bool THEN pci.style END DESC,
+    CASE WHEN $3::text = 'created_at' AND NOT $4::bool THEN wo.created_at END ASC,
+    CASE WHEN $3::text = 'created_at' AND $4::bool THEN wo.created_at END DESC,
+    CASE WHEN $3::text = 'id_wo' AND NOT $4::bool THEN wo.id_wo END ASC,
+    CASE WHEN $3::text = 'id_wo' AND $4::bool THEN wo.id_wo END DESC,
+    CASE WHEN $3::text = 'buyer' AND NOT $4::bool THEN wo.buyer END ASC,
+    CASE WHEN $3::text = 'buyer' AND $4::bool THEN wo.buyer END DESC,
+    CASE WHEN $3::text = 'model' AND NOT $4::bool THEN wo.model END ASC,
+    CASE WHEN $3::text = 'model' AND $4::bool THEN wo.model END DESC,
+    CASE WHEN $3::text = 'qty' AND NOT $4::bool THEN wo.qty END ASC,
+    CASE WHEN $3::text = 'qty' AND $4::bool THEN wo.qty END DESC,
+    CASE WHEN $3::text = 'status' AND NOT $4::bool THEN wo.status END ASC,
+    CASE WHEN $3::text = 'status' AND $4::bool THEN wo.status END DESC,
+    CASE WHEN $3::text = 'po_number' AND NOT $4::bool THEN pc.po_number END ASC,
+    CASE WHEN $3::text = 'po_number' AND $4::bool THEN pc.po_number END DESC,
+    CASE WHEN $3::text = 'po_client_item_style' AND NOT $4::bool THEN pci.style END ASC,
+    CASE WHEN $3::text = 'po_client_item_style' AND $4::bool THEN pci.style END DESC,
     wo.id_wo DESC
-LIMIT $5 OFFSET $4
+LIMIT $6 OFFSET $5
 `
 
 type ListWorkOrdersParams struct {
 	SearchTerm interface{} `json:"search_term"`
+	IDMitra    pgtype.Int4 `json:"id_mitra"`
 	SortBy     string      `json:"sort_by"`
 	SortDesc   bool        `json:"sort_desc"`
 	PageOffset int32       `json:"page_offset"`
@@ -1411,6 +1462,7 @@ type ListWorkOrdersRow struct {
 func (q *Queries) ListWorkOrders(ctx context.Context, arg ListWorkOrdersParams) ([]ListWorkOrdersRow, error) {
 	rows, err := q.db.Query(ctx, listWorkOrders,
 		arg.SearchTerm,
+		arg.IDMitra,
 		arg.SortBy,
 		arg.SortDesc,
 		arg.PageOffset,

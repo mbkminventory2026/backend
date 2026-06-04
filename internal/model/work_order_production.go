@@ -164,3 +164,14 @@ type WorkOrderErrorDoc struct {
 	Message string               `json:"message" example:"related data not found"`
 	Error   WorkOrderErrorDetail `json:"error"`
 }
+
+type WorkOrderShellTotalQtyResponse struct {
+	IDWoShell int32 `json:"id_wo_shell"`
+	TotalQty  int64 `json:"total_qty"`
+}
+
+type WorkOrderShellTotalQtySuccessDoc struct {
+	Status  string                         `json:"status" example:"success"`
+	Message string                         `json:"message" example:"total qty retrieved"`
+	Data    WorkOrderShellTotalQtyResponse `json:"data"`
+}

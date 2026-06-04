@@ -85,11 +85,30 @@ type UpdateCompanyRequest struct {
 
 // Hak Akses
 type CreateHakAksesRequest struct {
-	NamaHalaman string `json:"nama_halaman" binding:"required"`
+	KodePermission   string `json:"kode_permission" binding:"required"`
+	NamaHalaman      string `json:"nama_halaman" binding:"required"`
+	Deskripsi        string `json:"deskripsi"`
+	DomainPermission string `json:"domain_permission" binding:"required"`
+	AksiPermission   string `json:"aksi_permission" binding:"required"`
 }
 
 type UpdateHakAksesRequest struct {
-	NamaHalaman string `json:"nama_halaman" binding:"required"`
+	KodePermission   string `json:"kode_permission" binding:"required"`
+	NamaHalaman      string `json:"nama_halaman" binding:"required"`
+	Deskripsi        string `json:"deskripsi"`
+	DomainPermission string `json:"domain_permission" binding:"required"`
+	AksiPermission   string `json:"aksi_permission" binding:"required"`
+}
+
+// Warna
+type CreateWarnaRequest struct {
+	NamaWarna string  `json:"nama_warna" binding:"required"`
+	KodeHex   *string `json:"kode_hex" binding:"omitempty,max=7"`
+}
+
+type UpdateWarnaRequest struct {
+	NamaWarna string  `json:"nama_warna" binding:"required"`
+	KodeHex   *string `json:"kode_hex" binding:"omitempty,max=7"`
 }
 
 // --- RESPONSES ---
@@ -140,9 +159,20 @@ type CompanyResponse struct {
 }
 
 type HakAksesResponse struct {
-	ID        int32  `json:"id_hak_akses"`
-	Nama      string `json:"nama_halaman"`
-	CreatedAt string `json:"created_at"`
+	ID               int32  `json:"id_hak_akses"`
+	KodePermission   string `json:"kode_permission"`
+	Nama             string `json:"nama_halaman"`
+	Deskripsi        string `json:"deskripsi"`
+	DomainPermission string `json:"domain_permission"`
+	AksiPermission   string `json:"aksi_permission"`
+	CreatedAt        string `json:"created_at"`
+}
+
+type WarnaResponse struct {
+	ID        int32   `json:"id_warna"`
+	NamaWarna string  `json:"nama_warna"`
+	KodeHex   *string `json:"kode_hex"`
+	CreatedAt string  `json:"created_at"`
 }
 
 // --- SWAGGER SUCCESS DOCS ---
@@ -211,4 +241,16 @@ type HakAksesSuccessDoc struct {
 	Status  string           `json:"status" example:"success"`
 	Message string           `json:"message" example:"permission created"`
 	Data    HakAksesResponse `json:"data"`
+}
+
+type ListWarnaSuccessDoc struct {
+	Status  string          `json:"status" example:"success"`
+	Message string          `json:"message" example:"warna retrieved"`
+	Data    []WarnaResponse `json:"data"`
+}
+
+type WarnaSuccessDoc struct {
+	Status  string        `json:"status" example:"success"`
+	Message string        `json:"message" example:"warna created"`
+	Data    WarnaResponse `json:"data"`
 }

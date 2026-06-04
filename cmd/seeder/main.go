@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
+	"unicode"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
@@ -46,62 +48,76 @@ func main() {
 	}
 
 	// 3. Seed Departemen
+	err = seedRoles(ctx, dbPool)
+	if err != nil {
+		slog.Error("failed to seed roles", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	// 4. Seed Role Hak Akses
+	err = seedRoleHakAkses(ctx, dbPool)
+	if err != nil {
+		slog.Error("failed to seed role hak akses", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	// 5. Seed Departemen
 	err = seedDepartemen(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed departemen", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 4. Seed Mitra (5 Mitra, ID 1 = Permatatex)
+	// 6. Seed Mitra (5 Mitra, ID 1 = Permatatex)
 	err = seedMitra(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed mitra", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 5. Seed Jenis Barang (5 Jenis)
+	// 7. Seed Jenis Barang (5 Jenis)
 	err = seedJenisBarang(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed jenis barang", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 6. Seed Barang (5 Barang)
+	// 8. Seed Barang (5 Barang)
 	err = seedBarang(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed barang", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 7. Seed Super Admin User
+	// 9. Seed Super Admin User
 	err = seedUser(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed user", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 8. Seed PO Client & Items
+	// 10. Seed PO Client & Items
 	err = seedPOClient(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed PO Client", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 9. Seed Work Order
+	// 11. Seed Work Order
 	err = seedWorkOrder(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed Work Order", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 10. Seed Production Reports
+	// 12. Seed Production Reports
 	err = seedProductionReports(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed Production Reports", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 11. Sync Sequences
+	// 13. Sync Sequences
 	err = syncSequences(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to sync sequences", slog.String("error", err.Error()))
@@ -120,6 +136,7 @@ func syncSequences(ctx context.Context, db *pgxpool.Pool) error {
 		{"company_id_company_seq", "company", "id_company"},
 		{"mitra_id_mitra_seq", "mitra", "id_mitra"},
 		{"hak_akses_id_hak_akses_seq", "hak_akses", "id_hak_akses"},
+		{"roles_id_role_seq", "roles", "id_role"},
 		{"departemen_id_departemen_seq", "departemen", "id_departemen"},
 		{"jenis_barang_id_jenis_barang_seq", "jenis_barang", "id_jenis_barang"},
 		{"barang_id_barang_seq", "barang", "id_barang"},
@@ -267,31 +284,185 @@ func seedBarang(ctx context.Context, db *pgxpool.Pool) error {
 }
 
 func seedHakAkses(ctx context.Context, db *pgxpool.Pool) error {
-	permissions := []string{
+	permissionCodes := []string{
 		"USER_READ", "USER_CREATE", "USER_UPDATE", "USER_DELETE", "USER_APPROVE",
-		"MASTER_READ", "MASTER_CREATE", "MASTER_UPDATE", "MASTER_DELETE",
-		"PO_READ", "PO_CREATE", "PO_UPDATE", "PR_APPROVE",
-		"WO_READ", "WO_CREATE", "WO_CLOSE",
-		"REPORT_READ", "REPORT_CREATE",
+		"ROLE_READ", "ROLE_CREATE", "ROLE_UPDATE", "ROLE_DELETE", "USER_ROLE_ASSIGN",
+		"PERMISSION_READ", "PERMISSION_CREATE", "PERMISSION_UPDATE", "PERMISSION_DELETE",
+		"MASTER_BARANG_READ", "MASTER_BARANG_CREATE", "MASTER_BARANG_UPDATE", "MASTER_BARANG_DELETE",
+		"MASTER_MITRA_READ", "MASTER_MITRA_CREATE", "MASTER_MITRA_UPDATE", "MASTER_MITRA_DELETE",
+		"MASTER_JENIS_BARANG_READ", "MASTER_JENIS_BARANG_CREATE", "MASTER_JENIS_BARANG_UPDATE", "MASTER_JENIS_BARANG_DELETE",
+		"MASTER_COMPANY_READ", "MASTER_COMPANY_CREATE", "MASTER_COMPANY_UPDATE", "MASTER_COMPANY_DELETE",
+		"MASTER_DEPARTEMEN_READ", "MASTER_DEPARTEMEN_CREATE", "MASTER_DEPARTEMEN_UPDATE", "MASTER_DEPARTEMEN_DELETE",
+		"PO_CLIENT_READ", "PO_CLIENT_CREATE", "PO_CLIENT_UPDATE",
+		"PR_INTERNAL_READ", "PR_INTERNAL_CREATE", "PR_INTERNAL_UPDATE", "PR_INTERNAL_APPROVE",
+		"PO_INTERNAL_READ", "PO_INTERNAL_CREATE", "PO_INTERNAL_UPDATE", "PO_INTERNAL_APPROVE",
+		"WO_READ", "WO_CREATE", "WO_UPDATE", "WO_CLOSE",
+		"PRODUCTION_SUMMARY_READ",
+		"PRODUCTION_REPORT_READ", "PRODUCTION_REPORT_CREATE", "PRODUCTION_REPORT_UPDATE",
+		"TIMELINE_READ", "TIMELINE_CREATE", "TIMELINE_UPDATE",
+		"MARKER_PLAN_READ", "MARKER_PLAN_CREATE", "MARKER_PLAN_UPDATE",
+		"CUTTING_PLAN_READ", "CUTTING_PLAN_CREATE", "CUTTING_PLAN_UPDATE",
 		"INVENTORY_RECEIVE", "INVENTORY_ISSUE",
-		"PACKING_LIST_CREATE", "SURAT_JALAN_CREATE",
-		"LOG_READ", "DASHBOARD_READ",
+		"PACKING_LIST_READ", "PACKING_LIST_CREATE", "PACKING_LIST_UPDATE", "PACKING_LIST_APPROVE",
+		"SURAT_JALAN_CLIENT_READ", "SURAT_JALAN_INTERNAL_READ", "SURAT_JALAN_CREATE", "SURAT_JALAN_UPDATE",
+		"REPORT_READ", "LOG_READ", "DASHBOARD_READ",
 		"ALL_ACCESS",
 	}
 
-	for _, p := range permissions {
+	for _, code := range permissionCodes {
+		name, description, domain, action := inferPermissionMetadata(code)
 		var exists bool
-		err := db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM HAK_AKSES WHERE NAMA_HALAMAN = $1)`, p).Scan(&exists)
+		err := db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM HAK_AKSES WHERE KODE_PERMISSION = $1)`, code).Scan(&exists)
 		if err != nil {
 			return err
 		}
 		if !exists {
-			_, err = db.Exec(ctx, `INSERT INTO HAK_AKSES (NAMA_HALAMAN) VALUES ($1)`, p)
+			_, err = db.Exec(ctx, `
+				INSERT INTO HAK_AKSES (KODE_PERMISSION, NAMA_HALAMAN, DESKRIPSI, DOMAIN_PERMISSION, AKSI_PERMISSION)
+				VALUES ($1, $2, $3, $4, $5)
+			`, code, name, description, domain, action)
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err = db.Exec(ctx, `
+				UPDATE HAK_AKSES
+				SET NAMA_HALAMAN = $2,
+					DESKRIPSI = $3,
+					DOMAIN_PERMISSION = $4,
+					AKSI_PERMISSION = $5
+				WHERE KODE_PERMISSION = $1
+			`, code, name, description, domain, action)
 			if err != nil {
 				return err
 			}
 		}
 	}
+	return nil
+}
+
+func inferPermissionMetadata(code string) (name string, description string, domain string, action string) {
+	if code == "ALL_ACCESS" {
+		return "All Access", "Emergency full access", "system", "access"
+	}
+
+	parts := strings.Split(code, "_")
+	action = strings.ToLower(parts[len(parts)-1])
+	domain = strings.ToLower(strings.Join(parts[:len(parts)-1], "_"))
+
+	words := make([]string, 0, len(parts))
+	for _, part := range parts {
+		words = append(words, capitalize(strings.ToLower(part)))
+	}
+	name = strings.Join(words, " ")
+	description = "Allows " + strings.ToLower(strings.ReplaceAll(name, " ", " "))
+	return name, description, domain, action
+}
+
+func capitalize(s string) string {
+	if s == "" {
+		return ""
+	}
+	r := []rune(s)
+	r[0] = unicode.ToUpper(r[0])
+	return string(r)
+}
+
+func seedRoles(ctx context.Context, db *pgxpool.Pool) error {
+	roles := []string{
+		"SUPER_ADMIN",
+		"OPERATOR",
+		"ADMIN_KEUANGAN",
+		"ADMIN_PRODUKSI",
+		"ADMIN_GUDANG",
+		"MANAGER",
+		"CLIENT",
+	}
+
+	for _, role := range roles {
+		var exists bool
+		err := db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM ROLES WHERE NAMA_ROLE = $1)`, role).Scan(&exists)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			_, err = db.Exec(ctx, `INSERT INTO ROLES (NAMA_ROLE) VALUES ($1)`, role)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func seedRoleHakAkses(ctx context.Context, db *pgxpool.Pool) error {
+	rolePermissions := map[string][]string{
+		"SUPER_ADMIN": {"ALL_ACCESS"},
+		"OPERATOR": {
+			"USER_READ", "USER_CREATE", "USER_UPDATE", "USER_DELETE", "USER_APPROVE",
+			"ROLE_READ", "ROLE_CREATE", "ROLE_UPDATE", "ROLE_DELETE", "USER_ROLE_ASSIGN",
+			"PERMISSION_READ", "PERMISSION_CREATE", "PERMISSION_UPDATE", "PERMISSION_DELETE",
+			"LOG_READ",
+		},
+		"ADMIN_KEUANGAN": {
+			"MASTER_MITRA_READ", "MASTER_BARANG_READ", "MASTER_JENIS_BARANG_READ", "MASTER_COMPANY_READ",
+			"PO_CLIENT_READ",
+			"PR_INTERNAL_READ", "PR_INTERNAL_APPROVE",
+			"PO_INTERNAL_READ", "PO_INTERNAL_CREATE", "PO_INTERNAL_UPDATE", "PO_INTERNAL_APPROVE",
+			"REPORT_READ",
+		},
+		"ADMIN_PRODUKSI": {
+			"MASTER_BARANG_READ", "MASTER_MITRA_READ", "MASTER_JENIS_BARANG_READ", "MASTER_COMPANY_READ", "MASTER_DEPARTEMEN_READ",
+			"PO_CLIENT_READ", "PO_CLIENT_CREATE", "PO_CLIENT_UPDATE",
+			"WO_READ", "WO_CREATE", "WO_UPDATE", "WO_CLOSE",
+			"PRODUCTION_SUMMARY_READ",
+			"PRODUCTION_REPORT_READ", "PRODUCTION_REPORT_CREATE", "PRODUCTION_REPORT_UPDATE",
+			"TIMELINE_READ", "TIMELINE_CREATE", "TIMELINE_UPDATE",
+			"MARKER_PLAN_READ", "MARKER_PLAN_CREATE", "MARKER_PLAN_UPDATE",
+			"CUTTING_PLAN_READ", "CUTTING_PLAN_CREATE", "CUTTING_PLAN_UPDATE",
+			"PACKING_LIST_READ", "PACKING_LIST_CREATE", "PACKING_LIST_UPDATE",
+			"SURAT_JALAN_CLIENT_READ", "SURAT_JALAN_INTERNAL_READ", "SURAT_JALAN_CREATE", "SURAT_JALAN_UPDATE",
+			"REPORT_READ",
+		},
+		"ADMIN_GUDANG": {
+			"MASTER_BARANG_READ", "MASTER_MITRA_READ", "MASTER_JENIS_BARANG_READ",
+			"PR_INTERNAL_READ", "PR_INTERNAL_CREATE", "PR_INTERNAL_UPDATE",
+			"INVENTORY_RECEIVE", "INVENTORY_ISSUE",
+			"SURAT_JALAN_CLIENT_READ", "SURAT_JALAN_INTERNAL_READ",
+			"REPORT_READ",
+		},
+		"MANAGER": {
+			"USER_READ",
+			"MASTER_BARANG_READ", "MASTER_MITRA_READ", "MASTER_JENIS_BARANG_READ", "MASTER_COMPANY_READ", "MASTER_DEPARTEMEN_READ",
+			"PO_CLIENT_READ", "PR_INTERNAL_READ", "PO_INTERNAL_READ",
+			"WO_READ", "PRODUCTION_SUMMARY_READ", "PRODUCTION_REPORT_READ",
+			"TIMELINE_READ", "MARKER_PLAN_READ", "CUTTING_PLAN_READ",
+			"PACKING_LIST_READ", "SURAT_JALAN_CLIENT_READ", "SURAT_JALAN_INTERNAL_READ",
+			"REPORT_READ", "LOG_READ", "DASHBOARD_READ",
+			"PR_INTERNAL_APPROVE", "PO_INTERNAL_APPROVE", "PACKING_LIST_APPROVE",
+		},
+		"CLIENT": {
+			"PO_CLIENT_READ", "WO_READ", "PRODUCTION_SUMMARY_READ", "PACKING_LIST_READ", "SURAT_JALAN_CLIENT_READ",
+		},
+	}
+
+	for roleName, permissions := range rolePermissions {
+		for _, permissionCode := range permissions {
+			_, err := db.Exec(ctx, `
+				INSERT INTO ROLE_HAK_AKSES (ID_ROLE, ID_HAK_AKSES)
+				SELECT r.ID_ROLE, h.ID_HAK_AKSES
+				FROM ROLES r
+				JOIN HAK_AKSES h ON h.KODE_PERMISSION = $2
+				WHERE r.NAMA_ROLE = $1
+				ON CONFLICT (ID_ROLE, ID_HAK_AKSES) DO NOTHING
+			`, roleName, permissionCode)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -329,13 +500,28 @@ func seedUser(ctx context.Context, db *pgxpool.Pool) error {
 
 	if !exists {
 		_, err = db.Exec(ctx, `
-			INSERT INTO USERS (USERNAME, PASSWORD, IS_MANAGER, ID_DEPARTEMEN)
-			VALUES ($1, $2, $3, (SELECT ID_DEPARTEMEN FROM DEPARTEMEN WHERE NAMA_DEPARTEMEN = 'IT' LIMIT 1))
-		`, username, string(hashedPassword), true)
+			INSERT INTO USERS (USERNAME, PASSWORD, ID_ROLE, ID_DEPARTEMEN, STATUS)
+			VALUES (
+				$1,
+				$2,
+				(SELECT ID_ROLE FROM ROLES WHERE NAMA_ROLE = 'SUPER_ADMIN' LIMIT 1),
+				(SELECT ID_DEPARTEMEN FROM DEPARTEMEN WHERE NAMA_DEPARTEMEN = 'IT' LIMIT 1),
+				'active'
+			)
+		`, username, string(hashedPassword))
 		if err != nil {
 			return err
 		}
 		slog.Info("user seeded", slog.String("username", username))
+	} else {
+		_, err = db.Exec(ctx, `
+			UPDATE USERS
+			SET ID_ROLE = (SELECT ID_ROLE FROM ROLES WHERE NAMA_ROLE = 'SUPER_ADMIN' LIMIT 1)
+			WHERE USERNAME = $1
+		`, username)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

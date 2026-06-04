@@ -73,6 +73,20 @@ definitions:
       waktu:
         type: string
     type: object
+  model.AssignUserPermissionsRequest:
+    properties:
+      hak_akses_ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  model.AssignUserRoleRequest:
+    properties:
+      id_role:
+        type: integer
+    required:
+    - id_role
+    type: object
   model.AuthServiceUnavailableErrorDetail:
     properties:
       code:
@@ -214,9 +228,20 @@ definitions:
     type: object
   model.CreateHakAksesRequest:
     properties:
+      aksi_permission:
+        type: string
+      deskripsi:
+        type: string
+      domain_permission:
+        type: string
+      kode_permission:
+        type: string
       nama_halaman:
         type: string
     required:
+    - aksi_permission
+    - domain_permission
+    - kode_permission
     - nama_halaman
     type: object
   model.CreateJenisBarangRequest:
@@ -523,6 +548,17 @@ definitions:
     - nama
     - no_telp
     type: object
+  model.CreateRoleRequest:
+    properties:
+      hak_akses_ids:
+        items:
+          type: integer
+        type: array
+      nama_role:
+        type: string
+    required:
+    - nama_role
+    type: object
   model.CreateSuratJalanClientRequest:
     properties:
       id_material_list:
@@ -538,6 +574,24 @@ definitions:
     - qty
     - tanggal
     type: object
+  model.CreateTimelinePlanRequest:
+    properties:
+      id_po_client:
+        type: integer
+      notes:
+        type: string
+      shell_plans:
+        items:
+          $ref: '#/definitions/model.CreateWOShellPlanRequest'
+        minItems: 1
+        type: array
+      tanggal_disusun:
+        type: string
+    required:
+    - id_po_client
+    - shell_plans
+    - tanggal_disusun
+    type: object
   model.CreateUserRequest:
     properties:
       hak_akses_ids:
@@ -548,8 +602,8 @@ definitions:
         type: integer
       id_mitra:
         type: integer
-      is_manager:
-        type: boolean
+      id_role:
+        type: integer
       password:
         minLength: 6
         type: string
@@ -559,8 +613,45 @@ definitions:
       username:
         type: string
     required:
+    - id_role
     - password
     - username
+    type: object
+  model.CreateWOShellPlanRequest:
+    properties:
+      id_wo_shell:
+        type: integer
+      in_line:
+        type: string
+      status_embroo:
+        type: string
+      status_finishing_packing:
+        type: string
+      status_gelar_cutting:
+        type: string
+      status_loading_sewing:
+        type: string
+      tgl_embroo:
+        type: string
+      tgl_finishing_packing:
+        type: string
+      tgl_gelar_cutting:
+        type: string
+      tgl_loading_sewing:
+        type: string
+    required:
+    - id_wo_shell
+    - in_line
+    type: object
+  model.CreateWarnaRequest:
+    properties:
+      kode_hex:
+        maxLength: 7
+        type: string
+      nama_warna:
+        type: string
+    required:
+    - nama_warna
     type: object
   model.CreateWorkOrderRequest:
     properties:
@@ -711,6 +802,12 @@ definitions:
     type: object
   model.GetMeResponse:
     properties:
+      id_role:
+        example: 1
+        type: integer
+      role_name:
+        example: OPERATOR
+        type: string
       user_id:
         example: 1
         type: integer
@@ -738,10 +835,18 @@ definitions:
     type: object
   model.HakAksesResponse:
     properties:
+      aksi_permission:
+        type: string
       created_at:
+        type: string
+      deskripsi:
+        type: string
+      domain_permission:
         type: string
       id_hak_akses:
         type: integer
+      kode_permission:
+        type: string
       nama_halaman:
         type: string
     type: object
@@ -872,6 +977,19 @@ definitions:
         type: array
       message:
         example: permissions retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.ListWarnaSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.WarnaResponse'
+        type: array
+      message:
+        example: warna retrieved
         type: string
       status:
         example: success
@@ -1725,6 +1843,63 @@ definitions:
     - turnstile_token
     - username
     type: object
+  model.RoleListItem:
+    properties:
+      created_at:
+        type: string
+      id_role:
+        type: integer
+      nama_role:
+        type: string
+    type: object
+  model.RoleListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.RoleListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.RoleListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.RoleListResponse'
+      message:
+        example: roles retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.RoleResponse:
+    properties:
+      created_at:
+        type: string
+      hak_akses_ids:
+        items:
+          type: integer
+        type: array
+      id_role:
+        type: integer
+      nama_role:
+        type: string
+      permissions:
+        items:
+          type: string
+        type: array
+    type: object
+  model.RoleSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.RoleResponse'
+      message:
+        example: role created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.StockReportPerKategoriResponse:
     properties:
       kategori:
@@ -1919,6 +2094,64 @@ definitions:
         example: success
         type: string
     type: object
+  model.TimelinePlanErrorDetail:
+    properties:
+      code:
+        example: related_data_not_found
+        type: string
+    type: object
+  model.TimelinePlanErrorDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.TimelinePlanErrorDetail'
+      message:
+        example: related data not found
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.TimelinePlanResponse:
+    properties:
+      created_at:
+        type: string
+      id_po_client:
+        type: integer
+      id_timeline:
+        type: integer
+      notes:
+        type: string
+      shell_plans:
+        items:
+          $ref: '#/definitions/model.WOShellPlanResponse'
+        type: array
+      tanggal_disusun:
+        type: string
+    type: object
+  model.TimelinePlanSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.TimelinePlanResponse'
+      message:
+        example: timeline plan created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.TimelinePlanValidationErrorDoc:
+    properties:
+      error:
+        items:
+          $ref: '#/definitions/response.ValidationErrorItem'
+        type: array
+      message:
+        example: bad request
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
   model.TransactionErrorDetail:
     properties:
       code:
@@ -2008,9 +2241,20 @@ definitions:
     type: object
   model.UpdateHakAksesRequest:
     properties:
+      aksi_permission:
+        type: string
+      deskripsi:
+        type: string
+      domain_permission:
+        type: string
+      kode_permission:
+        type: string
       nama_halaman:
         type: string
     required:
+    - aksi_permission
+    - domain_permission
+    - kode_permission
     - nama_halaman
     type: object
   model.UpdateJenisBarangRequest:
@@ -2044,18 +2288,23 @@ definitions:
     - no_telp
     - tipe_perusahaan
     type: object
-  model.UpdateUserRequest:
+  model.UpdateRoleRequest:
     properties:
       hak_akses_ids:
         items:
           type: integer
         type: array
+      nama_role:
+        type: string
+    required:
+    - nama_role
+    type: object
+  model.UpdateUserRequest:
+    properties:
       id_departemen:
         type: integer
       id_mitra:
         type: integer
-      is_manager:
-        type: boolean
       password:
         minLength: 6
         type: string
@@ -2065,6 +2314,36 @@ definitions:
         type: string
     required:
     - username
+    type: object
+  model.UpdateWOShellPlanStatusRequest:
+    properties:
+      status_embroo:
+        type: string
+      status_finishing_packing:
+        type: string
+      status_gelar_cutting:
+        type: string
+      status_loading_sewing:
+        type: string
+    type: object
+  model.UpdateWOShellPlanStatusSuccessDoc:
+    properties:
+      message:
+        example: wo shell plan status updated
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.UpdateWarnaRequest:
+    properties:
+      kode_hex:
+        maxLength: 7
+        type: string
+      nama_warna:
+        type: string
+    required:
+    - nama_warna
     type: object
   model.UserListSuccessDoc:
     properties:
@@ -2091,13 +2370,15 @@ definitions:
         type: integer
       id_mitra:
         type: integer
+      id_role:
+        type: integer
       id_user:
         type: integer
-      is_manager:
-        type: boolean
       nama_departemen:
         type: string
       nama_perusahaan:
+        type: string
+      nama_role:
         type: string
       permissions:
         items:
@@ -2117,6 +2398,37 @@ definitions:
         type: string
       status:
         example: success
+        type: string
+    type: object
+  model.WOShellPlanResponse:
+    properties:
+      color:
+        type: string
+      fabric:
+        type: string
+      id_timeline:
+        type: integer
+      id_wo_shell:
+        type: integer
+      id_wo_shell_plan:
+        type: integer
+      in_line:
+        type: string
+      status_embroo:
+        type: string
+      status_finishing_packing:
+        type: string
+      status_gelar_cutting:
+        type: string
+      status_loading_sewing:
+        type: string
+      tgl_embroo:
+        type: string
+      tgl_finishing_packing:
+        type: string
+      tgl_gelar_cutting:
+        type: string
+      tgl_loading_sewing:
         type: string
     type: object
   model.WarehouseErrorDetail:
@@ -2147,6 +2459,28 @@ definitions:
         type: string
       status:
         example: error
+        type: string
+    type: object
+  model.WarnaResponse:
+    properties:
+      created_at:
+        type: string
+      id_warna:
+        type: integer
+      kode_hex:
+        type: string
+      nama_warna:
+        type: string
+    type: object
+  model.WarnaSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.WarnaResponse'
+      message:
+        example: warna created
+        type: string
+      status:
+        example: success
         type: string
     type: object
   model.WorkOrderDetailResponse:
@@ -2334,6 +2668,24 @@ definitions:
       ratio:
         type: integer
       size:
+        type: string
+    type: object
+  model.WorkOrderShellTotalQtyResponse:
+    properties:
+      id_wo_shell:
+        type: integer
+      total_qty:
+        type: integer
+    type: object
+  model.WorkOrderShellTotalQtySuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.WorkOrderShellTotalQtyResponse'
+      message:
+        example: total qty retrieved
+        type: string
+      status:
+        example: success
         type: string
     type: object
   model.WorkOrderStatusResponse:
@@ -3295,6 +3647,119 @@ paths:
       summary: Update Permission
       tags:
       - Master Data
+  /api/v1/master/warna:
+    get:
+      parameters:
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset (default 0)
+        in: query
+        name: offset
+        type: integer
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ListWarnaSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: List Colors
+      tags:
+      - Master Data
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Color payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateWarnaRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.WarnaSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Color
+      tags:
+      - Master Data
+  /api/v1/master/warna/{id}:
+    delete:
+      parameters:
+      - description: Color ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete Color
+      tags:
+      - Master Data
+    get:
+      parameters:
+      - description: Color ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.WarnaSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Color Detail
+      tags:
+      - Master Data
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Color ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Color payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateWarnaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.WarnaSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Update Color
+      tags:
+      - Master Data
   /api/v1/packing-lists:
     get:
       description: Returns a paginated list of packing list headers.
@@ -3958,6 +4423,210 @@ paths:
       summary: Laporan Stok per Lokasi
       tags:
       - Reports
+  /api/v1/roles:
+    get:
+      description: Returns a paginated list of roles.
+      parameters:
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Search by role name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.RoleListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: List Roles
+      tags:
+      - Roles
+    post:
+      consumes:
+      - application/json
+      description: Creates a new role and assigns permission overrides for the role.
+      parameters:
+      - description: Create role payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.RoleSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Role
+      tags:
+      - Roles
+  /api/v1/roles/{id}:
+    delete:
+      description: Deletes a role if it is not currently assigned to users.
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Delete Role
+      tags:
+      - Roles
+    get:
+      description: Returns a single role with assigned permissions.
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.RoleSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Role Detail
+      tags:
+      - Roles
+    put:
+      consumes:
+      - application/json
+      description: Updates role metadata and replaces assigned permissions.
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update role payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.RoleSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Update Role
+      tags:
+      - Roles
   /api/v1/surat-jalan-clients:
     get:
       description: Returns a paginated list of client delivery notes.
@@ -4128,6 +4797,113 @@ paths:
       summary: Create Surat Jalan
       tags:
       - Warehouse & Delivery
+  /api/v1/timeline-plans:
+    post:
+      consumes:
+      - application/json
+      description: Create a production timeline plan with multiple wo shell plans.
+      parameters:
+      - description: Timeline plan payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateTimelinePlanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.TimelinePlanSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TimelinePlanValidationErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TimelinePlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Timeline Plan
+      tags:
+      - Timeline & Production Plan
+  /api/v1/timeline-plans/{id}:
+    get:
+      description: Returns a single timeline plan with its wo shell plans.
+      parameters:
+      - description: Timeline ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.TimelinePlanSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TimelinePlanErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.TimelinePlanErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TimelinePlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Timeline Plan Detail
+      tags:
+      - Timeline & Production Plan
+  /api/v1/timeline-plans/wo-shell-plans/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Updates progress status for a specific work order shell plan (cutting,
+        embroidery, sewing, finishing/packing).
+      parameters:
+      - description: WO Shell Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Statuses update payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateWOShellPlanStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UpdateWOShellPlanStatusSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TimelinePlanErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.TimelinePlanErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TimelinePlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Update WO Shell Plan Status
+      tags:
+      - Timeline & Production Plan
   /api/v1/users:
     get:
       description: Returns a paginated list of users with their department and mitra
@@ -4323,6 +5099,52 @@ paths:
       summary: Approve User Pendaftaran
       tags:
       - Users
+  /api/v1/users/{id}/permissions:
+    put:
+      consumes:
+      - application/json
+      description: Replaces additive USER_AKSES overrides for a user without changing
+        the primary role.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Assign permissions payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.AssignUserPermissionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UserSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Replace User Permission Overrides
+      tags:
+      - Users
   /api/v1/users/{id}/reject:
     put:
       description: Rejects a pending user registration, updating status to rejected.
@@ -4342,6 +5164,51 @@ paths:
       security:
       - BearerAuth: []
       summary: Reject User Pendaftaran
+      tags:
+      - Users
+  /api/v1/users/{id}/role:
+    put:
+      consumes:
+      - application/json
+      description: Updates only the user's primary role assignment.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Assign role payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.AssignUserRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UserSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.GetMeUnauthorizedDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.LoginServiceUnavailableDoc'
+      security:
+      - BearerAuth: []
+      summary: Assign Role to User
       tags:
       - Users
   /api/v1/work-orders:
@@ -4489,6 +5356,36 @@ paths:
       security:
       - BearerAuth: []
       summary: Close Work Order
+      tags:
+      - Work Order & Production
+  /api/v1/work-orders/shells/{id}/total-qty:
+    get:
+      description: Returns the total quantity of a work order shell from its size
+        variations.
+      parameters:
+      - description: Work Order Shell ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.WorkOrderShellTotalQtySuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Work Order Shell Total Qty
       tags:
       - Work Order & Production
   /health:
