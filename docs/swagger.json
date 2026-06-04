@@ -3189,6 +3189,173 @@
                 }
             }
         },
+        "/api/v1/timeline-plans": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a production timeline plan with multiple wo shell plans.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Timeline \u0026 Production Plan"
+                ],
+                "summary": "Create Timeline Plan",
+                "parameters": [
+                    {
+                        "description": "Timeline plan payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateTimelinePlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.TimelinePlanSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.TimelinePlanValidationErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TimelinePlanErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/timeline-plans/wo-shell-plans/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates progress status for a specific work order shell plan (cutting, embroidery, sewing, finishing/packing).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Timeline \u0026 Production Plan"
+                ],
+                "summary": "Update WO Shell Plan Status",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "WO Shell Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Statuses update payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateWOShellPlanStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateWOShellPlanStatusSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.TimelinePlanErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.TimelinePlanErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TimelinePlanErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/timeline-plans/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a single timeline plan with its wo shell plans.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Timeline \u0026 Production Plan"
+                ],
+                "summary": "Get Timeline Plan Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Timeline ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.TimelinePlanSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.TimelinePlanErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.TimelinePlanErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TimelinePlanErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users": {
             "get": {
                 "security": [
@@ -4808,6 +4975,32 @@
                 }
             }
         },
+        "model.CreateTimelinePlanRequest": {
+            "type": "object",
+            "required": [
+                "id_po_client",
+                "shell_plans",
+                "tanggal_disusun"
+            ],
+            "properties": {
+                "id_po_client": {
+                    "type": "integer"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "shell_plans": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.CreateWOShellPlanRequest"
+                    }
+                },
+                "tanggal_disusun": {
+                    "type": "string"
+                }
+            }
+        },
         "model.CreateUserRequest": {
             "type": "object",
             "required": [
@@ -4840,6 +5033,45 @@
                     "type": "string"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.CreateWOShellPlanRequest": {
+            "type": "object",
+            "required": [
+                "id_wo_shell",
+                "in_line"
+            ],
+            "properties": {
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "in_line": {
+                    "type": "string"
+                },
+                "status_embroo": {
+                    "type": "string"
+                },
+                "status_finishing_packing": {
+                    "type": "string"
+                },
+                "status_gelar_cutting": {
+                    "type": "string"
+                },
+                "status_loading_sewing": {
+                    "type": "string"
+                },
+                "tgl_embroo": {
+                    "type": "string"
+                },
+                "tgl_finishing_packing": {
+                    "type": "string"
+                },
+                "tgl_gelar_cutting": {
+                    "type": "string"
+                },
+                "tgl_loading_sewing": {
                     "type": "string"
                 }
             }
@@ -7003,6 +7235,92 @@
                 }
             }
         },
+        "model.TimelinePlanErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "related_data_not_found"
+                }
+            }
+        },
+        "model.TimelinePlanErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/model.TimelinePlanErrorDetail"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "related data not found"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.TimelinePlanResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_po_client": {
+                    "type": "integer"
+                },
+                "id_timeline": {
+                    "type": "integer"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "shell_plans": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.WOShellPlanResponse"
+                    }
+                },
+                "tanggal_disusun": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.TimelinePlanSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.TimelinePlanResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "timeline plan created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.TimelinePlanValidationErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ValidationErrorItem"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "bad request"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
         "model.TransactionErrorDetail": {
             "type": "object",
             "properties": {
@@ -7245,6 +7563,36 @@
                 }
             }
         },
+        "model.UpdateWOShellPlanStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status_embroo": {
+                    "type": "string"
+                },
+                "status_finishing_packing": {
+                    "type": "string"
+                },
+                "status_gelar_cutting": {
+                    "type": "string"
+                },
+                "status_loading_sewing": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.UpdateWOShellPlanStatusSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "wo shell plan status updated"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.UpdateWarnaRequest": {
             "type": "object",
             "required": [
@@ -7339,6 +7687,53 @@
                 "status": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "model.WOShellPlanResponse": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "fabric": {
+                    "type": "string"
+                },
+                "id_timeline": {
+                    "type": "integer"
+                },
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "id_wo_shell_plan": {
+                    "type": "integer"
+                },
+                "in_line": {
+                    "type": "string"
+                },
+                "status_embroo": {
+                    "type": "string"
+                },
+                "status_finishing_packing": {
+                    "type": "string"
+                },
+                "status_gelar_cutting": {
+                    "type": "string"
+                },
+                "status_loading_sewing": {
+                    "type": "string"
+                },
+                "tgl_embroo": {
+                    "type": "string"
+                },
+                "tgl_finishing_packing": {
+                    "type": "string"
+                },
+                "tgl_gelar_cutting": {
+                    "type": "string"
+                },
+                "tgl_loading_sewing": {
+                    "type": "string"
                 }
             }
         },
