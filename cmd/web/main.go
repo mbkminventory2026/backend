@@ -120,6 +120,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	timelineProduksiUseCase, err := usecase.NewTimelineProduksiUseCase(queries, dbPool)
+	if err != nil {
+		logger.Error("failed to initialize timeline produksi usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	warehouseDeliveryUseCase, err := usecase.NewWarehouseDeliveryUseCase(queries, dbPool)
 	if err != nil {
 		logger.Error("failed to initialize warehouse delivery usecase", slog.String("error", err.Error()))
@@ -184,6 +191,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	timelineProduksiHandler, err := httpdelivery.NewTimelineProduksiHandler(timelineProduksiUseCase)
+	if err != nil {
+		logger.Error("failed to initialize timeline produksi handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	warehouseDeliveryHandler, err := httpdelivery.NewWarehouseDeliveryHandler(warehouseDeliveryUseCase)
 	if err != nil {
 		logger.Error("failed to initialize warehouse delivery handler", slog.String("error", err.Error()))
@@ -242,6 +256,7 @@ func main() {
 	masterDataHandler.RegisterRoutes(router, authMiddleware)
 	transactionDocumentHandler.RegisterRoutes(router, authMiddleware)
 	workOrderProductionHandler.RegisterRoutes(router, authMiddleware)
+	timelineProduksiHandler.RegisterRoutes(router, authMiddleware)
 	warehouseDeliveryHandler.RegisterRoutes(router, authMiddleware)
 
 	dashboardHandler.RegisterRoutes(router, authMiddleware)

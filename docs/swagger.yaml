@@ -574,6 +574,24 @@ definitions:
     - qty
     - tanggal
     type: object
+  model.CreateTimelinePlanRequest:
+    properties:
+      id_po_client:
+        type: integer
+      notes:
+        type: string
+      shell_plans:
+        items:
+          $ref: '#/definitions/model.CreateWOShellPlanRequest'
+        minItems: 1
+        type: array
+      tanggal_disusun:
+        type: string
+    required:
+    - id_po_client
+    - shell_plans
+    - tanggal_disusun
+    type: object
   model.CreateUserRequest:
     properties:
       hak_akses_ids:
@@ -598,6 +616,32 @@ definitions:
     - id_role
     - password
     - username
+    type: object
+  model.CreateWOShellPlanRequest:
+    properties:
+      id_wo_shell:
+        type: integer
+      in_line:
+        type: string
+      status_embroo:
+        type: string
+      status_finishing_packing:
+        type: string
+      status_gelar_cutting:
+        type: string
+      status_loading_sewing:
+        type: string
+      tgl_embroo:
+        type: string
+      tgl_finishing_packing:
+        type: string
+      tgl_gelar_cutting:
+        type: string
+      tgl_loading_sewing:
+        type: string
+    required:
+    - id_wo_shell
+    - in_line
     type: object
   model.CreateWorkOrderRequest:
     properties:
@@ -2027,6 +2071,64 @@ definitions:
         example: success
         type: string
     type: object
+  model.TimelinePlanErrorDetail:
+    properties:
+      code:
+        example: related_data_not_found
+        type: string
+    type: object
+  model.TimelinePlanErrorDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.TimelinePlanErrorDetail'
+      message:
+        example: related data not found
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.TimelinePlanResponse:
+    properties:
+      created_at:
+        type: string
+      id_po_client:
+        type: integer
+      id_timeline:
+        type: integer
+      notes:
+        type: string
+      shell_plans:
+        items:
+          $ref: '#/definitions/model.WOShellPlanResponse'
+        type: array
+      tanggal_disusun:
+        type: string
+    type: object
+  model.TimelinePlanSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.TimelinePlanResponse'
+      message:
+        example: timeline plan created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.TimelinePlanValidationErrorDoc:
+    properties:
+      error:
+        items:
+          $ref: '#/definitions/response.ValidationErrorItem'
+        type: array
+      message:
+        example: bad request
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
   model.TransactionErrorDetail:
     properties:
       code:
@@ -2190,6 +2292,26 @@ definitions:
     required:
     - username
     type: object
+  model.UpdateWOShellPlanStatusRequest:
+    properties:
+      status_embroo:
+        type: string
+      status_finishing_packing:
+        type: string
+      status_gelar_cutting:
+        type: string
+      status_loading_sewing:
+        type: string
+    type: object
+  model.UpdateWOShellPlanStatusSuccessDoc:
+    properties:
+      message:
+        example: wo shell plan status updated
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.UserListSuccessDoc:
     properties:
       data:
@@ -2243,6 +2365,37 @@ definitions:
         type: string
       status:
         example: success
+        type: string
+    type: object
+  model.WOShellPlanResponse:
+    properties:
+      color:
+        type: string
+      fabric:
+        type: string
+      id_timeline:
+        type: integer
+      id_wo_shell:
+        type: integer
+      id_wo_shell_plan:
+        type: integer
+      in_line:
+        type: string
+      status_embroo:
+        type: string
+      status_finishing_packing:
+        type: string
+      status_gelar_cutting:
+        type: string
+      status_loading_sewing:
+        type: string
+      tgl_embroo:
+        type: string
+      tgl_finishing_packing:
+        type: string
+      tgl_gelar_cutting:
+        type: string
+      tgl_loading_sewing:
         type: string
     type: object
   model.WarehouseErrorDetail:
@@ -4458,6 +4611,113 @@ paths:
       summary: Create Surat Jalan
       tags:
       - Warehouse & Delivery
+  /api/v1/timeline-plans:
+    post:
+      consumes:
+      - application/json
+      description: Create a production timeline plan with multiple wo shell plans.
+      parameters:
+      - description: Timeline plan payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateTimelinePlanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.TimelinePlanSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TimelinePlanValidationErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TimelinePlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Timeline Plan
+      tags:
+      - Timeline & Production Plan
+  /api/v1/timeline-plans/{id}:
+    get:
+      description: Returns a single timeline plan with its wo shell plans.
+      parameters:
+      - description: Timeline ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.TimelinePlanSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TimelinePlanErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.TimelinePlanErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TimelinePlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Timeline Plan Detail
+      tags:
+      - Timeline & Production Plan
+  /api/v1/timeline-plans/wo-shell-plans/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Updates progress status for a specific work order shell plan (cutting,
+        embroidery, sewing, finishing/packing).
+      parameters:
+      - description: WO Shell Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Statuses update payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateWOShellPlanStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UpdateWOShellPlanStatusSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TimelinePlanErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.TimelinePlanErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TimelinePlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Update WO Shell Plan Status
+      tags:
+      - Timeline & Production Plan
   /api/v1/users:
     get:
       description: Returns a paginated list of users with their department and mitra
