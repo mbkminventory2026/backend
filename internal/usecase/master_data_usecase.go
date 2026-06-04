@@ -237,6 +237,9 @@ func (u *MasterDataUseCase) GetMitraByID(ctx context.Context, id int32) (model.M
 		TipePerusahaan: item.TipePerusahaan,
 		Email:          item.Email,
 		NoTelp:         item.NoTelp,
+		Alamat:         item.Alamat,
+		Kota:           item.Kota,
+		KodePos:        item.KodePos,
 		CreatedAt:      item.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
@@ -268,6 +271,9 @@ func (u *MasterDataUseCase) ListMitra(ctx context.Context, filter model.ListQuer
 			TipePerusahaan: i.TipePerusahaan,
 			Email:          i.Email,
 			NoTelp:         i.NoTelp,
+			Alamat:         i.Alamat,
+			Kota:           i.Kota,
+			KodePos:        i.KodePos,
 			CreatedAt:      i.CreatedAt.Time.Format(time.RFC3339),
 		})
 	}
@@ -294,6 +300,9 @@ func (u *MasterDataUseCase) CreateMitra(ctx context.Context, req model.CreateMit
 		TipePerusahaan: item.TipePerusahaan,
 		Email:          item.Email,
 		NoTelp:         item.NoTelp,
+		Alamat:         item.Alamat,
+		Kota:           item.Kota,
+		KodePos:        item.KodePos,
 		CreatedAt:      item.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
@@ -319,6 +328,9 @@ func (u *MasterDataUseCase) UpdateMitra(ctx context.Context, id int32, req model
 		TipePerusahaan: item.TipePerusahaan,
 		Email:          item.Email,
 		NoTelp:         item.NoTelp,
+		Alamat:         item.Alamat,
+		Kota:           item.Kota,
+		KodePos:        item.KodePos,
 		CreatedAt:      item.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }

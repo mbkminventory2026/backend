@@ -269,13 +269,19 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	response.Success(c, http.StatusOK, "user deleted", nil)
 }
 
+type ApproveUserRequest struct {
+	Username string `json:"username" binding:"required,min=3"`
+}
+
 // Approve godoc
 // @Summary      Approve User Pendaftaran
-// @Description  Approves a pending user registration, updating status to active.
+// @Description  Approves a pending user registration, updating status to active and setting username/password.
 // @Tags         Users
+// @Accept       json
 // @Produce      json
 // @Security     BearerAuth
 // @Param        id   path      int  true  "User ID"
+// @Param        payload  body      httpdelivery.ApproveUserRequest  true  "Approval payload"
 // @Success      200  {object}  model.UserSuccessDoc
 // @Router       /api/v1/users/{id}/approve [put]
 func (h *UserHandler) Approve(c *gin.Context) {
@@ -285,7 +291,12 @@ func (h *UserHandler) Approve(c *gin.Context) {
 		return
 	}
 
-	result, err := h.useCase.Approve(c.Request.Context(), id)
+	var req ApproveUserRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+
+	result, err := h.useCase.Approve(c.Request.Context(), id, req.Username)
 	if err != nil {
 		h.handleError(c, err)
 		return

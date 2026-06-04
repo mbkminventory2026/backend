@@ -482,7 +482,18 @@ func isForeignKeyViolation(err error) bool {
 	return errors.As(err, &pgErr) && pgErr.Code == "23503"
 }
 
-func (u *UserUseCase) Approve(ctx context.Context, id int32) (*model.UserResponse, error) {
+func (u *UserUseCase) Approve(ctx context.Context, id int32, newUsername string) (*model.UserResponse, error) {
+	// 1. Generate random temporary password
+	temporaryPassword, err := passwordutil.GenerateTemporaryPassword(12)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to generate password", ErrUserServiceUnavailable)
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(temporaryPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to hash password", ErrUserServiceUnavailable)
+	}
+
 	tx, err := u.dbPool.Begin(ctx)
 	if err != nil {
 		return nil, err
@@ -494,10 +505,9 @@ func (u *UserUseCase) Approve(ctx context.Context, id int32) (*model.UserRespons
 	}()
 
 	qtx := entity.New(tx)
-	updatedUser, err := qtx.UpdateUserStatus(ctx, entity.UpdateUserStatusParams{
-		IDUser: id,
-		Status: "active",
-	})
+
+	// Check if user exists
+	user, err := qtx.GetUserByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrUserNotFound
@@ -505,14 +515,58 @@ func (u *UserUseCase) Approve(ctx context.Context, id int32) (*model.UserRespons
 		return nil, err
 	}
 
+	// Update user with newUsername, hashedPassword, active status, must_change_password
+	updatedUser, err := qtx.UpdateUser(ctx, entity.UpdateUserParams{
+		IDUser:             id,
+		Username:           newUsername,
+		Password:           string(hashedPassword),
+		IDRole:             user.IDRole,
+		IDDepartemen:       user.IDDepartemen,
+		IDMitra:            user.IDMitra,
+		Status:             "active",
+		MustChangePassword: true,
+		PasswordChangedAt:  pgtype.Timestamptz{Valid: false},
+		UpdatedBy:          pgtype.Int4{Valid: false},
+	})
+	if err != nil {
+		if isUniqueViolation(err) {
+			return nil, ErrUsernameAlreadyExists
+		}
+		return nil, err
+	}
+
+	role, err := qtx.GetRoleByID(ctx, updatedUser.IDRole)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
 
+	var resDept *int32
+	if updatedUser.IDDepartemen.Valid {
+		val := updatedUser.IDDepartemen.Int32
+		resDept = &val
+	}
+
+	var resMitra *int32
+	if updatedUser.IDMitra.Valid {
+		val := updatedUser.IDMitra.Int32
+		resMitra = &val
+	}
+
 	return &model.UserResponse{
-		IDUser:   updatedUser.IDUser,
-		Username: updatedUser.Username,
-		Status:   updatedUser.Status,
+		IDUser:             updatedUser.IDUser,
+		Username:           updatedUser.Username,
+		Status:             updatedUser.Status,
+		IDRole:             updatedUser.IDRole,
+		NamaRole:           role.NamaRole,
+		MustChangePassword: updatedUser.MustChangePassword,
+		IDDepartemen:       resDept,
+		IDMitra:            resMitra,
+		TemporaryPassword:  temporaryPassword,
+		CreatedAt:          updatedUser.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
 

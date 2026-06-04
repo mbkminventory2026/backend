@@ -105,8 +105,9 @@ func (u *AuthUseCase) RegisterMitra(ctx context.Context, req model.RegisterMitra
 		return fmt.Errorf("captcha verification: %w", err)
 	}
 
-	// 2. Hash Password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	// 2. Hash Dummy Password for pending user (cannot log in until approved)
+	dummyPassword := "pending_mitra_placeholder_password_not_for_login"
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(dummyPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
@@ -171,8 +172,11 @@ func (u *AuthUseCase) RegisterMitra(ctx context.Context, req model.RegisterMitra
 	idMitra := pgtype.Int4{Int32: mitra.IDMitra, Valid: true}
 	idDept := pgtype.Int4{Valid: false}
 
+	// Generate a unique temporary pending username using Mitra ID
+	tempUsername := fmt.Sprintf("pending_mitra_%d", mitra.IDMitra)
+
 	_, err = qtx.CreateUser(ctx, entity.CreateUserParams{
-		Username:           req.Username,
+		Username:           tempUsername,
 		Password:           string(hashedPassword),
 		IDRole:             clientRole.IDRole,
 		IDDepartemen:       idDept,
