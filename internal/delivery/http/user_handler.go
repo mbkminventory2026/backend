@@ -26,7 +26,7 @@ func NewUserHandler(useCase *usecase.UserUseCase) (*UserHandler, error) {
 }
 
 func (h *UserHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/api/v1/users").Use(authMiddleware)
+	group := router.Group("/api/v1/users").Use(authMiddleware, RequireInternalUser())
 
 	group.POST("", RequirePermission(PermissionUserCreate), h.Create)
 	group.GET("", RequirePermission(PermissionUserRead), h.List)

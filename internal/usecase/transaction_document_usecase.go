@@ -515,8 +515,11 @@ func (u *TransactionDocumentUseCase) ListPOClients(ctx context.Context, filter m
 	}, nil
 }
 
-func (u *TransactionDocumentUseCase) GetPOClientDetail(ctx context.Context, id int32) (*model.POClientDetailResponse, error) {
-	header, err := u.repo.GetPOClientDetail(ctx, id)
+func (u *TransactionDocumentUseCase) GetPOClientDetail(ctx context.Context, id int32, idMitra *int32) (*model.POClientDetailResponse, error) {
+	header, err := u.repo.GetPOClientDetail(ctx, entity.GetPOClientDetailParams{
+		IDPoClient: id,
+		IDMitra:    nullableInt32Param(idMitra),
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrTransactionNotFound

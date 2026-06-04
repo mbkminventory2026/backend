@@ -90,7 +90,7 @@ type Querier interface {
 	GetMitraByID(ctx context.Context, idMitra int32) (Mitra, error)
 	// Mengambil laporan riwayat pergerakan stok masuk (received) dan keluar (surat jalan) secara kronologis
 	GetMovementReport(ctx context.Context) ([]GetMovementReportRow, error)
-	GetPOClientDetail(ctx context.Context, idPoClient int32) (GetPOClientDetailRow, error)
+	GetPOClientDetail(ctx context.Context, arg GetPOClientDetailParams) (GetPOClientDetailRow, error)
 	GetPOInternalDetail(ctx context.Context, idPoInternal int32) (PoInternal, error)
 	GetPRInternalDetail(ctx context.Context, idPrInternal int32) (GetPRInternalDetailRow, error)
 	GetPackingListDetail(ctx context.Context, arg GetPackingListDetailParams) (GetPackingListDetailRow, error)

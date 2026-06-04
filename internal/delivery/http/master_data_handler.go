@@ -24,7 +24,7 @@ func NewMasterDataHandler(useCase *usecase.MasterDataUseCase) (*MasterDataHandle
 }
 
 func (h *MasterDataHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
-	master := router.Group("/api/v1/master").Use(authMiddleware)
+	master := router.Group("/api/v1/master").Use(authMiddleware, RequireInternalUser())
 
 	// Departemen
 	master.GET("/departemen", RequirePermission(PermissionMasterDepartemenRead), h.ListDepartemen)

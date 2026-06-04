@@ -24,13 +24,14 @@ func NewWorkOrderProductionHandler(useCase *usecase.WorkOrderProductionUseCase) 
 
 func (h *WorkOrderProductionHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
 	v1 := router.Group("/api/v1").Use(authMiddleware)
+	internalOnly := RequireInternalUser()
 	v1.GET("/work-orders", RequirePermission(PermissionWORead), h.ListWorkOrders)
 	v1.GET("/work-orders/:id", RequirePermission(PermissionWORead), h.GetWorkOrderDetail)
-	v1.GET("/work-orders/shells/:id/total-qty", RequirePermission(PermissionWORead), h.GetWorkOrderShellTotalQty)
+	v1.GET("/work-orders/shells/:id/total-qty", internalOnly, RequirePermission(PermissionWORead), h.GetWorkOrderShellTotalQty)
 	v1.GET("/production/summary", RequirePermission(PermissionProductionSummaryRead), h.ListProductionSummary)
-	v1.POST("/work-orders", RequirePermission(PermissionWOCreate), h.CreateWorkOrder)
-	v1.PATCH("/work-orders/:id/close", RequirePermission(PermissionWOClose), h.CloseWorkOrder)
-	v1.POST("/reports/:divisi", RequirePermission(PermissionProductionReportCreate), h.CreateFactoryReport)
+	v1.POST("/work-orders", internalOnly, RequirePermission(PermissionWOCreate), h.CreateWorkOrder)
+	v1.PATCH("/work-orders/:id/close", internalOnly, RequirePermission(PermissionWOClose), h.CloseWorkOrder)
+	v1.POST("/reports/:divisi", internalOnly, RequirePermission(PermissionProductionReportCreate), h.CreateFactoryReport)
 }
 
 // ListWorkOrders godoc

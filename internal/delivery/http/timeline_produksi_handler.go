@@ -23,7 +23,7 @@ func NewTimelineProduksiHandler(useCase *usecase.TimelineProduksiUseCase) (*Time
 }
 
 func (h *TimelineProduksiHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
-	v1 := router.Group("/api/v1").Use(authMiddleware)
+	v1 := router.Group("/api/v1").Use(authMiddleware, RequireInternalUser())
 
 	v1.POST("/timeline-plans", RequirePermission(PermissionTimelineCreate), h.CreateTimelinePlan)
 	v1.GET("/timeline-plans/:id", RequirePermission(PermissionTimelineRead), h.GetTimelinePlan)

@@ -41,13 +41,13 @@ func NewDashboardHandler(useCase *usecase.DashboardUseCase) (*DashboardHandler, 
 
 func (h *DashboardHandler) RegisterRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc) {
 	api := router.Group("/api/v1")
-	api.Use(authMiddleware)
+	api.Use(authMiddleware, RequireInternalUser())
 	{
 		api.GET("/logs", RequirePermission(PermissionLogRead), h.GetLogs)
 		api.POST("/dashboard/ai-estimation", RequirePermission(PermissionDashboardRead), h.PredictAIEstimation)
 	}
 
-	router.GET("/ws/alerts", authMiddleware, RequirePermission(PermissionDashboardRead), h.Alerts)
+	router.GET("/ws/alerts", authMiddleware, RequireInternalUser(), RequirePermission(PermissionDashboardRead), h.Alerts)
 }
 
 // GetLogs godoc

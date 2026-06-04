@@ -188,6 +188,10 @@ SELECT
 FROM PO_CLIENT pc
 JOIN MITRA m ON m.id_mitra = pc.id_mitra
 WHERE pc.id_po_client = sqlc.arg(id_po_client)
+AND (
+    sqlc.narg(id_mitra)::integer IS NULL OR
+    pc.id_mitra = sqlc.narg(id_mitra)::integer
+)
 LIMIT 1;
 
 -- name: ListPOClientItemsByPOClientID :many

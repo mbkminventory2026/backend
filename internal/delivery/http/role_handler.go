@@ -24,7 +24,7 @@ func NewRoleHandler(useCase *usecase.RoleUseCase) (*RoleHandler, error) {
 }
 
 func (h *RoleHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/api/v1/roles").Use(authMiddleware)
+	group := router.Group("/api/v1/roles").Use(authMiddleware, RequireInternalUser())
 
 	group.GET("", RequirePermission(PermissionRoleRead), h.List)
 	group.GET("/:id", RequirePermission(PermissionRoleRead), h.GetByID)

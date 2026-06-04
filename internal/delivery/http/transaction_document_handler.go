@@ -25,17 +25,18 @@ func NewTransactionDocumentHandler(useCase *usecase.TransactionDocumentUseCase) 
 
 func (h *TransactionDocumentHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
 	v1 := router.Group("/api/v1").Use(authMiddleware)
+	internalOnly := RequireInternalUser()
 	v1.GET("/po-clients", RequirePermission(PermissionPOClientRead), h.ListPOClients)
 	v1.GET("/po-clients/:id", RequirePermission(PermissionPOClientRead), h.GetPOClientDetail)
-	v1.POST("/po-clients", RequirePermission(PermissionPOClientCreate), h.CreatePOClient)
-	v1.PUT("/po-clients/:id", RequirePermission(PermissionPOClientUpdate), h.UpdatePOClient)
-	v1.GET("/pr-internals", RequirePermission(PermissionPRInternalRead), h.ListPRInternals)
-	v1.GET("/pr-internals/:id", RequirePermission(PermissionPRInternalRead), h.GetPRInternalDetail)
-	v1.POST("/pr-internals", RequirePermission(PermissionPRInternalCreate), h.CreatePRInternal)
-	v1.PATCH("/pr-internals/:id/approve", RequirePermission(PermissionPRInternalApprove), h.ApprovePRInternal)
-	v1.GET("/po-internals", RequirePermission(PermissionPOInternalRead), h.ListPOInternals)
-	v1.GET("/po-internals/:id", RequirePermission(PermissionPOInternalRead), h.GetPOInternalDetail)
-	v1.POST("/po-internals", RequirePermission(PermissionPOInternalCreate), h.CreatePOInternal)
+	v1.POST("/po-clients", internalOnly, RequirePermission(PermissionPOClientCreate), h.CreatePOClient)
+	v1.PUT("/po-clients/:id", internalOnly, RequirePermission(PermissionPOClientUpdate), h.UpdatePOClient)
+	v1.GET("/pr-internals", internalOnly, RequirePermission(PermissionPRInternalRead), h.ListPRInternals)
+	v1.GET("/pr-internals/:id", internalOnly, RequirePermission(PermissionPRInternalRead), h.GetPRInternalDetail)
+	v1.POST("/pr-internals", internalOnly, RequirePermission(PermissionPRInternalCreate), h.CreatePRInternal)
+	v1.PATCH("/pr-internals/:id/approve", internalOnly, RequirePermission(PermissionPRInternalApprove), h.ApprovePRInternal)
+	v1.GET("/po-internals", internalOnly, RequirePermission(PermissionPOInternalRead), h.ListPOInternals)
+	v1.GET("/po-internals/:id", internalOnly, RequirePermission(PermissionPOInternalRead), h.GetPOInternalDetail)
+	v1.POST("/po-internals", internalOnly, RequirePermission(PermissionPOInternalCreate), h.CreatePOInternal)
 }
 
 // ListPOClients godoc
@@ -100,18 +101,10 @@ func (h *TransactionDocumentHandler) GetPOClientDetail(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.GetPOClientDetail(c.Request.Context(), id)
+	item, err := h.useCase.GetPOClientDetail(c.Request.Context(), id, mitraID)
 	if err != nil {
 		h.handleError(c, err)
 		return
-	}
-
-	// If the user is a Mitra, they can ONLY access their own PO Client detail
-	if mitraID != nil {
-		if item.IDMitra != *mitraID {
-			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: you do not own this PO client document", nil))
-			return
-		}
 	}
 
 	payload, exists := c.Get(authorizationPayloadKey)

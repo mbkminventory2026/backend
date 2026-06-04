@@ -26,8 +26,17 @@ SELECT
 FROM PO_CLIENT pc
 JOIN MITRA m ON m.id_mitra = pc.id_mitra
 WHERE pc.id_po_client = $1
+AND (
+    $2::integer IS NULL OR
+    pc.id_mitra = $2::integer
+)
 LIMIT 1
 `
+
+type GetPOClientDetailParams struct {
+	IDPoClient int32       `json:"id_po_client"`
+	IDMitra    pgtype.Int4 `json:"id_mitra"`
+}
 
 type GetPOClientDetailRow struct {
 	IDPoClient  int32              `json:"id_po_client"`
@@ -42,8 +51,8 @@ type GetPOClientDetailRow struct {
 	MitraName   string             `json:"mitra_name"`
 }
 
-func (q *Queries) GetPOClientDetail(ctx context.Context, idPoClient int32) (GetPOClientDetailRow, error) {
-	row := q.db.QueryRow(ctx, getPOClientDetail, idPoClient)
+func (q *Queries) GetPOClientDetail(ctx context.Context, arg GetPOClientDetailParams) (GetPOClientDetailRow, error) {
+	row := q.db.QueryRow(ctx, getPOClientDetail, arg.IDPoClient, arg.IDMitra)
 	var i GetPOClientDetailRow
 	err := row.Scan(
 		&i.IDPoClient,

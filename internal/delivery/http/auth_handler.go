@@ -59,9 +59,9 @@ func (h *AuthHandler) RegisterRoutes(
 	protected := auth.Group("").Use(authMiddleware)
 	protected.GET("/me", h.GetMe)
 	protected.POST("/change-password", RequirePermission(PermissionAuthChangePassword), h.ChangePassword)
-	protected.GET("/forgot-password-requests", RequirePermission(PermissionPasswordResetRequestRead), h.ListForgotPasswordRequests)
-	protected.PATCH("/forgot-password-requests/:id/approve", RequirePermission(PermissionPasswordResetRequestApprove), h.ApproveForgotPasswordRequest)
-	protected.PATCH("/forgot-password-requests/:id/reject", RequirePermission(PermissionPasswordResetRequestReject), h.RejectForgotPasswordRequest)
+	protected.GET("/forgot-password-requests", RequireInternalUser(), RequirePermission(PermissionPasswordResetRequestRead), h.ListForgotPasswordRequests)
+	protected.PATCH("/forgot-password-requests/:id/approve", RequireInternalUser(), RequirePermission(PermissionPasswordResetRequestApprove), h.ApproveForgotPasswordRequest)
+	protected.PATCH("/forgot-password-requests/:id/reject", RequireInternalUser(), RequirePermission(PermissionPasswordResetRequestReject), h.RejectForgotPasswordRequest)
 }
 
 // Login godoc

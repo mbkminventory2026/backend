@@ -273,6 +273,58 @@ func GetMitraIDFromContext(c *gin.Context) (*int32, bool) {
 	return &val, true
 }
 
+// GetRoleNameFromContext retrieves the role name from JWT claims stored in context.
+func GetRoleNameFromContext(c *gin.Context) (string, bool) {
+	payload, exists := c.Get(authorizationPayloadKey)
+	if !exists {
+		return "", false
+	}
+
+	claims, ok := payload.(jwt.MapClaims)
+	if !ok {
+		return "", false
+	}
+
+	roleName, ok := claims["role_name"].(string)
+	if !ok {
+		return "", false
+	}
+
+	return roleName, true
+}
+
+// IsClientContext determines whether the current authenticated principal is an external client.
+func IsClientContext(c *gin.Context) (bool, bool) {
+	if roleName, ok := GetRoleNameFromContext(c); ok {
+		return strings.EqualFold(roleName, "CLIENT"), true
+	}
+
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		return false, false
+	}
+
+	return mitraID != nil, true
+}
+
+// RequireInternalUser blocks external client principals from internal-only endpoints.
+func RequireInternalUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		isClient, ok := IsClientContext(c)
+		if !ok {
+			AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid authentication context", nil))
+			return
+		}
+
+		if isClient {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: internal users only", nil))
+			return
+		}
+
+		c.Next()
+	}
+}
+
 // HasPermission checks if the authenticated user has a specific permission.
 func HasPermission(c *gin.Context, requiredPermission string) bool {
 	payload, exists := c.Get(authorizationPayloadKey)
