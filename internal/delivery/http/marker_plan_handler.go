@@ -42,12 +42,18 @@ func (h *MarkerPlanHandler) RegisterRoutes(router gin.IRouter, authMiddleware gi
 // @Failure      500      {object}  model.MarkerPlanErrorDoc
 // @Router       /api/v1/marker-plans [post]
 func (h *MarkerPlanHandler) CreateMarkerPlan(c *gin.Context) {
+	userID, ok := GetUserIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
 	var req model.CreateMarkerPlanRequest
 	if !BindJSON(c, &req) {
 		return
 	}
 
-	item, err := h.useCase.CreateMarkerPlan(c.Request.Context(), req)
+	item, err := h.useCase.CreateMarkerPlan(c.Request.Context(), userID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return

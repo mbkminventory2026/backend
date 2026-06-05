@@ -105,12 +105,18 @@ func (h *WarehouseDeliveryHandler) IssueInventory(c *gin.Context) {
 // @Failure      500      {object}  model.WarehouseErrorDoc
 // @Router       /api/v1/packing-lists [post]
 func (h *WarehouseDeliveryHandler) CreatePackingList(c *gin.Context) {
+	userID, ok := GetUserIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
 	var req model.CreatePackingListRequest
 	if !BindJSON(c, &req) {
 		return
 	}
 
-	item, err := h.useCase.CreatePackingList(c.Request.Context(), req)
+	item, err := h.useCase.CreatePackingList(c.Request.Context(), userID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return

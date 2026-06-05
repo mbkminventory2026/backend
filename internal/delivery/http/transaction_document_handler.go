@@ -426,12 +426,18 @@ func (h *TransactionDocumentHandler) GetPOInternalDetail(c *gin.Context) {
 // @Failure      500      {object}  model.TransactionErrorDoc
 // @Router       /api/v1/po-internals [post]
 func (h *TransactionDocumentHandler) CreatePOInternal(c *gin.Context) {
+	userID, ok := GetUserIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
 	var req model.CreatePOInternalRequest
 	if !BindJSON(c, &req) {
 		return
 	}
 
-	item, err := h.useCase.CreatePOInternal(c.Request.Context(), req)
+	item, err := h.useCase.CreatePOInternal(c.Request.Context(), userID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return

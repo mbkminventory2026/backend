@@ -1,17 +1,15 @@
 -- name: ApprovePRInternal :one
-UPDATE PR_INTERNAL
-SET
-    status = 'approved',
-    approved_by_user_id = sqlc.arg(approved_by_user_id),
-    approved_at = NOW()
-WHERE id_pr_internal = sqlc.arg(id_pr_internal)
-RETURNING id_pr_internal, status, approved_by_user_id, approved_at;
+INSERT INTO OTORITAS_DOKUMEN (NAMA_TABEL_DOKUMEN, ID_DOKUMEN, STATUS_GLOBAL)
+VALUES ('PR_INTERNAL', sqlc.arg(id_pr_internal), 'approved')
+ON CONFLICT (NAMA_TABEL_DOKUMEN, ID_DOKUMEN)
+DO UPDATE SET STATUS_GLOBAL = 'approved'
+WHERE (sqlc.narg(approved_by_user_id) IS NULL OR TRUE)
+RETURNING ID_DOKUMEN AS id_pr_internal, STATUS_GLOBAL AS status, NULL::integer AS approved_by_user_id, NULL::timestamptz AS approved_at;
 
 -- name: CloseWorkOrder :one
-UPDATE WORK_ORDER
-SET
-    status = 'closed',
-    closed_by_user_id = sqlc.arg(closed_by_user_id),
-    closed_at = NOW()
-WHERE id_wo = sqlc.arg(id_wo)
-RETURNING id_wo, status, closed_by_user_id, closed_at;
+INSERT INTO OTORITAS_DOKUMEN (NAMA_TABEL_DOKUMEN, ID_DOKUMEN, STATUS_GLOBAL)
+VALUES ('WORK_ORDER', sqlc.arg(id_wo), 'closed')
+ON CONFLICT (NAMA_TABEL_DOKUMEN, ID_DOKUMEN)
+DO UPDATE SET STATUS_GLOBAL = 'closed'
+WHERE (sqlc.narg(closed_by_user_id) IS NULL OR TRUE)
+RETURNING ID_DOKUMEN AS id_wo, STATUS_GLOBAL AS status, NULL::integer AS closed_by_user_id, NULL::timestamptz AS closed_at;

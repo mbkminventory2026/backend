@@ -14,7 +14,7 @@ SELECT
     pc.po_number,
     pci.style AS po_client_item_style,
     COUNT(*) OVER() AS total_count
-FROM WORK_ORDER wo
+FROM v_work_order wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE (
@@ -62,7 +62,7 @@ SELECT
     wo.created_at,
     pc.po_number,
     pci.style AS po_client_item_style
-FROM WORK_ORDER wo
+FROM v_work_order wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE wo.id_wo = sqlc.arg(id_wo)
@@ -237,7 +237,7 @@ SELECT
     pr.approved_at,
     pr.created_at,
     COUNT(*) OVER() AS total_count
-FROM PR_INTERNAL pr
+FROM v_pr_internal pr
 WHERE (
     sqlc.arg(search_term) = '' OR
     pr.nama ILIKE '%' || sqlc.arg(search_term) || '%' OR
@@ -282,7 +282,7 @@ SELECT
     approved_by_user_id,
     approved_at,
     created_at
-FROM PR_INTERNAL
+FROM v_pr_internal
 WHERE id_pr_internal = sqlc.arg(id_pr_internal)
 LIMIT 1;
 

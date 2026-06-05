@@ -47,7 +47,7 @@ func NewWorkOrderProductionUseCase(repo entity.Querier, dbPool *pgxpool.Pool) (*
 	}, nil
 }
 
-func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, req model.CreateWorkOrderRequest) (*model.WorkOrderResponse, error) {
+func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID int32, req model.CreateWorkOrderRequest) (*model.WorkOrderResponse, error) {
 	if len(req.Shells) == 0 || len(req.Trims) == 0 {
 		return nil, ErrWorkOrderValidation
 	}
@@ -188,6 +188,11 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, req mo
 			UOM:         material.Uom,
 			CreatedAt:   material.CreatedAt.Time.Format(time.RFC3339),
 		})
+	}
+
+	err = initializeApprovalWorkflow(ctx, qtx, "WORK_ORDER", header.IDWo, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize approval workflow: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {

@@ -165,12 +165,18 @@ func (h *WorkOrderProductionHandler) ListProductionSummary(c *gin.Context) {
 // @Failure      500      {object}  model.WorkOrderErrorDoc
 // @Router       /api/v1/work-orders [post]
 func (h *WorkOrderProductionHandler) CreateWorkOrder(c *gin.Context) {
+	userID, ok := GetUserIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
 	var req model.CreateWorkOrderRequest
 	if !BindJSON(c, &req) {
 		return
 	}
 
-	item, err := h.useCase.CreateWorkOrder(c.Request.Context(), req)
+	item, err := h.useCase.CreateWorkOrder(c.Request.Context(), userID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return

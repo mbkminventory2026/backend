@@ -132,3 +132,9 @@ WHERE id_user = $1;
 DELETE FROM USERS
 WHERE id_user = $1;
 
+-- name: GetUsersByRoleName :many
+SELECT u.id_user, u.username
+FROM USERS u
+JOIN ROLES r ON u.id_role = r.id_role
+WHERE r.nama_role = $1 AND u.status = 'active';
+

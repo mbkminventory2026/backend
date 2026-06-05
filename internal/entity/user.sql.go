@@ -278,6 +278,38 @@ func (q *Queries) GetUserPermissions(ctx context.Context, idUser int32) ([]strin
 	return items, nil
 }
 
+const getUsersByRoleName = `-- name: GetUsersByRoleName :many
+SELECT u.id_user, u.username
+FROM USERS u
+JOIN ROLES r ON u.id_role = r.id_role
+WHERE r.nama_role = $1 AND u.status = 'active'
+`
+
+type GetUsersByRoleNameRow struct {
+	IDUser   int32  `json:"id_user"`
+	Username string `json:"username"`
+}
+
+func (q *Queries) GetUsersByRoleName(ctx context.Context, namaRole string) ([]GetUsersByRoleNameRow, error) {
+	rows, err := q.db.Query(ctx, getUsersByRoleName, namaRole)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUsersByRoleNameRow
+	for rows.Next() {
+		var i GetUsersByRoleNameRow
+		if err := rows.Scan(&i.IDUser, &i.Username); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUsers = `-- name: ListUsers :many
 SELECT u.id_user, u.username, u.status, u.id_role, r.nama_role, u.id_departemen, u.id_mitra, d.nama_departemen, m.nama_perusahaan, u.must_change_password, u.created_at
 FROM USERS u

@@ -130,7 +130,7 @@ SELECT
     approved_by_user_id,
     approved_at,
     created_at
-FROM PR_INTERNAL
+FROM v_pr_internal
 WHERE id_pr_internal = $1
 LIMIT 1
 `
@@ -314,7 +314,7 @@ SELECT
     wo.created_at,
     pc.po_number,
     pci.style AS po_client_item_style
-FROM WORK_ORDER wo
+FROM v_work_order wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE wo.id_wo = $1
@@ -780,7 +780,7 @@ SELECT
     pr.approved_at,
     pr.created_at,
     COUNT(*) OVER() AS total_count
-FROM PR_INTERNAL pr
+FROM v_pr_internal pr
 WHERE (
     $1 = '' OR
     pr.nama ILIKE '%' || $1 || '%' OR
@@ -1408,7 +1408,7 @@ SELECT
     pc.po_number,
     pci.style AS po_client_item_style,
     COUNT(*) OVER() AS total_count
-FROM WORK_ORDER wo
+FROM v_work_order wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE (

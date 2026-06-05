@@ -106,7 +106,7 @@ func (u *WarehouseDeliveryUseCase) IssueInventory(ctx context.Context, req model
 	}, nil
 }
 
-func (u *WarehouseDeliveryUseCase) CreatePackingList(ctx context.Context, req model.CreatePackingListRequest) (*model.PackingListResponse, error) {
+func (u *WarehouseDeliveryUseCase) CreatePackingList(ctx context.Context, userID int32, req model.CreatePackingListRequest) (*model.PackingListResponse, error) {
 	if len(req.Items) == 0 {
 		return nil, ErrWarehouseValidation
 	}
@@ -187,6 +187,11 @@ func (u *WarehouseDeliveryUseCase) CreatePackingList(ctx context.Context, req mo
 			CreatedAt:  item.CreatedAt.Time.Format(time.RFC3339),
 			Sizes:      sizes,
 		})
+	}
+
+	// Initialize approval workflow
+	if err = initializeApprovalWorkflow(ctx, qtx, "PACKING_LIST", header.IDPackingList, userID); err != nil {
+		return nil, fmt.Errorf("failed to initialize approval workflow: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {

@@ -148,6 +148,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	approvalUseCase, err := usecase.NewApprovalUseCase(queries, dbPool)
+	if err != nil {
+		logger.Error("failed to initialize approval usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	reportUseCase, err := usecase.NewReportUseCase(queries)
 	if err != nil {
 		logger.Error("failed to initialize report usecase", slog.String("error", err.Error()))
@@ -228,6 +235,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	approvalHandler, err := httpdelivery.NewApprovalHandler(approvalUseCase)
+	if err != nil {
+		logger.Error("failed to initialize approval handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	reportHandler, err := httpdelivery.NewReportHandler(reportUseCase)
 	if err != nil {
 		logger.Error("failed to initialize report handler", slog.String("error", err.Error()))
@@ -273,6 +287,7 @@ func main() {
 	timelineProduksiHandler.RegisterRoutes(router, authMiddleware)
 	markerPlanHandler.RegisterRoutes(router, authMiddleware)
 	warehouseDeliveryHandler.RegisterRoutes(router, authMiddleware)
+	approvalHandler.RegisterRoutes(router, authMiddleware)
 
 	dashboardHandler.RegisterRoutes(router, authMiddleware)
 	reportHandler.RegisterRoutes(router, authMiddleware)

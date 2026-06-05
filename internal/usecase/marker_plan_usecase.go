@@ -40,7 +40,7 @@ func NewMarkerPlanUseCase(repo entity.Querier, dbPool *pgxpool.Pool) (*MarkerPla
 	}, nil
 }
 
-func (u *MarkerPlanUseCase) CreateMarkerPlan(ctx context.Context, req model.CreateMarkerPlanRequest) (*model.MarkerPlanResponse, error) {
+func (u *MarkerPlanUseCase) CreateMarkerPlan(ctx context.Context, userID int32, req model.CreateMarkerPlanRequest) (*model.MarkerPlanResponse, error) {
 	if len(req.Components) == 0 {
 		return nil, fmt.Errorf("%w: components cannot be empty", ErrMarkerPlanValidation)
 	}
@@ -117,6 +117,11 @@ func (u *MarkerPlanUseCase) CreateMarkerPlan(ctx context.Context, req model.Crea
 				return nil, mapMarkerDBError(sizeErr)
 			}
 		}
+	}
+
+	// Initialize approval workflow
+	if err = initializeApprovalWorkflow(ctx, qtx, "MARKER_PLAN", header.IDMarkerPlan, userID); err != nil {
+		return nil, fmt.Errorf("failed to initialize approval workflow: %w", err)
 	}
 
 	if err = tx.Commit(ctx); err != nil {

@@ -41,7 +41,7 @@ func NewTimelineProduksiUseCase(repo entity.Querier, dbPool *pgxpool.Pool) (*Tim
 	}, nil
 }
 
-func (u *TimelineProduksiUseCase) CreateTimelinePlan(ctx context.Context, req model.CreateTimelinePlanRequest) (*model.TimelinePlanResponse, error) {
+func (u *TimelineProduksiUseCase) CreateTimelinePlan(ctx context.Context, userID int32, req model.CreateTimelinePlanRequest) (*model.TimelinePlanResponse, error) {
 	if len(req.ShellPlans) == 0 {
 		return nil, fmt.Errorf("%w: shell plans cannot be empty", ErrTimelinePlanValidation)
 	}
@@ -141,6 +141,11 @@ func (u *TimelineProduksiUseCase) CreateTimelinePlan(ctx context.Context, req mo
 	_, err = qtx.CreateWOShellPlan(ctx, shellPlansParams)
 	if err != nil {
 		return nil, mapTimelineDBError(err)
+	}
+
+	// Initialize approval workflow
+	if err = initializeApprovalWorkflow(ctx, qtx, "TIMELINE_PRODUKSI", timelineHeader.IDTimeline, userID); err != nil {
+		return nil, fmt.Errorf("failed to initialize approval workflow: %w", err)
 	}
 
 	if err = tx.Commit(ctx); err != nil {

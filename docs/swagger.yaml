@@ -81,6 +81,21 @@ definitions:
       waktu:
         type: string
     type: object
+  model.ApprovalActionRequest:
+    properties:
+      action:
+        enum:
+        - approve
+        - reject
+        type: string
+      catatan:
+        type: string
+      id_otoritas_detail:
+        type: integer
+    required:
+    - action
+    - id_otoritas_detail
+    type: object
   model.ApprovePasswordResetResponse:
     properties:
       approved_at:
@@ -3160,6 +3175,72 @@ info:
   title: Permatatex IT Inventory API
   version: "1.0"
 paths:
+  /api/v1/approvals/action:
+    post:
+      consumes:
+      - application/json
+      description: Allows a user to approve or reject their pending approval step.
+      parameters:
+      - description: Action payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.ApprovalActionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Process Approval Action
+      tags:
+      - Approvals
+  /api/v1/approvals/document/{table}/{id}:
+    get:
+      description: Returns the complete approval steps history for a specific document.
+      parameters:
+      - description: Database table name (e.g. PR_INTERNAL, WORK_ORDER)
+        in: path
+        name: table
+        required: true
+        type: string
+      - description: Document ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Document Audit Trail
+      tags:
+      - Approvals
+  /api/v1/approvals/pending:
+    get:
+      description: Returns a list of documents currently waiting for the logged-in
+        user's approval.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Pending Approvals
+      tags:
+      - Approvals
   /api/v1/auth/change-password:
     post:
       consumes:
