@@ -354,6 +354,7 @@ func corsMiddleware(allowOrigin string) gin.HandlerFunc {
 		headers.Set("Access-Control-Allow-Origin", allowOrigin)
 		headers.Set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
 		headers.Set("Access-Control-Allow-Headers", "Origin,Content-Type,Accept,Authorization")
+		headers.Set("Access-Control-Expose-Headers", "X-Total-Count")
 		headers.Set("Access-Control-Allow-Credentials", "true")
 
 		if c.Request.Method == stdhttp.MethodOptions {
