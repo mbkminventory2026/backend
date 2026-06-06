@@ -147,6 +147,7 @@ func syncSequences(ctx context.Context, db *pgxpool.Pool) error {
 		{"work_order_shell_id_wo_shell_seq", "work_order_shell", "id_wo_shell"},
 		{"work_order_shell_size_id_wo_shell_size_seq", "work_order_shell_size", "id_wo_shell_size"},
 		{"work_order_trim_id_wo_trim_seq", "work_order_trim", "id_wo_trim"},
+		{"material_list_item_id_material_list_item_seq", "material_list_item", "id_material_list_item"},
 		{"material_list_id_material_list_seq", "material_list", "id_material_list"},
 		{"report_cutting_id_report_cutting_seq", "report_cutting", "id_report_cutting"},
 		{"report_sewing_id_report_sewing_seq", "report_sewing", "id_report_sewing"},
@@ -771,8 +772,8 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		// WO 1 Details: Shell
 		var idShell1 int32
 		err = db.QueryRow(ctx, `
-			INSERT INTO WORK_ORDER_SHELL (FABRIC, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO)
-			VALUES ('Cotton Combed 30s', 0.35, 'Black', 3, 0.22, $1)
+			INSERT INTO WORK_ORDER_SHELL (FABRIC, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO, PROVIDED_BY, MATERIAL_TYPE)
+			VALUES ('Cotton Combed 30s', 0.35, 'Black', 3, 0.22, $1, 'permata', 'fabric')
 			RETURNING ID_WO_SHELL
 		`, idWo1).Scan(&idShell1)
 		if err != nil {
@@ -793,23 +794,51 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		}
 
 		// WO 1 Details: Trims
-		_, err = db.Exec(ctx, `
-			INSERT INTO WORK_ORDER_TRIM (ITEM, DESCRIPTION, COLOR, CODE, CONS, QTY, UOM, POSITION, CREATED_BY, ALLOW, ID_WO)
-			VALUES 
-			('Label Leher', 'Satin Label', 'Black', 'TRM-LBL-01', 1.0, 1030, 'pcs', 'Neck', 'super-admin', 3, $1),
-			('Thread 120', 'Sewing Thread', 'Black', 'TRM-THR-01', 0.05, 50, 'cones', 'Seam', 'super-admin', 0, $1)
-		`, idWo1)
+		var idTrim1 int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO WORK_ORDER_TRIM (ITEM, DESCRIPTION, COLOR, CODE, CONS, QTY, UOM, POSITION, CREATED_BY, ALLOW, ID_WO, PROVIDED_BY)
+			VALUES ('Label Leher', 'Satin Label', 'Black', 'TRM-LBL-01', 1.0, 1030, 'pcs', 'Neck', 'super-admin', 3, $1, 'permata')
+			RETURNING ID_WO_TRIM
+		`, idWo1).Scan(&idTrim1)
+		if err != nil {
+			return err
+		}
+
+		var idTrim2 int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO WORK_ORDER_TRIM (ITEM, DESCRIPTION, COLOR, CODE, CONS, QTY, UOM, POSITION, CREATED_BY, ALLOW, ID_WO, PROVIDED_BY)
+			VALUES ('Thread 120', 'Sewing Thread', 'Black', 'TRM-THR-01', 0.05, 50, 'cones', 'Seam', 'super-admin', 0, $1, 'permata')
+			RETURNING ID_WO_TRIM
+		`, idWo1).Scan(&idTrim2)
+		if err != nil {
+			return err
+		}
+
+		// WO 1 Details: Material List Item
+		var idMli1, idMli2 int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO MATERIAL_LIST_ITEM (DESCRIPTION, ID_WO_SHELL, ID_WO_TRIM)
+			VALUES ('Cotton Combed 30s Fabric', $1, NULL)
+			RETURNING ID_MATERIAL_LIST_ITEM
+		`, idShell1).Scan(&idMli1)
+		if err != nil {
+			return err
+		}
+
+		err = db.QueryRow(ctx, `
+			INSERT INTO MATERIAL_LIST_ITEM (DESCRIPTION, ID_WO_SHELL, ID_WO_TRIM)
+			VALUES ('Satin Neck Label', NULL, $1)
+			RETURNING ID_MATERIAL_LIST_ITEM
+		`, idTrim1).Scan(&idMli2)
 		if err != nil {
 			return err
 		}
 
 		// WO 1 Details: Material List
 		_, err = db.Exec(ctx, `
-			INSERT INTO MATERIAL_LIST (DESCRIPTION, SIZE, COLOR, UOM, ID_WO)
-			VALUES 
-			('Cotton Combed 30s Fabric', 'All Size', 'Black', 'kg', $1),
-			('Satin Neck Label', 'Standard', 'Black', 'pcs', $1)
-		`, idWo1)
+			INSERT INTO MATERIAL_LIST (ID_MATERIAL_LIST_ITEM)
+			VALUES ($1), ($2)
+		`, idMli1, idMli2)
 		if err != nil {
 			return err
 		}
@@ -829,8 +858,8 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		// WO 2 Details: Shell
 		var idShell2 int32
 		err = db.QueryRow(ctx, `
-			INSERT INTO WORK_ORDER_SHELL (FABRIC, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO)
-			VALUES ('Cotton Combed 30s', 0.35, 'White', 3, 0.22, $1)
+			INSERT INTO WORK_ORDER_SHELL (FABRIC, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO, PROVIDED_BY, MATERIAL_TYPE)
+			VALUES ('Cotton Combed 30s', 0.35, 'White', 3, 0.22, $1, 'permata', 'fabric')
 			RETURNING ID_WO_SHELL
 		`, idWo2).Scan(&idShell2)
 		if err != nil {
@@ -850,19 +879,32 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		}
 
 		// WO 2 Details: Trims
-		_, err = db.Exec(ctx, `
-			INSERT INTO WORK_ORDER_TRIM (ITEM, DESCRIPTION, COLOR, CODE, CONS, QTY, UOM, POSITION, CREATED_BY, ALLOW, ID_WO)
-			VALUES ('Label Leher', 'Satin Label', 'White', 'TRM-LBL-02', 1.0, 515, 'pcs', 'Neck', 'super-admin', 3, $1)
-		`, idWo2)
+		var idTrim3 int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO WORK_ORDER_TRIM (ITEM, DESCRIPTION, COLOR, CODE, CONS, QTY, UOM, POSITION, CREATED_BY, ALLOW, ID_WO, PROVIDED_BY)
+			VALUES ('Label Leher', 'Satin Label', 'White', 'TRM-LBL-02', 1.0, 515, 'pcs', 'Neck', 'super-admin', 3, $1, 'permata')
+			RETURNING ID_WO_TRIM
+		`, idWo2).Scan(&idTrim3)
+		if err != nil {
+			return err
+		}
+
+		// WO 2 Details: Material List Item
+		var idMli3 int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO MATERIAL_LIST_ITEM (DESCRIPTION, ID_WO_SHELL, ID_WO_TRIM)
+			VALUES ('Cotton Combed 30s Fabric', $1, NULL)
+			RETURNING ID_MATERIAL_LIST_ITEM
+		`, idShell2).Scan(&idMli3)
 		if err != nil {
 			return err
 		}
 
 		// WO 2 Details: Material List
 		_, err = db.Exec(ctx, `
-			INSERT INTO MATERIAL_LIST (DESCRIPTION, SIZE, COLOR, UOM, ID_WO)
-			VALUES ('Cotton Combed 30s Fabric', 'All Size', 'White', 'kg', $1)
-		`, idWo2)
+			INSERT INTO MATERIAL_LIST (ID_MATERIAL_LIST_ITEM)
+			VALUES ($1)
+		`, idMli3)
 		if err != nil {
 			return err
 		}
