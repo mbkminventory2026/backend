@@ -64,9 +64,6 @@ func (h *MasterDataHandler) RegisterRoutes(router gin.IRouter, authMiddleware gi
 	// Permissions
 	master.GET("/permissions", RequirePermission(PermissionPermissionRead), h.ListHakAkses)
 	master.GET("/permissions/:id", RequirePermission(PermissionPermissionRead), h.GetHakAksesByID)
-	master.POST("/permissions", RequirePermission(PermissionPermissionCreate), h.CreateHakAkses)
-	master.PUT("/permissions/:id", RequirePermission(PermissionPermissionUpdate), h.UpdateHakAkses)
-	master.DELETE("/permissions/:id", RequirePermission(PermissionPermissionDelete), h.DeleteHakAkses)
 
 	// Company
 	master.GET("/company", RequirePermission(PermissionMasterCompanyRead), h.GetCompany)
@@ -616,81 +613,6 @@ func (h *MasterDataHandler) GetHakAksesByID(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusOK, "permission retrieved", item)
-}
-
-// CreateHakAkses godoc
-// @Summary      Create Permission
-// @Tags         Master Data
-// @Accept       json
-// @Produce      json
-// @Security     BearerAuth
-// @Param        payload  body      model.CreateHakAksesRequest  true  "Permission payload"
-// @Success      201      {object}  model.HakAksesSuccessDoc
-// @Failure      409      {object}  model.LoginBadRequestDoc
-// @Router       /api/v1/master/permissions [post]
-func (h *MasterDataHandler) CreateHakAkses(c *gin.Context) {
-	var req model.CreateHakAksesRequest
-	if !BindJSON(c, &req) {
-		return
-	}
-
-	item, err := h.useCase.CreateHakAkses(c.Request.Context(), req)
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	response.Success(c, http.StatusCreated, "permission created", item)
-}
-
-// UpdateHakAkses godoc
-// @Summary      Update Permission
-// @Tags         Master Data
-// @Accept       json
-// @Produce      json
-// @Security     BearerAuth
-// @Param        id       path      int                         true  "Permission ID"
-// @Param        payload  body      model.UpdateHakAksesRequest true  "Permission payload"
-// @Success      200      {object}  model.HakAksesSuccessDoc
-// @Router       /api/v1/master/permissions/{id} [put]
-func (h *MasterDataHandler) UpdateHakAkses(c *gin.Context) {
-	id, err := parsePathInt32(c, "id")
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
-		return
-	}
-
-	var req model.UpdateHakAksesRequest
-	if !BindJSON(c, &req) {
-		return
-	}
-
-	item, err := h.useCase.UpdateHakAkses(c.Request.Context(), id, req)
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	response.Success(c, http.StatusOK, "permission updated", item)
-}
-
-// DeleteHakAkses godoc
-// @Summary      Delete Permission
-// @Tags         Master Data
-// @Security     BearerAuth
-// @Param        id   path      int  true  "Permission ID"
-// @Success      200  {object}  response.BaseResponse
-// @Router       /api/v1/master/permissions/{id} [delete]
-func (h *MasterDataHandler) DeleteHakAkses(c *gin.Context) {
-	id, err := parsePathInt32(c, "id")
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
-		return
-	}
-
-	if err := h.useCase.DeleteHakAkses(c.Request.Context(), id); err != nil {
-		h.handleError(c, err)
-		return
-	}
-	response.Success(c, http.StatusOK, "permission deleted", nil)
 }
 
 // COMPANY

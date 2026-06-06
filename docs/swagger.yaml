@@ -324,24 +324,6 @@ definitions:
     - qty
     - tanggal
     type: object
-  model.CreateHakAksesRequest:
-    properties:
-      aksi_permission:
-        type: string
-      deskripsi:
-        type: string
-      domain_permission:
-        type: string
-      kode_permission:
-        type: string
-      nama_halaman:
-        type: string
-    required:
-    - aksi_permission
-    - domain_permission
-    - kode_permission
-    - nama_halaman
-    type: object
   model.CreateJenisBarangRequest:
     properties:
       kode:
@@ -1825,28 +1807,6 @@ definitions:
       vendor_telp:
         type: string
     type: object
-  model.PRInternalStatusResponse:
-    properties:
-      approved_at:
-        type: string
-      approved_by_user_id:
-        type: integer
-      id_pr_internal:
-        type: integer
-      status:
-        type: string
-    type: object
-  model.PRInternalStatusSuccessDoc:
-    properties:
-      data:
-        $ref: '#/definitions/model.PRInternalStatusResponse'
-      message:
-        example: pr internal approved
-        type: string
-      status:
-        example: success
-        type: string
-    type: object
   model.PRInternalSuccessDoc:
     properties:
       data:
@@ -2666,24 +2626,6 @@ definitions:
         type: string
     required:
     - nama_departemen
-    type: object
-  model.UpdateHakAksesRequest:
-    properties:
-      aksi_permission:
-        type: string
-      deskripsi:
-        type: string
-      domain_permission:
-        type: string
-      kode_permission:
-        type: string
-      nama_halaman:
-        type: string
-    required:
-    - aksi_permission
-    - domain_permission
-    - kode_permission
-    - nama_halaman
     type: object
   model.UpdateJenisBarangRequest:
     properties:
@@ -4353,50 +4295,7 @@ paths:
       summary: List Available Permissions
       tags:
       - Master Data
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Permission payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/model.CreateHakAksesRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/model.HakAksesSuccessDoc'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/model.LoginBadRequestDoc'
-      security:
-      - BearerAuth: []
-      summary: Create Permission
-      tags:
-      - Master Data
   /api/v1/master/permissions/{id}:
-    delete:
-      parameters:
-      - description: Permission ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.BaseResponse'
-      security:
-      - BearerAuth: []
-      summary: Delete Permission
-      tags:
-      - Master Data
     get:
       parameters:
       - description: Permission ID
@@ -4414,33 +4313,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Get Permission Detail
-      tags:
-      - Master Data
-    put:
-      consumes:
-      - application/json
-      parameters:
-      - description: Permission ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Permission payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/model.UpdateHakAksesRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.HakAksesSuccessDoc'
-      security:
-      - BearerAuth: []
-      summary: Update Permission
       tags:
       - Master Data
   /api/v1/master/warna:
@@ -5005,52 +4877,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Get PR Internal Detail
-      tags:
-      - Transaction Documents
-  /api/v1/pr-internals/{id}/approve:
-    patch:
-      description: Manager approval endpoint that only changes PR internal status
-        and audit fields.
-      parameters:
-      - description: PR Internal ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.PRInternalStatusSuccessDoc'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/model.TransactionErrorDoc'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/model.TransactionErrorDoc'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/model.TransactionErrorDoc'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/model.TransactionErrorDoc'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/model.TransactionErrorDoc'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/model.TransactionErrorDoc'
-      security:
-      - BearerAuth: []
-      summary: Approve PR Internal
       tags:
       - Transaction Documents
   /api/v1/production/summary:

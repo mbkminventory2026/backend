@@ -22,6 +22,7 @@ var (
 	ErrRoleNameAlreadyExists  = errors.New("role name already exists")
 	ErrRoleInUse              = errors.New("role is still assigned to users")
 	ErrReservedRoleProtected  = errors.New("reserved role cannot be modified or deleted")
+	ErrUnauthorizedRoleEdit   = errors.New("non-super admin is not allowed to edit SUPER_ADMIN, OPERATOR, or their own roles")
 
 	roleSortColumns = buildSortWhitelist("created_at", "id_role", "nama_role")
 )
@@ -121,13 +122,22 @@ func (u *RoleUseCase) Create(ctx context.Context, req model.CreateRoleRequest) (
 	return u.buildRoleResponse(ctx, role)
 }
 
-func (u *RoleUseCase) Update(ctx context.Context, id int32, req model.UpdateRoleRequest) (*model.RoleResponse, error) {
+func (u *RoleUseCase) Update(ctx context.Context, id int32, currentUserRole string, req model.UpdateRoleRequest) (*model.RoleResponse, error) {
 	existing, err := u.repo.GetRoleByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrRoleManagementNotFound
 		}
 		return nil, fmt.Errorf("%w: failed to get role", ErrRoleServiceUnavailable)
+	}
+
+	// Prevent privilege escalation: non-super admin users cannot modify SUPER_ADMIN or OPERATOR roles, or their own role.
+	if !strings.EqualFold(currentUserRole, "SUPER_ADMIN") {
+		if strings.EqualFold(existing.NamaRole, "SUPER_ADMIN") ||
+			strings.EqualFold(existing.NamaRole, "OPERATOR") ||
+			strings.EqualFold(existing.NamaRole, currentUserRole) {
+			return nil, ErrUnauthorizedRoleEdit
+		}
 	}
 
 	if isReservedRole(existing.NamaRole) && existing.NamaRole != req.NamaRole {

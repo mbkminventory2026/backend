@@ -1801,48 +1801,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Master Data"
-                ],
-                "summary": "Create Permission",
-                "parameters": [
-                    {
-                        "description": "Permission payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.CreateHakAksesRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/model.HakAksesSuccessDoc"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/model.LoginBadRequestDoc"
-                        }
-                    }
-                }
             }
         },
         "/api/v1/master/permissions/{id}": {
@@ -1873,77 +1831,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.HakAksesSuccessDoc"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Master Data"
-                ],
-                "summary": "Update Permission",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Permission ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Permission payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.UpdateHakAksesRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.HakAksesSuccessDoc"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "tags": [
-                    "Master Data"
-                ],
-                "summary": "Delete Permission",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Permission ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.BaseResponse"
                         }
                     }
                 }
@@ -2826,76 +2713,6 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.TransactionErrorDoc"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.TransactionErrorDoc"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/pr-internals/{id}/approve": {
-            "patch": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Manager approval endpoint that only changes PR internal status and audit fields.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Transaction Documents"
-                ],
-                "summary": "Approve PR Internal",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "PR Internal ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.PRInternalStatusSuccessDoc"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.TransactionErrorDoc"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/model.TransactionErrorDoc"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/model.TransactionErrorDoc"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.TransactionErrorDoc"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/model.TransactionErrorDoc"
                         }
@@ -5372,32 +5189,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.CreateHakAksesRequest": {
-            "type": "object",
-            "required": [
-                "aksi_permission",
-                "domain_permission",
-                "kode_permission",
-                "nama_halaman"
-            ],
-            "properties": {
-                "aksi_permission": {
-                    "type": "string"
-                },
-                "deskripsi": {
-                    "type": "string"
-                },
-                "domain_permission": {
-                    "type": "string"
-                },
-                "kode_permission": {
-                    "type": "string"
-                },
-                "nama_halaman": {
-                    "type": "string"
-                }
-            }
-        },
         "model.CreateJenisBarangRequest": {
             "type": "object",
             "required": [
@@ -7571,39 +7362,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.PRInternalStatusResponse": {
-            "type": "object",
-            "properties": {
-                "approved_at": {
-                    "type": "string"
-                },
-                "approved_by_user_id": {
-                    "type": "integer"
-                },
-                "id_pr_internal": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.PRInternalStatusSuccessDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/model.PRInternalStatusResponse"
-                },
-                "message": {
-                    "type": "string",
-                    "example": "pr internal approved"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "success"
-                }
-            }
-        },
         "model.PRInternalSuccessDoc": {
             "type": "object",
             "properties": {
@@ -8829,32 +8587,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "nama_departemen": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.UpdateHakAksesRequest": {
-            "type": "object",
-            "required": [
-                "aksi_permission",
-                "domain_permission",
-                "kode_permission",
-                "nama_halaman"
-            ],
-            "properties": {
-                "aksi_permission": {
-                    "type": "string"
-                },
-                "deskripsi": {
-                    "type": "string"
-                },
-                "domain_permission": {
-                    "type": "string"
-                },
-                "kode_permission": {
-                    "type": "string"
-                },
-                "nama_halaman": {
                     "type": "string"
                 }
             }

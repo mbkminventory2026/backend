@@ -149,7 +149,13 @@ func (h *RoleHandler) Update(c *gin.Context) {
 		return
 	}
 
-	result, err := h.useCase.Update(c.Request.Context(), id, req)
+	currentUserRole, ok := GetRoleNameFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid authentication context", nil))
+		return
+	}
+
+	result, err := h.useCase.Update(c.Request.Context(), id, currentUserRole, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -193,7 +199,7 @@ func (h *RoleHandler) handleError(c *gin.Context, err error) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), nil))
 	case errors.Is(err, usecase.ErrRoleManagementNotFound):
 		AbortWithError(c, NewHTTPError(http.StatusNotFound, err.Error(), nil))
-	case errors.Is(err, usecase.ErrReservedRoleProtected):
+	case errors.Is(err, usecase.ErrReservedRoleProtected), errors.Is(err, usecase.ErrUnauthorizedRoleEdit):
 		AbortWithError(c, NewHTTPError(http.StatusForbidden, err.Error(), nil))
 	case errors.Is(err, usecase.ErrRoleNameAlreadyExists), errors.Is(err, usecase.ErrRoleInUse):
 		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), nil))

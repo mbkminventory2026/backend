@@ -33,7 +33,6 @@ func (h *TransactionDocumentHandler) RegisterRoutes(router gin.IRouter, authMidd
 	v1.GET("/pr-internals", internalOnly, RequirePermission(PermissionPRInternalRead), h.ListPRInternals)
 	v1.GET("/pr-internals/:id", internalOnly, RequirePermission(PermissionPRInternalRead), h.GetPRInternalDetail)
 	v1.POST("/pr-internals", internalOnly, RequirePermission(PermissionPRInternalCreate), h.CreatePRInternal)
-	v1.PATCH("/pr-internals/:id/approve", internalOnly, RequirePermission(PermissionPRInternalApprove), h.ApprovePRInternal)
 	v1.GET("/po-internals", internalOnly, RequirePermission(PermissionPOInternalRead), h.ListPOInternals)
 	v1.GET("/po-internals/:id", internalOnly, RequirePermission(PermissionPOInternalRead), h.GetPOInternalDetail)
 	v1.POST("/po-internals", internalOnly, RequirePermission(PermissionPOInternalCreate), h.CreatePOInternal)
@@ -309,41 +308,6 @@ func (h *TransactionDocumentHandler) CreatePRInternal(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusCreated, "pr internal created", item)
-}
-
-// ApprovePRInternal godoc
-// @Summary      Approve PR Internal
-// @Description  Manager approval endpoint that only changes PR internal status and audit fields.
-// @Tags         Transaction Documents
-// @Produce      json
-// @Security     BearerAuth
-// @Param        id   path      int  true  "PR Internal ID"
-// @Success      200  {object}  model.PRInternalStatusSuccessDoc
-// @Failure      400  {object}  model.TransactionErrorDoc
-// @Failure      401  {object}  model.TransactionErrorDoc
-// @Failure      403  {object}  model.TransactionErrorDoc
-// @Failure      404  {object}  model.TransactionErrorDoc
-// @Failure      409  {object}  model.TransactionErrorDoc
-// @Failure      500  {object}  model.TransactionErrorDoc
-// @Router       /api/v1/pr-internals/{id}/approve [patch]
-func (h *TransactionDocumentHandler) ApprovePRInternal(c *gin.Context) {
-	id, err := parsePathInt32(c, "id")
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid pr internal id", nil))
-		return
-	}
-	userID, ok := GetUserIDFromContext(c)
-	if !ok {
-		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
-		return
-	}
-
-	item, err := h.useCase.ApprovePRInternal(c.Request.Context(), id, userID)
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	response.Success(c, http.StatusOK, "pr internal approved", item)
 }
 
 // ListPOInternals godoc

@@ -189,4 +189,3 @@ type ReturClientSuccessDoc struct {
 	Message string              `json:"message" example:"client return submitted"`
 	Data    ReturClientResponse `json:"data"`
 }
-
