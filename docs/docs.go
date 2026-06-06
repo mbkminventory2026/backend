@@ -590,6 +590,24 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/dashboard/operator": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil metrics realtime untuk layar Operator Dashboard",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Ambil KPI Operator",
+                "responses": {}
+            }
+        },
         "/api/v1/inventory/issue": {
             "post": {
                 "security": [
@@ -9091,6 +9109,9 @@ const docTemplate = `{
                 },
                 "qty": {
                     "type": "integer"
+                },
+                "retur": {
+                    "$ref": "#/definitions/model.ReturClientResponse"
                 },
                 "shells": {
                     "type": "array",

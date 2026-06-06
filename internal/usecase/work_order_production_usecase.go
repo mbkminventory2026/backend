@@ -536,6 +536,18 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id 
 		})
 	}
 
+	var returResponse *model.ReturClientResponse
+	returRow, err := u.repo.GetReturClientByWorkOrderID(ctx, id)
+	if err == nil {
+		returResponse = &model.ReturClientResponse{
+			IDReturClient: returRow.IDReturClient,
+			IDWo:          returRow.IDWo,
+			File:          returRow.File,
+			Deskripsi:     returRow.Deskripsi,
+			CreatedAt:     returRow.CreatedAt.Time.Format(time.RFC3339),
+		}
+	}
+
 	return &model.WorkOrderDetailResponse{
 		ID:                header.IDWo,
 		Buyer:             header.Buyer,
@@ -553,6 +565,7 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id 
 		Shells:            shells,
 		Trims:             trims,
 		MaterialLists:     materials,
+		Retur:             returResponse,
 	}, nil
 }
 

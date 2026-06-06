@@ -2918,6 +2918,8 @@ definitions:
         type: string
       qty:
         type: integer
+      retur:
+        $ref: '#/definitions/model.ReturClientResponse'
       shells:
         items:
           $ref: '#/definitions/model.WorkOrderShellResponse'
@@ -3568,6 +3570,17 @@ paths:
       security:
       - BearerAuth: []
       summary: AI Delivery Date Estimation untuk Order Baru
+      tags:
+      - Dashboard
+  /api/v1/dashboard/operator:
+    get:
+      description: Mengambil metrics realtime untuk layar Operator Dashboard
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Ambil KPI Operator
       tags:
       - Dashboard
   /api/v1/inventory/issue:
