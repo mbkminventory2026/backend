@@ -31,3 +31,35 @@ LEFT JOIN
     BARANG b ON rm.description = b.nama_barang OR rm.description = b.kode
 WHERE 
     rm.BALANCE < COALESCE(b.stok_minimum, 50); -- Asumsi threshold low stock adalah 50, bisa kita ubah nanti lewat argumen sqlc jika dinamis
+
+-- name: GetOperatorActiveWorkOrdersCount :one
+SELECT COUNT(*) FROM WORK_ORDER WHERE status = 'open';
+
+-- name: GetOperatorTargetProduksiHariIni :one
+SELECT COALESCE(SUM(qty), 0)::int FROM WORK_ORDER WHERE status = 'open';
+
+-- name: GetOperatorOutputHariIni :one
+SELECT COALESCE(SUM(qty), 0)::int FROM REPORT_PACKING WHERE tanggal = CURRENT_DATE;
+
+-- name: GetOperatorOngoingWorkOrders :many
+SELECT 
+    wo.ID_WO,
+    wo.BUYER,
+    wo.MODEL,
+    wo.QTY,
+    COALESCE(SUM(rp.qty), 0)::int as total_output
+FROM 
+    WORK_ORDER wo
+LEFT JOIN 
+    WORK_ORDER_SHELL wos ON wo.ID_WO = wos.ID_WO
+LEFT JOIN
+    WORK_ORDER_SHELL_SIZE woss ON wos.ID_WO_SHELL = woss.ID_WO_SHELL
+LEFT JOIN
+    REPORT_PACKING rp ON woss.ID_WO_SHELL_SIZE = rp.ID_WO_SHELL_SIZE
+WHERE 
+    wo.status = 'open'
+GROUP BY 
+    wo.ID_WO
+ORDER BY 
+    wo.DELIVERY ASC
+LIMIT 5;
