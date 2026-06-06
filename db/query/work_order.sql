@@ -77,20 +77,20 @@ INSERT INTO WORK_ORDER_TRIM (
 RETURNING id_wo_trim, item, description, color, code, cons, qty, uom, position, created_by, allow, id_wo, created_at;
 
 -- name: CreateMaterialList :one
-INSERT INTO MATERIAL_LIST (
-    description,
-    size,
-    color,
-    uom,
-    id_wo
-) VALUES (
-    sqlc.arg(description),
-    sqlc.arg(size),
-    sqlc.arg(color),
-    sqlc.arg(uom),
-    sqlc.arg(id_wo)
+WITH inserted_item AS (
+    INSERT INTO MATERIAL_LIST_ITEM (description)
+    VALUES (sqlc.arg(description))
+    RETURNING id_material_list_item, description
 )
-RETURNING id_material_list, description, size, color, uom, id_wo, created_at;
+INSERT INTO MATERIAL_LIST (id_material_list_item)
+SELECT id_material_list_item FROM inserted_item
+RETURNING id_material_list,
+          (SELECT description FROM inserted_item) AS description,
+          sqlc.arg(size)::text AS size,
+          sqlc.arg(color)::text AS color,
+          sqlc.arg(uom)::text AS uom,
+          sqlc.arg(id_wo)::integer AS id_wo,
+          created_at;
 
 -- name: WorkOrderShellTotalQty :one
 SELECT COALESCE(SUM(qty), 0)::bigint AS total_qty

@@ -266,6 +266,9 @@ func main() {
 	router.Use(corsMiddleware(cfg.CORSAllowOrigin))
 	router.Use(httpdelivery.ActivityLogMiddleware(activityLogService))
 
+	// Serve uploaded files statically
+	router.Static("/uploads", "./uploads")
+
 	healthHandler.RegisterRoutes(router)
 
 	authMiddleware := httpdelivery.AuthMiddleware(cfg.JWTSecret)

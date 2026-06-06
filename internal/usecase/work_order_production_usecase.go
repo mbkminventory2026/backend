@@ -23,6 +23,9 @@ var (
 	ErrWorkOrderNotFound           = errors.New("work order not found")
 	ErrReportDivisionUnsupported   = errors.New("unsupported report division")
 	ErrWorkOrderAlreadyClosed      = errors.New("work order is already closed")
+	ErrWorkOrderNotClosedByClient  = errors.New("work order must be marked as close by client first")
+	ErrWorkOrderNotOpen            = errors.New("cannot submit return: work order is not open")
+	ErrReturnAlreadySubmitted      = errors.New("return already submitted for this work order")
 
 	workOrderSortColumns         = buildSortWhitelist("created_at", "id_wo", "buyer", "model", "qty", "status", "po_number", "po_client_item_style")
 	productionSummarySortColumns = buildSortWhitelist("last_updated", "id_wo_shell_size", "model_name", "size", "target_qty", "cutting_qty", "sewing_qty", "qc_pass_qty", "packing_qty", "shipped_qty")
@@ -216,6 +219,11 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 }
 
 func (u *WorkOrderProductionUseCase) CloseWorkOrder(ctx context.Context, id int32, closerUserID int32) (*model.WorkOrderStatusResponse, error) {
+	// First run auto-close to catch any auto-closable work orders
+	if err := u.repo.AutoCloseWorkOrders(ctx); err != nil {
+		return nil, fmt.Errorf("%w: failed to run auto-close", ErrWorkOrderServiceUnavailable)
+	}
+
 	current, err := u.repo.GetWorkOrderDetail(ctx, entity.GetWorkOrderDetailParams{
 		IDWo:    id,
 		IDMitra: nullableInt32Param(nil),
@@ -228,6 +236,9 @@ func (u *WorkOrderProductionUseCase) CloseWorkOrder(ctx context.Context, id int3
 	}
 	if current.Status == "closed" {
 		return nil, ErrWorkOrderAlreadyClosed
+	}
+	if current.Status != "client_closed" {
+		return nil, ErrWorkOrderNotClosedByClient
 	}
 
 	updated, err := u.repo.CloseWorkOrder(ctx, entity.CloseWorkOrderParams{
@@ -344,6 +355,11 @@ func (u *WorkOrderProductionUseCase) CreateFactoryReport(ctx context.Context, di
 }
 
 func (u *WorkOrderProductionUseCase) ListWorkOrders(ctx context.Context, filter model.TransactionListFilter) (*model.WorkOrderListResponse, error) {
+	// Automatically close any work orders with no returns after 2 months
+	if err := u.repo.AutoCloseWorkOrders(ctx); err != nil {
+		return nil, fmt.Errorf("%w: failed to run auto-close", ErrWorkOrderServiceUnavailable)
+	}
+
 	page, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "id_wo", true, workOrderSortColumns)
 	rows, err := u.repo.ListWorkOrders(ctx, entity.ListWorkOrdersParams{
 		SearchTerm: search,
@@ -432,6 +448,11 @@ func (u *WorkOrderProductionUseCase) ListProductionSummary(ctx context.Context, 
 }
 
 func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id int32, idMitra *int32) (*model.WorkOrderDetailResponse, error) {
+	// Automatically close any work orders with no returns after 2 months
+	if err := u.repo.AutoCloseWorkOrders(ctx); err != nil {
+		return nil, fmt.Errorf("%w: failed to run auto-close", ErrWorkOrderServiceUnavailable)
+	}
+
 	header, err := u.repo.GetWorkOrderDetail(ctx, entity.GetWorkOrderDetailParams{
 		IDWo:    id,
 		IDMitra: nullableInt32Param(idMitra),
@@ -580,5 +601,96 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderShellTotalQty(ctx context.Conte
 	return &model.WorkOrderShellTotalQtyResponse{
 		IDWoShell: idWoShell,
 		TotalQty:  totalQty,
+	}, nil
+}
+
+func (u *WorkOrderProductionUseCase) CreateReturClient(ctx context.Context, idWo int32, file string, deskripsi string, idMitra *int32) (*model.ReturClientResponse, error) {
+	// Automatically close other orders
+	if err := u.repo.AutoCloseWorkOrders(ctx); err != nil {
+		return nil, fmt.Errorf("%w: failed to run auto-close", ErrWorkOrderServiceUnavailable)
+	}
+
+	// Fetch WO and verify it exists and is open
+	wo, err := u.repo.GetWorkOrderDetail(ctx, entity.GetWorkOrderDetailParams{
+		IDWo:    idWo,
+		IDMitra: nullableInt32Param(idMitra),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrWorkOrderNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to fetch work order", ErrWorkOrderServiceUnavailable)
+	}
+
+	if wo.Status != "open" {
+		return nil, ErrWorkOrderNotOpen
+	}
+
+	// Verify that a return has not been submitted yet
+	_, err = u.repo.GetReturClientByWorkOrderID(ctx, idWo)
+	if err == nil {
+		return nil, ErrReturnAlreadySubmitted
+	} else if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return nil, fmt.Errorf("%w: failed to verify existing return", ErrWorkOrderServiceUnavailable)
+	}
+
+	// Create return record
+	retur, err := u.repo.CreateReturClient(ctx, entity.CreateReturClientParams{
+		IDWo:      idWo,
+		File:      file,
+		Deskripsi: deskripsi,
+	})
+	if err != nil {
+		return nil, mapWorkOrderDBError(err)
+	}
+
+	return &model.ReturClientResponse{
+		IDReturClient: retur.IDReturClient,
+		IDWo:          retur.IDWo,
+		File:          retur.File,
+		Deskripsi:     retur.Deskripsi,
+		CreatedAt:     retur.CreatedAt.Time.Format(time.RFC3339),
+	}, nil
+}
+
+func (u *WorkOrderProductionUseCase) ClientCloseWorkOrder(ctx context.Context, idWo int32, idMitra *int32) (*model.WorkOrderStatusResponse, error) {
+	// Automatically close other orders
+	if err := u.repo.AutoCloseWorkOrders(ctx); err != nil {
+		return nil, fmt.Errorf("%w: failed to run auto-close", ErrWorkOrderServiceUnavailable)
+	}
+
+	// Fetch WO and verify it exists and is open
+	wo, err := u.repo.GetWorkOrderDetail(ctx, entity.GetWorkOrderDetailParams{
+		IDWo:    idWo,
+		IDMitra: nullableInt32Param(idMitra),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrWorkOrderNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to fetch work order", ErrWorkOrderServiceUnavailable)
+	}
+
+	if wo.Status == "closed" {
+		return nil, ErrWorkOrderAlreadyClosed
+	}
+
+	// If it is already client_closed, return immediately with success
+	if wo.Status == "client_closed" {
+		return &model.WorkOrderStatusResponse{
+			ID:     wo.IDWo,
+			Status: "client_closed",
+		}, nil
+	}
+
+	// Update status to client_closed
+	updated, err := u.repo.ClientCloseWorkOrder(ctx, idWo)
+	if err != nil {
+		return nil, mapWorkOrderDBError(err)
+	}
+
+	return &model.WorkOrderStatusResponse{
+		ID:     updated.IDWo,
+		Status: updated.Status,
 	}, nil
 }

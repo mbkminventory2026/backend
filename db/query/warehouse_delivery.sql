@@ -4,14 +4,14 @@ WITH inserted_received AS (
         tanggal,
         qty,
         keterangan,
-        id_material_list
+        id_material_list_item
     ) VALUES (
         sqlc.arg(tanggal)::date,
         sqlc.arg(qty),
         sqlc.arg(keterangan),
-        sqlc.arg(id_material_list)
+        sqlc.arg(id_material_list_item)
     )
-    RETURNING id_received, tanggal, qty, keterangan, id_material_list, created_at
+    RETURNING id_received, tanggal, qty, keterangan, id_material_list_item AS id_material_list, created_at
 ),
 inserted_rekonsiliasi_terima AS (
     INSERT INTO REKONSILIASI_MATERIAL_TERIMA (
@@ -101,14 +101,14 @@ INSERT INTO SURAT_JALAN_CLIENT (
     tanggal,
     qty,
     keterangan,
-    id_material_list
+    id_material_list_item
 ) VALUES (
     sqlc.arg(tanggal)::date,
     sqlc.arg(qty),
     sqlc.arg(keterangan),
-    sqlc.arg(id_material_list)
+    sqlc.arg(id_material_list_item)
 )
-RETURNING id_surat_jalan_client, tanggal, qty, keterangan, id_material_list, created_at;
+RETURNING id_surat_jalan_client, tanggal, qty, keterangan, id_material_list_item AS id_material_list, created_at;
 
 -- name: GetRekonsiliasiMaterialStock :one
 SELECT

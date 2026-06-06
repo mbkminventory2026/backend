@@ -12,39 +12,49 @@ import (
 )
 
 const createMaterialList = `-- name: CreateMaterialList :one
-INSERT INTO MATERIAL_LIST (
-    description,
-    size,
-    color,
-    uom,
-    id_wo
-) VALUES (
-    $1,
-    $2,
-    $3,
-    $4,
-    $5
+WITH inserted_item AS (
+    INSERT INTO MATERIAL_LIST_ITEM (description)
+    VALUES ($5)
+    RETURNING id_material_list_item, description
 )
-RETURNING id_material_list, description, size, color, uom, id_wo, created_at
+INSERT INTO MATERIAL_LIST (id_material_list_item)
+SELECT id_material_list_item FROM inserted_item
+RETURNING id_material_list,
+          (SELECT description FROM inserted_item) AS description,
+          $1::text AS size,
+          $2::text AS color,
+          $3::text AS uom,
+          $4::integer AS id_wo,
+          created_at
 `
 
 type CreateMaterialListParams struct {
-	Description string `json:"description"`
 	Size        string `json:"size"`
 	Color       string `json:"color"`
 	Uom         string `json:"uom"`
 	IDWo        int32  `json:"id_wo"`
+	Description string `json:"description"`
 }
 
-func (q *Queries) CreateMaterialList(ctx context.Context, arg CreateMaterialListParams) (MaterialList, error) {
+type CreateMaterialListRow struct {
+	IDMaterialList int32              `json:"id_material_list"`
+	Description    string             `json:"description"`
+	Size           string             `json:"size"`
+	Color          string             `json:"color"`
+	Uom            string             `json:"uom"`
+	IDWo           int32              `json:"id_wo"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) CreateMaterialList(ctx context.Context, arg CreateMaterialListParams) (CreateMaterialListRow, error) {
 	row := q.db.QueryRow(ctx, createMaterialList,
-		arg.Description,
 		arg.Size,
 		arg.Color,
 		arg.Uom,
 		arg.IDWo,
+		arg.Description,
 	)
-	var i MaterialList
+	var i CreateMaterialListRow
 	err := row.Scan(
 		&i.IDMaterialList,
 		&i.Description,
@@ -136,7 +146,18 @@ type CreateWorkOrderShellParams struct {
 	IDWo     int32          `json:"id_wo"`
 }
 
-func (q *Queries) CreateWorkOrderShell(ctx context.Context, arg CreateWorkOrderShellParams) (WorkOrderShell, error) {
+type CreateWorkOrderShellRow struct {
+	IDWoShell int32              `json:"id_wo_shell"`
+	Fabric    string             `json:"fabric"`
+	Cons      pgtype.Numeric     `json:"cons"`
+	Color     string             `json:"color"`
+	Allow     int32              `json:"allow"`
+	Berat1Yd  pgtype.Numeric     `json:"berat_1_yd"`
+	IDWo      int32              `json:"id_wo"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) CreateWorkOrderShell(ctx context.Context, arg CreateWorkOrderShellParams) (CreateWorkOrderShellRow, error) {
 	row := q.db.QueryRow(ctx, createWorkOrderShell,
 		arg.Fabric,
 		arg.Cons,
@@ -145,7 +166,7 @@ func (q *Queries) CreateWorkOrderShell(ctx context.Context, arg CreateWorkOrderS
 		arg.Berat1Yd,
 		arg.IDWo,
 	)
-	var i WorkOrderShell
+	var i CreateWorkOrderShellRow
 	err := row.Scan(
 		&i.IDWoShell,
 		&i.Fabric,
@@ -243,7 +264,23 @@ type CreateWorkOrderTrimParams struct {
 	IDWo        int32          `json:"id_wo"`
 }
 
-func (q *Queries) CreateWorkOrderTrim(ctx context.Context, arg CreateWorkOrderTrimParams) (WorkOrderTrim, error) {
+type CreateWorkOrderTrimRow struct {
+	IDWoTrim    int32              `json:"id_wo_trim"`
+	Item        string             `json:"item"`
+	Description string             `json:"description"`
+	Color       string             `json:"color"`
+	Code        string             `json:"code"`
+	Cons        pgtype.Numeric     `json:"cons"`
+	Qty         int32              `json:"qty"`
+	Uom         string             `json:"uom"`
+	Position    string             `json:"position"`
+	CreatedBy   string             `json:"created_by"`
+	Allow       int32              `json:"allow"`
+	IDWo        int32              `json:"id_wo"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) CreateWorkOrderTrim(ctx context.Context, arg CreateWorkOrderTrimParams) (CreateWorkOrderTrimRow, error) {
 	row := q.db.QueryRow(ctx, createWorkOrderTrim,
 		arg.Item,
 		arg.Description,
@@ -257,7 +294,7 @@ func (q *Queries) CreateWorkOrderTrim(ctx context.Context, arg CreateWorkOrderTr
 		arg.Allow,
 		arg.IDWo,
 	)
-	var i WorkOrderTrim
+	var i CreateWorkOrderTrimRow
 	err := row.Scan(
 		&i.IDWoTrim,
 		&i.Item,

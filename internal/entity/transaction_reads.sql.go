@@ -234,13 +234,15 @@ SELECT
     sjc.tanggal,
     sjc.qty,
     sjc.keterangan,
-    sjc.id_material_list,
+    sjc.id_material_list_item AS id_material_list,
     sjc.created_at,
-    ml.description AS material_description,
-    ml.id_wo
+    mli.description AS material_description,
+    COALESCE(wos.id_wo, wot.id_wo)::integer AS id_wo
 FROM SURAT_JALAN_CLIENT sjc
-JOIN MATERIAL_LIST ml ON ml.id_material_list = sjc.id_material_list
-JOIN WORK_ORDER wo ON wo.id_wo = ml.id_wo
+JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list_item = sjc.id_material_list_item
+LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = mli.id_wo_shell
+LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo_trim = mli.id_wo_trim
+JOIN WORK_ORDER wo ON wo.id_wo = COALESCE(wos.id_wo, wot.id_wo)
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE sjc.id_surat_jalan_client = $1
@@ -369,27 +371,40 @@ func (q *Queries) GetWorkOrderDetail(ctx context.Context, arg GetWorkOrderDetail
 
 const listMaterialListsByWorkOrderID = `-- name: ListMaterialListsByWorkOrderID :many
 SELECT
-    id_material_list,
-    description,
-    size,
-    color,
-    uom,
-    id_wo,
-    created_at
-FROM MATERIAL_LIST
-WHERE id_wo = $1
-ORDER BY id_material_list ASC
+    ml.id_material_list,
+    mli.description,
+    ''::text AS size,
+    COALESCE(wos.color, wot.color)::text AS color,
+    COALESCE(wot.uom, 'yds')::text AS uom,
+    COALESCE(wos.id_wo, wot.id_wo)::integer AS id_wo,
+    ml.created_at
+FROM MATERIAL_LIST ml
+JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list_item = ml.id_material_list_item
+LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = mli.id_wo_shell
+LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo_trim = mli.id_wo_trim
+WHERE COALESCE(wos.id_wo, wot.id_wo) = $1
+ORDER BY ml.id_material_list ASC
 `
 
-func (q *Queries) ListMaterialListsByWorkOrderID(ctx context.Context, idWo int32) ([]MaterialList, error) {
+type ListMaterialListsByWorkOrderIDRow struct {
+	IDMaterialList int32              `json:"id_material_list"`
+	Description    string             `json:"description"`
+	Size           string             `json:"size"`
+	Color          string             `json:"color"`
+	Uom            string             `json:"uom"`
+	IDWo           int32              `json:"id_wo"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) ListMaterialListsByWorkOrderID(ctx context.Context, idWo int32) ([]ListMaterialListsByWorkOrderIDRow, error) {
 	rows, err := q.db.Query(ctx, listMaterialListsByWorkOrderID, idWo)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []MaterialList
+	var items []ListMaterialListsByWorkOrderIDRow
 	for rows.Next() {
-		var i MaterialList
+		var i ListMaterialListsByWorkOrderIDRow
 		if err := rows.Scan(
 			&i.IDMaterialList,
 			&i.Description,
@@ -1105,20 +1120,22 @@ SELECT
     sjc.tanggal,
     sjc.qty,
     sjc.keterangan,
-    sjc.id_material_list,
+    sjc.id_material_list_item AS id_material_list,
     sjc.created_at,
-    ml.description AS material_description,
-    ml.id_wo,
+    mli.description AS material_description,
+    COALESCE(wos.id_wo, wot.id_wo)::integer AS id_wo,
     COUNT(*) OVER() AS total_count
 FROM SURAT_JALAN_CLIENT sjc
-JOIN MATERIAL_LIST ml ON ml.id_material_list = sjc.id_material_list
-JOIN WORK_ORDER wo ON wo.id_wo = ml.id_wo
+JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list_item = sjc.id_material_list_item
+LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = mli.id_wo_shell
+LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo_trim = mli.id_wo_trim
+JOIN WORK_ORDER wo ON wo.id_wo = COALESCE(wos.id_wo, wot.id_wo)
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE (
     $1 = '' OR
     sjc.keterangan ILIKE '%' || $1 || '%' OR
-    ml.description ILIKE '%' || $1 || '%'
+    mli.description ILIKE '%' || $1 || '%'
  ) AND (
     $2::integer IS NULL OR
     pc.id_mitra = $2::integer
@@ -1134,10 +1151,10 @@ ORDER BY
     CASE WHEN $3::text = 'qty' AND $4::bool THEN sjc.qty END DESC,
     CASE WHEN $3::text = 'keterangan' AND NOT $4::bool THEN sjc.keterangan END ASC,
     CASE WHEN $3::text = 'keterangan' AND $4::bool THEN sjc.keterangan END DESC,
-    CASE WHEN $3::text = 'material_description' AND NOT $4::bool THEN ml.description END ASC,
-    CASE WHEN $3::text = 'material_description' AND $4::bool THEN ml.description END DESC,
-    CASE WHEN $3::text = 'id_wo' AND NOT $4::bool THEN ml.id_wo END ASC,
-    CASE WHEN $3::text = 'id_wo' AND $4::bool THEN ml.id_wo END DESC,
+    CASE WHEN $3::text = 'material_description' AND NOT $4::bool THEN mli.description END ASC,
+    CASE WHEN $3::text = 'material_description' AND $4::bool THEN mli.description END DESC,
+    CASE WHEN $3::text = 'id_wo' AND NOT $4::bool THEN COALESCE(wos.id_wo, wot.id_wo) END ASC,
+    CASE WHEN $3::text = 'id_wo' AND $4::bool THEN COALESCE(wos.id_wo, wot.id_wo) END DESC,
     sjc.id_surat_jalan_client DESC
 LIMIT $6 OFFSET $5
 `
@@ -1309,15 +1326,26 @@ WHERE id_wo = $1
 ORDER BY id_wo_shell ASC
 `
 
-func (q *Queries) ListWorkOrderShellsByWorkOrderID(ctx context.Context, idWo int32) ([]WorkOrderShell, error) {
+type ListWorkOrderShellsByWorkOrderIDRow struct {
+	IDWoShell int32              `json:"id_wo_shell"`
+	Fabric    string             `json:"fabric"`
+	Cons      pgtype.Numeric     `json:"cons"`
+	Color     string             `json:"color"`
+	Allow     int32              `json:"allow"`
+	Berat1Yd  pgtype.Numeric     `json:"berat_1_yd"`
+	IDWo      int32              `json:"id_wo"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) ListWorkOrderShellsByWorkOrderID(ctx context.Context, idWo int32) ([]ListWorkOrderShellsByWorkOrderIDRow, error) {
 	rows, err := q.db.Query(ctx, listWorkOrderShellsByWorkOrderID, idWo)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []WorkOrderShell
+	var items []ListWorkOrderShellsByWorkOrderIDRow
 	for rows.Next() {
-		var i WorkOrderShell
+		var i ListWorkOrderShellsByWorkOrderIDRow
 		if err := rows.Scan(
 			&i.IDWoShell,
 			&i.Fabric,
@@ -1358,15 +1386,31 @@ WHERE id_wo = $1
 ORDER BY id_wo_trim ASC
 `
 
-func (q *Queries) ListWorkOrderTrimsByWorkOrderID(ctx context.Context, idWo int32) ([]WorkOrderTrim, error) {
+type ListWorkOrderTrimsByWorkOrderIDRow struct {
+	IDWoTrim    int32              `json:"id_wo_trim"`
+	Item        string             `json:"item"`
+	Description string             `json:"description"`
+	Color       string             `json:"color"`
+	Code        string             `json:"code"`
+	Cons        pgtype.Numeric     `json:"cons"`
+	Qty         int32              `json:"qty"`
+	Uom         string             `json:"uom"`
+	Position    string             `json:"position"`
+	CreatedBy   string             `json:"created_by"`
+	Allow       int32              `json:"allow"`
+	IDWo        int32              `json:"id_wo"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) ListWorkOrderTrimsByWorkOrderID(ctx context.Context, idWo int32) ([]ListWorkOrderTrimsByWorkOrderIDRow, error) {
 	rows, err := q.db.Query(ctx, listWorkOrderTrimsByWorkOrderID, idWo)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []WorkOrderTrim
+	var items []ListWorkOrderTrimsByWorkOrderIDRow
 	for rows.Next() {
-		var i WorkOrderTrim
+		var i ListWorkOrderTrimsByWorkOrderIDRow
 		if err := rows.Scan(
 			&i.IDWoTrim,
 			&i.Item,

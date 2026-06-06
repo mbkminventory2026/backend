@@ -96,13 +96,17 @@ type MarkerPlan struct {
 }
 
 type MaterialList struct {
-	IDMaterialList int32              `json:"id_material_list"`
-	Description    string             `json:"description"`
-	Size           string             `json:"size"`
-	Color          string             `json:"color"`
-	Uom            string             `json:"uom"`
-	IDWo           int32              `json:"id_wo"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	IDMaterialList     int32              `json:"id_material_list"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	IDMaterialListItem int32              `json:"id_material_list_item"`
+}
+
+type MaterialListItem struct {
+	IDMaterialListItem int32              `json:"id_material_list_item"`
+	Description        string             `json:"description"`
+	IDWoShell          pgtype.Int4        `json:"id_wo_shell"`
+	IDWoTrim           pgtype.Int4        `json:"id_wo_trim"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 }
 
 type Mitra struct {
@@ -289,12 +293,12 @@ type RatioSizeMarker struct {
 }
 
 type Received struct {
-	IDReceived     int32              `json:"id_received"`
-	Tanggal        pgtype.Date        `json:"tanggal"`
-	Qty            int32              `json:"qty"`
-	Keterangan     string             `json:"keterangan"`
-	IDMaterialList int32              `json:"id_material_list"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	IDReceived         int32              `json:"id_received"`
+	Tanggal            pgtype.Date        `json:"tanggal"`
+	Qty                int32              `json:"qty"`
+	Keterangan         string             `json:"keterangan"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	IDMaterialListItem int32              `json:"id_material_list_item"`
 }
 
 type RekonsiliasiMaterial struct {
@@ -365,6 +369,14 @@ type ReportSewing struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
+type ReturClient struct {
+	IDReturClient int32              `json:"id_retur_client"`
+	IDWo          int32              `json:"id_wo"`
+	File          string             `json:"file"`
+	Deskripsi     string             `json:"deskripsi"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+}
+
 type Role struct {
 	IDRole    int32              `json:"id_role"`
 	NamaRole  string             `json:"nama_role"`
@@ -381,8 +393,8 @@ type SuratJalanClient struct {
 	Tanggal            pgtype.Date        `json:"tanggal"`
 	Qty                int32              `json:"qty"`
 	Keterangan         string             `json:"keterangan"`
-	IDMaterialList     int32              `json:"id_material_list"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	IDMaterialListItem int32              `json:"id_material_list_item"`
 }
 
 type SuratJalanInternal struct {
@@ -485,14 +497,16 @@ type WorkOrder struct {
 }
 
 type WorkOrderShell struct {
-	IDWoShell int32              `json:"id_wo_shell"`
-	Fabric    string             `json:"fabric"`
-	Cons      pgtype.Numeric     `json:"cons"`
-	Color     string             `json:"color"`
-	Allow     int32              `json:"allow"`
-	Berat1Yd  pgtype.Numeric     `json:"berat_1_yd"`
-	IDWo      int32              `json:"id_wo"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	IDWoShell    int32              `json:"id_wo_shell"`
+	Fabric       string             `json:"fabric"`
+	Cons         pgtype.Numeric     `json:"cons"`
+	Color        string             `json:"color"`
+	Allow        int32              `json:"allow"`
+	Berat1Yd     pgtype.Numeric     `json:"berat_1_yd"`
+	IDWo         int32              `json:"id_wo"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	ProvidedBy   string             `json:"provided_by"`
+	MaterialType string             `json:"material_type"`
 }
 
 type WorkOrderShellSize struct {
@@ -518,4 +532,5 @@ type WorkOrderTrim struct {
 	Allow       int32              `json:"allow"`
 	IDWo        int32              `json:"id_wo"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	ProvidedBy  string             `json:"provided_by"`
 }

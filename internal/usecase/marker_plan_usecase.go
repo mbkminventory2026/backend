@@ -123,7 +123,6 @@ func (u *MarkerPlanUseCase) CreateMarkerPlan(ctx context.Context, userID int32, 
 	if err = initializeApprovalWorkflow(ctx, qtx, "MARKER_PLAN", header.IDMarkerPlan, userID); err != nil {
 		return nil, fmt.Errorf("failed to initialize approval workflow: %w", err)
 	}
-
 	if err = tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("%w: failed to commit transaction", ErrWorkOrderServiceUnavailable)
 	}
@@ -241,3 +240,4 @@ func mapMarkerDBError(err error) error {
 	}
 	return fmt.Errorf("%w: %s", ErrWorkOrderServiceUnavailable, err.Error())
 }
+
