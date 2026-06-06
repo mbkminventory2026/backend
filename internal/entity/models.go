@@ -96,13 +96,17 @@ type MarkerPlan struct {
 }
 
 type MaterialList struct {
-	IDMaterialList int32              `json:"id_material_list"`
-	Description    string             `json:"description"`
-	Size           string             `json:"size"`
-	Color          string             `json:"color"`
-	Uom            string             `json:"uom"`
-	IDWo           int32              `json:"id_wo"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	IDMaterialList     int32              `json:"id_material_list"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	IDMaterialListItem int32              `json:"id_material_list_item"`
+}
+
+type MaterialListItem struct {
+	IDMaterialListItem int32              `json:"id_material_list_item"`
+	Description        string             `json:"description"`
+	IDWoShell          pgtype.Int4        `json:"id_wo_shell"`
+	IDWoTrim           pgtype.Int4        `json:"id_wo_trim"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 }
 
 type Mitra struct {
@@ -162,6 +166,21 @@ type PackingListItemSize struct {
 	Qty                   int32              `json:"qty"`
 	IDPackingListItem     int32              `json:"id_packing_list_item"`
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
+}
+
+type PasswordResetRequest struct {
+	IDPasswordResetRequest int32              `json:"id_password_reset_request"`
+	IDUser                 int32              `json:"id_user"`
+	Reason                 string             `json:"reason"`
+	Status                 string             `json:"status"`
+	ApprovedBy             pgtype.Int4        `json:"approved_by"`
+	ApprovedAt             pgtype.Timestamptz `json:"approved_at"`
+	RejectedBy             pgtype.Int4        `json:"rejected_by"`
+	RejectedAt             pgtype.Timestamptz `json:"rejected_at"`
+	CompletedAt            pgtype.Timestamptz `json:"completed_at"`
+	RejectedReason         string             `json:"rejected_reason"`
+	RequestedAt            pgtype.Timestamptz `json:"requested_at"`
+	CreatedAt              pgtype.Timestamptz `json:"created_at"`
 }
 
 type PenanggungJawab struct {
@@ -226,20 +245,17 @@ type PoInternalItem struct {
 }
 
 type PrInternal struct {
-	IDPrInternal     int32              `json:"id_pr_internal"`
-	Tanggal          pgtype.Date        `json:"tanggal"`
-	Nama             string             `json:"nama"`
-	Departemen       string             `json:"departemen"`
-	VendorName       string             `json:"vendor_name"`
-	VendorAddress    string             `json:"vendor_address"`
-	VendorTelp       string             `json:"vendor_telp"`
-	Projek           string             `json:"projek"`
-	IDWo             int32              `json:"id_wo"`
-	IDUser           int32              `json:"id_user"`
-	CreatedAt        pgtype.Timestamptz `json:"created_at"`
-	Status           string             `json:"status"`
-	ApprovedByUserID pgtype.Int4        `json:"approved_by_user_id"`
-	ApprovedAt       pgtype.Timestamptz `json:"approved_at"`
+	IDPrInternal  int32              `json:"id_pr_internal"`
+	Tanggal       pgtype.Date        `json:"tanggal"`
+	Nama          string             `json:"nama"`
+	Departemen    string             `json:"departemen"`
+	VendorName    string             `json:"vendor_name"`
+	VendorAddress string             `json:"vendor_address"`
+	VendorTelp    string             `json:"vendor_telp"`
+	Projek        string             `json:"projek"`
+	IDWo          int32              `json:"id_wo"`
+	IDUser        int32              `json:"id_user"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }
 
 type PrInternalItem struct {
@@ -277,12 +293,12 @@ type RatioSizeMarker struct {
 }
 
 type Received struct {
-	IDReceived     int32              `json:"id_received"`
-	Tanggal        pgtype.Date        `json:"tanggal"`
-	Qty            int32              `json:"qty"`
-	Keterangan     string             `json:"keterangan"`
-	IDMaterialList int32              `json:"id_material_list"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	IDReceived         int32              `json:"id_received"`
+	Tanggal            pgtype.Date        `json:"tanggal"`
+	Qty                int32              `json:"qty"`
+	Keterangan         string             `json:"keterangan"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	IDMaterialListItem int32              `json:"id_material_list_item"`
 }
 
 type RekonsiliasiMaterial struct {
@@ -353,6 +369,14 @@ type ReportSewing struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
+type ReturClient struct {
+	IDReturClient int32              `json:"id_retur_client"`
+	IDWo          int32              `json:"id_wo"`
+	File          string             `json:"file"`
+	Deskripsi     string             `json:"deskripsi"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+}
+
 type Role struct {
 	IDRole    int32              `json:"id_role"`
 	NamaRole  string             `json:"nama_role"`
@@ -369,8 +393,8 @@ type SuratJalanClient struct {
 	Tanggal            pgtype.Date        `json:"tanggal"`
 	Qty                int32              `json:"qty"`
 	Keterangan         string             `json:"keterangan"`
-	IDMaterialList     int32              `json:"id_material_list"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	IDMaterialListItem int32              `json:"id_material_list_item"`
 }
 
 type SuratJalanInternal struct {
@@ -387,20 +411,55 @@ type TimelinePlanProduksi struct {
 }
 
 type User struct {
-	IDUser       int32              `json:"id_user"`
-	Username     string             `json:"username"`
-	Password     string             `json:"password"`
-	IDDepartemen pgtype.Int4        `json:"id_departemen"`
-	IDMitra      pgtype.Int4        `json:"id_mitra"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	Status       string             `json:"status"`
-	IDRole       int32              `json:"id_role"`
+	IDUser             int32              `json:"id_user"`
+	Username           string             `json:"username"`
+	Password           string             `json:"password"`
+	IDDepartemen       pgtype.Int4        `json:"id_departemen"`
+	IDMitra            pgtype.Int4        `json:"id_mitra"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	Status             string             `json:"status"`
+	IDRole             int32              `json:"id_role"`
+	MustChangePassword bool               `json:"must_change_password"`
+	PasswordChangedAt  pgtype.Timestamptz `json:"password_changed_at"`
+	CreatedBy          pgtype.Int4        `json:"created_by"`
+	UpdatedBy          pgtype.Int4        `json:"updated_by"`
 }
 
 type UserAkse struct {
 	IDUser     int32              `json:"id_user"`
 	IDHakAkses int32              `json:"id_hak_akses"`
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+}
+
+type VPrInternal struct {
+	IDPrInternal     int32              `json:"id_pr_internal"`
+	Tanggal          pgtype.Date        `json:"tanggal"`
+	Nama             string             `json:"nama"`
+	Departemen       string             `json:"departemen"`
+	VendorName       string             `json:"vendor_name"`
+	VendorAddress    string             `json:"vendor_address"`
+	VendorTelp       string             `json:"vendor_telp"`
+	Projek           string             `json:"projek"`
+	IDWo             int32              `json:"id_wo"`
+	IDUser           int32              `json:"id_user"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	Status           string             `json:"status"`
+	ApprovedByUserID pgtype.Int4        `json:"approved_by_user_id"`
+	ApprovedAt       pgtype.Timestamptz `json:"approved_at"`
+}
+
+type VWorkOrder struct {
+	IDWo           int32              `json:"id_wo"`
+	Buyer          string             `json:"buyer"`
+	Model          string             `json:"model"`
+	Qty            int32              `json:"qty"`
+	FobCmt         bool               `json:"fob_cmt"`
+	Delivery       pgtype.Date        `json:"delivery"`
+	IDPoClientItem int32              `json:"id_po_client_item"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	Status         string             `json:"status"`
+	ClosedByUserID pgtype.Int4        `json:"closed_by_user_id"`
+	ClosedAt       pgtype.Timestamptz `json:"closed_at"`
 }
 
 type Warna struct {
@@ -435,20 +494,19 @@ type WorkOrder struct {
 	Delivery       pgtype.Date        `json:"delivery"`
 	IDPoClientItem int32              `json:"id_po_client_item"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
-	Status         string             `json:"status"`
-	ClosedByUserID pgtype.Int4        `json:"closed_by_user_id"`
-	ClosedAt       pgtype.Timestamptz `json:"closed_at"`
 }
 
 type WorkOrderShell struct {
-	IDWoShell int32              `json:"id_wo_shell"`
-	Fabric    string             `json:"fabric"`
-	Cons      pgtype.Numeric     `json:"cons"`
-	Color     string             `json:"color"`
-	Allow     int32              `json:"allow"`
-	Berat1Yd  pgtype.Numeric     `json:"berat_1_yd"`
-	IDWo      int32              `json:"id_wo"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	IDWoShell    int32              `json:"id_wo_shell"`
+	Fabric       string             `json:"fabric"`
+	Cons         pgtype.Numeric     `json:"cons"`
+	Color        string             `json:"color"`
+	Allow        int32              `json:"allow"`
+	Berat1Yd     pgtype.Numeric     `json:"berat_1_yd"`
+	IDWo         int32              `json:"id_wo"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	ProvidedBy   string             `json:"provided_by"`
+	MaterialType string             `json:"material_type"`
 }
 
 type WorkOrderShellSize struct {
@@ -474,4 +532,5 @@ type WorkOrderTrim struct {
 	Allow       int32              `json:"allow"`
 	IDWo        int32              `json:"id_wo"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	ProvidedBy  string             `json:"provided_by"`
 }

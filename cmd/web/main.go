@@ -127,6 +127,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	markerPlanUseCase, err := usecase.NewMarkerPlanUseCase(queries, dbPool)
+	if err != nil {
+		logger.Error("failed to initialize marker plan usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	warehouseDeliveryUseCase, err := usecase.NewWarehouseDeliveryUseCase(queries, dbPool)
 	if err != nil {
 		logger.Error("failed to initialize warehouse delivery usecase", slog.String("error", err.Error()))
@@ -137,6 +144,13 @@ func main() {
 	dashboardUseCase, err := usecase.NewDashboardUseCase(queries, aiGateway)
 	if err != nil {
 		logger.Error("failed to initialize dashboard usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	approvalUseCase, err := usecase.NewApprovalUseCase(queries, dbPool)
+	if err != nil {
+		logger.Error("failed to initialize approval usecase", slog.String("error", err.Error()))
 		dbPool.Close()
 		os.Exit(1)
 	}
@@ -198,6 +212,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	markerPlanHandler, err := httpdelivery.NewMarkerPlanHandler(markerPlanUseCase)
+	if err != nil {
+		logger.Error("failed to initialize marker plan handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	warehouseDeliveryHandler, err := httpdelivery.NewWarehouseDeliveryHandler(warehouseDeliveryUseCase)
 	if err != nil {
 		logger.Error("failed to initialize warehouse delivery handler", slog.String("error", err.Error()))
@@ -210,6 +231,13 @@ func main() {
 	dashboardHandler, err := httpdelivery.NewDashboardHandler(dashboardUseCase)
 	if err != nil {
 		logger.Error("failed to initialize dashboard handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	approvalHandler, err := httpdelivery.NewApprovalHandler(approvalUseCase)
+	if err != nil {
+		logger.Error("failed to initialize approval handler", slog.String("error", err.Error()))
 		dbPool.Close()
 		os.Exit(1)
 	}
@@ -238,6 +266,9 @@ func main() {
 	router.Use(corsMiddleware(cfg.CORSAllowOrigin))
 	router.Use(httpdelivery.ActivityLogMiddleware(activityLogService))
 
+	// Serve uploaded files statically
+	router.Static("/uploads", "./uploads")
+
 	healthHandler.RegisterRoutes(router)
 
 	authMiddleware := httpdelivery.AuthMiddleware(cfg.JWTSecret)
@@ -257,7 +288,9 @@ func main() {
 	transactionDocumentHandler.RegisterRoutes(router, authMiddleware)
 	workOrderProductionHandler.RegisterRoutes(router, authMiddleware)
 	timelineProduksiHandler.RegisterRoutes(router, authMiddleware)
+	markerPlanHandler.RegisterRoutes(router, authMiddleware)
 	warehouseDeliveryHandler.RegisterRoutes(router, authMiddleware)
+	approvalHandler.RegisterRoutes(router, authMiddleware)
 
 	dashboardHandler.RegisterRoutes(router, authMiddleware)
 	reportHandler.RegisterRoutes(router, authMiddleware)
@@ -339,6 +372,7 @@ func corsMiddleware(allowOrigin string) gin.HandlerFunc {
 		headers.Set("Access-Control-Allow-Origin", allowOrigin)
 		headers.Set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
 		headers.Set("Access-Control-Allow-Headers", "Origin,Content-Type,Accept,Authorization")
+		headers.Set("Access-Control-Expose-Headers", "X-Total-Count")
 		headers.Set("Access-Control-Allow-Credentials", "true")
 
 		if c.Request.Method == stdhttp.MethodOptions {

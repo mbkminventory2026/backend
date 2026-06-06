@@ -36,29 +36,33 @@ func (q *Queries) CountUsers(ctx context.Context, searchTerm string) (int64, err
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO USERS (
-    username, password, id_role, id_departemen, id_mitra, status
+    username, password, id_role, id_departemen, id_mitra, status, must_change_password, created_by, updated_by
 ) VALUES (
-    $1, $2, $3, $4, $5, $6
-) RETURNING id_user, username, id_role, id_departemen, id_mitra, status, created_at
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
+) RETURNING id_user, username, id_role, id_departemen, id_mitra, status, must_change_password, created_at
 `
 
 type CreateUserParams struct {
-	Username     string      `json:"username"`
-	Password     string      `json:"password"`
-	IDRole       int32       `json:"id_role"`
-	IDDepartemen pgtype.Int4 `json:"id_departemen"`
-	IDMitra      pgtype.Int4 `json:"id_mitra"`
-	Status       string      `json:"status"`
+	Username           string      `json:"username"`
+	Password           string      `json:"password"`
+	IDRole             int32       `json:"id_role"`
+	IDDepartemen       pgtype.Int4 `json:"id_departemen"`
+	IDMitra            pgtype.Int4 `json:"id_mitra"`
+	Status             string      `json:"status"`
+	MustChangePassword bool        `json:"must_change_password"`
+	CreatedBy          pgtype.Int4 `json:"created_by"`
+	UpdatedBy          pgtype.Int4 `json:"updated_by"`
 }
 
 type CreateUserRow struct {
-	IDUser       int32              `json:"id_user"`
-	Username     string             `json:"username"`
-	IDRole       int32              `json:"id_role"`
-	IDDepartemen pgtype.Int4        `json:"id_departemen"`
-	IDMitra      pgtype.Int4        `json:"id_mitra"`
-	Status       string             `json:"status"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	IDUser             int32              `json:"id_user"`
+	Username           string             `json:"username"`
+	IDRole             int32              `json:"id_role"`
+	IDDepartemen       pgtype.Int4        `json:"id_departemen"`
+	IDMitra            pgtype.Int4        `json:"id_mitra"`
+	Status             string             `json:"status"`
+	MustChangePassword bool               `json:"must_change_password"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
@@ -69,6 +73,9 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		arg.IDDepartemen,
 		arg.IDMitra,
 		arg.Status,
+		arg.MustChangePassword,
+		arg.CreatedBy,
+		arg.UpdatedBy,
 	)
 	var i CreateUserRow
 	err := row.Scan(
@@ -78,6 +85,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		&i.IDDepartemen,
 		&i.IDMitra,
 		&i.Status,
+		&i.MustChangePassword,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -128,7 +136,7 @@ func (q *Queries) DeleteUserAksesByUserID(ctx context.Context, idUser int32) (in
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT u.id_user, u.username, u.status, u.id_role, r.nama_role, u.id_departemen, u.id_mitra, d.nama_departemen, m.nama_perusahaan, u.created_at
+SELECT u.id_user, u.username, u.status, u.id_role, r.nama_role, u.id_departemen, u.id_mitra, d.nama_departemen, m.nama_perusahaan, u.must_change_password, u.password_changed_at, u.created_at
 FROM USERS u
 JOIN ROLES r ON r.id_role = u.id_role
 LEFT JOIN DEPARTEMEN d ON u.id_departemen = d.id_departemen
@@ -137,16 +145,18 @@ WHERE u.id_user = $1 LIMIT 1
 `
 
 type GetUserByIDRow struct {
-	IDUser         int32              `json:"id_user"`
-	Username       string             `json:"username"`
-	Status         string             `json:"status"`
-	IDRole         int32              `json:"id_role"`
-	NamaRole       string             `json:"nama_role"`
-	IDDepartemen   pgtype.Int4        `json:"id_departemen"`
-	IDMitra        pgtype.Int4        `json:"id_mitra"`
-	NamaDepartemen pgtype.Text        `json:"nama_departemen"`
-	NamaPerusahaan pgtype.Text        `json:"nama_perusahaan"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	IDUser             int32              `json:"id_user"`
+	Username           string             `json:"username"`
+	Status             string             `json:"status"`
+	IDRole             int32              `json:"id_role"`
+	NamaRole           string             `json:"nama_role"`
+	IDDepartemen       pgtype.Int4        `json:"id_departemen"`
+	IDMitra            pgtype.Int4        `json:"id_mitra"`
+	NamaDepartemen     pgtype.Text        `json:"nama_departemen"`
+	NamaPerusahaan     pgtype.Text        `json:"nama_perusahaan"`
+	MustChangePassword bool               `json:"must_change_password"`
+	PasswordChangedAt  pgtype.Timestamptz `json:"password_changed_at"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) GetUserByID(ctx context.Context, idUser int32) (GetUserByIDRow, error) {
@@ -162,28 +172,32 @@ func (q *Queries) GetUserByID(ctx context.Context, idUser int32) (GetUserByIDRow
 		&i.IDMitra,
 		&i.NamaDepartemen,
 		&i.NamaPerusahaan,
+		&i.MustChangePassword,
+		&i.PasswordChangedAt,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT u.id_user, u.username, u.password, u.id_role, r.nama_role, u.id_departemen, u.id_mitra, u.status, u.created_at
+SELECT u.id_user, u.username, u.password, u.id_role, r.nama_role, u.id_departemen, u.id_mitra, u.status, u.must_change_password, u.password_changed_at, u.created_at
 FROM USERS u
 JOIN ROLES r ON r.id_role = u.id_role
 WHERE u.username = $1 LIMIT 1
 `
 
 type GetUserByUsernameRow struct {
-	IDUser       int32              `json:"id_user"`
-	Username     string             `json:"username"`
-	Password     string             `json:"password"`
-	IDRole       int32              `json:"id_role"`
-	NamaRole     string             `json:"nama_role"`
-	IDDepartemen pgtype.Int4        `json:"id_departemen"`
-	IDMitra      pgtype.Int4        `json:"id_mitra"`
-	Status       string             `json:"status"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	IDUser             int32              `json:"id_user"`
+	Username           string             `json:"username"`
+	Password           string             `json:"password"`
+	IDRole             int32              `json:"id_role"`
+	NamaRole           string             `json:"nama_role"`
+	IDDepartemen       pgtype.Int4        `json:"id_departemen"`
+	IDMitra            pgtype.Int4        `json:"id_mitra"`
+	Status             string             `json:"status"`
+	MustChangePassword bool               `json:"must_change_password"`
+	PasswordChangedAt  pgtype.Timestamptz `json:"password_changed_at"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) GetUserByUsername(ctx context.Context, username string) (GetUserByUsernameRow, error) {
@@ -198,6 +212,8 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (GetUs
 		&i.IDDepartemen,
 		&i.IDMitra,
 		&i.Status,
+		&i.MustChangePassword,
+		&i.PasswordChangedAt,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -262,8 +278,40 @@ func (q *Queries) GetUserPermissions(ctx context.Context, idUser int32) ([]strin
 	return items, nil
 }
 
+const getUsersByRoleName = `-- name: GetUsersByRoleName :many
+SELECT u.id_user, u.username
+FROM USERS u
+JOIN ROLES r ON u.id_role = r.id_role
+WHERE r.nama_role = $1 AND u.status = 'active'
+`
+
+type GetUsersByRoleNameRow struct {
+	IDUser   int32  `json:"id_user"`
+	Username string `json:"username"`
+}
+
+func (q *Queries) GetUsersByRoleName(ctx context.Context, namaRole string) ([]GetUsersByRoleNameRow, error) {
+	rows, err := q.db.Query(ctx, getUsersByRoleName, namaRole)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUsersByRoleNameRow
+	for rows.Next() {
+		var i GetUsersByRoleNameRow
+		if err := rows.Scan(&i.IDUser, &i.Username); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUsers = `-- name: ListUsers :many
-SELECT u.id_user, u.username, u.status, u.id_role, r.nama_role, u.id_departemen, u.id_mitra, d.nama_departemen, m.nama_perusahaan, u.created_at
+SELECT u.id_user, u.username, u.status, u.id_role, r.nama_role, u.id_departemen, u.id_mitra, d.nama_departemen, m.nama_perusahaan, u.must_change_password, u.created_at
 FROM USERS u
 JOIN ROLES r ON r.id_role = u.id_role
 LEFT JOIN DEPARTEMEN d ON u.id_departemen = d.id_departemen
@@ -302,16 +350,17 @@ type ListUsersParams struct {
 }
 
 type ListUsersRow struct {
-	IDUser         int32              `json:"id_user"`
-	Username       string             `json:"username"`
-	Status         string             `json:"status"`
-	IDRole         int32              `json:"id_role"`
-	NamaRole       string             `json:"nama_role"`
-	IDDepartemen   pgtype.Int4        `json:"id_departemen"`
-	IDMitra        pgtype.Int4        `json:"id_mitra"`
-	NamaDepartemen pgtype.Text        `json:"nama_departemen"`
-	NamaPerusahaan pgtype.Text        `json:"nama_perusahaan"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	IDUser             int32              `json:"id_user"`
+	Username           string             `json:"username"`
+	Status             string             `json:"status"`
+	IDRole             int32              `json:"id_role"`
+	NamaRole           string             `json:"nama_role"`
+	IDDepartemen       pgtype.Int4        `json:"id_departemen"`
+	IDMitra            pgtype.Int4        `json:"id_mitra"`
+	NamaDepartemen     pgtype.Text        `json:"nama_departemen"`
+	NamaPerusahaan     pgtype.Text        `json:"nama_perusahaan"`
+	MustChangePassword bool               `json:"must_change_password"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error) {
@@ -339,6 +388,7 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUse
 			&i.IDMitra,
 			&i.NamaDepartemen,
 			&i.NamaPerusahaan,
+			&i.MustChangePassword,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -351,6 +401,29 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUse
 	return items, nil
 }
 
+const resetUserPasswordTemporary = `-- name: ResetUserPasswordTemporary :execrows
+UPDATE USERS
+SET password = $2,
+    must_change_password = TRUE,
+    password_changed_at = NULL,
+    updated_by = $3
+WHERE id_user = $1
+`
+
+type ResetUserPasswordTemporaryParams struct {
+	IDUser    int32       `json:"id_user"`
+	Password  string      `json:"password"`
+	UpdatedBy pgtype.Int4 `json:"updated_by"`
+}
+
+func (q *Queries) ResetUserPasswordTemporary(ctx context.Context, arg ResetUserPasswordTemporaryParams) (int64, error) {
+	result, err := q.db.Exec(ctx, resetUserPasswordTemporary, arg.IDUser, arg.Password, arg.UpdatedBy)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const updateUser = `-- name: UpdateUser :one
 UPDATE USERS
 SET username = $2,
@@ -358,29 +431,36 @@ SET username = $2,
     id_role = $4,
     id_departemen = $5,
     id_mitra = $6,
-    status = $7
+    status = $7,
+    must_change_password = $8,
+    password_changed_at = $9,
+    updated_by = $10
 WHERE id_user = $1
-RETURNING id_user, username, id_role, id_departemen, id_mitra, status, created_at
+RETURNING id_user, username, id_role, id_departemen, id_mitra, status, must_change_password, created_at
 `
 
 type UpdateUserParams struct {
-	IDUser       int32       `json:"id_user"`
-	Username     string      `json:"username"`
-	Password     string      `json:"password"`
-	IDRole       int32       `json:"id_role"`
-	IDDepartemen pgtype.Int4 `json:"id_departemen"`
-	IDMitra      pgtype.Int4 `json:"id_mitra"`
-	Status       string      `json:"status"`
+	IDUser             int32              `json:"id_user"`
+	Username           string             `json:"username"`
+	Password           string             `json:"password"`
+	IDRole             int32              `json:"id_role"`
+	IDDepartemen       pgtype.Int4        `json:"id_departemen"`
+	IDMitra            pgtype.Int4        `json:"id_mitra"`
+	Status             string             `json:"status"`
+	MustChangePassword bool               `json:"must_change_password"`
+	PasswordChangedAt  pgtype.Timestamptz `json:"password_changed_at"`
+	UpdatedBy          pgtype.Int4        `json:"updated_by"`
 }
 
 type UpdateUserRow struct {
-	IDUser       int32              `json:"id_user"`
-	Username     string             `json:"username"`
-	IDRole       int32              `json:"id_role"`
-	IDDepartemen pgtype.Int4        `json:"id_departemen"`
-	IDMitra      pgtype.Int4        `json:"id_mitra"`
-	Status       string             `json:"status"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	IDUser             int32              `json:"id_user"`
+	Username           string             `json:"username"`
+	IDRole             int32              `json:"id_role"`
+	IDDepartemen       pgtype.Int4        `json:"id_departemen"`
+	IDMitra            pgtype.Int4        `json:"id_mitra"`
+	Status             string             `json:"status"`
+	MustChangePassword bool               `json:"must_change_password"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error) {
@@ -392,6 +472,9 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateU
 		arg.IDDepartemen,
 		arg.IDMitra,
 		arg.Status,
+		arg.MustChangePassword,
+		arg.PasswordChangedAt,
+		arg.UpdatedBy,
 	)
 	var i UpdateUserRow
 	err := row.Scan(
@@ -401,9 +484,33 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateU
 		&i.IDDepartemen,
 		&i.IDMitra,
 		&i.Status,
+		&i.MustChangePassword,
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const updateUserPasswordForChange = `-- name: UpdateUserPasswordForChange :execrows
+UPDATE USERS
+SET password = $2,
+    must_change_password = FALSE,
+    password_changed_at = NOW(),
+    updated_by = $3
+WHERE id_user = $1
+`
+
+type UpdateUserPasswordForChangeParams struct {
+	IDUser    int32       `json:"id_user"`
+	Password  string      `json:"password"`
+	UpdatedBy pgtype.Int4 `json:"updated_by"`
+}
+
+func (q *Queries) UpdateUserPasswordForChange(ctx context.Context, arg UpdateUserPasswordForChangeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateUserPasswordForChange, arg.IDUser, arg.Password, arg.UpdatedBy)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const updateUserStatus = `-- name: UpdateUserStatus :one

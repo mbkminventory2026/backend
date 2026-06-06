@@ -57,7 +57,7 @@ func (u *WarehouseDeliveryUseCase) ReceiveInventory(ctx context.Context, req mod
 		Tanggal:                mustDate(req.Tanggal),
 		Qty:                    req.Qty,
 		Keterangan:             req.Keterangan,
-		IDMaterialList:         req.IDMaterialList,
+		IDMaterialListItem:     req.IDMaterialList,
 		IDRekonsiliasiMaterial: req.IDRekonsiliasiMaterial,
 	})
 	if err != nil {
@@ -106,7 +106,7 @@ func (u *WarehouseDeliveryUseCase) IssueInventory(ctx context.Context, req model
 	}, nil
 }
 
-func (u *WarehouseDeliveryUseCase) CreatePackingList(ctx context.Context, req model.CreatePackingListRequest) (*model.PackingListResponse, error) {
+func (u *WarehouseDeliveryUseCase) CreatePackingList(ctx context.Context, userID int32, req model.CreatePackingListRequest) (*model.PackingListResponse, error) {
 	if len(req.Items) == 0 {
 		return nil, ErrWarehouseValidation
 	}
@@ -189,6 +189,11 @@ func (u *WarehouseDeliveryUseCase) CreatePackingList(ctx context.Context, req mo
 		})
 	}
 
+	// Initialize approval workflow
+	if err = initializeApprovalWorkflow(ctx, qtx, "PACKING_LIST", header.IDPackingList, userID); err != nil {
+		return nil, fmt.Errorf("failed to initialize approval workflow: %w", err)
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("%w: failed to commit transaction", ErrWarehouseServiceUnavailable)
 	}
@@ -227,10 +232,10 @@ func (u *WarehouseDeliveryUseCase) CreateSuratJalan(ctx context.Context, suratJa
 			return nil, ErrWarehouseValidation
 		}
 		item, err := u.repo.CreateSuratJalanClient(ctx, entity.CreateSuratJalanClientParams{
-			Tanggal:        mustDate(req.Tanggal),
-			Qty:            req.Qty,
-			Keterangan:     req.Keterangan,
-			IDMaterialList: req.IDMaterialList,
+			Tanggal:            mustDate(req.Tanggal),
+			Qty:                req.Qty,
+			Keterangan:         req.Keterangan,
+			IDMaterialListItem: req.IDMaterialList,
 		})
 		if err != nil {
 			return nil, mapWarehouseDBError(err)

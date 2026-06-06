@@ -14,7 +14,7 @@ SELECT
     pc.po_number,
     pci.style AS po_client_item_style,
     COUNT(*) OVER() AS total_count
-FROM WORK_ORDER wo
+FROM v_work_order wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE (
@@ -62,7 +62,7 @@ SELECT
     wo.created_at,
     pc.po_number,
     pci.style AS po_client_item_style
-FROM WORK_ORDER wo
+FROM v_work_order wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE wo.id_wo = sqlc.arg(id_wo)
@@ -120,16 +120,19 @@ ORDER BY id_wo_trim ASC;
 
 -- name: ListMaterialListsByWorkOrderID :many
 SELECT
-    id_material_list,
-    description,
-    size,
-    color,
-    uom,
-    id_wo,
-    created_at
-FROM MATERIAL_LIST
-WHERE id_wo = sqlc.arg(id_wo)
-ORDER BY id_material_list ASC;
+    ml.id_material_list,
+    mli.description,
+    ''::text AS size,
+    COALESCE(wos.color, wot.color)::text AS color,
+    COALESCE(wot.uom, 'yds')::text AS uom,
+    COALESCE(wos.id_wo, wot.id_wo)::integer AS id_wo,
+    ml.created_at
+FROM MATERIAL_LIST ml
+JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list_item = ml.id_material_list_item
+LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = mli.id_wo_shell
+LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo_trim = mli.id_wo_trim
+WHERE COALESCE(wos.id_wo, wot.id_wo) = sqlc.arg(id_wo)
+ORDER BY ml.id_material_list ASC;
 
 -- name: ListPOClients :many
 SELECT
@@ -188,6 +191,10 @@ SELECT
 FROM PO_CLIENT pc
 JOIN MITRA m ON m.id_mitra = pc.id_mitra
 WHERE pc.id_po_client = sqlc.arg(id_po_client)
+AND (
+    sqlc.narg(id_mitra)::integer IS NULL OR
+    pc.id_mitra = sqlc.narg(id_mitra)::integer
+)
 LIMIT 1;
 
 -- name: ListPOClientItemsByPOClientID :many
@@ -233,7 +240,7 @@ SELECT
     pr.approved_at,
     pr.created_at,
     COUNT(*) OVER() AS total_count
-FROM PR_INTERNAL pr
+FROM v_pr_internal pr
 WHERE (
     sqlc.arg(search_term) = '' OR
     pr.nama ILIKE '%' || sqlc.arg(search_term) || '%' OR
@@ -278,7 +285,7 @@ SELECT
     approved_by_user_id,
     approved_at,
     created_at
-FROM PR_INTERNAL
+FROM v_pr_internal
 WHERE id_pr_internal = sqlc.arg(id_pr_internal)
 LIMIT 1;
 
@@ -469,20 +476,22 @@ SELECT
     sjc.tanggal,
     sjc.qty,
     sjc.keterangan,
-    sjc.id_material_list,
+    sjc.id_material_list_item AS id_material_list,
     sjc.created_at,
-    ml.description AS material_description,
-    ml.id_wo,
+    mli.description AS material_description,
+    COALESCE(wos.id_wo, wot.id_wo)::integer AS id_wo,
     COUNT(*) OVER() AS total_count
 FROM SURAT_JALAN_CLIENT sjc
-JOIN MATERIAL_LIST ml ON ml.id_material_list = sjc.id_material_list
-JOIN WORK_ORDER wo ON wo.id_wo = ml.id_wo
+JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list_item = sjc.id_material_list_item
+LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = mli.id_wo_shell
+LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo_trim = mli.id_wo_trim
+JOIN WORK_ORDER wo ON wo.id_wo = COALESCE(wos.id_wo, wot.id_wo)
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE (
     sqlc.arg(search_term) = '' OR
     sjc.keterangan ILIKE '%' || sqlc.arg(search_term) || '%' OR
-    ml.description ILIKE '%' || sqlc.arg(search_term) || '%'
+    mli.description ILIKE '%' || sqlc.arg(search_term) || '%'
  ) AND (
     sqlc.narg(id_mitra)::integer IS NULL OR
     pc.id_mitra = sqlc.narg(id_mitra)::integer
@@ -498,10 +507,10 @@ ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'qty' AND sqlc.arg(sort_desc)::bool THEN sjc.qty END DESC,
     CASE WHEN sqlc.arg(sort_by)::text = 'keterangan' AND NOT sqlc.arg(sort_desc)::bool THEN sjc.keterangan END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'keterangan' AND sqlc.arg(sort_desc)::bool THEN sjc.keterangan END DESC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'material_description' AND NOT sqlc.arg(sort_desc)::bool THEN ml.description END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'material_description' AND sqlc.arg(sort_desc)::bool THEN ml.description END DESC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'id_wo' AND NOT sqlc.arg(sort_desc)::bool THEN ml.id_wo END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'id_wo' AND sqlc.arg(sort_desc)::bool THEN ml.id_wo END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'material_description' AND NOT sqlc.arg(sort_desc)::bool THEN mli.description END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'material_description' AND sqlc.arg(sort_desc)::bool THEN mli.description END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_wo' AND NOT sqlc.arg(sort_desc)::bool THEN COALESCE(wos.id_wo, wot.id_wo) END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'id_wo' AND sqlc.arg(sort_desc)::bool THEN COALESCE(wos.id_wo, wot.id_wo) END DESC,
     sjc.id_surat_jalan_client DESC
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 
@@ -511,13 +520,15 @@ SELECT
     sjc.tanggal,
     sjc.qty,
     sjc.keterangan,
-    sjc.id_material_list,
+    sjc.id_material_list_item AS id_material_list,
     sjc.created_at,
-    ml.description AS material_description,
-    ml.id_wo
+    mli.description AS material_description,
+    COALESCE(wos.id_wo, wot.id_wo)::integer AS id_wo
 FROM SURAT_JALAN_CLIENT sjc
-JOIN MATERIAL_LIST ml ON ml.id_material_list = sjc.id_material_list
-JOIN WORK_ORDER wo ON wo.id_wo = ml.id_wo
+JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list_item = sjc.id_material_list_item
+LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = mli.id_wo_shell
+LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo_trim = mli.id_wo_trim
+JOIN WORK_ORDER wo ON wo.id_wo = COALESCE(wos.id_wo, wot.id_wo)
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE sjc.id_surat_jalan_client = sqlc.arg(id_surat_jalan_client)

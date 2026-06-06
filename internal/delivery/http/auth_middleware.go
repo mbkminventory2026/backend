@@ -17,6 +17,13 @@ const (
 	// PermissionAllAccess is the special permission granted to super admin/emergency access
 	PermissionAllAccess = "ALL_ACCESS"
 
+	//nolint:gosec // permission code constants are identifiers, not credentials
+	PermissionAuthChangePassword = "AUTH_CHANGE_PASSWORD"
+	//nolint:gosec // permission code constants are identifiers, not credentials
+	PermissionPasswordResetRequestCreate = "PASSWORD_RESET_REQUEST_CREATE"
+	//nolint:gosec // permission code constants are identifiers, not credentials
+	PermissionUserTempPasswordCreate = "USER_TEMP_PASSWORD_CREATE"
+
 	PermissionUserRead    = "USER_READ"
 	PermissionUserCreate  = "USER_CREATE"
 	PermissionUserUpdate  = "USER_UPDATE"
@@ -113,9 +120,14 @@ const (
 	PermissionSuratJalanCreate       = "SURAT_JALAN_CREATE"
 	PermissionSuratJalanUpdate       = "SURAT_JALAN_UPDATE"
 
-	PermissionReportRead    = "REPORT_READ"
-	PermissionLogRead       = "LOG_READ"
-	PermissionDashboardRead = "DASHBOARD_READ"
+	PermissionReportRead       = "REPORT_READ"
+	PermissionLogRead          = "LOG_READ"
+	PermissionDashboardRead    = "DASHBOARD_READ"
+	PermissionAIEstimationRead = "AI_ESTIMATION_READ"
+
+	PermissionPasswordResetRequestRead    = "PASSWORD_RESET_REQUEST_READ"
+	PermissionPasswordResetRequestApprove = "PASSWORD_RESET_REQUEST_APPROVE"
+	PermissionPasswordResetRequestReject  = "PASSWORD_RESET_REQUEST_REJECT"
 )
 
 // AuthMiddleware validates JWT token from Authorization header.
@@ -260,6 +272,58 @@ func GetMitraIDFromContext(c *gin.Context) (*int32, bool) {
 
 	val := int32(mitraIDFloat)
 	return &val, true
+}
+
+// GetRoleNameFromContext retrieves the role name from JWT claims stored in context.
+func GetRoleNameFromContext(c *gin.Context) (string, bool) {
+	payload, exists := c.Get(authorizationPayloadKey)
+	if !exists {
+		return "", false
+	}
+
+	claims, ok := payload.(jwt.MapClaims)
+	if !ok {
+		return "", false
+	}
+
+	roleName, ok := claims["role_name"].(string)
+	if !ok {
+		return "", false
+	}
+
+	return roleName, true
+}
+
+// IsClientContext determines whether the current authenticated principal is an external client.
+func IsClientContext(c *gin.Context) (bool, bool) {
+	if roleName, ok := GetRoleNameFromContext(c); ok {
+		return strings.EqualFold(roleName, "CLIENT"), true
+	}
+
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		return false, false
+	}
+
+	return mitraID != nil, true
+}
+
+// RequireInternalUser blocks external client principals from internal-only endpoints.
+func RequireInternalUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		isClient, ok := IsClientContext(c)
+		if !ok {
+			AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid authentication context", nil))
+			return
+		}
+
+		if isClient {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: internal users only", nil))
+			return
+		}
+
+		c.Next()
+	}
 }
 
 // HasPermission checks if the authenticated user has a specific permission.

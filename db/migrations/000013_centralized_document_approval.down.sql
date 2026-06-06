@@ -1,0 +1,30 @@
+-- 1. Drop Views
+DROP VIEW IF EXISTS v_pr_internal;
+DROP VIEW IF EXISTS v_work_order;
+
+-- 2. Drop UNIQUE constraint from OTORITAS_DOKUMEN
+ALTER TABLE OTORITAS_DOKUMEN DROP CONSTRAINT IF EXISTS uq_otoritas_dokumen;
+
+-- 3. Add columns back to PR_INTERNAL
+ALTER TABLE PR_INTERNAL
+ADD COLUMN IF NOT EXISTS status VARCHAR(30) NOT NULL DEFAULT 'draft',
+ADD COLUMN IF NOT EXISTS approved_by_user_id INT,
+ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
+
+ALTER TABLE PR_INTERNAL
+ADD CONSTRAINT pr_internal_approved_by_user_id_fkey
+FOREIGN KEY (approved_by_user_id) REFERENCES USERS(ID_USER);
+
+-- 4. Add columns back to WORK_ORDER
+ALTER TABLE WORK_ORDER
+ADD COLUMN IF NOT EXISTS status VARCHAR(30) NOT NULL DEFAULT 'open',
+ADD COLUMN IF NOT EXISTS closed_by_user_id INT,
+ADD COLUMN IF NOT EXISTS closed_at TIMESTAMPTZ;
+
+ALTER TABLE WORK_ORDER
+ADD CONSTRAINT work_order_closed_by_user_id_fkey
+FOREIGN KEY (closed_by_user_id) REFERENCES USERS(ID_USER);
+
+-- 5. Restore indexes
+CREATE INDEX IF NOT EXISTS idx_pr_internal_status_lower ON PR_INTERNAL (LOWER(STATUS));
+CREATE INDEX IF NOT EXISTS idx_work_order_status_lower ON WORK_ORDER (LOWER(STATUS));

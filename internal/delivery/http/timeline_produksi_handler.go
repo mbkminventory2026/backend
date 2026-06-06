@@ -23,7 +23,7 @@ func NewTimelineProduksiHandler(useCase *usecase.TimelineProduksiUseCase) (*Time
 }
 
 func (h *TimelineProduksiHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
-	v1 := router.Group("/api/v1").Use(authMiddleware)
+	v1 := router.Group("/api/v1").Use(authMiddleware, RequireInternalUser())
 
 	v1.POST("/timeline-plans", RequirePermission(PermissionTimelineCreate), h.CreateTimelinePlan)
 	v1.GET("/timeline-plans/:id", RequirePermission(PermissionTimelineRead), h.GetTimelinePlan)
@@ -43,12 +43,18 @@ func (h *TimelineProduksiHandler) RegisterRoutes(router gin.IRouter, authMiddlew
 // @Failure      500      {object}  model.TimelinePlanErrorDoc
 // @Router       /api/v1/timeline-plans [post]
 func (h *TimelineProduksiHandler) CreateTimelinePlan(c *gin.Context) {
+	userID, ok := GetUserIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
 	var req model.CreateTimelinePlanRequest
 	if !BindJSON(c, &req) {
 		return
 	}
 
-	item, err := h.useCase.CreateTimelinePlan(c.Request.Context(), req)
+	item, err := h.useCase.CreateTimelinePlan(c.Request.Context(), userID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return

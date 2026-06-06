@@ -26,7 +26,7 @@ func NewUserHandler(useCase *usecase.UserUseCase) (*UserHandler, error) {
 }
 
 func (h *UserHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/api/v1/users").Use(authMiddleware)
+	group := router.Group("/api/v1/users").Use(authMiddleware, RequireInternalUser())
 
 	group.POST("", RequirePermission(PermissionUserCreate), h.Create)
 	group.GET("", RequirePermission(PermissionUserRead), h.List)
@@ -59,7 +59,12 @@ func (h *UserHandler) Create(c *gin.Context) {
 		return
 	}
 
-	result, err := h.useCase.Create(c.Request.Context(), req)
+	var actorUserID *int32
+	if userID, ok := GetUserIDFromContext(c); ok {
+		actorUserID = &userID
+	}
+
+	result, err := h.useCase.Create(c.Request.Context(), actorUserID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -150,7 +155,12 @@ func (h *UserHandler) Update(c *gin.Context) {
 		return
 	}
 
-	result, err := h.useCase.Update(c.Request.Context(), id, req)
+	var actorUserID *int32
+	if userID, ok := GetUserIDFromContext(c); ok {
+		actorUserID = &userID
+	}
+
+	result, err := h.useCase.Update(c.Request.Context(), id, actorUserID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -259,13 +269,19 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	response.Success(c, http.StatusOK, "user deleted", nil)
 }
 
+type ApproveUserRequest struct {
+	Username string `json:"username" binding:"required,min=3"`
+}
+
 // Approve godoc
 // @Summary      Approve User Pendaftaran
-// @Description  Approves a pending user registration, updating status to active.
+// @Description  Approves a pending user registration, updating status to active and setting username/password.
 // @Tags         Users
+// @Accept       json
 // @Produce      json
 // @Security     BearerAuth
 // @Param        id   path      int  true  "User ID"
+// @Param        payload  body      httpdelivery.ApproveUserRequest  true  "Approval payload"
 // @Success      200  {object}  model.UserSuccessDoc
 // @Router       /api/v1/users/{id}/approve [put]
 func (h *UserHandler) Approve(c *gin.Context) {
@@ -275,7 +291,12 @@ func (h *UserHandler) Approve(c *gin.Context) {
 		return
 	}
 
-	result, err := h.useCase.Approve(c.Request.Context(), id)
+	var req ApproveUserRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+
+	result, err := h.useCase.Approve(c.Request.Context(), id, req.Username)
 	if err != nil {
 		h.handleError(c, err)
 		return

@@ -12,18 +12,17 @@ import (
 )
 
 const approvePRInternal = `-- name: ApprovePRInternal :one
-UPDATE PR_INTERNAL
-SET
-    status = 'approved',
-    approved_by_user_id = $1,
-    approved_at = NOW()
-WHERE id_pr_internal = $2
-RETURNING id_pr_internal, status, approved_by_user_id, approved_at
+INSERT INTO OTORITAS_DOKUMEN (NAMA_TABEL_DOKUMEN, ID_DOKUMEN, STATUS_GLOBAL)
+VALUES ('PR_INTERNAL', $1, 'approved')
+ON CONFLICT (NAMA_TABEL_DOKUMEN, ID_DOKUMEN)
+DO UPDATE SET STATUS_GLOBAL = 'approved'
+WHERE ($2::integer IS NULL OR TRUE)
+RETURNING ID_DOKUMEN AS id_pr_internal, STATUS_GLOBAL AS status, NULL::integer AS approved_by_user_id, NULL::timestamptz AS approved_at
 `
 
 type ApprovePRInternalParams struct {
-	ApprovedByUserID pgtype.Int4 `json:"approved_by_user_id"`
 	IDPrInternal     int32       `json:"id_pr_internal"`
+	ApprovedByUserID pgtype.Int4 `json:"approved_by_user_id"`
 }
 
 type ApprovePRInternalRow struct {
@@ -34,7 +33,7 @@ type ApprovePRInternalRow struct {
 }
 
 func (q *Queries) ApprovePRInternal(ctx context.Context, arg ApprovePRInternalParams) (ApprovePRInternalRow, error) {
-	row := q.db.QueryRow(ctx, approvePRInternal, arg.ApprovedByUserID, arg.IDPrInternal)
+	row := q.db.QueryRow(ctx, approvePRInternal, arg.IDPrInternal, arg.ApprovedByUserID)
 	var i ApprovePRInternalRow
 	err := row.Scan(
 		&i.IDPrInternal,
@@ -46,18 +45,17 @@ func (q *Queries) ApprovePRInternal(ctx context.Context, arg ApprovePRInternalPa
 }
 
 const closeWorkOrder = `-- name: CloseWorkOrder :one
-UPDATE WORK_ORDER
-SET
-    status = 'closed',
-    closed_by_user_id = $1,
-    closed_at = NOW()
-WHERE id_wo = $2
-RETURNING id_wo, status, closed_by_user_id, closed_at
+INSERT INTO OTORITAS_DOKUMEN (NAMA_TABEL_DOKUMEN, ID_DOKUMEN, STATUS_GLOBAL)
+VALUES ('WORK_ORDER', $1, 'closed')
+ON CONFLICT (NAMA_TABEL_DOKUMEN, ID_DOKUMEN)
+DO UPDATE SET STATUS_GLOBAL = 'closed'
+WHERE ($2::integer IS NULL OR TRUE)
+RETURNING ID_DOKUMEN AS id_wo, STATUS_GLOBAL AS status, NULL::integer AS closed_by_user_id, NULL::timestamptz AS closed_at
 `
 
 type CloseWorkOrderParams struct {
-	ClosedByUserID pgtype.Int4 `json:"closed_by_user_id"`
 	IDWo           int32       `json:"id_wo"`
+	ClosedByUserID pgtype.Int4 `json:"closed_by_user_id"`
 }
 
 type CloseWorkOrderRow struct {
@@ -68,7 +66,7 @@ type CloseWorkOrderRow struct {
 }
 
 func (q *Queries) CloseWorkOrder(ctx context.Context, arg CloseWorkOrderParams) (CloseWorkOrderRow, error) {
-	row := q.db.QueryRow(ctx, closeWorkOrder, arg.ClosedByUserID, arg.IDWo)
+	row := q.db.QueryRow(ctx, closeWorkOrder, arg.IDWo, arg.ClosedByUserID)
 	var i CloseWorkOrderRow
 	err := row.Scan(
 		&i.IDWo,

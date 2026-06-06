@@ -23,6 +23,9 @@ var (
 	ErrWorkOrderNotFound           = errors.New("work order not found")
 	ErrReportDivisionUnsupported   = errors.New("unsupported report division")
 	ErrWorkOrderAlreadyClosed      = errors.New("work order is already closed")
+	ErrWorkOrderNotClosedByClient  = errors.New("work order must be marked as close by client first")
+	ErrWorkOrderNotOpen            = errors.New("cannot submit return: work order is not open")
+	ErrReturnAlreadySubmitted      = errors.New("return already submitted for this work order")
 
 	workOrderSortColumns         = buildSortWhitelist("created_at", "id_wo", "buyer", "model", "qty", "status", "po_number", "po_client_item_style")
 	productionSummarySortColumns = buildSortWhitelist("last_updated", "id_wo_shell_size", "model_name", "size", "target_qty", "cutting_qty", "sewing_qty", "qc_pass_qty", "packing_qty", "shipped_qty")
@@ -47,7 +50,7 @@ func NewWorkOrderProductionUseCase(repo entity.Querier, dbPool *pgxpool.Pool) (*
 	}, nil
 }
 
-func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, req model.CreateWorkOrderRequest) (*model.WorkOrderResponse, error) {
+func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID int32, req model.CreateWorkOrderRequest) (*model.WorkOrderResponse, error) {
 	if len(req.Shells) == 0 || len(req.Trims) == 0 {
 		return nil, ErrWorkOrderValidation
 	}
@@ -190,6 +193,11 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, req mo
 		})
 	}
 
+	err = initializeApprovalWorkflow(ctx, qtx, "WORK_ORDER", header.IDWo, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize approval workflow: %w", err)
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("%w: failed to commit transaction", ErrWorkOrderServiceUnavailable)
 	}
@@ -211,6 +219,11 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, req mo
 }
 
 func (u *WorkOrderProductionUseCase) CloseWorkOrder(ctx context.Context, id int32, closerUserID int32) (*model.WorkOrderStatusResponse, error) {
+	// First run auto-close to catch any auto-closable work orders
+	if err := u.repo.AutoCloseWorkOrders(ctx); err != nil {
+		return nil, fmt.Errorf("%w: failed to run auto-close", ErrWorkOrderServiceUnavailable)
+	}
+
 	current, err := u.repo.GetWorkOrderDetail(ctx, entity.GetWorkOrderDetailParams{
 		IDWo:    id,
 		IDMitra: nullableInt32Param(nil),
@@ -223,6 +236,9 @@ func (u *WorkOrderProductionUseCase) CloseWorkOrder(ctx context.Context, id int3
 	}
 	if current.Status == "closed" {
 		return nil, ErrWorkOrderAlreadyClosed
+	}
+	if current.Status != "client_closed" {
+		return nil, ErrWorkOrderNotClosedByClient
 	}
 
 	updated, err := u.repo.CloseWorkOrder(ctx, entity.CloseWorkOrderParams{
@@ -339,6 +355,11 @@ func (u *WorkOrderProductionUseCase) CreateFactoryReport(ctx context.Context, di
 }
 
 func (u *WorkOrderProductionUseCase) ListWorkOrders(ctx context.Context, filter model.TransactionListFilter) (*model.WorkOrderListResponse, error) {
+	// Automatically close any work orders with no returns after 2 months
+	if err := u.repo.AutoCloseWorkOrders(ctx); err != nil {
+		return nil, fmt.Errorf("%w: failed to run auto-close", ErrWorkOrderServiceUnavailable)
+	}
+
 	page, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "id_wo", true, workOrderSortColumns)
 	rows, err := u.repo.ListWorkOrders(ctx, entity.ListWorkOrdersParams{
 		SearchTerm: search,
@@ -427,6 +448,11 @@ func (u *WorkOrderProductionUseCase) ListProductionSummary(ctx context.Context, 
 }
 
 func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id int32, idMitra *int32) (*model.WorkOrderDetailResponse, error) {
+	// Automatically close any work orders with no returns after 2 months
+	if err := u.repo.AutoCloseWorkOrders(ctx); err != nil {
+		return nil, fmt.Errorf("%w: failed to run auto-close", ErrWorkOrderServiceUnavailable)
+	}
+
 	header, err := u.repo.GetWorkOrderDetail(ctx, entity.GetWorkOrderDetailParams{
 		IDWo:    id,
 		IDMitra: nullableInt32Param(idMitra),
@@ -510,6 +536,18 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id 
 		})
 	}
 
+	var returResponse *model.ReturClientResponse
+	returRow, err := u.repo.GetReturClientByWorkOrderID(ctx, id)
+	if err == nil {
+		returResponse = &model.ReturClientResponse{
+			IDReturClient: returRow.IDReturClient,
+			IDWo:          returRow.IDWo,
+			File:          returRow.File,
+			Deskripsi:     returRow.Deskripsi,
+			CreatedAt:     returRow.CreatedAt.Time.Format(time.RFC3339),
+		}
+	}
+
 	return &model.WorkOrderDetailResponse{
 		ID:                header.IDWo,
 		Buyer:             header.Buyer,
@@ -527,6 +565,7 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id 
 		Shells:            shells,
 		Trims:             trims,
 		MaterialLists:     materials,
+		Retur:             returResponse,
 	}, nil
 }
 

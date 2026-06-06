@@ -332,6 +332,11 @@ func (u *TransactionDocumentUseCase) CreatePRInternal(ctx context.Context, actor
 		})
 	}
 
+	err = initializeApprovalWorkflow(ctx, qtx, "PR_INTERNAL", header.IDPrInternal, actorUserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize approval workflow: %w", err)
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("%w: failed to commit transaction", ErrTransactionServiceUnavailable)
 	}
@@ -381,7 +386,7 @@ func (u *TransactionDocumentUseCase) ApprovePRInternal(ctx context.Context, id i
 	}, nil
 }
 
-func (u *TransactionDocumentUseCase) CreatePOInternal(ctx context.Context, req model.CreatePOInternalRequest) (*model.POInternalResponse, error) {
+func (u *TransactionDocumentUseCase) CreatePOInternal(ctx context.Context, userID int32, req model.CreatePOInternalRequest) (*model.POInternalResponse, error) {
 	if len(req.Items) == 0 {
 		return nil, ErrTransactionValidation
 	}
@@ -447,6 +452,11 @@ func (u *TransactionDocumentUseCase) CreatePOInternal(ctx context.Context, req m
 			UnitPrice:   numericToFloat64(item.UnitPrice),
 			CreatedAt:   item.CreatedAt.Time.Format(time.RFC3339),
 		})
+	}
+
+	err = initializeApprovalWorkflow(ctx, qtx, "PO_INTERNAL", header.IDPoInternal, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize approval workflow: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -515,8 +525,11 @@ func (u *TransactionDocumentUseCase) ListPOClients(ctx context.Context, filter m
 	}, nil
 }
 
-func (u *TransactionDocumentUseCase) GetPOClientDetail(ctx context.Context, id int32) (*model.POClientDetailResponse, error) {
-	header, err := u.repo.GetPOClientDetail(ctx, id)
+func (u *TransactionDocumentUseCase) GetPOClientDetail(ctx context.Context, id int32, idMitra *int32) (*model.POClientDetailResponse, error) {
+	header, err := u.repo.GetPOClientDetail(ctx, entity.GetPOClientDetailParams{
+		IDPoClient: id,
+		IDMitra:    nullableInt32Param(idMitra),
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrTransactionNotFound

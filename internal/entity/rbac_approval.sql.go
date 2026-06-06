@@ -11,12 +11,51 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createApprovalDetail = `-- name: CreateApprovalDetail :one
+INSERT INTO OTORITAS_DOKUMEN_DETAIL (ID_OTORITAS, ID_USER, TIPE_PERAN, IS_ACTION_DONE, WAKTU_AKSI, CATATAN)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING ID_OTORITAS_DETAIL, ID_OTORITAS, ID_USER, TIPE_PERAN, IS_ACTION_DONE, WAKTU_AKSI, CATATAN
+`
+
 type CreateApprovalDetailParams struct {
 	IDOtoritas   int32              `json:"id_otoritas"`
 	IDUser       int32              `json:"id_user"`
 	TipePeran    string             `json:"tipe_peran"`
 	IsActionDone bool               `json:"is_action_done"`
 	WaktuAksi    pgtype.Timestamptz `json:"waktu_aksi"`
+	Catatan      string             `json:"catatan"`
+}
+
+type CreateApprovalDetailRow struct {
+	IDOtoritasDetail int32              `json:"id_otoritas_detail"`
+	IDOtoritas       int32              `json:"id_otoritas"`
+	IDUser           int32              `json:"id_user"`
+	TipePeran        string             `json:"tipe_peran"`
+	IsActionDone     bool               `json:"is_action_done"`
+	WaktuAksi        pgtype.Timestamptz `json:"waktu_aksi"`
+	Catatan          string             `json:"catatan"`
+}
+
+func (q *Queries) CreateApprovalDetail(ctx context.Context, arg CreateApprovalDetailParams) (CreateApprovalDetailRow, error) {
+	row := q.db.QueryRow(ctx, createApprovalDetail,
+		arg.IDOtoritas,
+		arg.IDUser,
+		arg.TipePeran,
+		arg.IsActionDone,
+		arg.WaktuAksi,
+		arg.Catatan,
+	)
+	var i CreateApprovalDetailRow
+	err := row.Scan(
+		&i.IDOtoritasDetail,
+		&i.IDOtoritas,
+		&i.IDUser,
+		&i.TipePeran,
+		&i.IsActionDone,
+		&i.WaktuAksi,
+		&i.Catatan,
+	)
+	return i, err
 }
 
 const createApprovalHeader = `-- name: CreateApprovalHeader :one
@@ -37,34 +76,121 @@ func (q *Queries) CreateApprovalHeader(ctx context.Context, arg CreateApprovalHe
 	return id_otoritas, err
 }
 
-const getPendingApprovalsByUser = `-- name: GetPendingApprovalsByUser :many
-SELECT od.ID_OTORITAS, od.NAMA_TABEL_DOKUMEN, od.ID_DOKUMEN, odd.TIPE_PERAN 
-FROM OTORITAS_DOKUMEN_DETAIL odd
-JOIN OTORITAS_DOKUMEN od ON odd.ID_OTORITAS = od.ID_OTORITAS
-WHERE odd.ID_USER = $1 AND odd.IS_ACTION_DONE = FALSE
+const getApprovalDetailByID = `-- name: GetApprovalDetailByID :one
+SELECT ID_OTORITAS_DETAIL, ID_OTORITAS, ID_USER, TIPE_PERAN, IS_ACTION_DONE, WAKTU_AKSI, CATATAN, created_at
+FROM OTORITAS_DOKUMEN_DETAIL
+WHERE ID_OTORITAS_DETAIL = $1
+LIMIT 1
 `
 
-type GetPendingApprovalsByUserRow struct {
-	IDOtoritas       int32  `json:"id_otoritas"`
-	NamaTabelDokumen string `json:"nama_tabel_dokumen"`
-	IDDokumen        int32  `json:"id_dokumen"`
-	TipePeran        string `json:"tipe_peran"`
+func (q *Queries) GetApprovalDetailByID(ctx context.Context, idOtoritasDetail int32) (OtoritasDokumenDetail, error) {
+	row := q.db.QueryRow(ctx, getApprovalDetailByID, idOtoritasDetail)
+	var i OtoritasDokumenDetail
+	err := row.Scan(
+		&i.IDOtoritasDetail,
+		&i.IDOtoritas,
+		&i.IDUser,
+		&i.TipePeran,
+		&i.IsActionDone,
+		&i.WaktuAksi,
+		&i.Catatan,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
-func (q *Queries) GetPendingApprovalsByUser(ctx context.Context, idUser int32) ([]GetPendingApprovalsByUserRow, error) {
-	rows, err := q.db.Query(ctx, getPendingApprovalsByUser, idUser)
+const getApprovalHeaderByDoc = `-- name: GetApprovalHeaderByDoc :one
+SELECT ID_OTORITAS, NAMA_TABEL_DOKUMEN, ID_DOKUMEN, STATUS_GLOBAL, created_at
+FROM OTORITAS_DOKUMEN
+WHERE NAMA_TABEL_DOKUMEN = $1 AND ID_DOKUMEN = $2
+LIMIT 1
+`
+
+type GetApprovalHeaderByDocParams struct {
+	NamaTabelDokumen string `json:"nama_tabel_dokumen"`
+	IDDokumen        int32  `json:"id_dokumen"`
+}
+
+func (q *Queries) GetApprovalHeaderByDoc(ctx context.Context, arg GetApprovalHeaderByDocParams) (OtoritasDokuman, error) {
+	row := q.db.QueryRow(ctx, getApprovalHeaderByDoc, arg.NamaTabelDokumen, arg.IDDokumen)
+	var i OtoritasDokuman
+	err := row.Scan(
+		&i.IDOtoritas,
+		&i.NamaTabelDokumen,
+		&i.IDDokumen,
+		&i.StatusGlobal,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getApprovalHeaderByID = `-- name: GetApprovalHeaderByID :one
+SELECT ID_OTORITAS, NAMA_TABEL_DOKUMEN, ID_DOKUMEN, STATUS_GLOBAL, created_at
+FROM OTORITAS_DOKUMEN
+WHERE ID_OTORITAS = $1
+LIMIT 1
+`
+
+func (q *Queries) GetApprovalHeaderByID(ctx context.Context, idOtoritas int32) (OtoritasDokuman, error) {
+	row := q.db.QueryRow(ctx, getApprovalHeaderByID, idOtoritas)
+	var i OtoritasDokuman
+	err := row.Scan(
+		&i.IDOtoritas,
+		&i.NamaTabelDokumen,
+		&i.IDDokumen,
+		&i.StatusGlobal,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getTruePendingApprovalsByUser = `-- name: GetTruePendingApprovalsByUser :many
+SELECT 
+    od.ID_OTORITAS, 
+    od.NAMA_TABEL_DOKUMEN, 
+    od.ID_DOKUMEN, 
+    odd.ID_OTORITAS_DETAIL,
+    odd.TIPE_PERAN,
+    od.created_at AS requested_at
+FROM OTORITAS_DOKUMEN_DETAIL odd
+JOIN OTORITAS_DOKUMEN od ON odd.ID_OTORITAS = od.ID_OTORITAS
+WHERE odd.ID_USER = $1 
+  AND odd.IS_ACTION_DONE = FALSE
+  AND LOWER(od.STATUS_GLOBAL) = 'pending'
+  AND NOT EXISTS (
+      SELECT 1 FROM OTORITAS_DOKUMEN_DETAIL prev
+      WHERE prev.ID_OTORITAS = odd.ID_OTORITAS
+        AND prev.ID_OTORITAS_DETAIL < odd.ID_OTORITAS_DETAIL
+        AND prev.IS_ACTION_DONE = FALSE
+  )
+ORDER BY od.created_at ASC
+`
+
+type GetTruePendingApprovalsByUserRow struct {
+	IDOtoritas       int32              `json:"id_otoritas"`
+	NamaTabelDokumen string             `json:"nama_tabel_dokumen"`
+	IDDokumen        int32              `json:"id_dokumen"`
+	IDOtoritasDetail int32              `json:"id_otoritas_detail"`
+	TipePeran        string             `json:"tipe_peran"`
+	RequestedAt      pgtype.Timestamptz `json:"requested_at"`
+}
+
+func (q *Queries) GetTruePendingApprovalsByUser(ctx context.Context, idUser int32) ([]GetTruePendingApprovalsByUserRow, error) {
+	rows, err := q.db.Query(ctx, getTruePendingApprovalsByUser, idUser)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetPendingApprovalsByUserRow
+	var items []GetTruePendingApprovalsByUserRow
 	for rows.Next() {
-		var i GetPendingApprovalsByUserRow
+		var i GetTruePendingApprovalsByUserRow
 		if err := rows.Scan(
 			&i.IDOtoritas,
 			&i.NamaTabelDokumen,
 			&i.IDDokumen,
+			&i.IDOtoritasDetail,
 			&i.TipePeran,
+			&i.RequestedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -74,4 +200,151 @@ func (q *Queries) GetPendingApprovalsByUser(ctx context.Context, idUser int32) (
 		return nil, err
 	}
 	return items, nil
+}
+
+const hasPendingSteps = `-- name: HasPendingSteps :one
+SELECT EXISTS (
+    SELECT 1 FROM OTORITAS_DOKUMEN_DETAIL
+    WHERE ID_OTORITAS = $1
+      AND IS_ACTION_DONE = FALSE
+)::boolean
+`
+
+func (q *Queries) HasPendingSteps(ctx context.Context, idOtoritas int32) (bool, error) {
+	row := q.db.QueryRow(ctx, hasPendingSteps, idOtoritas)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const hasPreviousPendingSteps = `-- name: HasPreviousPendingSteps :one
+SELECT EXISTS (
+    SELECT 1 FROM OTORITAS_DOKUMEN_DETAIL
+    WHERE ID_OTORITAS = $1
+      AND ID_OTORITAS_DETAIL < $2
+      AND IS_ACTION_DONE = FALSE
+)::boolean
+`
+
+type HasPreviousPendingStepsParams struct {
+	IDOtoritas       int32 `json:"id_otoritas"`
+	IDOtoritasDetail int32 `json:"id_otoritas_detail"`
+}
+
+func (q *Queries) HasPreviousPendingSteps(ctx context.Context, arg HasPreviousPendingStepsParams) (bool, error) {
+	row := q.db.QueryRow(ctx, hasPreviousPendingSteps, arg.IDOtoritas, arg.IDOtoritasDetail)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const listApprovalDetailsByHeaderID = `-- name: ListApprovalDetailsByHeaderID :many
+SELECT ID_OTORITAS_DETAIL, ID_OTORITAS, ID_USER, TIPE_PERAN, IS_ACTION_DONE, WAKTU_AKSI, CATATAN, created_at
+FROM OTORITAS_DOKUMEN_DETAIL
+WHERE ID_OTORITAS = $1
+ORDER BY ID_OTORITAS_DETAIL ASC
+`
+
+func (q *Queries) ListApprovalDetailsByHeaderID(ctx context.Context, idOtoritas int32) ([]OtoritasDokumenDetail, error) {
+	rows, err := q.db.Query(ctx, listApprovalDetailsByHeaderID, idOtoritas)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []OtoritasDokumenDetail
+	for rows.Next() {
+		var i OtoritasDokumenDetail
+		if err := rows.Scan(
+			&i.IDOtoritasDetail,
+			&i.IDOtoritas,
+			&i.IDUser,
+			&i.TipePeran,
+			&i.IsActionDone,
+			&i.WaktuAksi,
+			&i.Catatan,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateApprovalStep = `-- name: UpdateApprovalStep :one
+UPDATE OTORITAS_DOKUMEN_DETAIL
+SET IS_ACTION_DONE = $1, WAKTU_AKSI = $2, CATATAN = $3
+WHERE ID_OTORITAS_DETAIL = $4
+RETURNING ID_OTORITAS_DETAIL, ID_OTORITAS, ID_USER, TIPE_PERAN, IS_ACTION_DONE, WAKTU_AKSI, CATATAN
+`
+
+type UpdateApprovalStepParams struct {
+	IsActionDone     bool               `json:"is_action_done"`
+	WaktuAksi        pgtype.Timestamptz `json:"waktu_aksi"`
+	Catatan          string             `json:"catatan"`
+	IDOtoritasDetail int32              `json:"id_otoritas_detail"`
+}
+
+type UpdateApprovalStepRow struct {
+	IDOtoritasDetail int32              `json:"id_otoritas_detail"`
+	IDOtoritas       int32              `json:"id_otoritas"`
+	IDUser           int32              `json:"id_user"`
+	TipePeran        string             `json:"tipe_peran"`
+	IsActionDone     bool               `json:"is_action_done"`
+	WaktuAksi        pgtype.Timestamptz `json:"waktu_aksi"`
+	Catatan          string             `json:"catatan"`
+}
+
+func (q *Queries) UpdateApprovalStep(ctx context.Context, arg UpdateApprovalStepParams) (UpdateApprovalStepRow, error) {
+	row := q.db.QueryRow(ctx, updateApprovalStep,
+		arg.IsActionDone,
+		arg.WaktuAksi,
+		arg.Catatan,
+		arg.IDOtoritasDetail,
+	)
+	var i UpdateApprovalStepRow
+	err := row.Scan(
+		&i.IDOtoritasDetail,
+		&i.IDOtoritas,
+		&i.IDUser,
+		&i.TipePeran,
+		&i.IsActionDone,
+		&i.WaktuAksi,
+		&i.Catatan,
+	)
+	return i, err
+}
+
+const updateGlobalStatus = `-- name: UpdateGlobalStatus :one
+UPDATE OTORITAS_DOKUMEN
+SET STATUS_GLOBAL = $1
+WHERE ID_OTORITAS = $2
+RETURNING ID_OTORITAS, NAMA_TABEL_DOKUMEN, ID_DOKUMEN, STATUS_GLOBAL
+`
+
+type UpdateGlobalStatusParams struct {
+	StatusGlobal string `json:"status_global"`
+	IDOtoritas   int32  `json:"id_otoritas"`
+}
+
+type UpdateGlobalStatusRow struct {
+	IDOtoritas       int32  `json:"id_otoritas"`
+	NamaTabelDokumen string `json:"nama_tabel_dokumen"`
+	IDDokumen        int32  `json:"id_dokumen"`
+	StatusGlobal     string `json:"status_global"`
+}
+
+func (q *Queries) UpdateGlobalStatus(ctx context.Context, arg UpdateGlobalStatusParams) (UpdateGlobalStatusRow, error) {
+	row := q.db.QueryRow(ctx, updateGlobalStatus, arg.StatusGlobal, arg.IDOtoritas)
+	var i UpdateGlobalStatusRow
+	err := row.Scan(
+		&i.IDOtoritas,
+		&i.NamaTabelDokumen,
+		&i.IDDokumen,
+		&i.StatusGlobal,
+	)
+	return i, err
 }

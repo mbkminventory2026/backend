@@ -14,6 +14,7 @@ import (
 
 	"permatatex-inventory/internal/entity"
 	"permatatex-inventory/internal/model"
+	"permatatex-inventory/pkg/passwordutil"
 )
 
 var (
@@ -45,9 +46,20 @@ func NewUserUseCase(repo entity.Querier, dbPool *pgxpool.Pool) (*UserUseCase, er
 	}, nil
 }
 
-func (u *UserUseCase) Create(ctx context.Context, req model.CreateUserRequest) (*model.UserResponse, error) {
+func (u *UserUseCase) Create(ctx context.Context, actorUserID *int32, req model.CreateUserRequest) (*model.UserResponse, error) {
+	temporaryPassword := ""
+	if req.Password != nil && *req.Password != "" {
+		temporaryPassword = *req.Password
+	} else {
+		var err error
+		temporaryPassword, err = passwordutil.GenerateTemporaryPassword(12)
+		if err != nil {
+			return nil, fmt.Errorf("%w: failed to generate temporary password", ErrUserServiceUnavailable)
+		}
+	}
+
 	// 1. Hash Password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(temporaryPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, fmt.Errorf("%w: failed to hash password", ErrUserServiceUnavailable)
 	}
@@ -81,13 +93,17 @@ func (u *UserUseCase) Create(ctx context.Context, req model.CreateUserRequest) (
 		status = *req.Status
 	}
 
+	actorParam := nullableInt32Param(actorUserID)
 	user, err := qtx.CreateUser(ctx, entity.CreateUserParams{
-		Username:     req.Username,
-		Password:     string(hashedPassword),
-		IDRole:       req.IDRole,
-		IDDepartemen: idDept,
-		IDMitra:      idMitra,
-		Status:       status,
+		Username:           req.Username,
+		Password:           string(hashedPassword),
+		IDRole:             req.IDRole,
+		IDDepartemen:       idDept,
+		IDMitra:            idMitra,
+		Status:             status,
+		MustChangePassword: true,
+		CreatedBy:          actorParam,
+		UpdatedBy:          actorParam,
 	})
 	if err != nil {
 		if isUniqueViolation(err) {
@@ -136,15 +152,17 @@ func (u *UserUseCase) Create(ctx context.Context, req model.CreateUserRequest) (
 	}
 
 	return &model.UserResponse{
-		IDUser:       user.IDUser,
-		Username:     user.Username,
-		Status:       user.Status,
-		IDRole:       user.IDRole,
-		NamaRole:     role.NamaRole,
-		IDDepartemen: resDept,
-		IDMitra:      resMitra,
-		CreatedAt:    user.CreatedAt.Time.Format(time.RFC3339),
-		HakAksesIDs:  req.HakAksesIDs,
+		IDUser:             user.IDUser,
+		Username:           user.Username,
+		Status:             user.Status,
+		IDRole:             user.IDRole,
+		NamaRole:           role.NamaRole,
+		MustChangePassword: user.MustChangePassword,
+		IDDepartemen:       resDept,
+		IDMitra:            resMitra,
+		CreatedAt:          user.CreatedAt.Time.Format(time.RFC3339),
+		TemporaryPassword:  temporaryPassword,
+		HakAksesIDs:        req.HakAksesIDs,
 	}, nil
 }
 
@@ -169,12 +187,13 @@ func (u *UserUseCase) List(ctx context.Context, filter model.ListUsersFilter) ([
 	result := make([]model.UserResponse, 0, len(items))
 	for _, item := range items {
 		res := model.UserResponse{
-			IDUser:    item.IDUser,
-			Username:  item.Username,
-			Status:    item.Status,
-			IDRole:    item.IDRole,
-			NamaRole:  item.NamaRole,
-			CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+			IDUser:             item.IDUser,
+			Username:           item.Username,
+			Status:             item.Status,
+			IDRole:             item.IDRole,
+			NamaRole:           item.NamaRole,
+			MustChangePassword: item.MustChangePassword,
+			CreatedAt:          item.CreatedAt.Time.Format(time.RFC3339),
 		}
 		if item.IDDepartemen.Valid {
 			val := item.IDDepartemen.Int32
@@ -216,14 +235,16 @@ func (u *UserUseCase) GetByID(ctx context.Context, id int32) (*model.UserRespons
 	}
 
 	res := &model.UserResponse{
-		IDUser:      user.IDUser,
-		Username:    user.Username,
-		Status:      user.Status,
-		IDRole:      user.IDRole,
-		NamaRole:    user.NamaRole,
-		CreatedAt:   user.CreatedAt.Time.Format(time.RFC3339),
-		Permissions: permissions,
-		HakAksesIDs: permissionIDs,
+		IDUser:             user.IDUser,
+		Username:           user.Username,
+		Status:             user.Status,
+		IDRole:             user.IDRole,
+		NamaRole:           user.NamaRole,
+		MustChangePassword: user.MustChangePassword,
+		CreatedAt:          user.CreatedAt.Time.Format(time.RFC3339),
+		PasswordChangedAt:  nullableTimestampString(user.PasswordChangedAt),
+		Permissions:        permissions,
+		HakAksesIDs:        permissionIDs,
 	}
 	if user.IDDepartemen.Valid {
 		val := user.IDDepartemen.Int32
@@ -243,7 +264,7 @@ func (u *UserUseCase) GetByID(ctx context.Context, id int32) (*model.UserRespons
 	return res, nil
 }
 
-func (u *UserUseCase) Update(ctx context.Context, id int32, req model.UpdateUserRequest) (*model.UserResponse, error) {
+func (u *UserUseCase) Update(ctx context.Context, id int32, actorUserID *int32, req model.UpdateUserRequest) (*model.UserResponse, error) {
 	// 1. Fetch current user to check existence and get existing password
 	userForUpdate, err := u.repo.GetUserByID(ctx, id)
 	if err != nil {
@@ -262,6 +283,8 @@ func (u *UserUseCase) Update(ctx context.Context, id int32, req model.UpdateUser
 		return nil, err
 	}
 	finalPassword := rawUser.Password
+	mustChangePassword := userForUpdate.MustChangePassword
+	passwordChangedAt := userForUpdate.PasswordChangedAt
 
 	// 3. Update password if provided
 	if req.Password != nil && *req.Password != "" {
@@ -270,6 +293,8 @@ func (u *UserUseCase) Update(ctx context.Context, id int32, req model.UpdateUser
 			return nil, err
 		}
 		finalPassword = string(hashed)
+		mustChangePassword = true
+		passwordChangedAt = pgtype.Timestamptz{Valid: false}
 	}
 
 	// 4. Start Transaction
@@ -301,13 +326,16 @@ func (u *UserUseCase) Update(ctx context.Context, id int32, req model.UpdateUser
 	}
 
 	updatedUser, err := qtx.UpdateUser(ctx, entity.UpdateUserParams{
-		IDUser:       id,
-		Username:     req.Username,
-		Password:     finalPassword,
-		IDRole:       userForUpdate.IDRole, // Use current role, ignore changes
-		IDDepartemen: idDept,
-		IDMitra:      idMitra,
-		Status:       status,
+		IDUser:             id,
+		Username:           req.Username,
+		Password:           finalPassword,
+		IDRole:             userForUpdate.IDRole, // Use current role, ignore changes
+		IDDepartemen:       idDept,
+		IDMitra:            idMitra,
+		Status:             status,
+		MustChangePassword: mustChangePassword,
+		PasswordChangedAt:  passwordChangedAt,
+		UpdatedBy:          nullableInt32Param(actorUserID),
 	})
 	if err != nil {
 		if isUniqueViolation(err) {
@@ -351,15 +379,17 @@ func (u *UserUseCase) Update(ctx context.Context, id int32, req model.UpdateUser
 	}
 
 	return &model.UserResponse{
-		IDUser:       updatedUser.IDUser,
-		Username:     updatedUser.Username,
-		Status:       updatedUser.Status,
-		IDRole:       updatedUser.IDRole,
-		NamaRole:     role.NamaRole,
-		IDDepartemen: resDept,
-		IDMitra:      resMitra,
-		CreatedAt:    updatedUser.CreatedAt.Time.Format(time.RFC3339),
-		HakAksesIDs:  permissionIDs,
+		IDUser:             updatedUser.IDUser,
+		Username:           updatedUser.Username,
+		Status:             updatedUser.Status,
+		IDRole:             updatedUser.IDRole,
+		NamaRole:           role.NamaRole,
+		MustChangePassword: updatedUser.MustChangePassword,
+		IDDepartemen:       resDept,
+		IDMitra:            resMitra,
+		CreatedAt:          updatedUser.CreatedAt.Time.Format(time.RFC3339),
+		PasswordChangedAt:  nullableTimestampString(passwordChangedAt),
+		HakAksesIDs:        permissionIDs,
 	}, nil
 }
 
@@ -452,7 +482,18 @@ func isForeignKeyViolation(err error) bool {
 	return errors.As(err, &pgErr) && pgErr.Code == "23503"
 }
 
-func (u *UserUseCase) Approve(ctx context.Context, id int32) (*model.UserResponse, error) {
+func (u *UserUseCase) Approve(ctx context.Context, id int32, newUsername string) (*model.UserResponse, error) {
+	// 1. Generate random temporary password
+	temporaryPassword, err := passwordutil.GenerateTemporaryPassword(12)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to generate password", ErrUserServiceUnavailable)
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(temporaryPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to hash password", ErrUserServiceUnavailable)
+	}
+
 	tx, err := u.dbPool.Begin(ctx)
 	if err != nil {
 		return nil, err
@@ -464,10 +505,9 @@ func (u *UserUseCase) Approve(ctx context.Context, id int32) (*model.UserRespons
 	}()
 
 	qtx := entity.New(tx)
-	updatedUser, err := qtx.UpdateUserStatus(ctx, entity.UpdateUserStatusParams{
-		IDUser: id,
-		Status: "active",
-	})
+
+	// Check if user exists
+	user, err := qtx.GetUserByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrUserNotFound
@@ -475,14 +515,58 @@ func (u *UserUseCase) Approve(ctx context.Context, id int32) (*model.UserRespons
 		return nil, err
 	}
 
+	// Update user with newUsername, hashedPassword, active status, must_change_password
+	updatedUser, err := qtx.UpdateUser(ctx, entity.UpdateUserParams{
+		IDUser:             id,
+		Username:           newUsername,
+		Password:           string(hashedPassword),
+		IDRole:             user.IDRole,
+		IDDepartemen:       user.IDDepartemen,
+		IDMitra:            user.IDMitra,
+		Status:             "active",
+		MustChangePassword: true,
+		PasswordChangedAt:  pgtype.Timestamptz{Valid: false},
+		UpdatedBy:          pgtype.Int4{Valid: false},
+	})
+	if err != nil {
+		if isUniqueViolation(err) {
+			return nil, ErrUsernameAlreadyExists
+		}
+		return nil, err
+	}
+
+	role, err := qtx.GetRoleByID(ctx, updatedUser.IDRole)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
 
+	var resDept *int32
+	if updatedUser.IDDepartemen.Valid {
+		val := updatedUser.IDDepartemen.Int32
+		resDept = &val
+	}
+
+	var resMitra *int32
+	if updatedUser.IDMitra.Valid {
+		val := updatedUser.IDMitra.Int32
+		resMitra = &val
+	}
+
 	return &model.UserResponse{
-		IDUser:   updatedUser.IDUser,
-		Username: updatedUser.Username,
-		Status:   updatedUser.Status,
+		IDUser:             updatedUser.IDUser,
+		Username:           updatedUser.Username,
+		Status:             updatedUser.Status,
+		IDRole:             updatedUser.IDRole,
+		NamaRole:           role.NamaRole,
+		MustChangePassword: updatedUser.MustChangePassword,
+		IDDepartemen:       resDept,
+		IDMitra:            resMitra,
+		TemporaryPassword:  temporaryPassword,
+		CreatedAt:          updatedUser.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
 

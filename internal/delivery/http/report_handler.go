@@ -22,7 +22,7 @@ func NewReportHandler(useCase *usecase.ReportUseCase) (*ReportHandler, error) {
 }
 
 func (h *ReportHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
-	v1 := router.Group("/api/v1").Use(authMiddleware)
+	v1 := router.Group("/api/v1").Use(authMiddleware, RequireInternalUser())
 	{
 		v1.GET("/reports/stock/category", RequirePermission(PermissionReportRead), h.GetStockReportPerKategori)
 		v1.GET("/reports/stock/location", RequirePermission(PermissionReportRead), h.GetStockReportPerLokasi)

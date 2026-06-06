@@ -132,6 +132,9 @@ type MitraResponse struct {
 	TipePerusahaan string `json:"tipe_perusahaan"`
 	Email          string `json:"email"`
 	NoTelp         string `json:"no_telp"`
+	Alamat         string `json:"alamat"`
+	Kota           string `json:"kota"`
+	KodePos        string `json:"kode_pos"`
 	CreatedAt      string `json:"created_at"`
 }
 

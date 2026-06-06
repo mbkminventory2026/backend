@@ -141,31 +141,40 @@ INSERT INTO SURAT_JALAN_CLIENT (
     tanggal,
     qty,
     keterangan,
-    id_material_list
+    id_material_list_item
 ) VALUES (
     $1::date,
     $2,
     $3,
     $4
 )
-RETURNING id_surat_jalan_client, tanggal, qty, keterangan, id_material_list, created_at
+RETURNING id_surat_jalan_client, tanggal, qty, keterangan, id_material_list_item AS id_material_list, created_at
 `
 
 type CreateSuratJalanClientParams struct {
-	Tanggal        pgtype.Date `json:"tanggal"`
-	Qty            int32       `json:"qty"`
-	Keterangan     string      `json:"keterangan"`
-	IDMaterialList int32       `json:"id_material_list"`
+	Tanggal            pgtype.Date `json:"tanggal"`
+	Qty                int32       `json:"qty"`
+	Keterangan         string      `json:"keterangan"`
+	IDMaterialListItem int32       `json:"id_material_list_item"`
 }
 
-func (q *Queries) CreateSuratJalanClient(ctx context.Context, arg CreateSuratJalanClientParams) (SuratJalanClient, error) {
+type CreateSuratJalanClientRow struct {
+	IDSuratJalanClient int32              `json:"id_surat_jalan_client"`
+	Tanggal            pgtype.Date        `json:"tanggal"`
+	Qty                int32              `json:"qty"`
+	Keterangan         string             `json:"keterangan"`
+	IDMaterialList     int32              `json:"id_material_list"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) CreateSuratJalanClient(ctx context.Context, arg CreateSuratJalanClientParams) (CreateSuratJalanClientRow, error) {
 	row := q.db.QueryRow(ctx, createSuratJalanClient,
 		arg.Tanggal,
 		arg.Qty,
 		arg.Keterangan,
-		arg.IDMaterialList,
+		arg.IDMaterialListItem,
 	)
-	var i SuratJalanClient
+	var i CreateSuratJalanClientRow
 	err := row.Scan(
 		&i.IDSuratJalanClient,
 		&i.Tanggal,
@@ -245,14 +254,14 @@ WITH inserted_received AS (
         tanggal,
         qty,
         keterangan,
-        id_material_list
+        id_material_list_item
     ) VALUES (
         $1::date,
         $2,
         $3,
         $4
     )
-    RETURNING id_received, tanggal, qty, keterangan, id_material_list, created_at
+    RETURNING id_received, tanggal, qty, keterangan, id_material_list_item AS id_material_list, created_at
 ),
 inserted_rekonsiliasi_terima AS (
     INSERT INTO REKONSILIASI_MATERIAL_TERIMA (
@@ -294,7 +303,7 @@ type ReceiveInventoryParams struct {
 	Tanggal                pgtype.Date `json:"tanggal"`
 	Qty                    int32       `json:"qty"`
 	Keterangan             string      `json:"keterangan"`
-	IDMaterialList         int32       `json:"id_material_list"`
+	IDMaterialListItem     int32       `json:"id_material_list_item"`
 	IDRekonsiliasiMaterial int32       `json:"id_rekonsiliasi_material"`
 }
 
@@ -316,7 +325,7 @@ func (q *Queries) ReceiveInventory(ctx context.Context, arg ReceiveInventoryPara
 		arg.Tanggal,
 		arg.Qty,
 		arg.Keterangan,
-		arg.IDMaterialList,
+		arg.IDMaterialListItem,
 		arg.IDRekonsiliasiMaterial,
 	)
 	var i ReceiveInventoryRow

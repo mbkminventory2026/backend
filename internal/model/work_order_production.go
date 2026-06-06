@@ -175,3 +175,18 @@ type WorkOrderShellTotalQtySuccessDoc struct {
 	Message string                         `json:"message" example:"total qty retrieved"`
 	Data    WorkOrderShellTotalQtyResponse `json:"data"`
 }
+
+type ReturClientResponse struct {
+	IDReturClient int32  `json:"id_retur_client" example:"1"`
+	IDWo          int32  `json:"id_wo" example:"10"`
+	File          string `json:"file" example:"uploads/wo_10_retur_12345.pdf"`
+	Deskripsi     string `json:"deskripsi" example:"Barang reject pada jahitan lengan"`
+	CreatedAt     string `json:"created_at" example:"2026-06-06T15:00:00Z"`
+}
+
+type ReturClientSuccessDoc struct {
+	Status  string              `json:"status" example:"success"`
+	Message string              `json:"message" example:"client return submitted"`
+	Data    ReturClientResponse `json:"data"`
+}
+

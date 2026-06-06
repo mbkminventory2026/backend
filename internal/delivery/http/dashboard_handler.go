@@ -41,13 +41,14 @@ func NewDashboardHandler(useCase *usecase.DashboardUseCase) (*DashboardHandler, 
 
 func (h *DashboardHandler) RegisterRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc) {
 	api := router.Group("/api/v1")
-	api.Use(authMiddleware)
+	api.Use(authMiddleware, RequireInternalUser())
 	{
 		api.GET("/logs", RequirePermission(PermissionLogRead), h.GetLogs)
-		api.POST("/dashboard/ai-estimation", RequirePermission(PermissionDashboardRead), h.PredictAIEstimation)
+		api.POST("/dashboard/ai-estimation", RequirePermission(PermissionAIEstimationRead), h.PredictAIEstimation)
+		api.GET("/dashboard/operator", RequirePermission(PermissionDashboardRead), h.GetOperatorMetrics)
 	}
 
-	router.GET("/ws/alerts", authMiddleware, RequirePermission(PermissionDashboardRead), h.Alerts)
+	router.GET("/ws/alerts", authMiddleware, RequireInternalUser(), RequirePermission(PermissionDashboardRead), h.Alerts)
 }
 
 // GetLogs godoc
@@ -104,6 +105,23 @@ func (h *DashboardHandler) PredictAIEstimation(c *gin.Context) {
 
 	// 3. Kembalikan respons sukses ke Frontend
 	response.Success(c, http.StatusOK, "Estimasi AI berhasil dihitung", result)
+}
+
+// GetOperatorMetrics mengambil metrik KPI dashboard operator
+// @Summary Ambil KPI Operator
+// @Description Mengambil metrics realtime untuk layar Operator Dashboard
+// @Tags Dashboard
+// @Produce json
+// @Security BearerAuth
+// @Router /api/v1/dashboard/operator [get]
+func (h *DashboardHandler) GetOperatorMetrics(c *gin.Context) {
+	result, err := h.useCase.GetOperatorDashboardMetrics(c.Request.Context())
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "Gagal memuat metrics operator", err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusOK, "Metrics operator berhasil diambil", result)
 }
 
 // Alerts menangani pendaftaran koneksi WebSocket

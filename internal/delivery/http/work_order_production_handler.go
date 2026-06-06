@@ -2,7 +2,11 @@ package httpdelivery
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -24,9 +28,10 @@ func NewWorkOrderProductionHandler(useCase *usecase.WorkOrderProductionUseCase) 
 
 func (h *WorkOrderProductionHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
 	v1 := router.Group("/api/v1").Use(authMiddleware)
+	internalOnly := RequireInternalUser()
 	v1.GET("/work-orders", RequirePermission(PermissionWORead), h.ListWorkOrders)
 	v1.GET("/work-orders/:id", RequirePermission(PermissionWORead), h.GetWorkOrderDetail)
-	v1.GET("/work-orders/shells/:id/total-qty", RequirePermission(PermissionWORead), h.GetWorkOrderShellTotalQty)
+	v1.GET("/work-orders/shells/:id/total-qty", internalOnly, RequirePermission(PermissionWORead), h.GetWorkOrderShellTotalQty)
 	v1.GET("/production/summary", RequirePermission(PermissionProductionSummaryRead), h.ListProductionSummary)
 	v1.POST("/work-orders", internalOnly, RequirePermission(PermissionWOCreate), h.CreateWorkOrder)
 	v1.PATCH("/work-orders/:id/close", internalOnly, RequirePermission(PermissionWOClose), h.CloseWorkOrder)
@@ -167,12 +172,18 @@ func (h *WorkOrderProductionHandler) ListProductionSummary(c *gin.Context) {
 // @Failure      500      {object}  model.WorkOrderErrorDoc
 // @Router       /api/v1/work-orders [post]
 func (h *WorkOrderProductionHandler) CreateWorkOrder(c *gin.Context) {
+	userID, ok := GetUserIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
 	var req model.CreateWorkOrderRequest
 	if !BindJSON(c, &req) {
 		return
 	}
 
-	item, err := h.useCase.CreateWorkOrder(c.Request.Context(), req)
+	item, err := h.useCase.CreateWorkOrder(c.Request.Context(), userID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -278,6 +289,12 @@ func (h *WorkOrderProductionHandler) handleError(c *gin.Context, err error) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), model.WorkOrderErrorDetail{Code: "related_data_not_found"}))
 	case errors.Is(err, usecase.ErrWorkOrderAlreadyClosed):
 		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.WorkOrderErrorDetail{Code: "work_order_already_closed"}))
+	case errors.Is(err, usecase.ErrWorkOrderNotClosedByClient):
+		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.WorkOrderErrorDetail{Code: "work_order_not_closed_by_client"}))
+	case errors.Is(err, usecase.ErrWorkOrderNotOpen):
+		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.WorkOrderErrorDetail{Code: "work_order_not_open"}))
+	case errors.Is(err, usecase.ErrReturnAlreadySubmitted):
+		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.WorkOrderErrorDetail{Code: "return_already_submitted"}))
 	case errors.Is(err, usecase.ErrReportDivisionUnsupported):
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), model.WorkOrderErrorDetail{Code: "unsupported_report_division"}))
 	case errors.Is(err, usecase.ErrWorkOrderServiceUnavailable):

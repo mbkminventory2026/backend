@@ -53,10 +53,15 @@ func (h *AuthHandler) RegisterRoutes(
 	}
 
 	auth.POST("/register-mitra", h.RegisterMitra)
+	auth.POST("/forgot-password-requests", h.CreateForgotPasswordRequest)
 
 	// Protected routes
 	protected := auth.Group("").Use(authMiddleware)
 	protected.GET("/me", h.GetMe)
+	protected.POST("/change-password", RequirePermission(PermissionAuthChangePassword), h.ChangePassword)
+	protected.GET("/forgot-password-requests", RequireInternalUser(), RequirePermission(PermissionPasswordResetRequestRead), h.ListForgotPasswordRequests)
+	protected.PATCH("/forgot-password-requests/:id/approve", RequireInternalUser(), RequirePermission(PermissionPasswordResetRequestApprove), h.ApproveForgotPasswordRequest)
+	protected.PATCH("/forgot-password-requests/:id/reject", RequireInternalUser(), RequirePermission(PermissionPasswordResetRequestReject), h.RejectForgotPasswordRequest)
 }
 
 // Login godoc
@@ -176,15 +181,17 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 
 	roleIDFloat, roleIDOK := claims["id_role"].(float64)
 	roleName, roleNameOK := claims["role_name"].(string)
-	if !roleIDOK || !roleNameOK {
+	mustChangePassword, mustChangePasswordOK := claims["must_change_password"].(bool)
+	if !roleIDOK || !roleNameOK || !mustChangePasswordOK {
 		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid token payload", nil))
 		return
 	}
 
 	response.Success(c, http.StatusOK, "profile retrieved", gin.H{
-		"user_id":   userID,
-		"id_role":   int32(roleIDFloat),
-		"role_name": roleName,
+		"user_id":              userID,
+		"id_role":              int32(roleIDFloat),
+		"role_name":            roleName,
+		"must_change_password": mustChangePassword,
 	})
 }
 
@@ -217,4 +224,191 @@ func (h *AuthHandler) RegisterMitra(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusCreated, "registrasi berhasil, menunggu persetujuan admin", nil)
+}
+
+// ChangePassword godoc
+// @Summary      Change Password
+// @Description  Allows an authenticated user to change their password and refresh their session token.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        payload  body      model.ChangePasswordRequest  true  "Change password payload"
+// @Success      200      {object}  model.ChangePasswordSuccessDoc
+// @Failure      400      {object}  model.LoginBadRequestDoc
+// @Failure      401      {object}  model.GetMeUnauthorizedDoc
+// @Failure      503      {object}  model.LoginServiceUnavailableDoc
+// @Router       /api/v1/auth/change-password [post]
+func (h *AuthHandler) ChangePassword(c *gin.Context) {
+	userID, ok := GetUserIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
+	var req model.ChangePasswordRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+
+	res, err := h.authUseCase.ChangePassword(c.Request.Context(), userID, req)
+	if err != nil {
+		h.handlePasswordFlowError(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "password changed successfully", res)
+}
+
+// CreateForgotPasswordRequest godoc
+// @Summary      Create Forgot Password Request
+// @Description  Allows a user to request a manual password reset without email.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        payload  body      model.ForgotPasswordRequestCreateRequest  true  "Forgot password request payload"
+// @Success      201      {object}  response.BaseResponse
+// @Failure      400      {object}  model.LoginBadRequestDoc
+// @Failure      404      {object}  model.LoginBadRequestDoc
+// @Failure      409      {object}  model.LoginBadRequestDoc
+// @Failure      503      {object}  model.LoginServiceUnavailableDoc
+// @Router       /api/v1/auth/forgot-password-requests [post]
+func (h *AuthHandler) CreateForgotPasswordRequest(c *gin.Context) {
+	var req model.ForgotPasswordRequestCreateRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+
+	res, err := h.authUseCase.CreateForgotPasswordRequest(c.Request.Context(), req)
+	if err != nil {
+		h.handlePasswordFlowError(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusCreated, "password reset request created", res)
+}
+
+// ListForgotPasswordRequests godoc
+// @Summary      List Forgot Password Requests
+// @Description  Returns all password reset requests for operator review.
+// @Tags         Auth
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200      {object}  model.PasswordResetRequestListSuccessDoc
+// @Failure      401      {object}  model.GetMeUnauthorizedDoc
+// @Failure      403      {object}  model.LoginBadRequestDoc
+// @Failure      503      {object}  model.LoginServiceUnavailableDoc
+// @Router       /api/v1/auth/forgot-password-requests [get]
+func (h *AuthHandler) ListForgotPasswordRequests(c *gin.Context) {
+	res, err := h.authUseCase.ListForgotPasswordRequests(c.Request.Context())
+	if err != nil {
+		h.handlePasswordFlowError(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "password reset requests retrieved", res)
+}
+
+// ApproveForgotPasswordRequest godoc
+// @Summary      Approve Forgot Password Request
+// @Description  Approves a pending password reset request and issues a temporary password.
+// @Tags         Auth
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Password reset request ID"
+// @Success      200  {object}  model.ApprovePasswordResetSuccessDoc
+// @Failure      400  {object}  model.LoginBadRequestDoc
+// @Failure      401  {object}  model.GetMeUnauthorizedDoc
+// @Failure      404  {object}  model.LoginBadRequestDoc
+// @Failure      503  {object}  model.LoginServiceUnavailableDoc
+// @Router       /api/v1/auth/forgot-password-requests/{id}/approve [patch]
+func (h *AuthHandler) ApproveForgotPasswordRequest(c *gin.Context) {
+	userID, ok := GetUserIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid password reset request id", nil))
+		return
+	}
+
+	res, err := h.authUseCase.ApproveForgotPasswordRequest(c.Request.Context(), id, userID)
+	if err != nil {
+		h.handlePasswordFlowError(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "password reset request approved", res)
+}
+
+// RejectForgotPasswordRequest godoc
+// @Summary      Reject Forgot Password Request
+// @Description  Rejects a pending password reset request.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id       path      int                                      true  "Password reset request ID"
+// @Param        payload  body      model.RejectPasswordResetRequestRequest  false  "Reject payload"
+// @Success      200      {object}  response.BaseResponse
+// @Failure      400      {object}  model.LoginBadRequestDoc
+// @Failure      401      {object}  model.GetMeUnauthorizedDoc
+// @Failure      404      {object}  model.LoginBadRequestDoc
+// @Failure      503      {object}  model.LoginServiceUnavailableDoc
+// @Router       /api/v1/auth/forgot-password-requests/{id}/reject [patch]
+func (h *AuthHandler) RejectForgotPasswordRequest(c *gin.Context) {
+	userID, ok := GetUserIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid password reset request id", nil))
+		return
+	}
+
+	var req model.RejectPasswordResetRequestRequest
+	if c.Request.ContentLength > 0 {
+		if !BindJSON(c, &req) {
+			return
+		}
+	}
+
+	_, err = h.authUseCase.RejectForgotPasswordRequest(c.Request.Context(), id, userID, req.RejectedReason)
+	if err != nil {
+		h.handlePasswordFlowError(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "password reset request rejected", nil)
+}
+
+func (h *AuthHandler) handlePasswordFlowError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, usecase.ErrCurrentPasswordInvalid):
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), nil))
+		return
+	case errors.Is(err, usecase.ErrPasswordConfirmationMismatch):
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), nil))
+		return
+	case errors.Is(err, usecase.ErrPasswordResetRequestAlreadyOpen):
+		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), nil))
+		return
+	case errors.Is(err, usecase.ErrPasswordResetRequestNotFound):
+		AbortWithError(c, NewHTTPError(http.StatusNotFound, err.Error(), nil))
+		return
+	case errors.Is(err, usecase.ErrUserNotFound):
+		AbortWithError(c, NewHTTPError(http.StatusNotFound, err.Error(), nil))
+		return
+	case errors.Is(err, usecase.ErrUserValidation):
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), nil))
+		return
+	default:
+		h.handleLoginError(c, err)
+	}
 }

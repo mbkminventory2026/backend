@@ -25,16 +25,17 @@ func NewWarehouseDeliveryHandler(useCase *usecase.WarehouseDeliveryUseCase) (*Wa
 
 func (h *WarehouseDeliveryHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
 	v1 := router.Group("/api/v1").Use(authMiddleware)
-	v1.POST("/inventory/receive", RequirePermission(PermissionInventoryReceive), h.ReceiveInventory)
-	v1.POST("/inventory/issue", RequirePermission(PermissionInventoryIssue), h.IssueInventory)
+	internalOnly := RequireInternalUser()
+	v1.POST("/inventory/receive", internalOnly, RequirePermission(PermissionInventoryReceive), h.ReceiveInventory)
+	v1.POST("/inventory/issue", internalOnly, RequirePermission(PermissionInventoryIssue), h.IssueInventory)
 	v1.GET("/packing-lists", RequirePermission(PermissionPackingListRead), h.ListPackingLists)
 	v1.GET("/packing-lists/:id", RequirePermission(PermissionPackingListRead), h.GetPackingListDetail)
-	v1.POST("/packing-lists", RequirePermission(PermissionPackingListCreate), h.CreatePackingList)
+	v1.POST("/packing-lists", internalOnly, RequirePermission(PermissionPackingListCreate), h.CreatePackingList)
 	v1.GET("/surat-jalan-clients", RequirePermission(PermissionSuratJalanClientRead), h.ListSuratJalanClients)
 	v1.GET("/surat-jalan-clients/:id", RequirePermission(PermissionSuratJalanClientRead), h.GetSuratJalanClientDetail)
-	v1.GET("/surat-jalan-internals", RequirePermission(PermissionSuratJalanInternalRead), h.ListSuratJalanInternals)
-	v1.GET("/surat-jalan-internals/:id", RequirePermission(PermissionSuratJalanInternalRead), h.GetSuratJalanInternalDetail)
-	v1.POST("/surat-jalan/:type", RequirePermission(PermissionSuratJalanCreate), h.CreateSuratJalan)
+	v1.GET("/surat-jalan-internals", internalOnly, RequirePermission(PermissionSuratJalanInternalRead), h.ListSuratJalanInternals)
+	v1.GET("/surat-jalan-internals/:id", internalOnly, RequirePermission(PermissionSuratJalanInternalRead), h.GetSuratJalanInternalDetail)
+	v1.POST("/surat-jalan/:type", internalOnly, RequirePermission(PermissionSuratJalanCreate), h.CreateSuratJalan)
 }
 
 // ReceiveInventory godoc
@@ -104,12 +105,18 @@ func (h *WarehouseDeliveryHandler) IssueInventory(c *gin.Context) {
 // @Failure      500      {object}  model.WarehouseErrorDoc
 // @Router       /api/v1/packing-lists [post]
 func (h *WarehouseDeliveryHandler) CreatePackingList(c *gin.Context) {
+	userID, ok := GetUserIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "unauthorized", nil))
+		return
+	}
+
 	var req model.CreatePackingListRequest
 	if !BindJSON(c, &req) {
 		return
 	}
 
-	item, err := h.useCase.CreatePackingList(c.Request.Context(), req)
+	item, err := h.useCase.CreatePackingList(c.Request.Context(), userID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return

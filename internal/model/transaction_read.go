@@ -46,6 +46,7 @@ type WorkOrderDetailResponse struct {
 	Shells            []WorkOrderShellResponse `json:"shells"`
 	Trims             []WorkOrderTrimResponse  `json:"trims"`
 	MaterialLists     []MaterialListResponse   `json:"material_lists"`
+	Retur             *ReturClientResponse     `json:"retur,omitempty"`
 }
 
 type WorkOrderListResponse struct {
