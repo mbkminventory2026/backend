@@ -133,6 +133,7 @@ type Querier interface {
 	HasPreviousPendingSteps(ctx context.Context, arg HasPreviousPendingStepsParams) (bool, error)
 	IssueInventory(ctx context.Context, arg IssueInventoryParams) (IssueInventoryRow, error)
 	ListApprovalDetailsByHeaderID(ctx context.Context, idOtoritas int32) ([]OtoritasDokumenDetail, error)
+	ListApprovalHistory(ctx context.Context, arg ListApprovalHistoryParams) ([]ListApprovalHistoryRow, error)
 	ListBarang(ctx context.Context, arg ListBarangParams) ([]ListBarangRow, error)
 	ListDepartemen(ctx context.Context, arg ListDepartemenParams) ([]Departeman, error)
 	ListHakAkses(ctx context.Context, arg ListHakAksesParams) ([]HakAkse, error)

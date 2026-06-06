@@ -78,3 +78,18 @@ WHERE odd.ID_USER = $1
         AND prev.IS_ACTION_DONE = FALSE
   )
 ORDER BY od.created_at ASC;
+
+-- name: ListApprovalHistory :many
+SELECT 
+    ID_OTORITAS, 
+    NAMA_TABEL_DOKUMEN, 
+    ID_DOKUMEN, 
+    STATUS_GLOBAL, 
+    created_at,
+    COUNT(*) OVER() AS total_count
+FROM OTORITAS_DOKUMEN
+WHERE 
+    (sqlc.arg(status_filter)::text = '' OR LOWER(STATUS_GLOBAL) = LOWER(sqlc.arg(status_filter)))
+    AND (sqlc.arg(table_filter)::text = '' OR LOWER(NAMA_TABEL_DOKUMEN) = LOWER(sqlc.arg(table_filter)))
+ORDER BY created_at DESC
+LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);

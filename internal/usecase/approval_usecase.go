@@ -40,6 +40,35 @@ func NewApprovalUseCase(repo entity.Querier, dbPool *pgxpool.Pool) (*ApprovalUse
 	}, nil
 }
 
+func (u *ApprovalUseCase) getDocumentSummaryAndRequester(ctx context.Context, tableName string, docID int32) (string, string) {
+	switch tableName {
+	case "PR_INTERNAL":
+		pr, prErr := u.repo.GetPRInternalDetail(ctx, docID)
+		if prErr == nil {
+			return fmt.Sprintf("%s - Projek: %s", pr.Nama, pr.Projek), pr.Nama
+		}
+	case "WORK_ORDER":
+		wo, woErr := u.repo.GetWorkOrderDetail(ctx, entity.GetWorkOrderDetailParams{
+			IDWo:    docID,
+			IDMitra: pgtype.Int4{Valid: false},
+		})
+		if woErr == nil {
+			return fmt.Sprintf("Buyer: %s - Model: %s (Qty: %d)", wo.Buyer, wo.Model, wo.Qty), "Admin Produksi"
+		}
+	case "PO_INTERNAL":
+		po, poErr := u.repo.GetPOInternalDetail(ctx, docID)
+		if poErr == nil {
+			return fmt.Sprintf("%s - Supplier: %s", po.NamaPo, po.SupplierName), "Admin Keuangan"
+		}
+	case "MARKER_PLAN":
+		mp, mpErr := u.repo.GetMarkerPlanByID(ctx, docID)
+		if mpErr == nil {
+			return fmt.Sprintf("Marker Plan Dokumen: %s", mp.NoDokumen), "Admin Produksi"
+		}
+	}
+	return fmt.Sprintf("Dokumen %s #%d", tableName, docID), "System"
+}
+
 func (u *ApprovalUseCase) GetPendingApprovals(ctx context.Context, userID int32) ([]model.ApprovalPendingResponse, error) {
 	rows, err := u.repo.GetTruePendingApprovalsByUser(ctx, userID)
 	if err != nil {
@@ -48,53 +77,58 @@ func (u *ApprovalUseCase) GetPendingApprovals(ctx context.Context, userID int32)
 
 	result := make([]model.ApprovalPendingResponse, 0, len(rows))
 	for _, row := range rows {
+		docSummary, requestedBy := u.getDocumentSummaryAndRequester(ctx, row.NamaTabelDokumen, row.IDDokumen)
 		item := model.ApprovalPendingResponse{
 			IDIDDetail:       row.IDOtoritasDetail,
 			IDHeader:         row.IDOtoritas,
 			NamaTabelDokumen: row.NamaTabelDokumen,
 			IDDokumen:        row.IDDokumen,
 			TipePeran:        row.TipePeran,
+			DocSummary:       docSummary,
+			RequestedBy:      requestedBy,
 			RequestedAt:      row.RequestedAt.Time,
 		}
-
-		// Fetch document specific summaries
-		switch row.NamaTabelDokumen {
-		case "PR_INTERNAL":
-			pr, prErr := u.repo.GetPRInternalDetail(ctx, row.IDDokumen)
-			if prErr == nil {
-				item.DocSummary = fmt.Sprintf("%s - Projek: %s", pr.Nama, pr.Projek)
-				item.RequestedBy = pr.Nama
-			}
-		case "WORK_ORDER":
-			wo, woErr := u.repo.GetWorkOrderDetail(ctx, entity.GetWorkOrderDetailParams{
-				IDWo:    row.IDDokumen,
-				IDMitra: pgtype.Int4{Valid: false},
-			})
-			if woErr == nil {
-				item.DocSummary = fmt.Sprintf("Buyer: %s - Model: %s (Qty: %d)", wo.Buyer, wo.Model, wo.Qty)
-				item.RequestedBy = "Admin Produksi"
-			}
-		case "PO_INTERNAL":
-			po, poErr := u.repo.GetPOInternalDetail(ctx, row.IDDokumen)
-			if poErr == nil {
-				item.DocSummary = fmt.Sprintf("%s - Supplier: %s", po.NamaPo, po.SupplierName)
-				item.RequestedBy = "Admin Keuangan"
-			}
-		case "MARKER_PLAN":
-			mp, mpErr := u.repo.GetMarkerPlanByID(ctx, row.IDDokumen)
-			if mpErr == nil {
-				item.DocSummary = fmt.Sprintf("Marker Plan Dokumen: %s", mp.NoDokumen)
-				item.RequestedBy = "Admin Produksi"
-			}
-		default:
-			item.DocSummary = fmt.Sprintf("Dokumen %s #%d", row.NamaTabelDokumen, row.IDDokumen)
-			item.RequestedBy = "System"
-		}
-
 		result = append(result, item)
 	}
 
 	return result, nil
+}
+
+func (u *ApprovalUseCase) GetApprovalHistory(ctx context.Context, status string, table string, limit int32, offset int32) (*model.ApprovalHistoryResponse, error) {
+	rows, err := u.repo.ListApprovalHistory(ctx, entity.ListApprovalHistoryParams{
+		StatusFilter: status,
+		TableFilter:  table,
+		PageLimit:    limit,
+		PageOffset:   offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to fetch approval history", ErrApprovalServiceUnavailable)
+	}
+
+	var totalItems int64 = 0
+	if len(rows) > 0 {
+		totalItems = rows[0].TotalCount
+	}
+
+	items := make([]model.ApprovalHistoryListItem, 0, len(rows))
+	for _, row := range rows {
+		docSummary, requestedBy := u.getDocumentSummaryAndRequester(ctx, row.NamaTabelDokumen, row.IDDokumen)
+		item := model.ApprovalHistoryListItem{
+			IDHeader:         row.IDOtoritas,
+			NamaTabelDokumen: row.NamaTabelDokumen,
+			IDDokumen:        row.IDDokumen,
+			StatusGlobal:     row.StatusGlobal,
+			DocSummary:       docSummary,
+			RequestedBy:      requestedBy,
+			CreatedAt:        row.CreatedAt.Time,
+		}
+		items = append(items, item)
+	}
+
+	return &model.ApprovalHistoryResponse{
+		Items:      items,
+		TotalItems: totalItems,
+	}, nil
 }
 
 func (u *ApprovalUseCase) ProcessApprovalAction(ctx context.Context, userID int32, req model.ApprovalActionRequest) error {
@@ -126,6 +160,42 @@ func (u *ApprovalUseCase) ProcessApprovalAction(ctx context.Context, userID int3
 
 	if header.StatusGlobal != "pending" {
 		return ErrDocumentNotPending
+	}
+
+	// 1.7 Check user's functional permission for the specific document type
+	var requiredPermission string
+	switch header.NamaTabelDokumen {
+	case "PR_INTERNAL":
+		requiredPermission = "PR_INTERNAL_APPROVE"
+	case "PO_INTERNAL":
+		requiredPermission = "PO_INTERNAL_APPROVE"
+	case "PACKING_LIST":
+		requiredPermission = "PACKING_LIST_APPROVE"
+	case "WORK_ORDER":
+		requiredPermission = "WO_UPDATE"
+	case "MARKER_PLAN":
+		requiredPermission = "MARKER_PLAN_UPDATE"
+	case "TIMELINE_PRODUKSI":
+		requiredPermission = "TIMELINE_UPDATE"
+	default:
+		return fmt.Errorf("tipe dokumen %s tidak didukung", header.NamaTabelDokumen)
+	}
+
+	userPerms, err := u.repo.GetUserPermissions(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("%w: get user permissions", ErrApprovalServiceUnavailable)
+	}
+
+	hasAccess := false
+	for _, p := range userPerms {
+		if p == "ALL_ACCESS" || p == requiredPermission {
+			hasAccess = true
+			break
+		}
+	}
+
+	if !hasAccess {
+		return ErrUnauthorizedApproval
 	}
 
 	// 2. Verify sequencing (prev steps must be done)

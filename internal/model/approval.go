@@ -36,3 +36,19 @@ type DocumentAuditTrailResponse struct {
 	StatusGlobal string           `json:"status_global"`
 	Steps        []AuditTrailStep `json:"steps"`
 }
+
+type ApprovalHistoryListItem struct {
+	IDHeader         int32     `json:"id_otoritas"`
+	NamaTabelDokumen string    `json:"nama_tabel_dokumen"`
+	IDDokumen        int32     `json:"id_dokumen"`
+	StatusGlobal     string    `json:"status_global"`
+	DocSummary       string    `json:"doc_summary,omitempty"`
+	RequestedBy      string    `json:"requested_by,omitempty"`
+	CreatedAt        time.Time `json:"created_at"`
+}
+
+type ApprovalHistoryResponse struct {
+	Items      []ApprovalHistoryListItem `json:"items"`
+	TotalItems int64                     `json:"total_items"`
+}
+

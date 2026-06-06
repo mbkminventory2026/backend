@@ -469,6 +469,8 @@ func (h *TransactionDocumentHandler) handleError(c *gin.Context, err error) {
 		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.TransactionErrorDetail{Code: "po_client_locked_for_update"}))
 	case errors.Is(err, usecase.ErrPRInternalAlreadyApproved):
 		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.TransactionErrorDetail{Code: "pr_internal_already_approved"}))
+	case errors.Is(err, usecase.ErrPRInternalNotApproved):
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), model.TransactionErrorDetail{Code: "pr_internal_not_approved"}))
 	case errors.Is(err, usecase.ErrTransactionServiceUnavailable):
 		AbortWithError(c, NewHTTPError(http.StatusInternalServerError, err.Error(), model.TransactionErrorDetail{Code: "transaction_service_unavailable"}))
 	default:

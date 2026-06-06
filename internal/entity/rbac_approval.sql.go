@@ -274,6 +274,70 @@ func (q *Queries) ListApprovalDetailsByHeaderID(ctx context.Context, idOtoritas 
 	return items, nil
 }
 
+const listApprovalHistory = `-- name: ListApprovalHistory :many
+SELECT 
+    ID_OTORITAS, 
+    NAMA_TABEL_DOKUMEN, 
+    ID_DOKUMEN, 
+    STATUS_GLOBAL, 
+    created_at,
+    COUNT(*) OVER() AS total_count
+FROM OTORITAS_DOKUMEN
+WHERE 
+    ($1::text = '' OR LOWER(STATUS_GLOBAL) = LOWER($1))
+    AND ($2::text = '' OR LOWER(NAMA_TABEL_DOKUMEN) = LOWER($2))
+ORDER BY created_at DESC
+LIMIT $4 OFFSET $3
+`
+
+type ListApprovalHistoryParams struct {
+	StatusFilter string `json:"status_filter"`
+	TableFilter  string `json:"table_filter"`
+	PageOffset   int32  `json:"page_offset"`
+	PageLimit    int32  `json:"page_limit"`
+}
+
+type ListApprovalHistoryRow struct {
+	IDOtoritas       int32              `json:"id_otoritas"`
+	NamaTabelDokumen string             `json:"nama_tabel_dokumen"`
+	IDDokumen        int32              `json:"id_dokumen"`
+	StatusGlobal     string             `json:"status_global"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	TotalCount       int64              `json:"total_count"`
+}
+
+func (q *Queries) ListApprovalHistory(ctx context.Context, arg ListApprovalHistoryParams) ([]ListApprovalHistoryRow, error) {
+	rows, err := q.db.Query(ctx, listApprovalHistory,
+		arg.StatusFilter,
+		arg.TableFilter,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListApprovalHistoryRow
+	for rows.Next() {
+		var i ListApprovalHistoryRow
+		if err := rows.Scan(
+			&i.IDOtoritas,
+			&i.NamaTabelDokumen,
+			&i.IDDokumen,
+			&i.StatusGlobal,
+			&i.CreatedAt,
+			&i.TotalCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateApprovalStep = `-- name: UpdateApprovalStep :one
 UPDATE OTORITAS_DOKUMEN_DETAIL
 SET IS_ACTION_DONE = $1, WAKTU_AKSI = $2, CATATAN = $3

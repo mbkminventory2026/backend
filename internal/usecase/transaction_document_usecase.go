@@ -23,6 +23,7 @@ var (
 	ErrPOClientAlreadyExists         = errors.New("po client number already exists")
 	ErrPOClientLockedForUpdate       = errors.New("po client cannot be updated because it is already used by work orders")
 	ErrPRInternalAlreadyApproved     = errors.New("pr internal is already approved")
+	ErrPRInternalNotApproved         = errors.New("pr internal is not approved yet")
 
 	poClientSortColumns   = buildSortWhitelist("created_at", "id_po_client", "po_number", "tanggal", "season", "delivery", "mitra_name")
 	prInternalSortColumns = buildSortWhitelist("created_at", "id_pr_internal", "tanggal", "nama", "departemen", "vendor_name", "projek", "status")
@@ -395,6 +396,18 @@ func (u *TransactionDocumentUseCase) CreatePOInternal(ctx context.Context, userI
 	}
 	if err := validateDate(req.ShipDate); err != nil {
 		return nil, err
+	}
+	// Validate that the referenced PR Internal is approved
+	pr, err := u.repo.GetPRInternalDetail(ctx, req.IDPRInternal)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrTransactionReferenceNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to verify PR Internal status", ErrTransactionServiceUnavailable)
+	}
+
+	if pr.Status != "approved" {
+		return nil, ErrPRInternalNotApproved
 	}
 
 	tx, err := u.dbPool.Begin(ctx)

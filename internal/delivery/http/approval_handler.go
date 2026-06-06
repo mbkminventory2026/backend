@@ -2,7 +2,9 @@ package httpdelivery
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -26,6 +28,7 @@ func (h *ApprovalHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.
 	group := router.Group("/api/v1/approvals").Use(authMiddleware, RequireInternalUser())
 
 	group.GET("/pending", h.GetPendingApprovals)
+	group.GET("/history", h.GetApprovalHistory)
 	group.POST("/action", h.ProcessApprovalAction)
 	group.GET("/document/:table/:id", h.GetDocumentAuditTrail)
 }
@@ -102,6 +105,31 @@ func (h *ApprovalHandler) GetDocumentAuditTrail(c *gin.Context) {
 		return
 	}
 
+	// Verify read permission for the specific document type
+	var requiredPermission string
+	switch table {
+	case "PR_INTERNAL":
+		requiredPermission = PermissionPRInternalRead
+	case "PO_INTERNAL":
+		requiredPermission = PermissionPOInternalRead
+	case "WORK_ORDER":
+		requiredPermission = PermissionWORead
+	case "MARKER_PLAN":
+		requiredPermission = PermissionMarkerPlanRead
+	case "TIMELINE_PRODUKSI":
+		requiredPermission = PermissionTimelineRead
+	case "PACKING_LIST":
+		requiredPermission = PermissionPackingListRead
+	default:
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "unsupported document type", nil))
+		return
+	}
+
+	if !HasPermission(c, requiredPermission) {
+		AbortWithError(c, NewHTTPError(http.StatusForbidden, fmt.Sprintf("access denied: missing read permission '%s'", requiredPermission), nil))
+		return
+	}
+
 	id, err := parsePathInt32(c, "id")
 	if err != nil {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid document id", nil))
@@ -115,6 +143,41 @@ func (h *ApprovalHandler) GetDocumentAuditTrail(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusOK, "audit trail retrieved", result)
+}
+
+// GetApprovalHistory godoc
+// @Summary      Get Approval History
+// @Description  Returns a list of completed (approved/rejected) document approval history.
+// @Tags         Approvals
+// @Produce      json
+// @Security     BearerAuth
+// @Param        status   query     string  false  "Filter by global status (e.g. approved, rejected)"
+// @Param        table    query     string  false  "Filter by document table name"
+// @Param        limit    query     int     false  "Limit"
+// @Param        offset   query     int     false  "Offset"
+// @Success      200      {object}  response.BaseResponse
+// @Router       /api/v1/approvals/history [get]
+func (h *ApprovalHandler) GetApprovalHistory(c *gin.Context) {
+	status := strings.TrimSpace(c.Query("status"))
+	table := strings.TrimSpace(c.Query("table"))
+
+	filter, err := parseListQuery(c, 20)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query parameters", nil))
+		return
+	}
+
+	// Calculate limit and offset for query
+	limit := filter.Limit
+	offset := (filter.Page - 1) * limit
+
+	result, err := h.useCase.GetApprovalHistory(c.Request.Context(), status, table, limit, offset)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "approval history retrieved", result)
 }
 
 func (h *ApprovalHandler) handleError(c *gin.Context, err error) {

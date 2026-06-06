@@ -3285,6 +3285,39 @@ paths:
       summary: Get Document Audit Trail
       tags:
       - Approvals
+  /api/v1/approvals/history:
+    get:
+      description: Returns a list of completed (approved/rejected) document approval
+        history.
+      parameters:
+      - description: Filter by global status (e.g. approved, rejected)
+        in: query
+        name: status
+        type: string
+      - description: Filter by document table name
+        in: query
+        name: table
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Approval History
+      tags:
+      - Approvals
   /api/v1/approvals/pending:
     get:
       description: Returns a list of documents currently waiting for the logged-in
