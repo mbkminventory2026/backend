@@ -124,3 +124,48 @@ func (u *DashboardUseCase) PredictNewOrder(ctx context.Context, req model.AIEsti
 	// 5. Eksekusi ke Python via Gateway
 	return u.aiGateway.PredictSchedule(ctx, aiReq)
 }
+
+// GetOperatorDashboardMetrics mengambil data real-time untuk dashboard operator
+func (u *DashboardUseCase) GetOperatorDashboardMetrics(ctx context.Context) (*model.OperatorDashboardMetrics, error) {
+	activeWO, err := u.queries.GetOperatorActiveWorkOrdersCount(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active WO: %w", err)
+	}
+
+	targetPcs, err := u.queries.GetOperatorTargetProduksiHariIni(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get target produksi: %w", err)
+	}
+
+	outputToday, err := u.queries.GetOperatorOutputHariIni(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get output hari ini: %w", err)
+	}
+
+	ongoingWOs, err := u.queries.GetOperatorOngoingWorkOrders(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ongoing WOs: %w", err)
+	}
+
+	var ongoingData []model.OngoingWorkOrder
+	for _, wo := range ongoingWOs {
+		ongoingData = append(ongoingData, model.OngoingWorkOrder{
+			IDWO:        wo.IDWo,
+			Buyer:       wo.Buyer,
+			Model:       wo.Model,
+			Qty:         wo.Qty,
+			TotalOutput: wo.TotalOutput,
+		})
+	}
+
+	// Hardcode rasio reject untuk saat ini karena tabel QC Finish belum melacak cacat
+	rasioReject := 0.0
+
+	return &model.OperatorDashboardMetrics{
+		ActiveWorkOrders:  activeWO,
+		TargetProduksiPcs: targetPcs,
+		OutputHariIni:     outputToday,
+		RasioReject:       rasioReject,
+		OngoingWorkOrders: ongoingData,
+	}, nil
+}

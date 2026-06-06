@@ -93,6 +93,11 @@ type Querier interface {
 	GetMitraByID(ctx context.Context, idMitra int32) (Mitra, error)
 	// Mengambil laporan riwayat pergerakan stok masuk (received) dan keluar (surat jalan) secara kronologis
 	GetMovementReport(ctx context.Context) ([]GetMovementReportRow, error)
+	// Asumsi threshold low stock adalah 50, bisa kita ubah nanti lewat argumen sqlc jika dinamis
+	GetOperatorActiveWorkOrdersCount(ctx context.Context) (int64, error)
+	GetOperatorOngoingWorkOrders(ctx context.Context) ([]GetOperatorOngoingWorkOrdersRow, error)
+	GetOperatorOutputHariIni(ctx context.Context) (int32, error)
+	GetOperatorTargetProduksiHariIni(ctx context.Context) (int32, error)
 	GetPOClientDetail(ctx context.Context, arg GetPOClientDetailParams) (GetPOClientDetailRow, error)
 	GetPOInternalDetail(ctx context.Context, idPoInternal int32) (PoInternal, error)
 	GetPRInternalDetail(ctx context.Context, idPrInternal int32) (GetPRInternalDetailRow, error)

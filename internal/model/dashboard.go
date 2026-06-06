@@ -86,3 +86,21 @@ type AIEstimationRequest struct {
 	KonsumsiKainPerPcs float64 `json:"konsumsi_kain_per_pcs"`
 	JenisKain          float64 `json:"jenis_kain"`
 }
+
+// OngoingWorkOrder representasi progress WO berjalan
+type OngoingWorkOrder struct {
+	IDWO        int32  `json:"id_wo"`
+	Buyer       string `json:"buyer"`
+	Model       string `json:"model"`
+	Qty         int32  `json:"qty"`
+	TotalOutput int32  `json:"total_output"`
+}
+
+// OperatorDashboardMetrics representasi seluruh metrik
+type OperatorDashboardMetrics struct {
+	ActiveWorkOrders  int64              `json:"active_work_orders"`
+	TargetProduksiPcs int32              `json:"target_produksi_pcs"`
+	OutputHariIni     int32              `json:"output_hari_ini"`
+	RasioReject       float64            `json:"rasio_reject"`
+	OngoingWorkOrders []OngoingWorkOrder `json:"ongoing_work_orders"`
+}
