@@ -138,7 +138,8 @@ SELECT
     pc.tanggal,
     pc.season,
     pc.delivery,
-    pc.payment_term,
+    pc.id_payment_term,
+    mpt.nama AS payment_term,
     pc.file,
     pc.id_mitra,
     pc.created_at,
@@ -146,6 +147,7 @@ SELECT
     COUNT(*) OVER() AS total_count
 FROM PO_CLIENT pc
 JOIN MITRA m ON m.id_mitra = pc.id_mitra
+JOIN MASTER_PAYMENT_TERM mpt ON mpt.id_payment_term = pc.id_payment_term
 WHERE (
     sqlc.arg(search_term) = '' OR
     pc.po_number ILIKE '%' || sqlc.arg(search_term) || '%' OR
@@ -180,13 +182,15 @@ SELECT
     pc.tanggal,
     pc.season,
     pc.delivery,
-    pc.payment_term,
+    pc.id_payment_term,
+    mpt.nama AS payment_term,
     pc.file,
     pc.id_mitra,
     pc.created_at,
     m.nama_perusahaan AS mitra_name
 FROM PO_CLIENT pc
 JOIN MITRA m ON m.id_mitra = pc.id_mitra
+JOIN MASTER_PAYMENT_TERM mpt ON mpt.id_payment_term = pc.id_payment_term
 WHERE pc.id_po_client = sqlc.arg(id_po_client)
 AND (
     sqlc.narg(id_mitra)::integer IS NULL OR

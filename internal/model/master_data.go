@@ -257,3 +257,17 @@ type WarnaSuccessDoc struct {
 	Message string        `json:"message" example:"warna created"`
 	Data    WarnaResponse `json:"data"`
 }
+
+// Payment Term
+type PaymentTermResponse struct {
+	IDPaymentTerm int32  `json:"id_payment_term"`
+	Kode          string `json:"kode"`
+	Nama          string `json:"nama"`
+}
+
+type ListPaymentTermsSuccessDoc struct {
+	Status  string                `json:"status" example:"success"`
+	Message string                `json:"message" example:"payment terms retrieved"`
+	Data    []PaymentTermResponse `json:"data"`
+}
+

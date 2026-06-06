@@ -72,14 +72,29 @@ func (u *TransactionDocumentUseCase) CreatePOClient(ctx context.Context, req mod
 
 	qtx := entity.New(tx)
 
+	mpts, err := qtx.ListPaymentTerms(ctx)
+	if err != nil {
+		return nil, mapTransactionDBError(err)
+	}
+	var paymentTermName string
+	for _, mpt := range mpts {
+		if mpt.IDPaymentTerm == req.IDPaymentTerm {
+			paymentTermName = mpt.Nama
+			break
+		}
+	}
+	if paymentTermName == "" {
+		return nil, fmt.Errorf("%w: invalid id_payment_term", ErrTransactionValidation)
+	}
+
 	header, err := qtx.CreatePOClient(ctx, entity.CreatePOClientParams{
-		PoNumber:    req.PONumber,
-		Tanggal:     mustDate(req.Tanggal),
-		Season:      req.Season,
-		Delivery:    mustDate(req.Delivery),
-		PaymentTerm: req.PaymentTerm,
-		File:        req.File,
-		IDMitra:     req.IDMitra,
+		PoNumber:        req.PONumber,
+		Tanggal:         mustDate(req.Tanggal),
+		Season:          req.Season,
+		Delivery:        mustDate(req.Delivery),
+		IDPaymentTerm:   req.IDPaymentTerm,
+		File:            req.File,
+		IDMitra:         req.IDMitra,
 	})
 	if err != nil {
 		return nil, mapTransactionDBError(err)
@@ -141,7 +156,8 @@ func (u *TransactionDocumentUseCase) CreatePOClient(ctx context.Context, req mod
 		Tanggal:         header.Tanggal.Time.Format("2006-01-02"),
 		Season:          header.Season,
 		Delivery:        header.Delivery.Time.Format("2006-01-02"),
-		PaymentTerm:     header.PaymentTerm,
+		IDPaymentTerm:   header.IDPaymentTerm,
+		PaymentTerm:     paymentTermName,
 		File:            header.File,
 		IDMitra:         header.IDMitra,
 		CreatedAt:       header.CreatedAt.Time.Format(time.RFC3339),
@@ -174,6 +190,21 @@ func (u *TransactionDocumentUseCase) UpdatePOClient(ctx context.Context, id int3
 
 	qtx := entity.New(tx)
 
+	mpts, err := qtx.ListPaymentTerms(ctx)
+	if err != nil {
+		return nil, mapTransactionDBError(err)
+	}
+	var paymentTermName string
+	for _, mpt := range mpts {
+		if mpt.IDPaymentTerm == req.IDPaymentTerm {
+			paymentTermName = mpt.Nama
+			break
+		}
+	}
+	if paymentTermName == "" {
+		return nil, fmt.Errorf("%w: invalid id_payment_term", ErrTransactionValidation)
+	}
+
 	workOrderCount, err := qtx.CountWorkOrdersByPOClientID(ctx, id)
 	if err != nil {
 		return nil, mapTransactionDBError(err)
@@ -183,14 +214,14 @@ func (u *TransactionDocumentUseCase) UpdatePOClient(ctx context.Context, id int3
 	}
 
 	header, err := qtx.UpdatePOClient(ctx, entity.UpdatePOClientParams{
-		IDPoClient:  id,
-		PoNumber:    req.PONumber,
-		Tanggal:     mustDate(req.Tanggal),
-		Season:      req.Season,
-		Delivery:    mustDate(req.Delivery),
-		PaymentTerm: req.PaymentTerm,
-		File:        req.File,
-		IDMitra:     req.IDMitra,
+		IDPoClient:      id,
+		PoNumber:        req.PONumber,
+		Tanggal:         mustDate(req.Tanggal),
+		Season:          req.Season,
+		Delivery:        mustDate(req.Delivery),
+		IDPaymentTerm:   req.IDPaymentTerm,
+		File:            req.File,
+		IDMitra:         req.IDMitra,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -262,7 +293,8 @@ func (u *TransactionDocumentUseCase) UpdatePOClient(ctx context.Context, id int3
 		Tanggal:         header.Tanggal.Time.Format("2006-01-02"),
 		Season:          header.Season,
 		Delivery:        header.Delivery.Time.Format("2006-01-02"),
-		PaymentTerm:     header.PaymentTerm,
+		IDPaymentTerm:   header.IDPaymentTerm,
+		PaymentTerm:     paymentTermName,
 		File:            header.File,
 		IDMitra:         header.IDMitra,
 		CreatedAt:       header.CreatedAt.Time.Format(time.RFC3339),
@@ -508,14 +540,16 @@ func (u *TransactionDocumentUseCase) ListPOClients(ctx context.Context, filter m
 	for _, row := range rows {
 		total = row.TotalCount
 		items = append(items, model.POClientListItem{
-			ID:        row.IDPoClient,
-			PONumber:  row.PoNumber,
-			Tanggal:   row.Tanggal.Time.Format("2006-01-02"),
-			Season:    row.Season,
-			Delivery:  row.Delivery.Time.Format("2006-01-02"),
-			IDMitra:   row.IDMitra,
-			MitraName: row.MitraName,
-			CreatedAt: row.CreatedAt.Time.Format(time.RFC3339),
+			ID:            row.IDPoClient,
+			PONumber:      row.PoNumber,
+			Tanggal:       row.Tanggal.Time.Format("2006-01-02"),
+			Season:        row.Season,
+			Delivery:      row.Delivery.Time.Format("2006-01-02"),
+			IDPaymentTerm: row.IDPaymentTerm,
+			PaymentTerm:   row.PaymentTerm,
+			IDMitra:       row.IDMitra,
+			MitraName:     row.MitraName,
+			CreatedAt:     row.CreatedAt.Time.Format(time.RFC3339),
 		})
 	}
 
@@ -576,6 +610,7 @@ func (u *TransactionDocumentUseCase) GetPOClientDetail(ctx context.Context, id i
 		Tanggal:         header.Tanggal.Time.Format("2006-01-02"),
 		Season:          header.Season,
 		Delivery:        header.Delivery.Time.Format("2006-01-02"),
+		IDPaymentTerm:   header.IDPaymentTerm,
 		PaymentTerm:     header.PaymentTerm,
 		File:            header.File,
 		IDMitra:         header.IDMitra,

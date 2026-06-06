@@ -74,6 +74,9 @@ func (h *MasterDataHandler) RegisterRoutes(router gin.IRouter, authMiddleware gi
 	master.POST("/company", RequirePermission(PermissionMasterCompanyCreate), h.CreateCompany)
 	master.PUT("/company/:id", RequirePermission(PermissionMasterCompanyUpdate), h.UpdateCompany)
 	master.DELETE("/company/:id", RequirePermission(PermissionMasterCompanyDelete), h.DeleteCompany)
+
+	// Payment Terms
+	master.GET("/payment-terms", RequirePermission(PermissionPOClientRead), h.ListPaymentTerms)
 }
 
 // DEPARTEMEN
@@ -931,6 +934,22 @@ func (h *MasterDataHandler) DeleteWarna(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusOK, "warna deleted", nil)
+}
+
+// ListPaymentTerms godoc
+// @Summary      List Payment Terms
+// @Tags         Master Data
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  model.ListPaymentTermsSuccessDoc
+// @Router       /api/v1/master/payment-terms [get]
+func (h *MasterDataHandler) ListPaymentTerms(c *gin.Context) {
+	items, err := h.useCase.ListPaymentTerms(c.Request.Context())
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "payment terms retrieved", items)
 }
 
 func (h *MasterDataHandler) handleError(c *gin.Context, err error) {

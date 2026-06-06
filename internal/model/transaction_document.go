@@ -21,7 +21,7 @@ type CreatePOClientRequest struct {
 	Tanggal         string                         `json:"tanggal" binding:"required,datetime=2006-01-02"`
 	Season          string                         `json:"season"`
 	Delivery        string                         `json:"delivery" binding:"required,datetime=2006-01-02"`
-	PaymentTerm     string                         `json:"payment_term"`
+	IDPaymentTerm   int32                          `json:"id_payment_term" binding:"required,gt=0"`
 	File            string                         `json:"file"`
 	IDMitra         int32                          `json:"id_mitra" binding:"required"`
 	Items           []CreatePOClientItemRequest    `json:"items" binding:"required,min=1,dive"`
@@ -97,6 +97,7 @@ type POClientResponse struct {
 	Tanggal         string                    `json:"tanggal"`
 	Season          string                    `json:"season"`
 	Delivery        string                    `json:"delivery"`
+	IDPaymentTerm   int32                     `json:"id_payment_term"`
 	PaymentTerm     string                    `json:"payment_term"`
 	File            string                    `json:"file"`
 	IDMitra         int32                     `json:"id_mitra"`

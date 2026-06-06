@@ -469,13 +469,13 @@ definitions:
         type: string
       id_mitra:
         type: integer
+      id_payment_term:
+        type: integer
       items:
         items:
           $ref: '#/definitions/model.CreatePOClientItemRequest'
         minItems: 1
         type: array
-      payment_term:
-        type: string
       penanggung_jawab:
         items:
           $ref: '#/definitions/model.CreatePenanggungJawabRequest'
@@ -490,6 +490,7 @@ definitions:
     required:
     - delivery
     - id_mitra
+    - id_payment_term
     - items
     - penanggung_jawab
     - po_number
@@ -1180,6 +1181,19 @@ definitions:
         example: success
         type: string
     type: object
+  model.ListPaymentTermsSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.PaymentTermResponse'
+        type: array
+      message:
+        example: payment terms retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.ListPermissionsSuccessDoc:
     properties:
       data:
@@ -1443,6 +1457,8 @@ definitions:
         type: string
       id_mitra:
         type: integer
+      id_payment_term:
+        type: integer
       id_po_client:
         type: integer
       items:
@@ -1500,9 +1516,13 @@ definitions:
         type: string
       id_mitra:
         type: integer
+      id_payment_term:
+        type: integer
       id_po_client:
         type: integer
       mitra_name:
+        type: string
+      payment_term:
         type: string
       po_number:
         type: string
@@ -1540,6 +1560,8 @@ definitions:
       file:
         type: string
       id_mitra:
+        type: integer
+      id_payment_term:
         type: integer
       id_po_client:
         type: integer
@@ -2021,6 +2043,15 @@ definitions:
       status:
         type: string
       username:
+        type: string
+    type: object
+  model.PaymentTermResponse:
+    properties:
+      id_payment_term:
+        type: integer
+      kode:
+        type: string
+      nama:
         type: string
     type: object
   model.PenanggungJawabResponse:
@@ -4233,6 +4264,20 @@ paths:
       security:
       - BearerAuth: []
       summary: Update Partner
+      tags:
+      - Master Data
+  /api/v1/master/payment-terms:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ListPaymentTermsSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: List Payment Terms
       tags:
       - Master Data
   /api/v1/master/permissions:

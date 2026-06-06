@@ -684,8 +684,8 @@ func seedPOClient(ctx context.Context, db *pgxpool.Pool) error {
 		// Insert PO Client
 		var idPoClient int32
 		err = db.QueryRow(ctx, `
-			INSERT INTO PO_CLIENT (PO_NUMBER, TANGGAL, SEASON, DELIVERY, PAYMENT_TERM, FILE, ID_MITRA)
-			VALUES ('PO-CLI-2026-001', '2026-06-01', 'Summer 2026', '2026-08-30', 'Net 30', 'po_file_001.pdf', 4)
+			INSERT INTO PO_CLIENT (PO_NUMBER, TANGGAL, SEASON, DELIVERY, ID_PAYMENT_TERM, FILE, ID_MITRA)
+			VALUES ('PO-CLI-2026-001', '2026-06-01', 'Summer 2026', '2026-08-30', 2, 'po_file_001.pdf', 4)
 			RETURNING ID_PO_CLIENT
 		`).Scan(&idPoClient)
 		if err != nil {
@@ -715,8 +715,8 @@ func seedPOClient(ctx context.Context, db *pgxpool.Pool) error {
 	if !exists {
 		var idPoClient int32
 		err = db.QueryRow(ctx, `
-			INSERT INTO PO_CLIENT (PO_NUMBER, TANGGAL, SEASON, DELIVERY, PAYMENT_TERM, FILE, ID_MITRA)
-			VALUES ('PO-CLI-2026-002', '2026-06-02', 'Summer 2026', '2026-09-15', 'Net 30', 'po_file_002.pdf', 5)
+			INSERT INTO PO_CLIENT (PO_NUMBER, TANGGAL, SEASON, DELIVERY, ID_PAYMENT_TERM, FILE, ID_MITRA)
+			VALUES ('PO-CLI-2026-002', '2026-06-02', 'Summer 2026', '2026-09-15', 2, 'po_file_002.pdf', 5)
 			RETURNING ID_PO_CLIENT
 		`).Scan(&idPoClient)
 		if err != nil {

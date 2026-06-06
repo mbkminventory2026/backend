@@ -54,14 +54,16 @@ type WorkOrderListResponse struct {
 }
 
 type POClientListItem struct {
-	ID        int32  `json:"id_po_client"`
-	PONumber  string `json:"po_number"`
-	Tanggal   string `json:"tanggal"`
-	Season    string `json:"season"`
-	Delivery  string `json:"delivery"`
-	IDMitra   int32  `json:"id_mitra"`
-	MitraName string `json:"mitra_name"`
-	CreatedAt string `json:"created_at"`
+	ID            int32  `json:"id_po_client"`
+	PONumber      string `json:"po_number"`
+	Tanggal       string `json:"tanggal"`
+	Season        string `json:"season"`
+	Delivery      string `json:"delivery"`
+	IDPaymentTerm int32  `json:"id_payment_term"`
+	PaymentTerm   string `json:"payment_term"`
+	IDMitra       int32  `json:"id_mitra"`
+	MitraName     string `json:"mitra_name"`
+	CreatedAt     string `json:"created_at"`
 }
 
 type POClientDetailResponse struct {
@@ -70,6 +72,7 @@ type POClientDetailResponse struct {
 	Tanggal         string                    `json:"tanggal"`
 	Season          string                    `json:"season"`
 	Delivery        string                    `json:"delivery"`
+	IDPaymentTerm   int32                     `json:"id_payment_term"`
 	PaymentTerm     string                    `json:"payment_term"`
 	File            string                    `json:"file"`
 	IDMitra         int32                     `json:"id_mitra"`

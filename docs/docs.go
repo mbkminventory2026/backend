@@ -1710,6 +1710,30 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/master/payment-terms": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "List Payment Terms",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ListPaymentTermsSuccessDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/master/permissions": {
             "get": {
                 "security": [
@@ -5329,6 +5353,7 @@ const docTemplate = `{
             "required": [
                 "delivery",
                 "id_mitra",
+                "id_payment_term",
                 "items",
                 "penanggung_jawab",
                 "po_number",
@@ -5344,15 +5369,15 @@ const docTemplate = `{
                 "id_mitra": {
                     "type": "integer"
                 },
+                "id_payment_term": {
+                    "type": "integer"
+                },
                 "items": {
                     "type": "array",
                     "minItems": 1,
                     "items": {
                         "$ref": "#/definitions/model.CreatePOClientItemRequest"
                     }
-                },
-                "payment_term": {
-                    "type": "string"
                 },
                 "penanggung_jawab": {
                     "type": "array",
@@ -6359,6 +6384,25 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ListPaymentTermsSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PaymentTermResponse"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "payment terms retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.ListPermissionsSuccessDoc": {
             "type": "object",
             "properties": {
@@ -6748,6 +6792,9 @@ const docTemplate = `{
                 "id_mitra": {
                     "type": "integer"
                 },
+                "id_payment_term": {
+                    "type": "integer"
+                },
                 "id_po_client": {
                     "type": "integer"
                 },
@@ -6834,10 +6881,16 @@ const docTemplate = `{
                 "id_mitra": {
                     "type": "integer"
                 },
+                "id_payment_term": {
+                    "type": "integer"
+                },
                 "id_po_client": {
                     "type": "integer"
                 },
                 "mitra_name": {
+                    "type": "string"
+                },
+                "payment_term": {
                     "type": "string"
                 },
                 "po_number": {
@@ -6894,6 +6947,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id_mitra": {
+                    "type": "integer"
+                },
+                "id_payment_term": {
                     "type": "integer"
                 },
                 "id_po_client": {
@@ -7618,6 +7674,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.PaymentTermResponse": {
+            "type": "object",
+            "properties": {
+                "id_payment_term": {
+                    "type": "integer"
+                },
+                "kode": {
+                    "type": "string"
+                },
+                "nama": {
                     "type": "string"
                 }
             }

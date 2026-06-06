@@ -818,3 +818,22 @@ func pgTextToPtrString(t pgtype.Text) *string {
 	s := t.String
 	return &s
 }
+
+// PAYMENT TERMS
+func (u *MasterDataUseCase) ListPaymentTerms(ctx context.Context) ([]model.PaymentTermResponse, error) {
+	items, err := u.repo.ListPaymentTerms(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]model.PaymentTermResponse, 0, len(items))
+	for _, i := range items {
+		res = append(res, model.PaymentTermResponse{
+			IDPaymentTerm: i.IDPaymentTerm,
+			Kode:          i.Kode,
+			Nama:          i.Nama,
+		})
+	}
+	return res, nil
+}
+

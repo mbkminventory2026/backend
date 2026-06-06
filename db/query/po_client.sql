@@ -4,7 +4,7 @@ INSERT INTO PO_CLIENT (
     tanggal,
     season,
     delivery,
-    payment_term,
+    id_payment_term,
     file,
     id_mitra
 ) VALUES (
@@ -12,11 +12,11 @@ INSERT INTO PO_CLIENT (
     sqlc.arg(tanggal)::date,
     sqlc.arg(season),
     sqlc.arg(delivery)::date,
-    sqlc.arg(payment_term),
+    sqlc.arg(id_payment_term),
     sqlc.arg(file),
     sqlc.arg(id_mitra)
 )
-RETURNING id_po_client, po_number, tanggal, season, delivery, payment_term, file, id_mitra, created_at;
+RETURNING id_po_client, po_number, tanggal, season, delivery, id_payment_term, file, id_mitra, created_at;
 
 -- name: UpdatePOClient :one
 UPDATE PO_CLIENT
@@ -25,11 +25,14 @@ SET
     tanggal = sqlc.arg(tanggal)::date,
     season = sqlc.arg(season),
     delivery = sqlc.arg(delivery)::date,
-    payment_term = sqlc.arg(payment_term),
+    id_payment_term = sqlc.arg(id_payment_term),
     file = sqlc.arg(file),
     id_mitra = sqlc.arg(id_mitra)
 WHERE id_po_client = sqlc.arg(id_po_client)
-RETURNING id_po_client, po_number, tanggal, season, delivery, payment_term, file, id_mitra, created_at;
+RETURNING id_po_client, po_number, tanggal, season, delivery, id_payment_term, file, id_mitra, created_at;
+
+-- name: ListPaymentTerms :many
+SELECT id_payment_term, kode, nama FROM MASTER_PAYMENT_TERM ORDER BY id_payment_term ASC;
 
 -- name: CreatePOClientItem :one
 INSERT INTO PO_CLIENT_ITEM (
