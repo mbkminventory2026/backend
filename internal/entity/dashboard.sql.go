@@ -69,7 +69,7 @@ func (q *Queries) GetLowStockAlerts(ctx context.Context) ([]GetLowStockAlertsRow
 
 const getOperatorActiveWorkOrdersCount = `-- name: GetOperatorActiveWorkOrdersCount :one
 
-SELECT COUNT(*) FROM WORK_ORDER WHERE status = 'open'
+SELECT COUNT(*) FROM WORK_ORDER
 `
 
 // Asumsi threshold low stock adalah 50, bisa kita ubah nanti lewat argumen sqlc jika dinamis
@@ -95,8 +95,6 @@ LEFT JOIN
     WORK_ORDER_SHELL_SIZE woss ON wos.ID_WO_SHELL = woss.ID_WO_SHELL
 LEFT JOIN
     REPORT_PACKING rp ON woss.ID_WO_SHELL_SIZE = rp.ID_WO_SHELL_SIZE
-WHERE 
-    wo.status = 'open'
 GROUP BY 
     wo.ID_WO
 ORDER BY 
@@ -150,7 +148,7 @@ func (q *Queries) GetOperatorOutputHariIni(ctx context.Context) (int32, error) {
 }
 
 const getOperatorTargetProduksiHariIni = `-- name: GetOperatorTargetProduksiHariIni :one
-SELECT COALESCE(SUM(qty), 0)::int FROM WORK_ORDER WHERE status = 'open'
+SELECT COALESCE(SUM(qty), 0)::int FROM WORK_ORDER
 `
 
 func (q *Queries) GetOperatorTargetProduksiHariIni(ctx context.Context) (int32, error) {

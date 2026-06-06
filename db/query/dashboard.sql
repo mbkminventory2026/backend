@@ -33,10 +33,10 @@ WHERE
     rm.BALANCE < COALESCE(b.stok_minimum, 50); -- Asumsi threshold low stock adalah 50, bisa kita ubah nanti lewat argumen sqlc jika dinamis
 
 -- name: GetOperatorActiveWorkOrdersCount :one
-SELECT COUNT(*) FROM WORK_ORDER WHERE status = 'open';
+SELECT COUNT(*) FROM WORK_ORDER;
 
 -- name: GetOperatorTargetProduksiHariIni :one
-SELECT COALESCE(SUM(qty), 0)::int FROM WORK_ORDER WHERE status = 'open';
+SELECT COALESCE(SUM(qty), 0)::int FROM WORK_ORDER;
 
 -- name: GetOperatorOutputHariIni :one
 SELECT COALESCE(SUM(qty), 0)::int FROM REPORT_PACKING WHERE tanggal = CURRENT_DATE;
@@ -56,8 +56,6 @@ LEFT JOIN
     WORK_ORDER_SHELL_SIZE woss ON wos.ID_WO_SHELL = woss.ID_WO_SHELL
 LEFT JOIN
     REPORT_PACKING rp ON woss.ID_WO_SHELL_SIZE = rp.ID_WO_SHELL_SIZE
-WHERE 
-    wo.status = 'open'
 GROUP BY 
     wo.ID_WO
 ORDER BY 
