@@ -28,9 +28,12 @@ func (h *WorkOrderProductionHandler) RegisterRoutes(router gin.IRouter, authMidd
 	v1.GET("/work-orders/:id", RequirePermission(PermissionWORead), h.GetWorkOrderDetail)
 	v1.GET("/work-orders/shells/:id/total-qty", RequirePermission(PermissionWORead), h.GetWorkOrderShellTotalQty)
 	v1.GET("/production/summary", RequirePermission(PermissionProductionSummaryRead), h.ListProductionSummary)
-	v1.POST("/work-orders", RequirePermission(PermissionWOCreate), h.CreateWorkOrder)
-	v1.PATCH("/work-orders/:id/close", RequirePermission(PermissionWOClose), h.CloseWorkOrder)
-	v1.POST("/reports/:divisi", RequirePermission(PermissionProductionReportCreate), h.CreateFactoryReport)
+	v1.POST("/work-orders", internalOnly, RequirePermission(PermissionWOCreate), h.CreateWorkOrder)
+	v1.PATCH("/work-orders/:id/close", internalOnly, RequirePermission(PermissionWOClose), h.CloseWorkOrder)
+	v1.POST("/reports/:divisi", internalOnly, RequirePermission(PermissionProductionReportCreate), h.CreateFactoryReport)
+	v1.POST("/work-orders/:id/retur", RequirePermission(PermissionWORead), h.CreateReturClient)
+	v1.PATCH("/work-orders/:id/client-close", RequirePermission(PermissionWORead), h.ClientCloseWorkOrder)
+	v1.GET("/work-orders/:id/daily-reports", RequirePermission(PermissionWORead), h.GetDailyReportsByWorkOrder)
 }
 
 // ListWorkOrders godoc
@@ -282,4 +285,133 @@ func (h *WorkOrderProductionHandler) handleError(c *gin.Context, err error) {
 	default:
 		AbortWithError(c, err)
 	}
+}
+
+// CreateReturClient godoc
+// @Summary      Submit Client Return
+// @Description  Submit a client return for a work order by uploading a shipping document (surat jalan) and providing a description.
+// @Tags         Work Order & Production
+// @Accept       multipart/form-data
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id         path      int     true  "Work Order ID"
+// @Param        file       formData  file    true  "Surat jalan file"
+// @Param        deskripsi  formData  string  false "Optional description/reason"
+// @Success      201        {object}  model.ReturClientSuccessDoc
+// @Failure      400        {object}  model.WorkOrderErrorDoc
+// @Failure      404        {object}  model.WorkOrderErrorDoc
+// @Failure      409        {object}  model.WorkOrderErrorDoc
+// @Failure      500        {object}  model.WorkOrderErrorDoc
+// @Router       /api/v1/work-orders/{id}/retur [post]
+func (h *WorkOrderProductionHandler) CreateReturClient(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid work order id", nil))
+		return
+	}
+
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid authentication context", nil))
+		return
+	}
+
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "file (surat jalan) is required", nil))
+		return
+	}
+
+	deskripsi := c.PostForm("deskripsi")
+
+	// Ensure uploads directory exists
+	uploadsDir := "./uploads"
+	if err := os.MkdirAll(uploadsDir, 0755); err != nil {
+		AbortWithError(c, fmt.Errorf("%w: failed to create uploads directory", usecase.ErrWorkOrderServiceUnavailable))
+		return
+	}
+
+	// Create unique file name
+	fileName := fmt.Sprintf("wo_%d_retur_%d%s", id, time.Now().UnixNano(), filepath.Ext(fileHeader.Filename))
+	filePath := filepath.Join(uploadsDir, fileName)
+
+	// Save file locally
+	if err := c.SaveUploadedFile(fileHeader, filePath); err != nil {
+		AbortWithError(c, fmt.Errorf("%w: failed to save uploaded file", usecase.ErrWorkOrderServiceUnavailable))
+		return
+	}
+
+	// We store path as Unix style relative path
+	dbFilePath := fmt.Sprintf("uploads/%s", fileName)
+
+	item, err := h.useCase.CreateReturClient(c.Request.Context(), id, dbFilePath, deskripsi, mitraID)
+	if err != nil {
+		// Clean up uploaded file on failure
+		_ = os.Remove(filePath)
+		h.handleError(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusCreated, "client return submitted", item)
+}
+
+// ClientCloseWorkOrder godoc
+// @Summary      Mark Work Order as Closed by Client
+// @Description  Client endpoint that marks the work order status as closed by the client, allowing it to be subsequently closed by the Finance Admin.
+// @Tags         Work Order & Production
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Work Order ID"
+// @Success      200  {object}  model.WorkOrderStatusSuccessDoc
+// @Failure      400  {object}  model.WorkOrderErrorDoc
+// @Failure      404  {object}  model.WorkOrderErrorDoc
+// @Failure      409  {object}  model.WorkOrderErrorDoc
+// @Failure      500  {object}  model.WorkOrderErrorDoc
+// @Router       /api/v1/work-orders/{id}/client-close [patch]
+func (h *WorkOrderProductionHandler) ClientCloseWorkOrder(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid work order id", nil))
+		return
+	}
+
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid authentication context", nil))
+		return
+	}
+
+	item, err := h.useCase.ClientCloseWorkOrder(c.Request.Context(), id, mitraID)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "work order marked as closed by client", item)
+}
+
+// GetDailyReportsByWorkOrder godoc
+// @Summary      Get Daily Production Reports for Work Order
+// @Description  Returns chronological list of raw daily reports for a given work order.
+// @Tags         Work Order & Production
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Work Order ID"
+// @Success      200  {object}  model.DailyReportListSuccessDoc
+// @Failure      400  {object}  model.WorkOrderErrorDoc
+// @Failure      500  {object}  model.WorkOrderErrorDoc
+// @Router       /api/v1/work-orders/{id}/daily-reports [get]
+func (h *WorkOrderProductionHandler) GetDailyReportsByWorkOrder(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid work order id", nil))
+		return
+	}
+
+	item, err := h.useCase.GetDailyReportsByWorkOrder(c.Request.Context(), id)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "daily reports retrieved", item)
 }

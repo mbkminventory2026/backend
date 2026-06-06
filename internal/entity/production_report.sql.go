@@ -170,3 +170,77 @@ func (q *Queries) CreateReportSewing(ctx context.Context, arg CreateReportSewing
 	)
 	return i, err
 }
+
+const getDailyReportsByWorkOrder = `-- name: GetDailyReportsByWorkOrder :many
+SELECT 'cutting'::varchar(20) AS division, rc.tanggal, rc.qty, rc.id_wo_shell_size
+FROM REPORT_CUTTING rc
+JOIN WORK_ORDER_SHELL_SIZE woss ON woss.id_wo_shell_size = rc.id_wo_shell_size
+JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = woss.id_wo_shell
+WHERE wos.id_wo = $1
+
+UNION ALL
+
+SELECT 'sewing'::varchar(20) AS division, rs.tanggal, rs.qty, rs.id_wo_shell_size
+FROM REPORT_SEWING rs
+JOIN WORK_ORDER_SHELL_SIZE woss ON woss.id_wo_shell_size = rs.id_wo_shell_size
+JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = woss.id_wo_shell
+WHERE wos.id_wo = $1
+
+UNION ALL
+
+SELECT 'qc-finish'::varchar(20) AS division, rq.tanggal, rq.qty, rq.id_wo_shell_size
+FROM REPORT_QC_FINISH rq
+JOIN WORK_ORDER_SHELL_SIZE woss ON woss.id_wo_shell_size = rq.id_wo_shell_size
+JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = woss.id_wo_shell
+WHERE wos.id_wo = $1
+
+UNION ALL
+
+SELECT 'packing'::varchar(20) AS division, rp.tanggal, rp.qty, rp.id_wo_shell_size
+FROM REPORT_PACKING rp
+JOIN WORK_ORDER_SHELL_SIZE woss ON woss.id_wo_shell_size = rp.id_wo_shell_size
+JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = woss.id_wo_shell
+WHERE wos.id_wo = $1
+
+UNION ALL
+
+SELECT 'pengiriman'::varchar(20) AS division, rpe.report_date AS tanggal, rpe.qty, rpe.id_wo_shell_size
+FROM REPORT_PENGIRIMAN rpe
+JOIN WORK_ORDER_SHELL_SIZE woss ON woss.id_wo_shell_size = rpe.id_wo_shell_size
+JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = woss.id_wo_shell
+WHERE wos.id_wo = $1
+
+ORDER BY tanggal DESC, id_wo_shell_size ASC
+`
+
+type GetDailyReportsByWorkOrderRow struct {
+	Division      string      `json:"division"`
+	Tanggal       pgtype.Date `json:"tanggal"`
+	Qty           int32       `json:"qty"`
+	IDWoShellSize int32       `json:"id_wo_shell_size"`
+}
+
+func (q *Queries) GetDailyReportsByWorkOrder(ctx context.Context, idWo int32) ([]GetDailyReportsByWorkOrderRow, error) {
+	rows, err := q.db.Query(ctx, getDailyReportsByWorkOrder, idWo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetDailyReportsByWorkOrderRow
+	for rows.Next() {
+		var i GetDailyReportsByWorkOrderRow
+		if err := rows.Scan(
+			&i.Division,
+			&i.Tanggal,
+			&i.Qty,
+			&i.IDWoShellSize,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

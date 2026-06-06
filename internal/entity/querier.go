@@ -79,6 +79,7 @@ type Querier interface {
 	GetBarangByID(ctx context.Context, idBarang int32) (GetBarangByIDRow, error)
 	GetCompany(ctx context.Context) (Company, error)
 	GetCompanyByID(ctx context.Context, idCompany int32) (Company, error)
+	GetDailyReportsByWorkOrder(ctx context.Context, idWo int32) ([]GetDailyReportsByWorkOrderRow, error)
 	GetDepartemenByID(ctx context.Context, idDepartemen int32) (Departeman, error)
 	GetHakAksesByID(ctx context.Context, idHakAkses int32) (HakAkse, error)
 	GetJenisBarangByID(ctx context.Context, idJenisBarang int32) (JenisBarang, error)

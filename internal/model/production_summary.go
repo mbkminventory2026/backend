@@ -35,3 +35,20 @@ type ProductionSummaryListSuccessDoc struct {
 	Message string                        `json:"message" example:"production summary retrieved"`
 	Data    ProductionSummaryListResponse `json:"data"`
 }
+
+type DailyReportListItem struct {
+	Division      string `json:"division"`
+	Tanggal       string `json:"tanggal"`
+	Qty           int32  `json:"qty"`
+	IDWOShellSize int32  `json:"id_wo_shell_size"`
+}
+
+type DailyReportListResponse struct {
+	Items []DailyReportListItem `json:"items"`
+}
+
+type DailyReportListSuccessDoc struct {
+	Status  string                  `json:"status" example:"success"`
+	Message string                  `json:"message" example:"daily reports retrieved"`
+	Data    DailyReportListResponse `json:"data"`
+}

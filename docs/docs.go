@@ -22,6 +22,394 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/approvals/action": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows a user to approve or reject their pending approval step.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "Process Approval Action",
+                "parameters": [
+                    {
+                        "description": "Action payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ApprovalActionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/approvals/document/{table}/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the complete approval steps history for a specific document.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "Get Document Audit Trail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Database table name (e.g. PR_INTERNAL, WORK_ORDER)",
+                        "name": "table",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Document ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/approvals/pending": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a list of documents currently waiting for the logged-in user's approval.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "Get Pending Approvals",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/change-password": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows an authenticated user to change their password and refresh their session token.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Change Password",
+                "parameters": [
+                    {
+                        "description": "Change password payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ChangePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ChangePasswordSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeUnauthorizedDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/forgot-password-requests": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns all password reset requests for operator review.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "List Forgot Password Requests",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PasswordResetRequestListSuccessDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeUnauthorizedDoc"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Allows a user to request a manual password reset without email.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Create Forgot Password Request",
+                "parameters": [
+                    {
+                        "description": "Forgot password request payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ForgotPasswordRequestCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/forgot-password-requests/{id}/approve": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Approves a pending password reset request and issues a temporary password.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Approve Forgot Password Request",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Password reset request ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ApprovePasswordResetSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeUnauthorizedDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/forgot-password-requests/{id}/reject": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Rejects a pending password reset request.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Reject Forgot Password Request",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Password reset request ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Reject payload",
+                        "name": "payload",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/model.RejectPasswordResetRequestRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetMeUnauthorizedDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginServiceUnavailableDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/login": {
             "post": {
                 "description": "Authenticates user using username, password, and Turnstile token, then returns JWT access token.",
@@ -202,6 +590,24 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/dashboard/operator": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil metrics realtime untuk layar Operator Dashboard",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Ambil KPI Operator",
+                "responses": {}
+            }
+        },
         "/api/v1/inventory/issue": {
             "post": {
                 "security": [
@@ -350,6 +756,109 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.ListLogsSuccessDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/marker-plans": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a marker plan with components, ratios, and ratio size markers in a single transaction.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marker Plan"
+                ],
+                "summary": "Create Marker Plan",
+                "parameters": [
+                    {
+                        "description": "Marker plan payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateMarkerPlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanValidationErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/marker-plans/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a single marker plan with components, ratios, and size breakdown.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marker Plan"
+                ],
+                "summary": "Get Marker Plan Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Marker Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanErrorDoc"
                         }
                     }
                 }
@@ -3636,7 +4145,10 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Approves a pending user registration, updating status to active.",
+                "description": "Approves a pending user registration, updating status to active and setting username/password.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -3651,6 +4163,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Approval payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httpdelivery.ApproveUserRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -4041,6 +4562,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/work-orders/{id}/client-close": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Client endpoint that marks the work order status as closed by the client, allowing it to be subsequently closed by the Finance Admin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Work Order \u0026 Production"
+                ],
+                "summary": "Mark Work Order as Closed by Client",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Work Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderStatusSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/work-orders/{id}/close": {
             "patch": {
                 "security": [
@@ -4111,6 +4690,126 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/work-orders/{id}/daily-reports": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns chronological list of raw daily reports for a given work order.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Work Order \u0026 Production"
+                ],
+                "summary": "Get Daily Production Reports for Work Order",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Work Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.DailyReportListSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/work-orders/{id}/retur": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Submit a client return for a work order by uploading a shipping document (surat jalan) and providing a description.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Work Order \u0026 Production"
+                ],
+                "summary": "Submit Client Return",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Work Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Surat jalan file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Optional description/reason",
+                        "name": "deskripsi",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.ReturClientSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Returns service health status, including database connectivity.",
@@ -4139,6 +4838,18 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "httpdelivery.ApproveUserRequest": {
+            "type": "object",
+            "required": [
+                "username"
+            ],
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "minLength": 3
+                }
+            }
+        },
         "model.AIEstimationRequest": {
             "type": "object",
             "properties": {
@@ -4249,6 +4960,100 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ApprovalActionRequest": {
+            "type": "object",
+            "required": [
+                "action",
+                "id_otoritas_detail"
+            ],
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": [
+                        "approve",
+                        "reject"
+                    ]
+                },
+                "catatan": {
+                    "type": "string"
+                },
+                "id_otoritas_detail": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.ApprovePasswordResetResponse": {
+            "type": "object",
+            "properties": {
+                "approved_at": {
+                    "type": "string"
+                },
+                "approved_by": {
+                    "type": "integer"
+                },
+                "approved_by_username": {
+                    "type": "string"
+                },
+                "completed_at": {
+                    "type": "string"
+                },
+                "id_password_reset_request": {
+                    "type": "integer"
+                },
+                "id_role": {
+                    "type": "integer"
+                },
+                "id_user": {
+                    "type": "integer"
+                },
+                "nama_role": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "rejected_at": {
+                    "type": "string"
+                },
+                "rejected_by": {
+                    "type": "integer"
+                },
+                "rejected_by_username": {
+                    "type": "string"
+                },
+                "rejected_reason": {
+                    "type": "string"
+                },
+                "requested_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "temporary_password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ApprovePasswordResetSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.ApprovePasswordResetResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "password reset request approved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.AssignUserPermissionsRequest": {
             "type": "object",
             "properties": {
@@ -4309,6 +5114,44 @@ const docTemplate = `{
                 },
                 "stok_minimum": {
                     "type": "integer"
+                }
+            }
+        },
+        "model.ChangePasswordRequest": {
+            "type": "object",
+            "required": [
+                "confirm_new_password",
+                "current_password",
+                "new_password"
+            ],
+            "properties": {
+                "confirm_new_password": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "current_password": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "new_password": {
+                    "type": "string",
+                    "minLength": 6
+                }
+            }
+        },
+        "model.ChangePasswordSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.LoginResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "password changed successfully"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -4532,6 +5375,52 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "model.CreateKomponenMarkerPlanRequest": {
+            "type": "object",
+            "required": [
+                "nama_komponen",
+                "ratios"
+            ],
+            "properties": {
+                "nama_komponen": {
+                    "type": "string"
+                },
+                "ratios": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.CreateRatioMarkerRequest"
+                    }
+                }
+            }
+        },
+        "model.CreateMarkerPlanRequest": {
+            "type": "object",
+            "required": [
+                "components",
+                "id_wo_shell",
+                "no_dokumen",
+                "tanggal_efektif"
+            ],
+            "properties": {
+                "components": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.CreateKomponenMarkerPlanRequest"
+                    }
+                },
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "no_dokumen": {
+                    "type": "string"
+                },
+                "tanggal_efektif": {
+                    "type": "string"
                 }
             }
         },
@@ -4939,6 +5828,80 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CreateRatioMarkerRequest": {
+            "type": "object",
+            "required": [
+                "allowance",
+                "cons",
+                "efficiency_marker",
+                "id_wo_shell",
+                "panjang_marker",
+                "plan_spreading_gelaran",
+                "roll_qty",
+                "sambungan_roll",
+                "sizes"
+            ],
+            "properties": {
+                "allowance": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "cons": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "cons_buyer": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "efficiency_marker": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "panjang_marker": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "plan_spreading_gelaran": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "roll_qty": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "sambungan_roll": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "sizes": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.CreateRatioSizeMarkerRequest"
+                    }
+                }
+            }
+        },
+        "model.CreateRatioSizeMarkerRequest": {
+            "type": "object",
+            "required": [
+                "id_wo_shell_size",
+                "qty_plan"
+            ],
+            "properties": {
+                "id_wo_shell_size": {
+                    "type": "integer"
+                },
+                "qty_plan": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
         "model.CreateRoleRequest": {
             "type": "object",
             "required": [
@@ -5008,7 +5971,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "id_role",
-                "password",
                 "username"
             ],
             "properties": {
@@ -5250,6 +6212,50 @@ const docTemplate = `{
                 }
             }
         },
+        "model.DailyReportListItem": {
+            "type": "object",
+            "properties": {
+                "division": {
+                    "type": "string"
+                },
+                "id_wo_shell_size": {
+                    "type": "integer"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.DailyReportListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.DailyReportListItem"
+                    }
+                }
+            }
+        },
+        "model.DailyReportListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.DailyReportListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "daily reports retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.DepartemenResponse": {
             "type": "object",
             "properties": {
@@ -5303,12 +6309,30 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ForgotPasswordRequestCreateRequest": {
+            "type": "object",
+            "required": [
+                "username"
+            ],
+            "properties": {
+                "reason": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "model.GetMeResponse": {
             "type": "object",
             "properties": {
                 "id_role": {
                     "type": "integer",
                     "example": 1
+                },
+                "must_change_password": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "role_name": {
                     "type": "string",
@@ -5454,6 +6478,29 @@ const docTemplate = `{
                 },
                 "nama_jenis_barang": {
                     "type": "string"
+                }
+            }
+        },
+        "model.KomponenMarkerPlanResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_komponen_marker": {
+                    "type": "integer"
+                },
+                "id_marker_plan": {
+                    "type": "integer"
+                },
+                "nama_komponen": {
+                    "type": "string"
+                },
+                "ratios": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RatioMarkerResponse"
+                    }
                 }
             }
         },
@@ -5661,6 +6708,15 @@ const docTemplate = `{
                 "expires_in": {
                     "type": "integer"
                 },
+                "id_role": {
+                    "type": "integer"
+                },
+                "must_change_password": {
+                    "type": "boolean"
+                },
+                "role_name": {
+                    "type": "string"
+                },
                 "token_type": {
                     "type": "string"
                 }
@@ -5727,6 +6783,92 @@ const docTemplate = `{
                 }
             }
         },
+        "model.MarkerPlanErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "related_data_not_found"
+                }
+            }
+        },
+        "model.MarkerPlanErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/model.MarkerPlanErrorDetail"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "related data not found"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.MarkerPlanResponse": {
+            "type": "object",
+            "properties": {
+                "components": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KomponenMarkerPlanResponse"
+                    }
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id_marker_plan": {
+                    "type": "integer"
+                },
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "no_dokumen": {
+                    "type": "string"
+                },
+                "tanggal_efektif": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.MarkerPlanSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.MarkerPlanResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "marker plan created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.MarkerPlanValidationErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ValidationErrorItem"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "bad request"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
         "model.MaterialListResponse": {
             "type": "object",
             "properties": {
@@ -5753,6 +6895,9 @@ const docTemplate = `{
         "model.MitraResponse": {
             "type": "object",
             "properties": {
+                "alamat": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -5761,6 +6906,12 @@ const docTemplate = `{
                 },
                 "id_mitra": {
                     "type": "integer"
+                },
+                "kode_pos": {
+                    "type": "string"
+                },
+                "kota": {
+                    "type": "string"
                 },
                 "nama_perusahaan": {
                     "type": "string"
@@ -6639,6 +7790,78 @@ const docTemplate = `{
                 }
             }
         },
+        "model.PasswordResetRequestListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PasswordResetRequestResponse"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "password reset requests retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.PasswordResetRequestResponse": {
+            "type": "object",
+            "properties": {
+                "approved_at": {
+                    "type": "string"
+                },
+                "approved_by": {
+                    "type": "integer"
+                },
+                "approved_by_username": {
+                    "type": "string"
+                },
+                "completed_at": {
+                    "type": "string"
+                },
+                "id_password_reset_request": {
+                    "type": "integer"
+                },
+                "id_role": {
+                    "type": "integer"
+                },
+                "id_user": {
+                    "type": "integer"
+                },
+                "nama_role": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "rejected_at": {
+                    "type": "string"
+                },
+                "rejected_by": {
+                    "type": "integer"
+                },
+                "rejected_by_username": {
+                    "type": "string"
+                },
+                "rejected_reason": {
+                    "type": "string"
+                },
+                "requested_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "model.PenanggungJawabResponse": {
             "type": "object",
             "properties": {
@@ -6735,6 +7958,73 @@ const docTemplate = `{
                 }
             }
         },
+        "model.RatioMarkerResponse": {
+            "type": "object",
+            "properties": {
+                "allowance": {
+                    "type": "number"
+                },
+                "cons": {
+                    "type": "number"
+                },
+                "cons_buyer": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "efficiency_marker": {
+                    "type": "number"
+                },
+                "id_komponen_marker": {
+                    "type": "integer"
+                },
+                "id_ratio_marker": {
+                    "type": "integer"
+                },
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "panjang_marker": {
+                    "type": "number"
+                },
+                "plan_spreading_gelaran": {
+                    "type": "number"
+                },
+                "roll_qty": {
+                    "type": "integer"
+                },
+                "sambungan_roll": {
+                    "type": "integer"
+                },
+                "sizes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RatioSizeMarkerResponse"
+                    }
+                }
+            }
+        },
+        "model.RatioSizeMarkerResponse": {
+            "type": "object",
+            "properties": {
+                "id_ratio_marker": {
+                    "type": "integer"
+                },
+                "id_ratio_size_marker": {
+                    "type": "integer"
+                },
+                "id_wo_shell_size": {
+                    "type": "integer"
+                },
+                "qty_plan": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "string"
+                }
+            }
+        },
         "model.ReceiveInventoryRequest": {
             "type": "object",
             "required": [
@@ -6816,10 +8106,8 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "nama_perusahaan",
-                "password",
                 "tipe_perusahaan",
-                "turnstile_token",
-                "username"
+                "turnstile_token"
             ],
             "properties": {
                 "alamat": {
@@ -6840,10 +8128,6 @@ const docTemplate = `{
                 "no_telp": {
                     "type": "string"
                 },
-                "password": {
-                    "type": "string",
-                    "minLength": 6
-                },
                 "tipe_perusahaan": {
                     "type": "string",
                     "enum": [
@@ -6853,10 +8137,55 @@ const docTemplate = `{
                 },
                 "turnstile_token": {
                     "type": "string"
-                },
-                "username": {
+                }
+            }
+        },
+        "model.RejectPasswordResetRequestRequest": {
+            "type": "object",
+            "properties": {
+                "rejected_reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ReturClientResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
                     "type": "string",
-                    "minLength": 3
+                    "example": "2026-06-06T15:00:00Z"
+                },
+                "deskripsi": {
+                    "type": "string",
+                    "example": "Barang reject pada jahitan lengan"
+                },
+                "file": {
+                    "type": "string",
+                    "example": "uploads/wo_10_retur_12345.pdf"
+                },
+                "id_retur_client": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "id_wo": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "model.ReturClientSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.ReturClientResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "client return submitted"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -7654,6 +8983,9 @@ const docTemplate = `{
                 "id_user": {
                     "type": "integer"
                 },
+                "must_change_password": {
+                    "type": "boolean"
+                },
                 "nama_departemen": {
                     "type": "string"
                 },
@@ -7663,6 +8995,9 @@ const docTemplate = `{
                 "nama_role": {
                     "type": "string"
                 },
+                "password_changed_at": {
+                    "type": "string"
+                },
                 "permissions": {
                     "type": "array",
                     "items": {
@@ -7670,6 +9005,9 @@ const docTemplate = `{
                     }
                 },
                 "status": {
+                    "type": "string"
+                },
+                "temporary_password": {
                     "type": "string"
                 },
                 "username": {
@@ -7861,6 +9199,9 @@ const docTemplate = `{
                 },
                 "qty": {
                     "type": "integer"
+                },
+                "retur": {
+                    "$ref": "#/definitions/model.ReturClientResponse"
                 },
                 "shells": {
                     "type": "array",

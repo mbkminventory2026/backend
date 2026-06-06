@@ -577,3 +577,115 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderShellTotalQty(ctx context.Conte
 		TotalQty:  totalQty,
 	}, nil
 }
+
+func (u *WorkOrderProductionUseCase) CreateReturClient(ctx context.Context, idWo int32, file string, deskripsi string, idMitra *int32) (*model.ReturClientResponse, error) {
+	// Automatically close other orders
+	if err := u.repo.AutoCloseWorkOrders(ctx); err != nil {
+		return nil, fmt.Errorf("%w: failed to run auto-close", ErrWorkOrderServiceUnavailable)
+	}
+
+	// Fetch WO and verify it exists and is open
+	wo, err := u.repo.GetWorkOrderDetail(ctx, entity.GetWorkOrderDetailParams{
+		IDWo:    idWo,
+		IDMitra: nullableInt32Param(idMitra),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrWorkOrderNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to fetch work order", ErrWorkOrderServiceUnavailable)
+	}
+
+	if wo.Status != "open" {
+		return nil, ErrWorkOrderNotOpen
+	}
+
+	// Verify that a return has not been submitted yet
+	_, err = u.repo.GetReturClientByWorkOrderID(ctx, idWo)
+	if err == nil {
+		return nil, ErrReturnAlreadySubmitted
+	} else if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return nil, fmt.Errorf("%w: failed to verify existing return", ErrWorkOrderServiceUnavailable)
+	}
+
+	// Create return record
+	retur, err := u.repo.CreateReturClient(ctx, entity.CreateReturClientParams{
+		IDWo:      idWo,
+		File:      file,
+		Deskripsi: deskripsi,
+	})
+	if err != nil {
+		return nil, mapWorkOrderDBError(err)
+	}
+
+	return &model.ReturClientResponse{
+		IDReturClient: retur.IDReturClient,
+		IDWo:          retur.IDWo,
+		File:          retur.File,
+		Deskripsi:     retur.Deskripsi,
+		CreatedAt:     retur.CreatedAt.Time.Format(time.RFC3339),
+	}, nil
+}
+
+func (u *WorkOrderProductionUseCase) ClientCloseWorkOrder(ctx context.Context, idWo int32, idMitra *int32) (*model.WorkOrderStatusResponse, error) {
+	// Automatically close other orders
+	if err := u.repo.AutoCloseWorkOrders(ctx); err != nil {
+		return nil, fmt.Errorf("%w: failed to run auto-close", ErrWorkOrderServiceUnavailable)
+	}
+
+	// Fetch WO and verify it exists and is open
+	wo, err := u.repo.GetWorkOrderDetail(ctx, entity.GetWorkOrderDetailParams{
+		IDWo:    idWo,
+		IDMitra: nullableInt32Param(idMitra),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrWorkOrderNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to fetch work order", ErrWorkOrderServiceUnavailable)
+	}
+
+	if wo.Status == "closed" {
+		return nil, ErrWorkOrderAlreadyClosed
+	}
+
+	// If it is already client_closed, return immediately with success
+	if wo.Status == "client_closed" {
+		return &model.WorkOrderStatusResponse{
+			ID:     wo.IDWo,
+			Status: "client_closed",
+		}, nil
+	}
+
+	// Update status to client_closed
+	updated, err := u.repo.ClientCloseWorkOrder(ctx, idWo)
+	if err != nil {
+		return nil, mapWorkOrderDBError(err)
+	}
+
+	return &model.WorkOrderStatusResponse{
+		ID:     updated.IDWo,
+		Status: updated.Status,
+	}, nil
+}
+
+func (u *WorkOrderProductionUseCase) GetDailyReportsByWorkOrder(ctx context.Context, idWo int32) (*model.DailyReportListResponse, error) {
+	rows, err := u.repo.GetDailyReportsByWorkOrder(ctx, idWo)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to fetch daily reports", ErrWorkOrderServiceUnavailable)
+	}
+
+	items := make([]model.DailyReportListItem, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, model.DailyReportListItem{
+			Division:      row.Division,
+			Tanggal:       row.Tanggal.Time.Format("2006-01-02"),
+			Qty:           row.Qty,
+			IDWOShellSize: row.IDWoShellSize,
+		})
+	}
+
+	return &model.DailyReportListResponse{
+		Items: items,
+	}, nil
+}
