@@ -4541,6 +4541,64 @@
                 }
             }
         },
+        "/api/v1/work-orders/{id}/client-close": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Client endpoint that marks the work order status as closed by the client, allowing it to be subsequently closed by the Finance Admin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Work Order \u0026 Production"
+                ],
+                "summary": "Mark Work Order as Closed by Client",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Work Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderStatusSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/work-orders/{id}/close": {
             "patch": {
                 "security": [
@@ -4586,6 +4644,80 @@
                     },
                     "403": {
                         "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/work-orders/{id}/retur": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Submit a client return for a work order by uploading a shipping document (surat jalan) and providing a description.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Work Order \u0026 Production"
+                ],
+                "summary": "Submit Client Return",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Work Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Surat jalan file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Optional description/reason",
+                        "name": "deskripsi",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.ReturClientSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/model.WorkOrderErrorDoc"
                         }
@@ -7902,6 +8034,47 @@
             "properties": {
                 "rejected_reason": {
                     "type": "string"
+                }
+            }
+        },
+        "model.ReturClientResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-06-06T15:00:00Z"
+                },
+                "deskripsi": {
+                    "type": "string",
+                    "example": "Barang reject pada jahitan lengan"
+                },
+                "file": {
+                    "type": "string",
+                    "example": "uploads/wo_10_retur_12345.pdf"
+                },
+                "id_retur_client": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "id_wo": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "model.ReturClientSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.ReturClientResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "client return submitted"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },

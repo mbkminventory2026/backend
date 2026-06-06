@@ -16,13 +16,13 @@ INSERT INTO OTORITAS_DOKUMEN (NAMA_TABEL_DOKUMEN, ID_DOKUMEN, STATUS_GLOBAL)
 VALUES ('PR_INTERNAL', $1, 'approved')
 ON CONFLICT (NAMA_TABEL_DOKUMEN, ID_DOKUMEN)
 DO UPDATE SET STATUS_GLOBAL = 'approved'
-WHERE ($2 IS NULL OR TRUE)
+WHERE ($2::integer IS NULL OR TRUE)
 RETURNING ID_DOKUMEN AS id_pr_internal, STATUS_GLOBAL AS status, NULL::integer AS approved_by_user_id, NULL::timestamptz AS approved_at
 `
 
 type ApprovePRInternalParams struct {
 	IDPrInternal     int32       `json:"id_pr_internal"`
-	ApprovedByUserID interface{} `json:"approved_by_user_id"`
+	ApprovedByUserID pgtype.Int4 `json:"approved_by_user_id"`
 }
 
 type ApprovePRInternalRow struct {
@@ -49,13 +49,13 @@ INSERT INTO OTORITAS_DOKUMEN (NAMA_TABEL_DOKUMEN, ID_DOKUMEN, STATUS_GLOBAL)
 VALUES ('WORK_ORDER', $1, 'closed')
 ON CONFLICT (NAMA_TABEL_DOKUMEN, ID_DOKUMEN)
 DO UPDATE SET STATUS_GLOBAL = 'closed'
-WHERE ($2 IS NULL OR TRUE)
+WHERE ($2::integer IS NULL OR TRUE)
 RETURNING ID_DOKUMEN AS id_wo, STATUS_GLOBAL AS status, NULL::integer AS closed_by_user_id, NULL::timestamptz AS closed_at
 `
 
 type CloseWorkOrderParams struct {
 	IDWo           int32       `json:"id_wo"`
-	ClosedByUserID interface{} `json:"closed_by_user_id"`
+	ClosedByUserID pgtype.Int4 `json:"closed_by_user_id"`
 }
 
 type CloseWorkOrderRow struct {

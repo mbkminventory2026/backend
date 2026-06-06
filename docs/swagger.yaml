@@ -2213,6 +2213,35 @@ definitions:
       rejected_reason:
         type: string
     type: object
+  model.ReturClientResponse:
+    properties:
+      created_at:
+        example: "2026-06-06T15:00:00Z"
+        type: string
+      deskripsi:
+        example: Barang reject pada jahitan lengan
+        type: string
+      file:
+        example: uploads/wo_10_retur_12345.pdf
+        type: string
+      id_retur_client:
+        example: 1
+        type: integer
+      id_wo:
+        example: 10
+        type: integer
+    type: object
+  model.ReturClientSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.ReturClientResponse'
+      message:
+        example: client return submitted
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.RoleListItem:
     properties:
       created_at:
@@ -6013,6 +6042,44 @@ paths:
       summary: Get Work Order Detail
       tags:
       - Work Order & Production
+  /api/v1/work-orders/{id}/client-close:
+    patch:
+      description: Client endpoint that marks the work order status as closed by the
+        client, allowing it to be subsequently closed by the Finance Admin.
+      parameters:
+      - description: Work Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.WorkOrderStatusSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Mark Work Order as Closed by Client
+      tags:
+      - Work Order & Production
   /api/v1/work-orders/{id}/close:
     patch:
       description: Manager endpoint that only changes work order status and close
@@ -6057,6 +6124,55 @@ paths:
       security:
       - BearerAuth: []
       summary: Close Work Order
+      tags:
+      - Work Order & Production
+  /api/v1/work-orders/{id}/retur:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Submit a client return for a work order by uploading a shipping
+        document (surat jalan) and providing a description.
+      parameters:
+      - description: Work Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Surat jalan file
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Optional description/reason
+        in: formData
+        name: deskripsi
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.ReturClientSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Submit Client Return
       tags:
       - Work Order & Production
   /api/v1/work-orders/shells/{id}/total-qty:

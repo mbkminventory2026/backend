@@ -57,7 +57,7 @@ func (u *WarehouseDeliveryUseCase) ReceiveInventory(ctx context.Context, req mod
 		Tanggal:                mustDate(req.Tanggal),
 		Qty:                    req.Qty,
 		Keterangan:             req.Keterangan,
-		IDMaterialList:         req.IDMaterialList,
+		IDMaterialListItem:     req.IDMaterialList,
 		IDRekonsiliasiMaterial: req.IDRekonsiliasiMaterial,
 	})
 	if err != nil {
@@ -232,10 +232,10 @@ func (u *WarehouseDeliveryUseCase) CreateSuratJalan(ctx context.Context, suratJa
 			return nil, ErrWarehouseValidation
 		}
 		item, err := u.repo.CreateSuratJalanClient(ctx, entity.CreateSuratJalanClientParams{
-			Tanggal:        mustDate(req.Tanggal),
-			Qty:            req.Qty,
-			Keterangan:     req.Keterangan,
-			IDMaterialList: req.IDMaterialList,
+			Tanggal:            mustDate(req.Tanggal),
+			Qty:                req.Qty,
+			Keterangan:         req.Keterangan,
+			IDMaterialListItem: req.IDMaterialList,
 		})
 		if err != nil {
 			return nil, mapWarehouseDBError(err)
