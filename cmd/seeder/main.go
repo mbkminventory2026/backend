@@ -117,7 +117,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 13. Sync Sequences
+	// 13. Seed Marker Plan
+	err = seedMarkerPlan(ctx, dbPool)
+	if err != nil {
+		slog.Error("failed to seed Marker Plan", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	// 14. Sync Sequences
 	err = syncSequences(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to sync sequences", slog.String("error", err.Error()))
@@ -154,6 +161,10 @@ func syncSequences(ctx context.Context, db *pgxpool.Pool) error {
 		{"report_qc_finish_id_report_qc_finishing_seq", "report_qc_finish", "id_report_qc_finishing"},
 		{"report_packing_id_report_packing_seq", "report_packing", "id_report_packing"},
 		{"report_pengiriman_id_report_pengiriman_seq", "report_pengiriman", "id_report_pengiriman"},
+		{"marker_plan_id_marker_plan_seq", "marker_plan", "id_marker_plan"},
+		{"komponen_marker_plan_id_komponen_marker_seq", "komponen_marker_plan", "id_komponen_marker"},
+		{"ratio_marker_id_ratio_marker_seq", "ratio_marker", "id_ratio_marker"},
+		{"ratio_size_marker_id_ratio_size_marker_seq", "ratio_size_marker", "id_ratio_size_marker"},
 	}
 
 	for _, q := range queries {
@@ -1020,6 +1031,116 @@ func seedProductionReports(ctx context.Context, db *pgxpool.Pool) error {
 			}
 		}
 		slog.Info("production reports seeded successfully for Basic Crewneck T-Shirt Black")
+	}
+
+	return nil
+}
+
+func seedMarkerPlan(ctx context.Context, db *pgxpool.Pool) error {
+	var exists bool
+	err := db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM MARKER_PLAN WHERE NO_DOKUMEN = 'MP-2026-001')`).Scan(&exists)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		// 1. Get Shell ID of WO 1 (Black)
+		var idShell int32
+		err = db.QueryRow(ctx, `
+			SELECT wos.ID_WO_SHELL 
+			FROM WORK_ORDER_SHELL wos
+			JOIN WORK_ORDER wo ON wo.ID_WO = wos.ID_WO
+			WHERE wo.MODEL = 'Basic Crewneck T-Shirt Black' LIMIT 1
+		`).Scan(&idShell)
+		if err != nil {
+			return fmt.Errorf("failed to find WO Shell for Black T-Shirt: %w", err)
+		}
+
+		// 2. Insert Marker Plan
+		var idMarkerPlan int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO MARKER_PLAN (NO_DOKUMEN, TANGGAL_EFEKTIF, ID_WO_SHELL)
+			VALUES ('MP-2026-001', '2026-06-02', $1)
+			RETURNING ID_MARKER_PLAN
+		`, idShell).Scan(&idMarkerPlan)
+		if err != nil {
+			return err
+		}
+		slog.Info("marker plan seeded: MP-2026-001", slog.Int("id", int(idMarkerPlan)))
+
+		// 3. Insert Komponen Marker Plan
+		var idKomponen int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO KOMPONEN_MARKER_PLAN (ID_MARKER_PLAN, NAMA_KOMPONEN)
+			VALUES ($1, 'Cotton Combed Black')
+			RETURNING ID_KOMPONEN_MARKER
+		`, idMarkerPlan).Scan(&idKomponen)
+		if err != nil {
+			return err
+		}
+
+		// 4. Insert Ratio Marker
+		var idRatioMarker int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO RATIO_MARKER (
+				ID_KOMPONEN_MARKER, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN,
+				PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER,
+				ROLL_QTY, SAMBUNGAN_ROLL, PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET
+			) VALUES ($1, $2, 0.350, 100, 35.000, 85.50, 3.00, 0.360, 2, 1, 1, 1.450, 'yard', 'Seeded Ratio')
+			RETURNING ID_RATIO_MARKER
+		`, idKomponen, idShell).Scan(&idRatioMarker)
+		if err != nil {
+			return err
+		}
+
+		// 5. Get Shell size IDs of WO 1 (Black: S, M, L, XL)
+		rows, err := db.Query(ctx, `
+			SELECT ID_WO_SHELL_SIZE, SIZE
+			FROM WORK_ORDER_SHELL_SIZE
+			WHERE ID_WO_SHELL = $1
+		`, idShell)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		type SizeInfo struct {
+			ID   int32
+			Size string
+		}
+		var sizes []SizeInfo
+		for rows.Next() {
+			var sz SizeInfo
+			if err := rows.Scan(&sz.ID, &sz.Size); err != nil {
+				return err
+			}
+			sizes = append(sizes, sz)
+		}
+
+		// 6. Insert Ratio Size Markers
+		for _, sz := range sizes {
+			var ratioPlan int32
+			switch sz.Size {
+			case "S":
+				ratioPlan = 2
+			case "M":
+				ratioPlan = 3
+			case "L":
+				ratioPlan = 3
+			case "XL":
+				ratioPlan = 2
+			default:
+				ratioPlan = 1
+			}
+			_, err = db.Exec(ctx, `
+				INSERT INTO RATIO_SIZE_MARKER (ID_RATIO_MARKER, ID_WO_SHELL_SIZE, RATIO_PLAN)
+				VALUES ($1, $2, $3)
+			`, idRatioMarker, sz.ID, ratioPlan)
+			if err != nil {
+				return err
+			}
+		}
+		slog.Info("ratio size markers seeded for MP-2026-001")
 	}
 
 	return nil
