@@ -51,4 +51,3 @@ type ApprovalHistoryResponse struct {
 	Items      []ApprovalHistoryListItem `json:"items"`
 	TotalItems int64                     `json:"total_items"`
 }
-

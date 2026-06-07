@@ -282,6 +282,10 @@ type RatioMarker struct {
 	RollQty              int32              `json:"roll_qty"`
 	SambunganRoll        int32              `json:"sambungan_roll"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+	Plot                 int32              `json:"plot"`
+	LebarKain            pgtype.Numeric     `json:"lebar_kain"`
+	PanjangMarkerUnit    string             `json:"panjang_marker_unit"`
+	Ket                  string             `json:"ket"`
 }
 
 type RatioSizeMarker struct {

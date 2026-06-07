@@ -67,10 +67,10 @@ const createRatioMarker = `-- name: CreateRatioMarker :one
 INSERT INTO RATIO_MARKER (
     ID_KOMPONEN_MARKER, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN,
     PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER,
-    ROLL_QTY, SAMBUNGAN_ROLL
+    ROLL_QTY, SAMBUNGAN_ROLL, PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
-) RETURNING ID_RATIO_MARKER, ID_KOMPONEN_MARKER, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN, PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER, ROLL_QTY, SAMBUNGAN_ROLL, created_at
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+) RETURNING ID_RATIO_MARKER, ID_KOMPONEN_MARKER, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN, PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER, ROLL_QTY, SAMBUNGAN_ROLL, PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET, created_at
 `
 
 type CreateRatioMarkerParams struct {
@@ -84,9 +84,32 @@ type CreateRatioMarkerParams struct {
 	ConsBuyer            pgtype.Numeric `json:"cons_buyer"`
 	RollQty              int32          `json:"roll_qty"`
 	SambunganRoll        int32          `json:"sambungan_roll"`
+	Plot                 int32          `json:"plot"`
+	LebarKain            pgtype.Numeric `json:"lebar_kain"`
+	PanjangMarkerUnit    string         `json:"panjang_marker_unit"`
+	Ket                  string         `json:"ket"`
 }
 
-func (q *Queries) CreateRatioMarker(ctx context.Context, arg CreateRatioMarkerParams) (RatioMarker, error) {
+type CreateRatioMarkerRow struct {
+	IDRatioMarker        int32              `json:"id_ratio_marker"`
+	IDKomponenMarker     int32              `json:"id_komponen_marker"`
+	IDWoShell            int32              `json:"id_wo_shell"`
+	Cons                 pgtype.Numeric     `json:"cons"`
+	PlanSpreadingGelaran pgtype.Numeric     `json:"plan_spreading_gelaran"`
+	PanjangMarker        pgtype.Numeric     `json:"panjang_marker"`
+	EfficiencyMarker     pgtype.Numeric     `json:"efficiency_marker"`
+	Allowance            pgtype.Numeric     `json:"allowance"`
+	ConsBuyer            pgtype.Numeric     `json:"cons_buyer"`
+	RollQty              int32              `json:"roll_qty"`
+	SambunganRoll        int32              `json:"sambungan_roll"`
+	Plot                 int32              `json:"plot"`
+	LebarKain            pgtype.Numeric     `json:"lebar_kain"`
+	PanjangMarkerUnit    string             `json:"panjang_marker_unit"`
+	Ket                  string             `json:"ket"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) CreateRatioMarker(ctx context.Context, arg CreateRatioMarkerParams) (CreateRatioMarkerRow, error) {
 	row := q.db.QueryRow(ctx, createRatioMarker,
 		arg.IDKomponenMarker,
 		arg.IDWoShell,
@@ -98,8 +121,12 @@ func (q *Queries) CreateRatioMarker(ctx context.Context, arg CreateRatioMarkerPa
 		arg.ConsBuyer,
 		arg.RollQty,
 		arg.SambunganRoll,
+		arg.Plot,
+		arg.LebarKain,
+		arg.PanjangMarkerUnit,
+		arg.Ket,
 	)
-	var i RatioMarker
+	var i CreateRatioMarkerRow
 	err := row.Scan(
 		&i.IDRatioMarker,
 		&i.IDKomponenMarker,
@@ -112,6 +139,10 @@ func (q *Queries) CreateRatioMarker(ctx context.Context, arg CreateRatioMarkerPa
 		&i.ConsBuyer,
 		&i.RollQty,
 		&i.SambunganRoll,
+		&i.Plot,
+		&i.LebarKain,
+		&i.PanjangMarkerUnit,
+		&i.Ket,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -176,21 +207,41 @@ func (q *Queries) ListKomponenByMarkerPlanID(ctx context.Context, idMarkerPlan i
 
 const listRatioByKomponenID = `-- name: ListRatioByKomponenID :many
 SELECT ID_RATIO_MARKER, ID_KOMPONEN_MARKER, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN,
-       PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER, ROLL_QTY, SAMBUNGAN_ROLL, created_at
+       PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER, ROLL_QTY, SAMBUNGAN_ROLL,
+       PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET, created_at
 FROM RATIO_MARKER
 WHERE ID_KOMPONEN_MARKER = $1
 ORDER BY ID_RATIO_MARKER ASC
 `
 
-func (q *Queries) ListRatioByKomponenID(ctx context.Context, idKomponenMarker int32) ([]RatioMarker, error) {
+type ListRatioByKomponenIDRow struct {
+	IDRatioMarker        int32              `json:"id_ratio_marker"`
+	IDKomponenMarker     int32              `json:"id_komponen_marker"`
+	IDWoShell            int32              `json:"id_wo_shell"`
+	Cons                 pgtype.Numeric     `json:"cons"`
+	PlanSpreadingGelaran pgtype.Numeric     `json:"plan_spreading_gelaran"`
+	PanjangMarker        pgtype.Numeric     `json:"panjang_marker"`
+	EfficiencyMarker     pgtype.Numeric     `json:"efficiency_marker"`
+	Allowance            pgtype.Numeric     `json:"allowance"`
+	ConsBuyer            pgtype.Numeric     `json:"cons_buyer"`
+	RollQty              int32              `json:"roll_qty"`
+	SambunganRoll        int32              `json:"sambungan_roll"`
+	Plot                 int32              `json:"plot"`
+	LebarKain            pgtype.Numeric     `json:"lebar_kain"`
+	PanjangMarkerUnit    string             `json:"panjang_marker_unit"`
+	Ket                  string             `json:"ket"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) ListRatioByKomponenID(ctx context.Context, idKomponenMarker int32) ([]ListRatioByKomponenIDRow, error) {
 	rows, err := q.db.Query(ctx, listRatioByKomponenID, idKomponenMarker)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []RatioMarker
+	var items []ListRatioByKomponenIDRow
 	for rows.Next() {
-		var i RatioMarker
+		var i ListRatioByKomponenIDRow
 		if err := rows.Scan(
 			&i.IDRatioMarker,
 			&i.IDKomponenMarker,
@@ -203,6 +254,10 @@ func (q *Queries) ListRatioByKomponenID(ctx context.Context, idKomponenMarker in
 			&i.ConsBuyer,
 			&i.RollQty,
 			&i.SambunganRoll,
+			&i.Plot,
+			&i.LebarKain,
+			&i.PanjangMarkerUnit,
+			&i.Ket,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err

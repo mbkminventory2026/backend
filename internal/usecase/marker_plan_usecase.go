@@ -98,6 +98,10 @@ func (u *MarkerPlanUseCase) CreateMarkerPlan(ctx context.Context, userID int32, 
 				ConsBuyer:            mustNumericPtr(ratioReq.ConsBuyer),
 				RollQty:              ratioReq.RollQty,
 				SambunganRoll:        ratioReq.SambunganRoll,
+				Plot:                 ratioReq.Plot,
+				LebarKain:            mustNumeric(ratioReq.LebarKain),
+				PanjangMarkerUnit:    ratioReq.PanjangMarkerUnit,
+				Ket:                  ratioReq.Ket,
 			})
 			if ratioErr != nil {
 				return nil, mapMarkerDBError(ratioErr)
@@ -182,6 +186,10 @@ func (u *MarkerPlanUseCase) GetMarkerPlan(ctx context.Context, idMarkerPlan int3
 				ConsBuyer:            numericToFloat64Ptr(rRow.ConsBuyer),
 				RollQty:              rRow.RollQty,
 				SambunganRoll:        rRow.SambunganRoll,
+				Plot:                 rRow.Plot,
+				LebarKain:            numericToFloat64(rRow.LebarKain),
+				PanjangMarkerUnit:    rRow.PanjangMarkerUnit,
+				Ket:                  rRow.Ket,
 				CreatedAt:            rRow.CreatedAt.Time.Format(time.RFC3339),
 				Sizes:                sizes,
 			}
@@ -240,4 +248,3 @@ func mapMarkerDBError(err error) error {
 	}
 	return fmt.Errorf("%w: %s", ErrWorkOrderServiceUnavailable, err.Error())
 }
-

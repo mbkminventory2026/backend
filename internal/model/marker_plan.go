@@ -17,6 +17,10 @@ type CreateRatioMarkerRequest struct {
 	ConsBuyer            *float64                       `json:"cons_buyer" binding:"omitempty,gte=0"`
 	RollQty              int32                          `json:"roll_qty" binding:"required,gte=0"`
 	SambunganRoll        int32                          `json:"sambungan_roll" binding:"required,gte=0"`
+	Plot                 int32                          `json:"plot" binding:"required,gte=1"`
+	LebarKain            float64                        `json:"lebar_kain" binding:"required,gte=0"`
+	PanjangMarkerUnit    string                         `json:"panjang_marker_unit" binding:"required"`
+	Ket                  string                         `json:"ket" binding:"omitempty"`
 	Sizes                []CreateRatioSizeMarkerRequest `json:"sizes" binding:"required,min=1,dive"`
 }
 
@@ -52,6 +56,10 @@ type RatioMarkerResponse struct {
 	ConsBuyer            *float64                  `json:"cons_buyer,omitempty"`
 	RollQty              int32                     `json:"roll_qty"`
 	SambunganRoll        int32                     `json:"sambungan_roll"`
+	Plot                 int32                     `json:"plot"`
+	LebarKain            float64                   `json:"lebar_kain"`
+	PanjangMarkerUnit    string                    `json:"panjang_marker_unit"`
+	Ket                  string                    `json:"ket"`
 	CreatedAt            string                    `json:"created_at"`
 	Sizes                []RatioSizeMarkerResponse `json:"sizes"`
 }

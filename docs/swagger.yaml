@@ -694,12 +694,22 @@ definitions:
         type: number
       id_wo_shell:
         type: integer
+      ket:
+        type: string
+      lebar_kain:
+        minimum: 0
+        type: number
       panjang_marker:
         minimum: 0
         type: number
+      panjang_marker_unit:
+        type: string
       plan_spreading_gelaran:
         minimum: 0
         type: number
+      plot:
+        minimum: 1
+        type: integer
       roll_qty:
         minimum: 0
         type: integer
@@ -716,8 +726,11 @@ definitions:
     - cons
     - efficiency_marker
     - id_wo_shell
+    - lebar_kain
     - panjang_marker
+    - panjang_marker_unit
     - plan_spreading_gelaran
+    - plot
     - roll_qty
     - sambungan_roll
     - sizes
@@ -2133,10 +2146,18 @@ definitions:
         type: integer
       id_wo_shell:
         type: integer
+      ket:
+        type: string
+      lebar_kain:
+        type: number
       panjang_marker:
         type: number
+      panjang_marker_unit:
+        type: string
       plan_spreading_gelaran:
         type: number
+      plot:
+        type: integer
       roll_qty:
         type: integer
       sambungan_roll:

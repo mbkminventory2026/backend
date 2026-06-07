@@ -5886,8 +5886,11 @@ const docTemplate = `{
                 "cons",
                 "efficiency_marker",
                 "id_wo_shell",
+                "lebar_kain",
                 "panjang_marker",
+                "panjang_marker_unit",
                 "plan_spreading_gelaran",
+                "plot",
                 "roll_qty",
                 "sambungan_roll",
                 "sizes"
@@ -5912,13 +5915,27 @@ const docTemplate = `{
                 "id_wo_shell": {
                     "type": "integer"
                 },
+                "ket": {
+                    "type": "string"
+                },
+                "lebar_kain": {
+                    "type": "number",
+                    "minimum": 0
+                },
                 "panjang_marker": {
                     "type": "number",
                     "minimum": 0
                 },
+                "panjang_marker_unit": {
+                    "type": "string"
+                },
                 "plan_spreading_gelaran": {
                     "type": "number",
                     "minimum": 0
+                },
+                "plot": {
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "roll_qty": {
                     "type": "integer",
@@ -8036,11 +8053,23 @@ const docTemplate = `{
                 "id_wo_shell": {
                     "type": "integer"
                 },
+                "ket": {
+                    "type": "string"
+                },
+                "lebar_kain": {
+                    "type": "number"
+                },
                 "panjang_marker": {
                     "type": "number"
                 },
+                "panjang_marker_unit": {
+                    "type": "string"
+                },
                 "plan_spreading_gelaran": {
                     "type": "number"
+                },
+                "plot": {
+                    "type": "integer"
                 },
                 "roll_qty": {
                     "type": "integer"
