@@ -11,6 +11,26 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countTimelinePlans = `-- name: CountTimelinePlans :one
+SELECT COUNT(*)
+FROM TIMELINE_PLAN_PRODUKSI tpp
+JOIN PO_CLIENT pc ON tpp.ID_PO_CLIENT = pc.ID_PO_CLIENT
+JOIN MITRA m ON pc.ID_MITRA = m.ID_MITRA
+WHERE (
+    $1::text = '' OR
+    m.NAMA_PERUSAHAAN ILIKE '%' || $1::text || '%' OR
+    pc.PO_NUMBER ILIKE '%' || $1::text || '%' OR
+    tpp.NOTES ILIKE '%' || $1::text || '%'
+)
+`
+
+func (q *Queries) CountTimelinePlans(ctx context.Context, searchTerm string) (int64, error) {
+	row := q.db.QueryRow(ctx, countTimelinePlans, searchTerm)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createTimelinePlan = `-- name: CreateTimelinePlan :one
 INSERT INTO TIMELINE_PLAN_PRODUKSI (
     ID_PO_CLIENT, TANGGAL_DISUSUN, NOTES
@@ -126,6 +146,80 @@ func (q *Queries) GetWOShellPlansByTimelineID(ctx context.Context, idTimeline in
 			&i.StatusFinishingPacking,
 			&i.Fabric,
 			&i.Color,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTimelinePlans = `-- name: ListTimelinePlans :many
+SELECT 
+    tpp.ID_TIMELINE, tpp.ID_PO_CLIENT, tpp.TANGGAL_DISUSUN, tpp.NOTES, tpp.created_at,
+    m.NAMA_PERUSAHAAN AS client_name, pc.PO_NUMBER AS po_number
+FROM TIMELINE_PLAN_PRODUKSI tpp
+JOIN PO_CLIENT pc ON tpp.ID_PO_CLIENT = pc.ID_PO_CLIENT
+JOIN MITRA m ON pc.ID_MITRA = m.ID_MITRA
+WHERE (
+    $1::text = '' OR
+    m.NAMA_PERUSAHAAN ILIKE '%' || $1::text || '%' OR
+    pc.PO_NUMBER ILIKE '%' || $1::text || '%' OR
+    tpp.NOTES ILIKE '%' || $1::text || '%'
+)
+ORDER BY
+    CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN tpp.created_at END ASC,
+    CASE WHEN $2::text = 'created_at' AND $3::bool THEN tpp.created_at END DESC,
+    CASE WHEN $2::text = 'id_timeline' AND NOT $3::bool THEN tpp.ID_TIMELINE END ASC,
+    CASE WHEN $2::text = 'id_timeline' AND $3::bool THEN tpp.ID_TIMELINE END DESC,
+    tpp.ID_TIMELINE DESC
+LIMIT $5 OFFSET $4
+`
+
+type ListTimelinePlansParams struct {
+	SearchTerm string `json:"search_term"`
+	SortBy     string `json:"sort_by"`
+	SortDesc   bool   `json:"sort_desc"`
+	PageOffset int32  `json:"page_offset"`
+	PageLimit  int32  `json:"page_limit"`
+}
+
+type ListTimelinePlansRow struct {
+	IDTimeline     int32              `json:"id_timeline"`
+	IDPoClient     int32              `json:"id_po_client"`
+	TanggalDisusun pgtype.Date        `json:"tanggal_disusun"`
+	Notes          string             `json:"notes"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	ClientName     string             `json:"client_name"`
+	PoNumber       string             `json:"po_number"`
+}
+
+func (q *Queries) ListTimelinePlans(ctx context.Context, arg ListTimelinePlansParams) ([]ListTimelinePlansRow, error) {
+	rows, err := q.db.Query(ctx, listTimelinePlans,
+		arg.SearchTerm,
+		arg.SortBy,
+		arg.SortDesc,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTimelinePlansRow
+	for rows.Next() {
+		var i ListTimelinePlansRow
+		if err := rows.Scan(
+			&i.IDTimeline,
+			&i.IDPoClient,
+			&i.TanggalDisusun,
+			&i.Notes,
+			&i.CreatedAt,
+			&i.ClientName,
+			&i.PoNumber,
 		); err != nil {
 			return nil, err
 		}
