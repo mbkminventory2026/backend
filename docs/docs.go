@@ -8222,6 +8222,9 @@ const docTemplate = `{
                 },
                 "size": {
                     "type": "string"
+                },
+                "size_qty": {
+                    "type": "integer"
                 }
             }
         },

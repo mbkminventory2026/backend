@@ -42,6 +42,7 @@ type RatioSizeMarkerResponse struct {
 	IDWoShellSize     int32  `json:"id_wo_shell_size"`
 	RatioPlan         int32  `json:"ratio_plan"`
 	Size              string `json:"size,omitempty"`
+	SizeQty           int32  `json:"size_qty"`
 }
 
 type RatioMarkerResponse struct {

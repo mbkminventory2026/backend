@@ -2222,6 +2222,8 @@ definitions:
         type: integer
       size:
         type: string
+      size_qty:
+        type: integer
     type: object
   model.ReceiveInventoryRequest:
     properties:

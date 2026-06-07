@@ -376,7 +376,7 @@ func (q *Queries) ListRatioByKomponenID(ctx context.Context, idKomponenMarker in
 }
 
 const listRatioSizeByRatioID = `-- name: ListRatioSizeByRatioID :many
-SELECT rsm.ID_RATIO_SIZE_MARKER, rsm.ID_RATIO_MARKER, rsm.ID_WO_SHELL_SIZE, rsm.RATIO_PLAN, wss.SIZE
+SELECT rsm.ID_RATIO_SIZE_MARKER, rsm.ID_RATIO_MARKER, rsm.ID_WO_SHELL_SIZE, rsm.RATIO_PLAN, wss.SIZE, wss.QTY AS size_qty
 FROM RATIO_SIZE_MARKER rsm
 JOIN WORK_ORDER_SHELL_SIZE wss ON rsm.ID_WO_SHELL_SIZE = wss.ID_WO_SHELL_SIZE
 WHERE rsm.ID_RATIO_MARKER = $1
@@ -389,6 +389,7 @@ type ListRatioSizeByRatioIDRow struct {
 	IDWoShellSize     int32  `json:"id_wo_shell_size"`
 	RatioPlan         int32  `json:"ratio_plan"`
 	Size              string `json:"size"`
+	SizeQty           int32  `json:"size_qty"`
 }
 
 func (q *Queries) ListRatioSizeByRatioID(ctx context.Context, idRatioMarker int32) ([]ListRatioSizeByRatioIDRow, error) {
@@ -406,6 +407,7 @@ func (q *Queries) ListRatioSizeByRatioID(ctx context.Context, idRatioMarker int3
 			&i.IDWoShellSize,
 			&i.RatioPlan,
 			&i.Size,
+			&i.SizeQty,
 		); err != nil {
 			return nil, err
 		}

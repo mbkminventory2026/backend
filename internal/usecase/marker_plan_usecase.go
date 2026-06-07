@@ -173,6 +173,7 @@ func (u *MarkerPlanUseCase) GetMarkerPlan(ctx context.Context, idMarkerPlan int3
 					IDWoShellSize:     sRow.IDWoShellSize,
 					RatioPlan:         sRow.RatioPlan,
 					Size:              sRow.Size,
+					SizeQty:           sRow.SizeQty,
 				}
 			}
 
