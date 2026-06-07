@@ -81,6 +81,9 @@ type POClientItemResponse struct {
 	Qty         int32   `json:"qty"`
 	Price       float64 `json:"price"`
 	CreatedAt   string  `json:"created_at"`
+	IDWo        *int32  `json:"id_wo,omitempty"`
+	WoStatus    *string `json:"wo_status,omitempty"`
+	HasRetur    bool    `json:"has_retur"`
 }
 
 type PenanggungJawabResponse struct {

@@ -96,3 +96,21 @@ RETURNING id_material_list,
 SELECT COALESCE(SUM(qty), 0)::bigint AS total_qty
 FROM WORK_ORDER_SHELL_SIZE
 WHERE id_wo_shell = sqlc.arg(id_wo_shell);
+
+-- name: DeleteWorkOrdersByPOClientID :exec
+DELETE FROM WORK_ORDER
+WHERE id_po_client_item IN (
+    SELECT id_po_client_item
+    FROM PO_CLIENT_ITEM
+    WHERE id_po_client = sqlc.arg(id_po_client)
+);
+
+-- name: CountConfiguredWorkOrdersByPOClientID :one
+SELECT COUNT(*)
+FROM WORK_ORDER wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo = wo.id_wo
+LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo = wo.id_wo
+LEFT JOIN MATERIAL_LIST ml ON ml.id_wo = wo.id_wo
+WHERE pci.id_po_client = sqlc.arg(id_po_client)
+  AND (wos.id_wo_shell IS NOT NULL OR wot.id_wo_trim IS NOT NULL OR ml.id_material_list IS NOT NULL);

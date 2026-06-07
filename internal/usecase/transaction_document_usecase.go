@@ -293,10 +293,22 @@ func (u *TransactionDocumentUseCase) CreatePRInternal(ctx context.Context, actor
 
 	qtx := entity.New(tx)
 
+	user, err := qtx.GetUserByID(ctx, actorUserID)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to fetch user for PR internal", ErrTransactionServiceUnavailable)
+	}
+
+	dept := "produksi"
+	if user.Username != "super-admin" && user.NamaRole != "super-admin" {
+		if user.NamaDepartemen.Valid && user.NamaDepartemen.String != "" {
+			dept = user.NamaDepartemen.String
+		}
+	}
+
 	header, err := qtx.CreatePRInternal(ctx, entity.CreatePRInternalParams{
 		Tanggal:       mustDate(req.Tanggal),
 		Nama:          req.Nama,
-		Departemen:    req.Departemen,
+		Departemen:    dept,
 		VendorName:    req.VendorName,
 		VendorAddress: req.VendorAddress,
 		VendorTelp:    req.VendorTelp,
@@ -529,6 +541,7 @@ func (u *TransactionDocumentUseCase) ListPOClients(ctx context.Context, filter m
 			IDMitra:   row.IDMitra,
 			MitraName: row.MitraName,
 			CreatedAt: row.CreatedAt.Time.Format(time.RFC3339),
+			HasRetur:  row.HasRetur,
 		})
 	}
 
@@ -569,6 +582,9 @@ func (u *TransactionDocumentUseCase) GetPOClientDetail(ctx context.Context, id i
 			Qty:         row.Qty,
 			Price:       numericToFloat64(row.Price),
 			CreatedAt:   row.CreatedAt.Time.Format(time.RFC3339),
+			IDWo:        nullableInt32Ptr(row.IDWo),
+			WoStatus:    nullableStringPtr(row.WoStatus),
+			HasRetur:    row.HasRetur,
 		})
 	}
 

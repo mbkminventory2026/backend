@@ -426,28 +426,48 @@ func (q *Queries) ListMaterialListsByWorkOrderID(ctx context.Context, idWo int32
 
 const listPOClientItemsByPOClientID = `-- name: ListPOClientItemsByPOClientID :many
 SELECT
-    id_po_client_item,
-    id_po_client,
-    style,
-    colour,
-    description,
-    qty,
-    price,
-    created_at
-FROM PO_CLIENT_ITEM
-WHERE id_po_client = $1
-ORDER BY id_po_client_item ASC
+    pci.id_po_client_item,
+    pci.id_po_client,
+    pci.style,
+    pci.colour,
+    pci.description,
+    pci.qty,
+    pci.price,
+    pci.created_at,
+    wo.id_wo,
+    wo.status AS wo_status,
+    EXISTS (
+        SELECT 1 FROM RETUR_CLIENT rc WHERE rc.id_wo = wo.id_wo
+    )::boolean AS has_retur
+FROM PO_CLIENT_ITEM pci
+LEFT JOIN v_work_order wo ON wo.id_po_client_item = pci.id_po_client_item
+WHERE pci.id_po_client = $1
+ORDER BY pci.id_po_client_item ASC
 `
 
-func (q *Queries) ListPOClientItemsByPOClientID(ctx context.Context, idPoClient int32) ([]PoClientItem, error) {
+type ListPOClientItemsByPOClientIDRow struct {
+	IDPoClientItem int32              `json:"id_po_client_item"`
+	IDPoClient     int32              `json:"id_po_client"`
+	Style          string             `json:"style"`
+	Colour         string             `json:"colour"`
+	Description    string             `json:"description"`
+	Qty            int32              `json:"qty"`
+	Price          pgtype.Numeric     `json:"price"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	IDWo           pgtype.Int4        `json:"id_wo"`
+	WoStatus       pgtype.Text        `json:"wo_status"`
+	HasRetur       bool               `json:"has_retur"`
+}
+
+func (q *Queries) ListPOClientItemsByPOClientID(ctx context.Context, idPoClient int32) ([]ListPOClientItemsByPOClientIDRow, error) {
 	rows, err := q.db.Query(ctx, listPOClientItemsByPOClientID, idPoClient)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []PoClientItem
+	var items []ListPOClientItemsByPOClientIDRow
 	for rows.Next() {
-		var i PoClientItem
+		var i ListPOClientItemsByPOClientIDRow
 		if err := rows.Scan(
 			&i.IDPoClientItem,
 			&i.IDPoClient,
@@ -457,6 +477,9 @@ func (q *Queries) ListPOClientItemsByPOClientID(ctx context.Context, idPoClient 
 			&i.Qty,
 			&i.Price,
 			&i.CreatedAt,
+			&i.IDWo,
+			&i.WoStatus,
+			&i.HasRetur,
 		); err != nil {
 			return nil, err
 		}
@@ -480,6 +503,13 @@ SELECT
     pc.id_mitra,
     pc.created_at,
     m.nama_perusahaan AS mitra_name,
+    EXISTS (
+        SELECT 1
+        FROM PO_CLIENT_ITEM pci
+        JOIN WORK_ORDER wo ON wo.id_po_client_item = pci.id_po_client_item
+        JOIN RETUR_CLIENT rc ON rc.id_wo = wo.id_wo
+        WHERE pci.id_po_client = pc.id_po_client
+    )::boolean AS has_retur,
     COUNT(*) OVER() AS total_count
 FROM PO_CLIENT pc
 JOIN MITRA m ON m.id_mitra = pc.id_mitra
@@ -531,6 +561,7 @@ type ListPOClientsRow struct {
 	IDMitra     int32              `json:"id_mitra"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	MitraName   string             `json:"mitra_name"`
+	HasRetur    bool               `json:"has_retur"`
 	TotalCount  int64              `json:"total_count"`
 }
 
@@ -561,6 +592,7 @@ func (q *Queries) ListPOClients(ctx context.Context, arg ListPOClientsParams) ([
 			&i.IDMitra,
 			&i.CreatedAt,
 			&i.MitraName,
+			&i.HasRetur,
 			&i.TotalCount,
 		); err != nil {
 			return nil, err
@@ -1506,7 +1538,15 @@ SELECT
     wo.closed_at,
     wo.created_at,
     pc.po_number,
+    pc.id_po_client,
     pci.style AS po_client_item_style,
+    EXISTS (
+        SELECT 1 FROM RETUR_CLIENT rc WHERE rc.id_wo = wo.id_wo
+    )::boolean AS has_retur,
+    COALESCE(
+        (SELECT rc.file FROM RETUR_CLIENT rc WHERE rc.id_wo = wo.id_wo LIMIT 1),
+        ''
+    )::text AS retur_file,
     COUNT(*) OVER() AS total_count
 FROM v_work_order wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
@@ -1564,7 +1604,10 @@ type ListWorkOrdersRow struct {
 	ClosedAt          pgtype.Timestamptz `json:"closed_at"`
 	CreatedAt         pgtype.Timestamptz `json:"created_at"`
 	PoNumber          string             `json:"po_number"`
+	IDPoClient        int32              `json:"id_po_client"`
 	PoClientItemStyle string             `json:"po_client_item_style"`
+	HasRetur          bool               `json:"has_retur"`
+	ReturFile         string             `json:"retur_file"`
 	TotalCount        int64              `json:"total_count"`
 }
 
@@ -1597,7 +1640,10 @@ func (q *Queries) ListWorkOrders(ctx context.Context, arg ListWorkOrdersParams) 
 			&i.ClosedAt,
 			&i.CreatedAt,
 			&i.PoNumber,
+			&i.IDPoClient,
 			&i.PoClientItemStyle,
+			&i.HasRetur,
+			&i.ReturFile,
 			&i.TotalCount,
 		); err != nil {
 			return nil, err

@@ -30,6 +30,7 @@ func (h *WorkOrderProductionHandler) RegisterRoutes(router gin.IRouter, authMidd
 	v1 := router.Group("/api/v1").Use(authMiddleware)
 	internalOnly := RequireInternalUser()
 	v1.GET("/work-orders", RequirePermission(PermissionWORead), h.ListWorkOrders)
+	v1.GET("/work-orders/returns", RequirePermission(PermissionWORead), h.ListReturClients)
 	v1.GET("/work-orders/:id", RequirePermission(PermissionWORead), h.GetWorkOrderDetail)
 	v1.GET("/work-orders/shells/:id/total-qty", internalOnly, RequirePermission(PermissionWORead), h.GetWorkOrderShellTotalQty)
 	v1.GET("/production/summary", RequirePermission(PermissionProductionSummaryRead), h.ListProductionSummary)
@@ -431,4 +432,41 @@ func (h *WorkOrderProductionHandler) GetDailyReportsByWorkOrder(c *gin.Context) 
 		return
 	}
 	response.Success(c, http.StatusOK, "daily reports retrieved", item)
+}
+
+// ListReturClients godoc
+// @Summary      List Client Returns
+// @Description  Returns a paginated list of client return requests.
+// @Tags         Work Order & Production
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page    query     int     false  "Page (default 1)"
+// @Param        limit   query     int     false  "Limit (default 20)"
+// @Param        search  query     string  false  "Search by PO number or model"
+// @Success      200     {object}  model.ReturClientListSuccessDoc
+// @Failure      400     {object}  model.WorkOrderErrorDoc
+// @Failure      401     {object}  model.WorkOrderErrorDoc
+// @Failure      500     {object}  model.WorkOrderErrorDoc
+// @Router       /api/v1/work-orders/returns [get]
+func (h *WorkOrderProductionHandler) ListReturClients(c *gin.Context) {
+	filter, err := parseListQuery(c, 20)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
+		return
+	}
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid authentication context", nil))
+		return
+	}
+
+	item, err := h.useCase.ListReturClients(c.Request.Context(), model.TransactionListFilter{
+		ListQueryFilter: filter,
+		IDMitra:         mitraID,
+	})
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "client returns retrieved", item)
 }

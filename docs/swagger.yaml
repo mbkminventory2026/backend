@@ -1585,13 +1585,19 @@ definitions:
         type: string
       description:
         type: string
+      has_retur:
+        type: boolean
       id_po_client_item:
+        type: integer
+      id_wo:
         type: integer
       price:
         type: number
       qty:
         type: integer
       style:
+        type: string
+      wo_status:
         type: string
     type: object
   model.POClientListItem:
@@ -1600,6 +1606,8 @@ definitions:
         type: string
       delivery:
         type: string
+      has_retur:
+        type: boolean
       id_mitra:
         type: integer
       id_po_client:
@@ -2344,6 +2352,53 @@ definitions:
   model.RejectPasswordResetRequestRequest:
     properties:
       rejected_reason:
+        type: string
+    type: object
+  model.ReturClientListItem:
+    properties:
+      buyer:
+        type: string
+      created_at:
+        type: string
+      deskripsi:
+        type: string
+      file:
+        type: string
+      id_mitra:
+        type: integer
+      id_po_client:
+        type: integer
+      id_retur_client:
+        type: integer
+      id_wo:
+        type: integer
+      mitra_name:
+        type: string
+      model:
+        type: string
+      po_number:
+        type: string
+      wo_qty:
+        type: integer
+    type: object
+  model.ReturClientListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.ReturClientListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.ReturClientListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.ReturClientListResponse'
+      message:
+        example: retur client list retrieved
+        type: string
+      status:
+        example: success
         type: string
     type: object
   model.ReturClientResponse:
@@ -3104,6 +3159,10 @@ definitions:
         type: string
       fob_cmt:
         type: boolean
+      has_retur:
+        type: boolean
+      id_po_client:
+        type: integer
       id_po_client_item:
         type: integer
       id_wo:
@@ -6417,6 +6476,46 @@ paths:
       security:
       - BearerAuth: []
       summary: Submit Client Return
+      tags:
+      - Work Order & Production
+  /api/v1/work-orders/returns:
+    get:
+      description: Returns a paginated list of client return requests.
+      parameters:
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Search by PO number or model
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ReturClientListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: List Client Returns
       tags:
       - Work Order & Production
   /api/v1/work-orders/shells/{id}/total-qty:

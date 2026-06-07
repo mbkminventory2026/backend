@@ -377,6 +377,12 @@ func (u *WorkOrderProductionUseCase) ListWorkOrders(ctx context.Context, filter 
 	total := int64(0)
 	for _, row := range rows {
 		total = row.TotalCount
+		var returFilePtr *string
+		if row.ReturFile != "" {
+			val := row.ReturFile
+			returFilePtr = &val
+		}
+
 		items = append(items, model.WorkOrderListItem{
 			ID:                row.IDWo,
 			Buyer:             row.Buyer,
@@ -390,6 +396,9 @@ func (u *WorkOrderProductionUseCase) ListWorkOrders(ctx context.Context, filter 
 			PONumber:          row.PoNumber,
 			POClientItemStyle: row.PoClientItemStyle,
 			CreatedAt:         row.CreatedAt.Time.Format(time.RFC3339),
+			HasRetur:          row.HasRetur,
+			IDPOClient:        row.IDPoClient,
+			ReturFile:         returFilePtr,
 		})
 	}
 
@@ -726,5 +735,44 @@ func (u *WorkOrderProductionUseCase) GetDailyReportsByWorkOrder(ctx context.Cont
 
 	return &model.DailyReportListResponse{
 		Items: items,
+	}, nil
+}
+
+func (u *WorkOrderProductionUseCase) ListReturClients(ctx context.Context, filter model.TransactionListFilter) (*model.ReturClientListResponse, error) {
+	page, limit, offset, search, _, _ := normalizeListFilter(filter.ListQueryFilter, "", false, nil)
+
+	rows, err := u.repo.ListReturClients(ctx, entity.ListReturClientsParams{
+		IDMitra:    nullableInt32Param(filter.IDMitra),
+		Search:     search,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to list retur clients", ErrWorkOrderServiceUnavailable)
+	}
+
+	items := make([]model.ReturClientListItem, 0, len(rows))
+	total := int64(0)
+	for _, row := range rows {
+		total = row.TotalCount
+		items = append(items, model.ReturClientListItem{
+			IDReturClient: row.IDReturClient,
+			IDWo:          row.IDWo,
+			File:          row.File,
+			Deskripsi:     row.Deskripsi,
+			CreatedAt:     row.CreatedAt.Time.Format(time.RFC3339),
+			Buyer:         row.Buyer,
+			Model:         row.Model,
+			WoQty:         row.WoQty,
+			PoNumber:      row.PoNumber,
+			IDMitra:       row.IDMitra,
+			MitraName:     row.MitraName,
+			IDPOClient:    row.IDPoClient,
+		})
+	}
+
+	return &model.ReturClientListResponse{
+		Items:      items,
+		Pagination: buildPagination(total, page, limit),
 	}, nil
 }

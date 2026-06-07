@@ -7,6 +7,8 @@ package entity
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const autoCloseWorkOrders = `-- name: AutoCloseWorkOrders :exec
@@ -103,4 +105,90 @@ func (q *Queries) GetReturClientByWorkOrderID(ctx context.Context, idWo int32) (
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const listReturClients = `-- name: ListReturClients :many
+SELECT rc.id_retur_client, rc.id_wo, rc.file, rc.deskripsi, rc.created_at,
+       wo.buyer, wo.model, wo.qty AS wo_qty,
+       pc.po_number, pc.id_mitra, m.nama_perusahaan as mitra_name,
+       pc.id_po_client,
+       COUNT(*) OVER() as total_count
+FROM RETUR_CLIENT rc
+JOIN WORK_ORDER wo ON wo.id_wo = rc.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
+JOIN MITRA m ON m.id_mitra = pc.id_mitra
+WHERE (
+    $1::integer IS NULL OR
+    pc.id_mitra = $1::integer
+) AND (
+    $2::text = '' OR
+    pc.po_number ILIKE '%' || $2::text || '%' OR
+    wo.model ILIKE '%' || $2::text || '%'
+)
+ORDER BY rc.created_at DESC
+LIMIT $4::integer
+OFFSET $3::integer
+`
+
+type ListReturClientsParams struct {
+	IDMitra    pgtype.Int4 `json:"id_mitra"`
+	Search     string      `json:"search"`
+	PageOffset int32       `json:"page_offset"`
+	PageLimit  int32       `json:"page_limit"`
+}
+
+type ListReturClientsRow struct {
+	IDReturClient int32              `json:"id_retur_client"`
+	IDWo          int32              `json:"id_wo"`
+	File          string             `json:"file"`
+	Deskripsi     string             `json:"deskripsi"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	Buyer         string             `json:"buyer"`
+	Model         string             `json:"model"`
+	WoQty         int32              `json:"wo_qty"`
+	PoNumber      string             `json:"po_number"`
+	IDMitra       int32              `json:"id_mitra"`
+	MitraName     string             `json:"mitra_name"`
+	IDPoClient    int32              `json:"id_po_client"`
+	TotalCount    int64              `json:"total_count"`
+}
+
+func (q *Queries) ListReturClients(ctx context.Context, arg ListReturClientsParams) ([]ListReturClientsRow, error) {
+	rows, err := q.db.Query(ctx, listReturClients,
+		arg.IDMitra,
+		arg.Search,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListReturClientsRow
+	for rows.Next() {
+		var i ListReturClientsRow
+		if err := rows.Scan(
+			&i.IDReturClient,
+			&i.IDWo,
+			&i.File,
+			&i.Deskripsi,
+			&i.CreatedAt,
+			&i.Buyer,
+			&i.Model,
+			&i.WoQty,
+			&i.PoNumber,
+			&i.IDMitra,
+			&i.MitraName,
+			&i.IDPoClient,
+			&i.TotalCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

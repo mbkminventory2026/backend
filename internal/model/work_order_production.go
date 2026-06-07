@@ -189,3 +189,30 @@ type ReturClientSuccessDoc struct {
 	Message string              `json:"message" example:"client return submitted"`
 	Data    ReturClientResponse `json:"data"`
 }
+
+type ReturClientListItem struct {
+	IDReturClient int32  `json:"id_retur_client"`
+	IDWo          int32  `json:"id_wo"`
+	File          string `json:"file"`
+	Deskripsi     string `json:"deskripsi"`
+	CreatedAt     string `json:"created_at"`
+	Buyer         string `json:"buyer"`
+	Model         string `json:"model"`
+	WoQty         int32  `json:"wo_qty"`
+	PoNumber      string `json:"po_number"`
+	IDMitra       int32  `json:"id_mitra"`
+	MitraName     string `json:"mitra_name"`
+	IDPOClient    int32  `json:"id_po_client"`
+}
+
+type ReturClientListResponse struct {
+	Items      []ReturClientListItem `json:"items"`
+	Pagination PaginationMeta        `json:"pagination"`
+}
+
+type ReturClientListSuccessDoc struct {
+	Status  string                  `json:"status" example:"success"`
+	Message string                  `json:"message" example:"retur client list retrieved"`
+	Data    ReturClientListResponse `json:"data"`
+}
+

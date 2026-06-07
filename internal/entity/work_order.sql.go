@@ -11,6 +11,24 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countConfiguredWorkOrdersByPOClientID = `-- name: CountConfiguredWorkOrdersByPOClientID :one
+SELECT COUNT(*)
+FROM WORK_ORDER wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo = wo.id_wo
+LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo = wo.id_wo
+LEFT JOIN MATERIAL_LIST ml ON ml.id_wo = wo.id_wo
+WHERE pci.id_po_client = $1
+  AND (wos.id_wo_shell IS NOT NULL OR wot.id_wo_trim IS NOT NULL OR ml.id_material_list IS NOT NULL)
+`
+
+func (q *Queries) CountConfiguredWorkOrdersByPOClientID(ctx context.Context, idPoClient int32) (int64, error) {
+	row := q.db.QueryRow(ctx, countConfiguredWorkOrdersByPOClientID, idPoClient)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createMaterialList = `-- name: CreateMaterialList :one
 WITH inserted_item AS (
     INSERT INTO MATERIAL_LIST_ITEM (description)
@@ -311,6 +329,20 @@ func (q *Queries) CreateWorkOrderTrim(ctx context.Context, arg CreateWorkOrderTr
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const deleteWorkOrdersByPOClientID = `-- name: DeleteWorkOrdersByPOClientID :exec
+DELETE FROM WORK_ORDER
+WHERE id_po_client_item IN (
+    SELECT id_po_client_item
+    FROM PO_CLIENT_ITEM
+    WHERE id_po_client = $1
+)
+`
+
+func (q *Queries) DeleteWorkOrdersByPOClientID(ctx context.Context, idPoClient int32) error {
+	_, err := q.db.Exec(ctx, deleteWorkOrdersByPOClientID, idPoClient)
+	return err
 }
 
 const workOrderShellTotalQty = `-- name: WorkOrderShellTotalQty :one

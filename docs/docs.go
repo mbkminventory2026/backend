@@ -4570,6 +4570,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/work-orders/returns": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of client return requests.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Work Order \u0026 Production"
+                ],
+                "summary": "List Client Returns",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by PO number or model",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ReturClientListSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/work-orders/shells/{id}/total-qty": {
             "get": {
                 "security": [
@@ -7261,7 +7324,13 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "has_retur": {
+                    "type": "boolean"
+                },
                 "id_po_client_item": {
+                    "type": "integer"
+                },
+                "id_wo": {
                     "type": "integer"
                 },
                 "price": {
@@ -7271,6 +7340,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "style": {
+                    "type": "string"
+                },
+                "wo_status": {
                     "type": "string"
                 }
             }
@@ -7283,6 +7355,9 @@ const docTemplate = `{
                 },
                 "delivery": {
                     "type": "string"
+                },
+                "has_retur": {
+                    "type": "boolean"
                 },
                 "id_mitra": {
                     "type": "integer"
@@ -8405,6 +8480,77 @@ const docTemplate = `{
             "properties": {
                 "rejected_reason": {
                     "type": "string"
+                }
+            }
+        },
+        "model.ReturClientListItem": {
+            "type": "object",
+            "properties": {
+                "buyer": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "deskripsi": {
+                    "type": "string"
+                },
+                "file": {
+                    "type": "string"
+                },
+                "id_mitra": {
+                    "type": "integer"
+                },
+                "id_po_client": {
+                    "type": "integer"
+                },
+                "id_retur_client": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "mitra_name": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "po_number": {
+                    "type": "string"
+                },
+                "wo_qty": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.ReturClientListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ReturClientListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/model.PaginationMeta"
+                }
+            }
+        },
+        "model.ReturClientListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.ReturClientListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "retur client list retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -9538,6 +9684,12 @@ const docTemplate = `{
                 },
                 "fob_cmt": {
                     "type": "boolean"
+                },
+                "has_retur": {
+                    "type": "boolean"
+                },
+                "id_po_client": {
+                    "type": "integer"
                 },
                 "id_po_client_item": {
                     "type": "integer"
