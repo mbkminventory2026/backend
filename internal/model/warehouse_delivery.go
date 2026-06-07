@@ -36,7 +36,11 @@ type IssueInventoryResponse struct {
 }
 
 type CreatePackingListItemSizeRequest struct {
-	Qty int32 `json:"qty" binding:"required,gt=0"`
+	Qty int32 `json:"qty" binding:"gte=0"`
+}
+
+type CreatePackingListRejectSizeRequest struct {
+	Qty int32 `json:"qty" binding:"gte=0"`
 }
 
 type CreatePackingListItemRequest struct {
@@ -50,15 +54,22 @@ type CreatePackingListItemRequest struct {
 }
 
 type CreatePackingListRequest struct {
-	TotalGarmentPerBox   int32                          `json:"total_garment_per_box" binding:"required,gte=0"`
-	TotalReject          int32                          `json:"total_reject" binding:"required,gte=0"`
-	IDWO                 int32                          `json:"id_wo" binding:"required,gt=0"`
-	IDSuratJalanInternal *int32                         `json:"id_surat_jalan_internal"`
-	Items                []CreatePackingListItemRequest `json:"items" binding:"required,min=1,dive"`
+	TotalGarmentPerBox   int32                                `json:"total_garment_per_box" binding:"required,gte=0"`
+	TotalReject          int32                                `json:"total_reject" binding:"required,gte=0"`
+	IDWO                 int32                                `json:"id_wo" binding:"required,gt=0"`
+	IDSuratJalanInternal *int32                               `json:"id_surat_jalan_internal"`
+	Items                []CreatePackingListItemRequest       `json:"items" binding:"required,min=1,dive"`
+	RejectSizes          []CreatePackingListRejectSizeRequest `json:"reject_sizes" binding:"dive"`
 }
 
 type PackingListItemSizeResponse struct {
 	ID        int32  `json:"id_packing_list_item_size"`
+	Qty       int32  `json:"qty"`
+	CreatedAt string `json:"created_at"`
+}
+
+type PackingListRejectSizeResponse struct {
+	ID        int32  `json:"id_packing_list_reject_size"`
 	Qty       int32  `json:"qty"`
 	CreatedAt string `json:"created_at"`
 }
@@ -76,13 +87,14 @@ type PackingListItemResponse struct {
 }
 
 type PackingListResponse struct {
-	ID                   int32                     `json:"id_packing_list"`
-	TotalGarmentPerBox   int32                     `json:"total_garment_per_box"`
-	TotalReject          int32                     `json:"total_reject"`
-	IDWO                 int32                     `json:"id_wo"`
-	IDSuratJalanInternal *int32                    `json:"id_surat_jalan_internal,omitempty"`
-	CreatedAt            string                    `json:"created_at"`
-	Items                []PackingListItemResponse `json:"items"`
+	ID                   int32                           `json:"id_packing_list"`
+	TotalGarmentPerBox   int32                           `json:"total_garment_per_box"`
+	TotalReject          int32                           `json:"total_reject"`
+	IDWO                 int32                           `json:"id_wo"`
+	IDSuratJalanInternal *int32                          `json:"id_surat_jalan_internal,omitempty"`
+	CreatedAt            string                          `json:"created_at"`
+	Items                []PackingListItemResponse       `json:"items"`
+	RejectSizes          []PackingListRejectSizeResponse `json:"reject_sizes"`
 }
 
 type CreateSuratJalanClientRequest struct {

@@ -168,6 +168,13 @@ type PackingListItemSize struct {
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
 }
 
+type PackingListRejectSize struct {
+	IDPackingListRejectSize int32              `json:"id_packing_list_reject_size"`
+	Qty                     int32              `json:"qty"`
+	IDPackingList           int32              `json:"id_packing_list"`
+	CreatedAt               pgtype.Timestamptz `json:"created_at"`
+}
+
 type PasswordResetRequest struct {
 	IDPasswordResetRequest int32              `json:"id_password_reset_request"`
 	IDUser                 int32              `json:"id_user"`

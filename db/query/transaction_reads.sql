@@ -470,6 +470,16 @@ JOIN PACKING_LIST_ITEM pli ON pli.id_packing_list_item = plis.id_packing_list_it
 WHERE pli.id_packing_list = sqlc.arg(id_packing_list)
 ORDER BY plis.id_packing_list_item_size ASC;
 
+-- name: ListPackingListRejectSizesByPackingListID :many
+SELECT
+    plrs.id_packing_list_reject_size,
+    plrs.qty,
+    plrs.id_packing_list,
+    plrs.created_at
+FROM PACKING_LIST_REJECT_SIZE plrs
+WHERE plrs.id_packing_list = sqlc.arg(id_packing_list)
+ORDER BY plrs.id_packing_list_reject_size ASC;
+
 -- name: ListSuratJalanClients :many
 SELECT
     sjc.id_surat_jalan_client,

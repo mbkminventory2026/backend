@@ -92,6 +92,16 @@ INSERT INTO PACKING_LIST_ITEM_SIZE (
 )
 RETURNING id_packing_list_item_size, qty, id_packing_list_item, created_at;
 
+-- name: CreatePackingListRejectSize :one
+INSERT INTO PACKING_LIST_REJECT_SIZE (
+    qty,
+    id_packing_list
+) VALUES (
+    sqlc.arg(qty),
+    sqlc.arg(id_packing_list)
+)
+RETURNING id_packing_list_reject_size, qty, id_packing_list, created_at;
+
 -- name: CreateSuratJalanInternal :one
 INSERT INTO SURAT_JALAN_INTERNAL DEFAULT VALUES
 RETURNING id_surat_jalan_internal, created_at;

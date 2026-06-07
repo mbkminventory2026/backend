@@ -5875,12 +5875,19 @@ const docTemplate = `{
         },
         "model.CreatePackingListItemSizeRequest": {
             "type": "object",
-            "required": [
-                "qty"
-            ],
             "properties": {
                 "qty": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "model.CreatePackingListRejectSizeRequest": {
+            "type": "object",
+            "properties": {
+                "qty": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
@@ -5904,6 +5911,12 @@ const docTemplate = `{
                     "minItems": 1,
                     "items": {
                         "$ref": "#/definitions/model.CreatePackingListItemRequest"
+                    }
+                },
+                "reject_sizes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CreatePackingListRejectSizeRequest"
                     }
                 },
                 "total_garment_per_box": {
@@ -7784,6 +7797,12 @@ const docTemplate = `{
                 "model": {
                     "type": "string"
                 },
+                "reject_sizes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PackingListRejectSizeResponse"
+                    }
+                },
                 "total_garment_per_box": {
                     "type": "integer"
                 },
@@ -7916,6 +7935,20 @@ const docTemplate = `{
                 }
             }
         },
+        "model.PackingListRejectSizeResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_packing_list_reject_size": {
+                    "type": "integer"
+                },
+                "qty": {
+                    "type": "integer"
+                }
+            }
+        },
         "model.PackingListResponse": {
             "type": "object",
             "properties": {
@@ -7935,6 +7968,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.PackingListItemResponse"
+                    }
+                },
+                "reject_sizes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PackingListRejectSizeResponse"
                     }
                 },
                 "total_garment_per_box": {

@@ -976,6 +976,42 @@ func (q *Queries) ListPackingListItemsByPackingListID(ctx context.Context, idPac
 	return items, nil
 }
 
+const listPackingListRejectSizesByPackingListID = `-- name: ListPackingListRejectSizesByPackingListID :many
+SELECT
+    plrs.id_packing_list_reject_size,
+    plrs.qty,
+    plrs.id_packing_list,
+    plrs.created_at
+FROM PACKING_LIST_REJECT_SIZE plrs
+WHERE plrs.id_packing_list = $1
+ORDER BY plrs.id_packing_list_reject_size ASC
+`
+
+func (q *Queries) ListPackingListRejectSizesByPackingListID(ctx context.Context, idPackingList int32) ([]PackingListRejectSize, error) {
+	rows, err := q.db.Query(ctx, listPackingListRejectSizesByPackingListID, idPackingList)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PackingListRejectSize
+	for rows.Next() {
+		var i PackingListRejectSize
+		if err := rows.Scan(
+			&i.IDPackingListRejectSize,
+			&i.Qty,
+			&i.IDPackingList,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPackingLists = `-- name: ListPackingLists :many
 SELECT
     pl.id_packing_list,

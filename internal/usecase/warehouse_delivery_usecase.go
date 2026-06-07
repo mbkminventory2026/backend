@@ -189,6 +189,23 @@ func (u *WarehouseDeliveryUseCase) CreatePackingList(ctx context.Context, userID
 		})
 	}
 
+	rejectSizes := make([]model.PackingListRejectSizeResponse, 0, len(req.RejectSizes))
+	for _, rejectSizeReq := range req.RejectSizes {
+		rejectSize, rejectSizeErr := qtx.CreatePackingListRejectSize(ctx, entity.CreatePackingListRejectSizeParams{
+			Qty:           rejectSizeReq.Qty,
+			IDPackingList: header.IDPackingList,
+		})
+		if rejectSizeErr != nil {
+			return nil, mapWarehouseDBError(rejectSizeErr)
+		}
+
+		rejectSizes = append(rejectSizes, model.PackingListRejectSizeResponse{
+			ID:        rejectSize.IDPackingListRejectSize,
+			Qty:       rejectSize.Qty,
+			CreatedAt: rejectSize.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
 	// Initialize approval workflow
 	if err = initializeApprovalWorkflow(ctx, qtx, "PACKING_LIST", header.IDPackingList, userID); err != nil {
 		return nil, fmt.Errorf("failed to initialize approval workflow: %w", err)
@@ -212,6 +229,7 @@ func (u *WarehouseDeliveryUseCase) CreatePackingList(ctx context.Context, userID
 		IDSuratJalanInternal: suratJalanPtr,
 		CreatedAt:            header.CreatedAt.Time.Format(time.RFC3339),
 		Items:                items,
+		RejectSizes:          rejectSizes,
 	}, nil
 }
 
@@ -347,6 +365,20 @@ func (u *WarehouseDeliveryUseCase) GetPackingListDetail(ctx context.Context, id 
 		suratJalanPtr = &value
 	}
 
+	rejectRows, err := u.repo.ListPackingListRejectSizesByPackingListID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to get packing list reject sizes", ErrWarehouseServiceUnavailable)
+	}
+
+	rejectSizes := make([]model.PackingListRejectSizeResponse, 0, len(rejectRows))
+	for _, row := range rejectRows {
+		rejectSizes = append(rejectSizes, model.PackingListRejectSizeResponse{
+			ID:        row.IDPackingListRejectSize,
+			Qty:       row.Qty,
+			CreatedAt: row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
 	return &model.PackingListDetailResponse{
 		ID:                   header.IDPackingList,
 		TotalGarmentPerBox:   header.TotalGarmentPerBox,
@@ -357,6 +389,7 @@ func (u *WarehouseDeliveryUseCase) GetPackingListDetail(ctx context.Context, id 
 		Model:                header.Model,
 		CreatedAt:            header.CreatedAt.Time.Format(time.RFC3339),
 		Items:                items,
+		RejectSizes:          rejectSizes,
 	}, nil
 }
 

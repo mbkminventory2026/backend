@@ -133,15 +133,16 @@ type PackingListListItem struct {
 }
 
 type PackingListDetailResponse struct {
-	ID                   int32                     `json:"id_packing_list"`
-	TotalGarmentPerBox   int32                     `json:"total_garment_per_box"`
-	TotalReject          int32                     `json:"total_reject"`
-	IDWO                 int32                     `json:"id_wo"`
-	IDSuratJalanInternal *int32                    `json:"id_surat_jalan_internal,omitempty"`
-	Buyer                string                    `json:"buyer"`
-	Model                string                    `json:"model"`
-	CreatedAt            string                    `json:"created_at"`
-	Items                []PackingListItemResponse `json:"items"`
+	ID                   int32                           `json:"id_packing_list"`
+	TotalGarmentPerBox   int32                           `json:"total_garment_per_box"`
+	TotalReject          int32                           `json:"total_reject"`
+	IDWO                 int32                           `json:"id_wo"`
+	IDSuratJalanInternal *int32                          `json:"id_surat_jalan_internal,omitempty"`
+	Buyer                string                          `json:"buyer"`
+	Model                string                          `json:"model"`
+	CreatedAt            string                          `json:"created_at"`
+	Items                []PackingListItemResponse       `json:"items"`
+	RejectSizes          []PackingListRejectSizeResponse `json:"reject_sizes"`
 }
 
 type PackingListListResponse struct {

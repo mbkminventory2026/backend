@@ -136,6 +136,34 @@ func (q *Queries) CreatePackingListItemSize(ctx context.Context, arg CreatePacki
 	return i, err
 }
 
+const createPackingListRejectSize = `-- name: CreatePackingListRejectSize :one
+INSERT INTO PACKING_LIST_REJECT_SIZE (
+    qty,
+    id_packing_list
+) VALUES (
+    $1,
+    $2
+)
+RETURNING id_packing_list_reject_size, qty, id_packing_list, created_at
+`
+
+type CreatePackingListRejectSizeParams struct {
+	Qty           int32 `json:"qty"`
+	IDPackingList int32 `json:"id_packing_list"`
+}
+
+func (q *Queries) CreatePackingListRejectSize(ctx context.Context, arg CreatePackingListRejectSizeParams) (PackingListRejectSize, error) {
+	row := q.db.QueryRow(ctx, createPackingListRejectSize, arg.Qty, arg.IDPackingList)
+	var i PackingListRejectSize
+	err := row.Scan(
+		&i.IDPackingListRejectSize,
+		&i.Qty,
+		&i.IDPackingList,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const createSuratJalanClient = `-- name: CreateSuratJalanClient :one
 INSERT INTO SURAT_JALAN_CLIENT (
     tanggal,

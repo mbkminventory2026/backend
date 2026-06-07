@@ -639,9 +639,14 @@ definitions:
   model.CreatePackingListItemSizeRequest:
     properties:
       qty:
+        minimum: 0
         type: integer
-    required:
-    - qty
+    type: object
+  model.CreatePackingListRejectSizeRequest:
+    properties:
+      qty:
+        minimum: 0
+        type: integer
     type: object
   model.CreatePackingListRequest:
     properties:
@@ -653,6 +658,10 @@ definitions:
         items:
           $ref: '#/definitions/model.CreatePackingListItemRequest'
         minItems: 1
+        type: array
+      reject_sizes:
+        items:
+          $ref: '#/definitions/model.CreatePackingListRejectSizeRequest'
         type: array
       total_garment_per_box:
         minimum: 0
@@ -1932,6 +1941,10 @@ definitions:
         type: array
       model:
         type: string
+      reject_sizes:
+        items:
+          $ref: '#/definitions/model.PackingListRejectSizeResponse'
+        type: array
       total_garment_per_box:
         type: integer
       total_reject:
@@ -2019,6 +2032,15 @@ definitions:
         example: success
         type: string
     type: object
+  model.PackingListRejectSizeResponse:
+    properties:
+      created_at:
+        type: string
+      id_packing_list_reject_size:
+        type: integer
+      qty:
+        type: integer
+    type: object
   model.PackingListResponse:
     properties:
       created_at:
@@ -2032,6 +2054,10 @@ definitions:
       items:
         items:
           $ref: '#/definitions/model.PackingListItemResponse'
+        type: array
+      reject_sizes:
+        items:
+          $ref: '#/definitions/model.PackingListRejectSizeResponse'
         type: array
       total_garment_per_box:
         type: integer
