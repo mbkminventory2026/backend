@@ -267,15 +267,15 @@ type PrInternalItem struct {
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 }
 
-type ProfilePerusahaan struct {
-	IDProfilePerusahaan int32              `json:"id_profile_perusahaan"`
-	Nama                string             `json:"nama"`
-	Alamat              string             `json:"alamat"`
-	Email               string             `json:"email"`
-	NoTelp              string             `json:"no_telp"`
-	About               string             `json:"about"`
-	Logo                string             `json:"logo"`
-	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+type ProfilPerusahaan struct {
+	IDProfilPerusahaan int32              `json:"id_profil_perusahaan"`
+	Nama               string             `json:"nama"`
+	Alamat             string             `json:"alamat"`
+	Email              string             `json:"email"`
+	NoTelp             string             `json:"no_telp"`
+	About              string             `json:"about"`
+	Logo               string             `json:"logo"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 }
 
 type RatioMarker struct {

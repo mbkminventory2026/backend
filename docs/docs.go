@@ -1834,7 +1834,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/master/profile-perusahaan": {
+        "/api/v1/master/profil-perusahaan": {
             "get": {
                 "security": [
                     {
@@ -1847,12 +1847,12 @@ const docTemplate = `{
                 "tags": [
                     "Master Data"
                 ],
-                "summary": "Get Profile Perusahaan Data",
+                "summary": "Get Profil Perusahaan Data",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.ProfilePerusahaanSuccessDoc"
+                            "$ref": "#/definitions/model.ProfilPerusahaanSuccessDoc"
                         }
                     }
                 }
@@ -1872,15 +1872,15 @@ const docTemplate = `{
                 "tags": [
                     "Master Data"
                 ],
-                "summary": "Create Profile Perusahaan Data",
+                "summary": "Create Profil Perusahaan Data",
                 "parameters": [
                     {
-                        "description": "Profile Perusahaan payload",
+                        "description": "Profil Perusahaan payload",
                         "name": "payload",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.CreateProfilePerusahaanRequest"
+                            "$ref": "#/definitions/model.CreateProfilPerusahaanRequest"
                         }
                     }
                 ],
@@ -1888,7 +1888,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/model.ProfilePerusahaanSuccessDoc"
+                            "$ref": "#/definitions/model.ProfilPerusahaanSuccessDoc"
                         }
                     },
                     "409": {
@@ -1900,7 +1900,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/master/profile-perusahaan/{id}": {
+        "/api/v1/master/profil-perusahaan/{id}": {
             "get": {
                 "security": [
                     {
@@ -1913,11 +1913,11 @@ const docTemplate = `{
                 "tags": [
                     "Master Data"
                 ],
-                "summary": "Get Profile Perusahaan Detail",
+                "summary": "Get Profil Perusahaan Detail",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Profile Perusahaan ID",
+                        "description": "Profil Perusahaan ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1927,7 +1927,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.ProfilePerusahaanSuccessDoc"
+                            "$ref": "#/definitions/model.ProfilPerusahaanSuccessDoc"
                         }
                     }
                 }
@@ -1947,22 +1947,22 @@ const docTemplate = `{
                 "tags": [
                     "Master Data"
                 ],
-                "summary": "Update Profile Perusahaan Data",
+                "summary": "Update Profil Perusahaan Data",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Profile Perusahaan ID",
+                        "description": "Profil Perusahaan ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Profile Perusahaan payload",
+                        "description": "Profil Perusahaan payload",
                         "name": "payload",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.UpdateProfilePerusahaanRequest"
+                            "$ref": "#/definitions/model.UpdateProfilPerusahaanRequest"
                         }
                     }
                 ],
@@ -1970,7 +1970,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.ProfilePerusahaanSuccessDoc"
+                            "$ref": "#/definitions/model.ProfilPerusahaanSuccessDoc"
                         }
                     }
                 }
@@ -1984,11 +1984,11 @@ const docTemplate = `{
                 "tags": [
                     "Master Data"
                 ],
-                "summary": "Delete Profile Perusahaan Data",
+                "summary": "Delete Profil Perusahaan Data",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Profile Perusahaan ID",
+                        "description": "Profil Perusahaan ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -5888,7 +5888,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.CreateProfilePerusahaanRequest": {
+        "model.CreateProfilPerusahaanRequest": {
             "type": "object",
             "required": [
                 "nama"
@@ -8158,7 +8158,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.ProfilePerusahaanResponse": {
+        "model.ProfilPerusahaanResponse": {
             "type": "object",
             "properties": {
                 "about": {
@@ -8173,7 +8173,7 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
-                "id_profile_perusahaan": {
+                "id_profil_perusahaan": {
                     "type": "integer"
                 },
                 "logo": {
@@ -8187,15 +8187,15 @@ const docTemplate = `{
                 }
             }
         },
-        "model.ProfilePerusahaanSuccessDoc": {
+        "model.ProfilPerusahaanSuccessDoc": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/model.ProfilePerusahaanResponse"
+                    "$ref": "#/definitions/model.ProfilPerusahaanResponse"
                 },
                 "message": {
                     "type": "string",
-                    "example": "profile perusahaan data retrieved"
+                    "example": "profil perusahaan data retrieved"
                 },
                 "status": {
                     "type": "string",
@@ -9088,7 +9088,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.UpdateProfilePerusahaanRequest": {
+        "model.UpdateProfilPerusahaanRequest": {
             "type": "object",
             "required": [
                 "nama"

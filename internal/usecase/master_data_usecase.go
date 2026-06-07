@@ -18,7 +18,7 @@ var (
 	ErrMasterDataNotFound             = errors.New("master data not found")
 	ErrMasterDataConflict             = errors.New("master data already exists")
 	ErrMasterDataDuplicateCode        = errors.New("master data code already exists")
-	ErrProfilePerusahaanAlreadyExists = errors.New("profile perusahaan data already exists")
+	ErrProfilPerusahaanAlreadyExists = errors.New("profil perusahaan data already exists")
 
 	departemenSortColumns  = buildSortWhitelist("created_at", "id_departemen", "nama_departemen")
 	jenisBarangSortColumns = buildSortWhitelist("created_at", "id_jenis_barang", "kode", "nama_jenis_barang")
@@ -584,18 +584,18 @@ func (u *MasterDataUseCase) DeleteHakAkses(ctx context.Context, id int32) error 
 	return nil
 }
 
-// PROFILE PERUSAHAAN
-func (u *MasterDataUseCase) GetProfilePerusahaan(ctx context.Context) (model.ProfilePerusahaanResponse, error) {
-	item, err := u.repo.GetProfilePerusahaan(ctx)
+// PROFIL PERUSAHAAN
+func (u *MasterDataUseCase) GetProfilPerusahaan(ctx context.Context) (model.ProfilPerusahaanResponse, error) {
+	item, err := u.repo.GetProfilPerusahaan(ctx)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return model.ProfilePerusahaanResponse{}, ErrMasterDataNotFound
+			return model.ProfilPerusahaanResponse{}, ErrMasterDataNotFound
 		}
-		return model.ProfilePerusahaanResponse{}, err
+		return model.ProfilPerusahaanResponse{}, err
 	}
 
-	return model.ProfilePerusahaanResponse{
-		ID:        item.IDProfilePerusahaan,
+	return model.ProfilPerusahaanResponse{
+		ID:        item.IDProfilPerusahaan,
 		Nama:      item.Nama,
 		Alamat:    item.Alamat,
 		Email:     item.Email,
@@ -606,17 +606,17 @@ func (u *MasterDataUseCase) GetProfilePerusahaan(ctx context.Context) (model.Pro
 	}, nil
 }
 
-func (u *MasterDataUseCase) GetProfilePerusahaanByID(ctx context.Context, id int32) (model.ProfilePerusahaanResponse, error) {
-	item, err := u.repo.GetProfilePerusahaanByID(ctx, id)
+func (u *MasterDataUseCase) GetProfilPerusahaanByID(ctx context.Context, id int32) (model.ProfilPerusahaanResponse, error) {
+	item, err := u.repo.GetProfilPerusahaanByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return model.ProfilePerusahaanResponse{}, ErrMasterDataNotFound
+			return model.ProfilPerusahaanResponse{}, ErrMasterDataNotFound
 		}
-		return model.ProfilePerusahaanResponse{}, err
+		return model.ProfilPerusahaanResponse{}, err
 	}
 
-	return model.ProfilePerusahaanResponse{
-		ID:        item.IDProfilePerusahaan,
+	return model.ProfilPerusahaanResponse{
+		ID:        item.IDProfilPerusahaan,
 		Nama:      item.Nama,
 		Alamat:    item.Alamat,
 		Email:     item.Email,
@@ -627,14 +627,14 @@ func (u *MasterDataUseCase) GetProfilePerusahaanByID(ctx context.Context, id int
 	}, nil
 }
 
-func (u *MasterDataUseCase) CreateProfilePerusahaan(ctx context.Context, req model.CreateProfilePerusahaanRequest) (model.ProfilePerusahaanResponse, error) {
-	if _, err := u.repo.GetProfilePerusahaan(ctx); err == nil {
-		return model.ProfilePerusahaanResponse{}, ErrProfilePerusahaanAlreadyExists
+func (u *MasterDataUseCase) CreateProfilPerusahaan(ctx context.Context, req model.CreateProfilPerusahaanRequest) (model.ProfilPerusahaanResponse, error) {
+	if _, err := u.repo.GetProfilPerusahaan(ctx); err == nil {
+		return model.ProfilPerusahaanResponse{}, ErrProfilPerusahaanAlreadyExists
 	} else if !errors.Is(err, pgx.ErrNoRows) {
-		return model.ProfilePerusahaanResponse{}, fmt.Errorf("check existing profile perusahaan: %w", err)
+		return model.ProfilPerusahaanResponse{}, fmt.Errorf("check existing profil perusahaan: %w", err)
 	}
 
-	item, err := u.repo.CreateProfilePerusahaan(ctx, entity.CreateProfilePerusahaanParams{
+	item, err := u.repo.CreateProfilPerusahaan(ctx, entity.CreateProfilPerusahaanParams{
 		Nama:   req.Nama,
 		Alamat: req.Alamat,
 		Email:  req.Email,
@@ -643,11 +643,11 @@ func (u *MasterDataUseCase) CreateProfilePerusahaan(ctx context.Context, req mod
 		Logo:   req.Logo,
 	})
 	if err != nil {
-		return model.ProfilePerusahaanResponse{}, mapMasterDataConflict(err)
+		return model.ProfilPerusahaanResponse{}, mapMasterDataConflict(err)
 	}
 
-	return model.ProfilePerusahaanResponse{
-		ID:        item.IDProfilePerusahaan,
+	return model.ProfilPerusahaanResponse{
+		ID:        item.IDProfilPerusahaan,
 		Nama:      item.Nama,
 		Alamat:    item.Alamat,
 		Email:     item.Email,
@@ -658,9 +658,9 @@ func (u *MasterDataUseCase) CreateProfilePerusahaan(ctx context.Context, req mod
 	}, nil
 }
 
-func (u *MasterDataUseCase) UpdateProfilePerusahaan(ctx context.Context, id int32, req model.UpdateProfilePerusahaanRequest) (model.ProfilePerusahaanResponse, error) {
-	item, err := u.repo.UpdateProfilePerusahaan(ctx, entity.UpdateProfilePerusahaanParams{
-		IDProfilePerusahaan: id,
+func (u *MasterDataUseCase) UpdateProfilPerusahaan(ctx context.Context, id int32, req model.UpdateProfilPerusahaanRequest) (model.ProfilPerusahaanResponse, error) {
+	item, err := u.repo.UpdateProfilPerusahaan(ctx, entity.UpdateProfilPerusahaanParams{
+		IDProfilPerusahaan: id,
 		Nama:                req.Nama,
 		Alamat:              req.Alamat,
 		Email:               req.Email,
@@ -670,13 +670,13 @@ func (u *MasterDataUseCase) UpdateProfilePerusahaan(ctx context.Context, id int3
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return model.ProfilePerusahaanResponse{}, ErrMasterDataNotFound
+			return model.ProfilPerusahaanResponse{}, ErrMasterDataNotFound
 		}
-		return model.ProfilePerusahaanResponse{}, mapMasterDataConflict(err)
+		return model.ProfilPerusahaanResponse{}, mapMasterDataConflict(err)
 	}
 
-	return model.ProfilePerusahaanResponse{
-		ID:        item.IDProfilePerusahaan,
+	return model.ProfilPerusahaanResponse{
+		ID:        item.IDProfilPerusahaan,
 		Nama:      item.Nama,
 		Alamat:    item.Alamat,
 		Email:     item.Email,
@@ -687,8 +687,8 @@ func (u *MasterDataUseCase) UpdateProfilePerusahaan(ctx context.Context, id int3
 	}, nil
 }
 
-func (u *MasterDataUseCase) DeleteProfilePerusahaan(ctx context.Context, id int32) error {
-	affected, err := u.repo.DeleteProfilePerusahaan(ctx, id)
+func (u *MasterDataUseCase) DeleteProfilPerusahaan(ctx context.Context, id int32) error {
+	affected, err := u.repo.DeleteProfilPerusahaan(ctx, id)
 	if err != nil {
 		return err
 	}
