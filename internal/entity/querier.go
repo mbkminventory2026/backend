@@ -139,6 +139,7 @@ type Querier interface {
 	ListHakAkses(ctx context.Context, arg ListHakAksesParams) ([]HakAkse, error)
 	ListJenisBarang(ctx context.Context, arg ListJenisBarangParams) ([]JenisBarang, error)
 	ListKomponenByMarkerPlanID(ctx context.Context, idMarkerPlan int32) ([]KomponenMarkerPlan, error)
+	ListMarkerPlans(ctx context.Context, arg ListMarkerPlansParams) ([]ListMarkerPlansRow, error)
 	ListMaterialListsByWorkOrderID(ctx context.Context, idWo int32) ([]ListMaterialListsByWorkOrderIDRow, error)
 	ListMitra(ctx context.Context, arg ListMitraParams) ([]Mitra, error)
 	ListPOClientItemsByPOClientID(ctx context.Context, idPoClient int32) ([]PoClientItem, error)

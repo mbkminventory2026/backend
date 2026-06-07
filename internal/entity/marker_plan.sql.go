@@ -205,6 +205,111 @@ func (q *Queries) ListKomponenByMarkerPlanID(ctx context.Context, idMarkerPlan i
 	return items, nil
 }
 
+const listMarkerPlans = `-- name: ListMarkerPlans :many
+SELECT
+    mp.id_marker_plan,
+    mp.no_dokumen,
+    mp.tanggal_efektif,
+    mp.id_wo_shell,
+    mp.created_at,
+    wos.fabric,
+    wos.color,
+    wo.id_wo,
+    wo.buyer,
+    wo.model,
+    COUNT(*) OVER() AS total_count
+FROM MARKER_PLAN mp
+JOIN WORK_ORDER_SHELL wos ON mp.id_wo_shell = wos.id_wo_shell
+JOIN WORK_ORDER wo ON wos.id_wo = wo.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
+WHERE (
+    $1 = '' OR
+    mp.no_dokumen ILIKE '%' || $1 || '%' OR
+    wo.buyer ILIKE '%' || $1 || '%' OR
+    wo.model ILIKE '%' || $1 || '%' OR
+    wos.fabric ILIKE '%' || $1 || '%'
+) AND (
+    $2::integer IS NULL OR
+    pc.id_mitra = $2::integer
+)
+ORDER BY
+    CASE WHEN $3::text = 'created_at' AND NOT $4::bool THEN mp.created_at END ASC,
+    CASE WHEN $3::text = 'created_at' AND $4::bool THEN mp.created_at END DESC,
+    CASE WHEN $3::text = 'no_dokumen' AND NOT $4::bool THEN mp.no_dokumen END ASC,
+    CASE WHEN $3::text = 'no_dokumen' AND $4::bool THEN mp.no_dokumen END DESC,
+    CASE WHEN $3::text = 'tanggal_efektif' AND NOT $4::bool THEN mp.tanggal_efektif END ASC,
+    CASE WHEN $3::text = 'tanggal_efektif' AND $4::bool THEN mp.tanggal_efektif END DESC,
+    CASE WHEN $3::text = 'model' AND NOT $4::bool THEN wo.model END ASC,
+    CASE WHEN $3::text = 'model' AND $4::bool THEN wo.model END DESC,
+    CASE WHEN $3::text = 'buyer' AND NOT $4::bool THEN wo.buyer END ASC,
+    CASE WHEN $3::text = 'buyer' AND $4::bool THEN wo.buyer END DESC,
+    mp.id_marker_plan DESC
+LIMIT $6 OFFSET $5
+`
+
+type ListMarkerPlansParams struct {
+	SearchTerm interface{} `json:"search_term"`
+	IDMitra    pgtype.Int4 `json:"id_mitra"`
+	SortBy     string      `json:"sort_by"`
+	SortDesc   bool        `json:"sort_desc"`
+	PageOffset int32       `json:"page_offset"`
+	PageLimit  int32       `json:"page_limit"`
+}
+
+type ListMarkerPlansRow struct {
+	IDMarkerPlan   int32              `json:"id_marker_plan"`
+	NoDokumen      string             `json:"no_dokumen"`
+	TanggalEfektif pgtype.Date        `json:"tanggal_efektif"`
+	IDWoShell      int32              `json:"id_wo_shell"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	Fabric         string             `json:"fabric"`
+	Color          string             `json:"color"`
+	IDWo           int32              `json:"id_wo"`
+	Buyer          string             `json:"buyer"`
+	Model          string             `json:"model"`
+	TotalCount     int64              `json:"total_count"`
+}
+
+func (q *Queries) ListMarkerPlans(ctx context.Context, arg ListMarkerPlansParams) ([]ListMarkerPlansRow, error) {
+	rows, err := q.db.Query(ctx, listMarkerPlans,
+		arg.SearchTerm,
+		arg.IDMitra,
+		arg.SortBy,
+		arg.SortDesc,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListMarkerPlansRow
+	for rows.Next() {
+		var i ListMarkerPlansRow
+		if err := rows.Scan(
+			&i.IDMarkerPlan,
+			&i.NoDokumen,
+			&i.TanggalEfektif,
+			&i.IDWoShell,
+			&i.CreatedAt,
+			&i.Fabric,
+			&i.Color,
+			&i.IDWo,
+			&i.Buyer,
+			&i.Model,
+			&i.TotalCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRatioByKomponenID = `-- name: ListRatioByKomponenID :many
 SELECT ID_RATIO_MARKER, ID_KOMPONEN_MARKER, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN,
        PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER, ROLL_QTY, SAMBUNGAN_ROLL,

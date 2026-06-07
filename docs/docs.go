@@ -813,6 +813,61 @@ const docTemplate = `{
             }
         },
         "/api/v1/marker-plans": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of marker plans.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marker Plan"
+                ],
+                "summary": "List Marker Plans",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by document number, model, buyer, fabric",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanListSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.MarkerPlanErrorDoc"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -6873,6 +6928,71 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "error"
+                }
+            }
+        },
+        "model.MarkerPlanListItem": {
+            "type": "object",
+            "properties": {
+                "buyer": {
+                    "type": "string"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "fabric": {
+                    "type": "string"
+                },
+                "id_marker_plan": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "no_dokumen": {
+                    "type": "string"
+                },
+                "tanggal_efektif": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.MarkerPlanListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.MarkerPlanListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/model.PaginationMeta"
+                }
+            }
+        },
+        "model.MarkerPlanListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.MarkerPlanListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "marker plans retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },

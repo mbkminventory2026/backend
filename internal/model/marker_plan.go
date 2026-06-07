@@ -104,3 +104,27 @@ type MarkerPlanValidationErrorDoc struct {
 	Message string                         `json:"message" example:"bad request"`
 	Error   []response.ValidationErrorItem `json:"error"`
 }
+
+type MarkerPlanListItem struct {
+	IDMarkerPlan   int32  `json:"id_marker_plan"`
+	NoDokumen      string `json:"no_dokumen"`
+	TanggalEfektif string `json:"tanggal_efektif"`
+	IDWoShell      int32  `json:"id_wo_shell"`
+	Fabric         string `json:"fabric"`
+	Color          string `json:"color"`
+	IDWo           int32  `json:"id_wo"`
+	Buyer          string `json:"buyer"`
+	Model          string `json:"model"`
+	CreatedAt      string `json:"created_at"`
+}
+
+type MarkerPlanListResponse struct {
+	Items      []MarkerPlanListItem `json:"items"`
+	Pagination PaginationMeta       `json:"pagination"`
+}
+
+type MarkerPlanListSuccessDoc struct {
+	Status  string                 `json:"status" example:"success"`
+	Message string                 `json:"message" example:"marker plans retrieved"`
+	Data    MarkerPlanListResponse `json:"data"`
+}

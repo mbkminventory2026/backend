@@ -1365,6 +1365,49 @@ definitions:
         example: error
         type: string
     type: object
+  model.MarkerPlanListItem:
+    properties:
+      buyer:
+        type: string
+      color:
+        type: string
+      created_at:
+        type: string
+      fabric:
+        type: string
+      id_marker_plan:
+        type: integer
+      id_wo:
+        type: integer
+      id_wo_shell:
+        type: integer
+      model:
+        type: string
+      no_dokumen:
+        type: string
+      tanggal_efektif:
+        type: string
+    type: object
+  model.MarkerPlanListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.MarkerPlanListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.MarkerPlanListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.MarkerPlanListResponse'
+      message:
+        example: marker plans retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.MarkerPlanResponse:
     properties:
       components:
@@ -3765,6 +3808,41 @@ paths:
       tags:
       - Dashboard
   /api/v1/marker-plans:
+    get:
+      description: Returns a paginated list of marker plans.
+      parameters:
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Search by document number, model, buyer, fabric
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MarkerPlanListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.MarkerPlanErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.MarkerPlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: List Marker Plans
+      tags:
+      - Marker Plan
     post:
       consumes:
       - application/json

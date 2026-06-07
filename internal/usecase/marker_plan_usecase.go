@@ -21,6 +21,8 @@ var (
 	ErrMarkerPlanReferenceNotFound = errors.New("related data not found")
 )
 
+var markerPlanSortColumns = buildSortWhitelist("created_at", "no_dokumen", "tanggal_efektif", "model", "buyer")
+
 type MarkerPlanUseCase struct {
 	repo   entity.Querier
 	dbPool *pgxpool.Pool
@@ -211,6 +213,45 @@ func (u *MarkerPlanUseCase) GetMarkerPlan(ctx context.Context, idMarkerPlan int3
 		IDWoShell:      header.IDWoShell,
 		CreatedAt:      header.CreatedAt.Time.Format(time.RFC3339),
 		Components:     components,
+	}, nil
+}
+
+func (u *MarkerPlanUseCase) ListMarkerPlans(ctx context.Context, filter model.TransactionListFilter) (*model.MarkerPlanListResponse, error) {
+	page, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "id_marker_plan", true, markerPlanSortColumns)
+
+	rows, err := u.repo.ListMarkerPlans(ctx, entity.ListMarkerPlansParams{
+		SearchTerm: search,
+		IDMitra:    nullableInt32Param(filter.IDMitra),
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to list marker plans: %w", ErrWorkOrderServiceUnavailable, err)
+	}
+
+	items := make([]model.MarkerPlanListItem, 0, len(rows))
+	total := int64(0)
+	for _, row := range rows {
+		total = row.TotalCount
+		items = append(items, model.MarkerPlanListItem{
+			IDMarkerPlan:   row.IDMarkerPlan,
+			NoDokumen:      row.NoDokumen,
+			TanggalEfektif: formatDate(row.TanggalEfektif),
+			IDWoShell:      row.IDWoShell,
+			Fabric:         row.Fabric,
+			Color:          row.Color,
+			IDWo:           row.IDWo,
+			Buyer:          row.Buyer,
+			Model:          row.Model,
+			CreatedAt:      row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	return &model.MarkerPlanListResponse{
+		Items:      items,
+		Pagination: buildPagination(total, page, limit),
 	}, nil
 }
 

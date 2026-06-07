@@ -26,6 +26,7 @@ func (h *MarkerPlanHandler) RegisterRoutes(router gin.IRouter, authMiddleware gi
 	v1 := router.Group("/api/v1").Use(authMiddleware)
 
 	v1.POST("/marker-plans", RequirePermission(PermissionMarkerPlanCreate), h.CreateMarkerPlan)
+	v1.GET("/marker-plans", RequirePermission(PermissionMarkerPlanRead), h.ListMarkerPlans)
 	v1.GET("/marker-plans/:id", RequirePermission(PermissionMarkerPlanRead), h.GetMarkerPlan)
 }
 
@@ -86,6 +87,42 @@ func (h *MarkerPlanHandler) GetMarkerPlan(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusOK, "marker plan retrieved", item)
+}
+
+// ListMarkerPlans godoc
+// @Summary      List Marker Plans
+// @Description  Returns a paginated list of marker plans.
+// @Tags         Marker Plan
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page    query     int     false  "Page (default 1)"
+// @Param        limit   query     int     false  "Limit (default 20)"
+// @Param        search  query     string  false  "Search by document number, model, buyer, fabric"
+// @Success      200     {object}  model.MarkerPlanListSuccessDoc
+// @Failure      400     {object}  model.MarkerPlanErrorDoc
+// @Failure      500     {object}  model.MarkerPlanErrorDoc
+// @Router       /api/v1/marker-plans [get]
+func (h *MarkerPlanHandler) ListMarkerPlans(c *gin.Context) {
+	filter, err := parseListQuery(c, 20)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
+		return
+	}
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid authentication context", nil))
+		return
+	}
+
+	item, err := h.useCase.ListMarkerPlans(c.Request.Context(), model.TransactionListFilter{
+		ListQueryFilter: filter,
+		IDMitra:         mitraID,
+	})
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "marker plans retrieved", item)
 }
 
 func (h *MarkerPlanHandler) handleError(c *gin.Context, err error) {
