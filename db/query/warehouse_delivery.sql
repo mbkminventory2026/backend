@@ -85,22 +85,26 @@ RETURNING id_packing_list_item, id_packing_list, color, qty_box, qty_per_box, bo
 -- name: CreatePackingListItemSize :one
 INSERT INTO PACKING_LIST_ITEM_SIZE (
     qty,
-    id_packing_list_item
+    id_packing_list_item,
+    id_wo_shell_size
 ) VALUES (
     sqlc.arg(qty),
-    sqlc.arg(id_packing_list_item)
+    sqlc.arg(id_packing_list_item),
+    sqlc.arg(id_wo_shell_size)
 )
-RETURNING id_packing_list_item_size, qty, id_packing_list_item, created_at;
+RETURNING id_packing_list_item_size, qty, id_packing_list_item, id_wo_shell_size, created_at;
 
 -- name: CreatePackingListRejectSize :one
 INSERT INTO PACKING_LIST_REJECT_SIZE (
     qty,
-    id_packing_list
+    id_packing_list,
+    id_wo_shell_size
 ) VALUES (
     sqlc.arg(qty),
-    sqlc.arg(id_packing_list)
+    sqlc.arg(id_packing_list),
+    sqlc.arg(id_wo_shell_size)
 )
-RETURNING id_packing_list_reject_size, qty, id_packing_list, created_at;
+RETURNING id_packing_list_reject_size, qty, id_packing_list, id_wo_shell_size, created_at;
 
 -- name: CreateSuratJalanInternal :one
 INSERT INTO SURAT_JALAN_INTERNAL DEFAULT VALUES

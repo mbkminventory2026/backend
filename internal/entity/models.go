@@ -166,6 +166,7 @@ type PackingListItemSize struct {
 	Qty                   int32              `json:"qty"`
 	IDPackingListItem     int32              `json:"id_packing_list_item"`
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
+	IDWoShellSize         int32              `json:"id_wo_shell_size"`
 }
 
 type PackingListRejectSize struct {
@@ -173,6 +174,7 @@ type PackingListRejectSize struct {
 	Qty                     int32              `json:"qty"`
 	IDPackingList           int32              `json:"id_packing_list"`
 	CreatedAt               pgtype.Timestamptz `json:"created_at"`
+	IDWoShellSize           int32              `json:"id_wo_shell_size"`
 }
 
 type PasswordResetRequest struct {

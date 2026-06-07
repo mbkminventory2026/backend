@@ -111,26 +111,38 @@ func (q *Queries) CreatePackingListItem(ctx context.Context, arg CreatePackingLi
 const createPackingListItemSize = `-- name: CreatePackingListItemSize :one
 INSERT INTO PACKING_LIST_ITEM_SIZE (
     qty,
-    id_packing_list_item
+    id_packing_list_item,
+    id_wo_shell_size
 ) VALUES (
     $1,
-    $2
+    $2,
+    $3
 )
-RETURNING id_packing_list_item_size, qty, id_packing_list_item, created_at
+RETURNING id_packing_list_item_size, qty, id_packing_list_item, id_wo_shell_size, created_at
 `
 
 type CreatePackingListItemSizeParams struct {
 	Qty               int32 `json:"qty"`
 	IDPackingListItem int32 `json:"id_packing_list_item"`
+	IDWoShellSize     int32 `json:"id_wo_shell_size"`
 }
 
-func (q *Queries) CreatePackingListItemSize(ctx context.Context, arg CreatePackingListItemSizeParams) (PackingListItemSize, error) {
-	row := q.db.QueryRow(ctx, createPackingListItemSize, arg.Qty, arg.IDPackingListItem)
-	var i PackingListItemSize
+type CreatePackingListItemSizeRow struct {
+	IDPackingListItemSize int32              `json:"id_packing_list_item_size"`
+	Qty                   int32              `json:"qty"`
+	IDPackingListItem     int32              `json:"id_packing_list_item"`
+	IDWoShellSize         int32              `json:"id_wo_shell_size"`
+	CreatedAt             pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) CreatePackingListItemSize(ctx context.Context, arg CreatePackingListItemSizeParams) (CreatePackingListItemSizeRow, error) {
+	row := q.db.QueryRow(ctx, createPackingListItemSize, arg.Qty, arg.IDPackingListItem, arg.IDWoShellSize)
+	var i CreatePackingListItemSizeRow
 	err := row.Scan(
 		&i.IDPackingListItemSize,
 		&i.Qty,
 		&i.IDPackingListItem,
+		&i.IDWoShellSize,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -139,26 +151,38 @@ func (q *Queries) CreatePackingListItemSize(ctx context.Context, arg CreatePacki
 const createPackingListRejectSize = `-- name: CreatePackingListRejectSize :one
 INSERT INTO PACKING_LIST_REJECT_SIZE (
     qty,
-    id_packing_list
+    id_packing_list,
+    id_wo_shell_size
 ) VALUES (
     $1,
-    $2
+    $2,
+    $3
 )
-RETURNING id_packing_list_reject_size, qty, id_packing_list, created_at
+RETURNING id_packing_list_reject_size, qty, id_packing_list, id_wo_shell_size, created_at
 `
 
 type CreatePackingListRejectSizeParams struct {
 	Qty           int32 `json:"qty"`
 	IDPackingList int32 `json:"id_packing_list"`
+	IDWoShellSize int32 `json:"id_wo_shell_size"`
 }
 
-func (q *Queries) CreatePackingListRejectSize(ctx context.Context, arg CreatePackingListRejectSizeParams) (PackingListRejectSize, error) {
-	row := q.db.QueryRow(ctx, createPackingListRejectSize, arg.Qty, arg.IDPackingList)
-	var i PackingListRejectSize
+type CreatePackingListRejectSizeRow struct {
+	IDPackingListRejectSize int32              `json:"id_packing_list_reject_size"`
+	Qty                     int32              `json:"qty"`
+	IDPackingList           int32              `json:"id_packing_list"`
+	IDWoShellSize           int32              `json:"id_wo_shell_size"`
+	CreatedAt               pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) CreatePackingListRejectSize(ctx context.Context, arg CreatePackingListRejectSizeParams) (CreatePackingListRejectSizeRow, error) {
+	row := q.db.QueryRow(ctx, createPackingListRejectSize, arg.Qty, arg.IDPackingList, arg.IDWoShellSize)
+	var i CreatePackingListRejectSizeRow
 	err := row.Scan(
 		&i.IDPackingListRejectSize,
 		&i.Qty,
 		&i.IDPackingList,
+		&i.IDWoShellSize,
 		&i.CreatedAt,
 	)
 	return i, err

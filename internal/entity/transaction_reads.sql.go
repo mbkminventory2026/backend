@@ -898,6 +898,7 @@ SELECT
     plis.id_packing_list_item_size,
     plis.qty,
     plis.id_packing_list_item,
+    plis.id_wo_shell_size,
     plis.created_at
 FROM PACKING_LIST_ITEM_SIZE plis
 JOIN PACKING_LIST_ITEM pli ON pli.id_packing_list_item = plis.id_packing_list_item
@@ -905,19 +906,28 @@ WHERE pli.id_packing_list = $1
 ORDER BY plis.id_packing_list_item_size ASC
 `
 
-func (q *Queries) ListPackingListItemSizesByPackingListID(ctx context.Context, idPackingList int32) ([]PackingListItemSize, error) {
+type ListPackingListItemSizesByPackingListIDRow struct {
+	IDPackingListItemSize int32              `json:"id_packing_list_item_size"`
+	Qty                   int32              `json:"qty"`
+	IDPackingListItem     int32              `json:"id_packing_list_item"`
+	IDWoShellSize         int32              `json:"id_wo_shell_size"`
+	CreatedAt             pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) ListPackingListItemSizesByPackingListID(ctx context.Context, idPackingList int32) ([]ListPackingListItemSizesByPackingListIDRow, error) {
 	rows, err := q.db.Query(ctx, listPackingListItemSizesByPackingListID, idPackingList)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []PackingListItemSize
+	var items []ListPackingListItemSizesByPackingListIDRow
 	for rows.Next() {
-		var i PackingListItemSize
+		var i ListPackingListItemSizesByPackingListIDRow
 		if err := rows.Scan(
 			&i.IDPackingListItemSize,
 			&i.Qty,
 			&i.IDPackingListItem,
+			&i.IDWoShellSize,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -981,25 +991,35 @@ SELECT
     plrs.id_packing_list_reject_size,
     plrs.qty,
     plrs.id_packing_list,
+    plrs.id_wo_shell_size,
     plrs.created_at
 FROM PACKING_LIST_REJECT_SIZE plrs
 WHERE plrs.id_packing_list = $1
 ORDER BY plrs.id_packing_list_reject_size ASC
 `
 
-func (q *Queries) ListPackingListRejectSizesByPackingListID(ctx context.Context, idPackingList int32) ([]PackingListRejectSize, error) {
+type ListPackingListRejectSizesByPackingListIDRow struct {
+	IDPackingListRejectSize int32              `json:"id_packing_list_reject_size"`
+	Qty                     int32              `json:"qty"`
+	IDPackingList           int32              `json:"id_packing_list"`
+	IDWoShellSize           int32              `json:"id_wo_shell_size"`
+	CreatedAt               pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) ListPackingListRejectSizesByPackingListID(ctx context.Context, idPackingList int32) ([]ListPackingListRejectSizesByPackingListIDRow, error) {
 	rows, err := q.db.Query(ctx, listPackingListRejectSizesByPackingListID, idPackingList)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []PackingListRejectSize
+	var items []ListPackingListRejectSizesByPackingListIDRow
 	for rows.Next() {
-		var i PackingListRejectSize
+		var i ListPackingListRejectSizesByPackingListIDRow
 		if err := rows.Scan(
 			&i.IDPackingListRejectSize,
 			&i.Qty,
 			&i.IDPackingList,
+			&i.IDWoShellSize,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err

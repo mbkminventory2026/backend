@@ -5875,7 +5875,13 @@ const docTemplate = `{
         },
         "model.CreatePackingListItemSizeRequest": {
             "type": "object",
+            "required": [
+                "id_wo_shell_size"
+            ],
             "properties": {
+                "id_wo_shell_size": {
+                    "type": "integer"
+                },
                 "qty": {
                     "type": "integer",
                     "minimum": 0
@@ -5884,7 +5890,13 @@ const docTemplate = `{
         },
         "model.CreatePackingListRejectSizeRequest": {
             "type": "object",
+            "required": [
+                "id_wo_shell_size"
+            ],
             "properties": {
+                "id_wo_shell_size": {
+                    "type": "integer"
+                },
                 "qty": {
                     "type": "integer",
                     "minimum": 0
@@ -7871,6 +7883,9 @@ const docTemplate = `{
                 "id_packing_list_item_size": {
                     "type": "integer"
                 },
+                "id_wo_shell_size": {
+                    "type": "integer"
+                },
                 "qty": {
                     "type": "integer"
                 }
@@ -7942,6 +7957,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id_packing_list_reject_size": {
+                    "type": "integer"
+                },
+                "id_wo_shell_size": {
                     "type": "integer"
                 },
                 "qty": {

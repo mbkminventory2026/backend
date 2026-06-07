@@ -464,6 +464,7 @@ SELECT
     plis.id_packing_list_item_size,
     plis.qty,
     plis.id_packing_list_item,
+    plis.id_wo_shell_size,
     plis.created_at
 FROM PACKING_LIST_ITEM_SIZE plis
 JOIN PACKING_LIST_ITEM pli ON pli.id_packing_list_item = plis.id_packing_list_item
@@ -475,6 +476,7 @@ SELECT
     plrs.id_packing_list_reject_size,
     plrs.qty,
     plrs.id_packing_list,
+    plrs.id_wo_shell_size,
     plrs.created_at
 FROM PACKING_LIST_REJECT_SIZE plrs
 WHERE plrs.id_packing_list = sqlc.arg(id_packing_list)

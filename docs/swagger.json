@@ -5872,7 +5872,13 @@
         },
         "model.CreatePackingListItemSizeRequest": {
             "type": "object",
+            "required": [
+                "id_wo_shell_size"
+            ],
             "properties": {
+                "id_wo_shell_size": {
+                    "type": "integer"
+                },
                 "qty": {
                     "type": "integer",
                     "minimum": 0
@@ -5881,7 +5887,13 @@
         },
         "model.CreatePackingListRejectSizeRequest": {
             "type": "object",
+            "required": [
+                "id_wo_shell_size"
+            ],
             "properties": {
+                "id_wo_shell_size": {
+                    "type": "integer"
+                },
                 "qty": {
                     "type": "integer",
                     "minimum": 0
@@ -7868,6 +7880,9 @@
                 "id_packing_list_item_size": {
                     "type": "integer"
                 },
+                "id_wo_shell_size": {
+                    "type": "integer"
+                },
                 "qty": {
                     "type": "integer"
                 }
@@ -7939,6 +7954,9 @@
                     "type": "string"
                 },
                 "id_packing_list_reject_size": {
+                    "type": "integer"
+                },
+                "id_wo_shell_size": {
                     "type": "integer"
                 },
                 "qty": {

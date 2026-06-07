@@ -36,11 +36,13 @@ type IssueInventoryResponse struct {
 }
 
 type CreatePackingListItemSizeRequest struct {
-	Qty int32 `json:"qty" binding:"gte=0"`
+	IDWOShellSize int32 `json:"id_wo_shell_size" binding:"required,gt=0"`
+	Qty           int32 `json:"qty" binding:"gte=0"`
 }
 
 type CreatePackingListRejectSizeRequest struct {
-	Qty int32 `json:"qty" binding:"gte=0"`
+	IDWOShellSize int32 `json:"id_wo_shell_size" binding:"required,gt=0"`
+	Qty           int32 `json:"qty" binding:"gte=0"`
 }
 
 type CreatePackingListItemRequest struct {
@@ -63,15 +65,17 @@ type CreatePackingListRequest struct {
 }
 
 type PackingListItemSizeResponse struct {
-	ID        int32  `json:"id_packing_list_item_size"`
-	Qty       int32  `json:"qty"`
-	CreatedAt string `json:"created_at"`
+	ID            int32  `json:"id_packing_list_item_size"`
+	IDWOShellSize int32  `json:"id_wo_shell_size"`
+	Qty           int32  `json:"qty"`
+	CreatedAt     string `json:"created_at"`
 }
 
 type PackingListRejectSizeResponse struct {
-	ID        int32  `json:"id_packing_list_reject_size"`
-	Qty       int32  `json:"qty"`
-	CreatedAt string `json:"created_at"`
+	ID            int32  `json:"id_packing_list_reject_size"`
+	IDWOShellSize int32  `json:"id_wo_shell_size"`
+	Qty           int32  `json:"qty"`
+	CreatedAt     string `json:"created_at"`
 }
 
 type PackingListItemResponse struct {
