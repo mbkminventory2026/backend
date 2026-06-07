@@ -23,3 +23,11 @@ func nullableTimestampString(value pgtype.Timestamptz) string {
 	}
 	return value.Time.Format("2006-01-02T15:04:05Z07:00")
 }
+
+func nullableStringPtr(value pgtype.Text) *string {
+	if !value.Valid {
+		return nil
+	}
+	v := value.String
+	return &v
+}

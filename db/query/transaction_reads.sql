@@ -12,7 +12,15 @@ SELECT
     wo.closed_at,
     wo.created_at,
     pc.po_number,
+    pc.id_po_client,
     pci.style AS po_client_item_style,
+    EXISTS (
+        SELECT 1 FROM RETUR_CLIENT rc WHERE rc.id_wo = wo.id_wo
+    )::boolean AS has_retur,
+    COALESCE(
+        (SELECT rc.file FROM RETUR_CLIENT rc WHERE rc.id_wo = wo.id_wo LIMIT 1),
+        ''
+    )::text AS retur_file,
     COUNT(*) OVER() AS total_count
 FROM v_work_order wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
@@ -146,6 +154,13 @@ SELECT
     pc.id_mitra,
     pc.created_at,
     m.nama_perusahaan AS mitra_name,
+    EXISTS (
+        SELECT 1
+        FROM PO_CLIENT_ITEM pci
+        JOIN WORK_ORDER wo ON wo.id_po_client_item = pci.id_po_client_item
+        JOIN RETUR_CLIENT rc ON rc.id_wo = wo.id_wo
+        WHERE pci.id_po_client = pc.id_po_client
+    )::boolean AS has_retur,
     COUNT(*) OVER() AS total_count
 FROM PO_CLIENT pc
 JOIN MITRA m ON m.id_mitra = pc.id_mitra
@@ -199,17 +214,25 @@ LIMIT 1;
 
 -- name: ListPOClientItemsByPOClientID :many
 SELECT
-    id_po_client_item,
-    id_po_client,
-    style,
-    colour,
-    description,
-    qty,
-    price,
-    created_at
-FROM PO_CLIENT_ITEM
-WHERE id_po_client = sqlc.arg(id_po_client)
-ORDER BY id_po_client_item ASC;
+    pci.id_po_client_item,
+    pci.id_po_client,
+    pci.style,
+    pci.colour,
+    pci.description,
+    pci.qty,
+    pci.price,
+    pci.created_at,
+    wo.id_wo,
+    wo.status AS wo_status,
+    EXISTS (
+        SELECT 1 FROM RETUR_CLIENT rc WHERE rc.id_wo = wo.id_wo
+    )::boolean AS has_retur
+FROM PO_CLIENT_ITEM pci
+LEFT JOIN v_work_order wo ON wo.id_po_client_item = pci.id_po_client_item
+WHERE pci.id_po_client = sqlc.arg(id_po_client)
+ORDER BY pci.id_po_client_item ASC;
+
+
 
 -- name: ListPenanggungJawabByPOClientID :many
 SELECT

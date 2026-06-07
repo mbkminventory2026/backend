@@ -15,18 +15,21 @@ type PaginationMeta struct {
 }
 
 type WorkOrderListItem struct {
-	ID                int32  `json:"id_wo"`
-	Buyer             string `json:"buyer"`
-	Model             string `json:"model"`
-	Qty               int32  `json:"qty"`
-	FOBCMT            bool   `json:"fob_cmt"`
-	Delivery          string `json:"delivery"`
-	IDPOClientItem    int32  `json:"id_po_client_item"`
-	Status            string `json:"status"`
-	ClosedAt          string `json:"closed_at,omitempty"`
-	PONumber          string `json:"po_number"`
-	POClientItemStyle string `json:"po_client_item_style"`
-	CreatedAt         string `json:"created_at"`
+	ID                int32   `json:"id_wo"`
+	Buyer             string  `json:"buyer"`
+	Model             string  `json:"model"`
+	Qty               int32   `json:"qty"`
+	FOBCMT            bool    `json:"fob_cmt"`
+	Delivery          string  `json:"delivery"`
+	IDPOClientItem    int32   `json:"id_po_client_item"`
+	Status            string  `json:"status"`
+	ClosedAt          string  `json:"closed_at,omitempty"`
+	PONumber          string  `json:"po_number"`
+	POClientItemStyle string  `json:"po_client_item_style"`
+	CreatedAt         string  `json:"created_at"`
+	HasRetur          bool    `json:"has_retur"`
+	IDPOClient        int32   `json:"id_po_client"`
+	ReturFile         *string `json:"retur_file,omitempty"`
 }
 
 type WorkOrderDetailResponse struct {
@@ -63,6 +66,7 @@ type POClientListItem struct {
 	IDMitra   int32  `json:"id_mitra"`
 	MitraName string `json:"mitra_name"`
 	CreatedAt string `json:"created_at"`
+	HasRetur  bool   `json:"has_retur"`
 }
 
 type POClientDetailResponse struct {
