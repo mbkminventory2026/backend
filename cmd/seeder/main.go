@@ -124,7 +124,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 14. Sync Sequences
+	// 14. Seed Timeline Plan
+	err = seedTimelinePlan(ctx, dbPool)
+	if err != nil {
+		slog.Error("failed to seed Timeline Plan", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	// 15. Sync Sequences
 	err = syncSequences(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to sync sequences", slog.String("error", err.Error()))
@@ -165,6 +172,8 @@ func syncSequences(ctx context.Context, db *pgxpool.Pool) error {
 		{"komponen_marker_plan_id_komponen_marker_seq", "komponen_marker_plan", "id_komponen_marker"},
 		{"ratio_marker_id_ratio_marker_seq", "ratio_marker", "id_ratio_marker"},
 		{"ratio_size_marker_id_ratio_size_marker_seq", "ratio_size_marker", "id_ratio_size_marker"},
+		{"timeline_plan_produksi_id_timeline_seq", "timeline_plan_produksi", "id_timeline"},
+		{"wo_shell_plan_id_wo_shell_plan_seq", "wo_shell_plan", "id_wo_shell_plan"},
 	}
 
 	for _, q := range queries {
@@ -603,6 +612,70 @@ func seedSystemUsers(ctx context.Context, db *pgxpool.Pool) error {
 		IDMitra:                  &clientMitraID,
 	}); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func seedTimelinePlan(ctx context.Context, db *pgxpool.Pool) error {
+	var exists bool
+	err := db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM TIMELINE_PLAN_PRODUKSI WHERE NOTES = 'Initial Master Timeline')`).Scan(&exists)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		// Dapatkan PO Client
+		var idPoClient int32
+		err = db.QueryRow(ctx, `SELECT ID_PO_CLIENT FROM PO_CLIENT WHERE PO_NUMBER = 'PO-CLI-2026-001' LIMIT 1`).Scan(&idPoClient)
+		if err != nil {
+			return fmt.Errorf("failed to get PO Client for timeline seeder: %w", err)
+		}
+
+		// Insert Timeline Plan Produksi
+		var idTimeline int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO TIMELINE_PLAN_PRODUKSI (ID_PO_CLIENT, TANGGAL_DISUSUN, NOTES)
+			VALUES ($1, '2026-06-07', 'Initial Master Timeline')
+			RETURNING ID_TIMELINE
+		`, idPoClient).Scan(&idTimeline)
+		if err != nil {
+			return err
+		}
+		slog.Info("timeline plan seeded", slog.Int("id", int(idTimeline)))
+
+		// Dapatkan WO Shell
+		var idWoShell int32
+		err = db.QueryRow(ctx, `
+			SELECT s.ID_WO_SHELL 
+			FROM WORK_ORDER_SHELL s 
+			JOIN WORK_ORDER w ON s.ID_WO = w.ID_WO 
+			WHERE w.MODEL = 'Basic Crewneck T-Shirt Black' LIMIT 1
+		`).Scan(&idWoShell)
+		if err != nil {
+			return fmt.Errorf("failed to get WO Shell for timeline seeder: %w", err)
+		}
+
+		// Insert WO Shell Plan
+		_, err = db.Exec(ctx, `
+			INSERT INTO WO_SHELL_PLAN (
+				ID_TIMELINE, ID_WO_SHELL, IN_LINE, 
+				TGL_GELAR_CUTTING, STATUS_GELAR_CUTTING,
+				TGL_EMBROO, STATUS_EMBROO,
+				TGL_LOADING_SEWING, STATUS_LOADING_SEWING,
+				TGL_FINISHING_PACKING, STATUS_FINISHING_PACKING
+			) VALUES (
+				$1, $2, 'Line 1',
+				'2026-06-10', 'PENDING',
+				'2026-06-12', 'PENDING',
+				'2026-06-15', 'PENDING',
+				'2026-06-20', 'PENDING'
+			)
+		`, idTimeline, idWoShell)
+		if err != nil {
+			return err
+		}
+		slog.Info("wo shell plan seeded for timeline", slog.Int("id_timeline", int(idTimeline)))
 	}
 
 	return nil
