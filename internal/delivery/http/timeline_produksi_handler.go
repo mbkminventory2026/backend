@@ -26,8 +26,39 @@ func (h *TimelineProduksiHandler) RegisterRoutes(router gin.IRouter, authMiddlew
 	v1 := router.Group("/api/v1").Use(authMiddleware, RequireInternalUser())
 
 	v1.POST("/timeline-plans", RequirePermission(PermissionTimelineCreate), h.CreateTimelinePlan)
+	v1.GET("/timeline-plans", RequirePermission(PermissionTimelineRead), h.GetTimelinePlans)
 	v1.GET("/timeline-plans/:id", RequirePermission(PermissionTimelineRead), h.GetTimelinePlan)
 	v1.PATCH("/timeline-plans/wo-shell-plans/:id/status", RequirePermission(PermissionTimelineUpdate), h.UpdateWOShellPlanStatus)
+}
+
+// GetTimelinePlans godoc
+// @Summary      Get List of Timeline Plans
+// @Description  Get a paginated list of timeline plans
+// @Tags         Timeline & Production Plan
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page    query     int     false  "Page number" default(1)
+// @Param        limit   query     int     false  "Number of items per page" default(10)
+// @Param        search  query     string  false  "Search term"
+// @Param        sort    query     string  false  "Sort by column" default(created_at)
+// @Param        desc    query     bool    false  "Sort descending" default(true)
+// @Success      200     {object}  model.TimelinePlanListSuccessDoc
+// @Failure      400     {object}  model.TimelinePlanErrorDoc
+// @Failure      500     {object}  model.TimelinePlanErrorDoc
+// @Router       /api/v1/timeline-plans [get]
+func (h *TimelineProduksiHandler) GetTimelinePlans(c *gin.Context) {
+	filter, err := parseListQuery(c, 10)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query parameter", nil))
+		return
+	}
+
+	result, err := h.useCase.GetTimelinePlans(c.Request.Context(), filter)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "timeline plans retrieved", result)
 }
 
 // CreateTimelinePlan godoc
