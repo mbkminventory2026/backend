@@ -5958,13 +5958,13 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "id_wo_shell_size",
-                "qty_plan"
+                "ratio_plan"
             ],
             "properties": {
                 "id_wo_shell_size": {
                     "type": "integer"
                 },
-                "qty_plan": {
+                "ratio_plan": {
                     "type": "integer",
                     "minimum": 0
                 }
@@ -8097,7 +8097,7 @@ const docTemplate = `{
                 "id_wo_shell_size": {
                     "type": "integer"
                 },
-                "qty_plan": {
+                "ratio_plan": {
                     "type": "integer"
                 },
                 "size": {

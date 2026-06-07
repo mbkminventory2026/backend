@@ -151,7 +151,7 @@ func (q *Queries) CreateRatioMarker(ctx context.Context, arg CreateRatioMarkerPa
 type CreateRatioSizeMarkerParams struct {
 	IDRatioMarker int32 `json:"id_ratio_marker"`
 	IDWoShellSize int32 `json:"id_wo_shell_size"`
-	QtyPlan       int32 `json:"qty_plan"`
+	RatioPlan     int32 `json:"ratio_plan"`
 }
 
 const getMarkerPlanByID = `-- name: GetMarkerPlanByID :one
@@ -271,7 +271,7 @@ func (q *Queries) ListRatioByKomponenID(ctx context.Context, idKomponenMarker in
 }
 
 const listRatioSizeByRatioID = `-- name: ListRatioSizeByRatioID :many
-SELECT rsm.ID_RATIO_SIZE_MARKER, rsm.ID_RATIO_MARKER, rsm.ID_WO_SHELL_SIZE, rsm.QTY_PLAN, wss.SIZE
+SELECT rsm.ID_RATIO_SIZE_MARKER, rsm.ID_RATIO_MARKER, rsm.ID_WO_SHELL_SIZE, rsm.RATIO_PLAN, wss.SIZE
 FROM RATIO_SIZE_MARKER rsm
 JOIN WORK_ORDER_SHELL_SIZE wss ON rsm.ID_WO_SHELL_SIZE = wss.ID_WO_SHELL_SIZE
 WHERE rsm.ID_RATIO_MARKER = $1
@@ -282,7 +282,7 @@ type ListRatioSizeByRatioIDRow struct {
 	IDRatioSizeMarker int32  `json:"id_ratio_size_marker"`
 	IDRatioMarker     int32  `json:"id_ratio_marker"`
 	IDWoShellSize     int32  `json:"id_wo_shell_size"`
-	QtyPlan           int32  `json:"qty_plan"`
+	RatioPlan         int32  `json:"ratio_plan"`
 	Size              string `json:"size"`
 }
 
@@ -299,7 +299,7 @@ func (q *Queries) ListRatioSizeByRatioID(ctx context.Context, idRatioMarker int3
 			&i.IDRatioSizeMarker,
 			&i.IDRatioMarker,
 			&i.IDWoShellSize,
-			&i.QtyPlan,
+			&i.RatioPlan,
 			&i.Size,
 		); err != nil {
 			return nil, err

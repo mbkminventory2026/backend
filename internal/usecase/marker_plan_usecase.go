@@ -113,7 +113,7 @@ func (u *MarkerPlanUseCase) CreateMarkerPlan(ctx context.Context, userID int32, 
 				sizeParams[idx] = entity.CreateRatioSizeMarkerParams{
 					IDRatioMarker: ratio.IDRatioMarker,
 					IDWoShellSize: sizeReq.IDWoShellSize,
-					QtyPlan:       sizeReq.QtyPlan,
+					RatioPlan:     sizeReq.RatioPlan,
 				}
 			}
 
@@ -169,7 +169,7 @@ func (u *MarkerPlanUseCase) GetMarkerPlan(ctx context.Context, idMarkerPlan int3
 					IDRatioSizeMarker: sRow.IDRatioSizeMarker,
 					IDRatioMarker:     sRow.IDRatioMarker,
 					IDWoShellSize:     sRow.IDWoShellSize,
-					QtyPlan:           sRow.QtyPlan,
+					RatioPlan:         sRow.RatioPlan,
 					Size:              sRow.Size,
 				}
 			}

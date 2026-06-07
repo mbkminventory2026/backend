@@ -4,7 +4,7 @@ import "permatatex-inventory/pkg/response"
 
 type CreateRatioSizeMarkerRequest struct {
 	IDWoShellSize int32 `json:"id_wo_shell_size" binding:"required,gt=0"`
-	QtyPlan       int32 `json:"qty_plan" binding:"required,gte=0"`
+	RatioPlan     int32 `json:"ratio_plan" binding:"required,gte=0"`
 }
 
 type CreateRatioMarkerRequest struct {
@@ -40,7 +40,7 @@ type RatioSizeMarkerResponse struct {
 	IDRatioSizeMarker int32  `json:"id_ratio_size_marker"`
 	IDRatioMarker     int32  `json:"id_ratio_marker"`
 	IDWoShellSize     int32  `json:"id_wo_shell_size"`
-	QtyPlan           int32  `json:"qty_plan"`
+	RatioPlan         int32  `json:"ratio_plan"`
 	Size              string `json:"size,omitempty"`
 }
 

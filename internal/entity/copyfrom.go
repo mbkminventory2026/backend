@@ -31,7 +31,7 @@ func (r iteratorForCreateRatioSizeMarker) Values() ([]interface{}, error) {
 	return []interface{}{
 		r.rows[0].IDRatioMarker,
 		r.rows[0].IDWoShellSize,
-		r.rows[0].QtyPlan,
+		r.rows[0].RatioPlan,
 	}, nil
 }
 
@@ -40,7 +40,7 @@ func (r iteratorForCreateRatioSizeMarker) Err() error {
 }
 
 func (q *Queries) CreateRatioSizeMarker(ctx context.Context, arg []CreateRatioSizeMarkerParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"ratio_size_marker"}, []string{"id_ratio_marker", "id_wo_shell_size", "qty_plan"}, &iteratorForCreateRatioSizeMarker{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"ratio_size_marker"}, []string{"id_ratio_marker", "id_wo_shell_size", "ratio_plan"}, &iteratorForCreateRatioSizeMarker{rows: arg})
 }
 
 // iteratorForCreateWOShellPlan implements pgx.CopyFromSource.

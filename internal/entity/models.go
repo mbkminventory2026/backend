@@ -292,7 +292,7 @@ type RatioSizeMarker struct {
 	IDRatioSizeMarker int32              `json:"id_ratio_size_marker"`
 	IDRatioMarker     int32              `json:"id_ratio_marker"`
 	IDWoShellSize     int32              `json:"id_wo_shell_size"`
-	QtyPlan           int32              `json:"qty_plan"`
+	RatioPlan         int32              `json:"ratio_plan"`
 	CreatedAt         pgtype.Timestamptz `json:"created_at"`
 }
 

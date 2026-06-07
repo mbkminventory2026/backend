@@ -739,12 +739,12 @@ definitions:
     properties:
       id_wo_shell_size:
         type: integer
-      qty_plan:
+      ratio_plan:
         minimum: 0
         type: integer
     required:
     - id_wo_shell_size
-    - qty_plan
+    - ratio_plan
     type: object
   model.CreateRoleRequest:
     properties:
@@ -2175,7 +2175,7 @@ definitions:
         type: integer
       id_wo_shell_size:
         type: integer
-      qty_plan:
+      ratio_plan:
         type: integer
       size:
         type: string
