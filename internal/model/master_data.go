@@ -64,8 +64,8 @@ type UpdateBarangRequest struct {
 	StokMinimum   int32  `json:"stok_minimum"`
 }
 
-// Company
-type CreateCompanyRequest struct {
+// Profile Perusahaan
+type CreateProfilePerusahaanRequest struct {
 	Nama   string `json:"nama" binding:"required"`
 	Alamat string `json:"alamat"`
 	Email  string `json:"email" binding:"omitempty,email"`
@@ -74,7 +74,7 @@ type CreateCompanyRequest struct {
 	Logo   string `json:"logo"`
 }
 
-type UpdateCompanyRequest struct {
+type UpdateProfilePerusahaanRequest struct {
 	Nama   string `json:"nama" binding:"required"`
 	Alamat string `json:"alamat"`
 	Email  string `json:"email" binding:"omitempty,email"`
@@ -150,8 +150,8 @@ type BarangResponse struct {
 	CreatedAt       string `json:"created_at"`
 }
 
-type CompanyResponse struct {
-	ID        int32  `json:"id_company"`
+type ProfilePerusahaanResponse struct {
+	ID        int32  `json:"id_profile_perusahaan"`
 	Nama      string `json:"nama"`
 	Alamat    string `json:"alamat"`
 	Email     string `json:"email"`
@@ -234,10 +234,10 @@ type ListPermissionsSuccessDoc struct {
 	Data    []HakAksesResponse `json:"data"`
 }
 
-type CompanySuccessDoc struct {
-	Status  string          `json:"status" example:"success"`
-	Message string          `json:"message" example:"company data retrieved"`
-	Data    CompanyResponse `json:"data"`
+type ProfilePerusahaanSuccessDoc struct {
+	Status  string                    `json:"status" example:"success"`
+	Message string                    `json:"message" example:"profile perusahaan data retrieved"`
+	Data    ProfilePerusahaanResponse `json:"data"`
 }
 
 type HakAksesSuccessDoc struct {

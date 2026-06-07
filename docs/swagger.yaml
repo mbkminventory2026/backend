@@ -212,36 +212,6 @@ definitions:
         example: success
         type: string
     type: object
-  model.CompanyResponse:
-    properties:
-      about:
-        type: string
-      alamat:
-        type: string
-      created_at:
-        type: string
-      email:
-        type: string
-      id_company:
-        type: integer
-      logo:
-        type: string
-      nama:
-        type: string
-      no_telp:
-        type: string
-    type: object
-  model.CompanySuccessDoc:
-    properties:
-      data:
-        $ref: '#/definitions/model.CompanyResponse'
-      message:
-        example: company data retrieved
-        type: string
-      status:
-        example: success
-        type: string
-    type: object
   model.CreateBarangRequest:
     properties:
       id_jenis_barang:
@@ -275,23 +245,6 @@ definitions:
       status:
         example: success
         type: string
-    type: object
-  model.CreateCompanyRequest:
-    properties:
-      about:
-        type: string
-      alamat:
-        type: string
-      email:
-        type: string
-      logo:
-        type: string
-      nama:
-        type: string
-      no_telp:
-        type: string
-    required:
-    - nama
     type: object
   model.CreateDepartemenRequest:
     properties:
@@ -694,6 +647,23 @@ definitions:
     required:
     - nama
     - no_telp
+    type: object
+  model.CreateProfilePerusahaanRequest:
+    properties:
+      about:
+        type: string
+      alamat:
+        type: string
+      email:
+        type: string
+      logo:
+        type: string
+      nama:
+        type: string
+      no_telp:
+        type: string
+    required:
+    - nama
     type: object
   model.CreateRatioMarkerRequest:
     properties:
@@ -2209,6 +2179,36 @@ definitions:
         example: success
         type: string
     type: object
+  model.ProfilePerusahaanResponse:
+    properties:
+      about:
+        type: string
+      alamat:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      id_profile_perusahaan:
+        type: integer
+      logo:
+        type: string
+      nama:
+        type: string
+      no_telp:
+        type: string
+    type: object
+  model.ProfilePerusahaanSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.ProfilePerusahaanResponse'
+      message:
+        example: profile perusahaan data retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.RatioMarkerResponse:
     properties:
       allowance:
@@ -2747,23 +2747,6 @@ definitions:
     - nama_barang
     - satuan
     type: object
-  model.UpdateCompanyRequest:
-    properties:
-      about:
-        type: string
-      alamat:
-        type: string
-      email:
-        type: string
-      logo:
-        type: string
-      nama:
-        type: string
-      no_telp:
-        type: string
-    required:
-    - nama
-    type: object
   model.UpdateDepartemenRequest:
     properties:
       nama_departemen:
@@ -2819,6 +2802,23 @@ definitions:
     - nama_perusahaan
     - no_telp
     - tipe_perusahaan
+    type: object
+  model.UpdateProfilePerusahaanRequest:
+    properties:
+      about:
+        type: string
+      alamat:
+        type: string
+      email:
+        type: string
+      logo:
+        type: string
+      nama:
+        type: string
+      no_telp:
+        type: string
+    required:
+    - nama
     type: object
   model.UpdateRoleRequest:
     properties:
@@ -4066,110 +4066,6 @@ paths:
       summary: Update Item
       tags:
       - Master Data
-  /api/v1/master/company:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.CompanySuccessDoc'
-      security:
-      - BearerAuth: []
-      summary: Get Company Data
-      tags:
-      - Master Data
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Company payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/model.CreateCompanyRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/model.CompanySuccessDoc'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/model.LoginBadRequestDoc'
-      security:
-      - BearerAuth: []
-      summary: Create Company Data
-      tags:
-      - Master Data
-  /api/v1/master/company/{id}:
-    delete:
-      parameters:
-      - description: Company ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.BaseResponse'
-      security:
-      - BearerAuth: []
-      summary: Delete Company Data
-      tags:
-      - Master Data
-    get:
-      parameters:
-      - description: Company ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.CompanySuccessDoc'
-      security:
-      - BearerAuth: []
-      summary: Get Company Detail
-      tags:
-      - Master Data
-    put:
-      consumes:
-      - application/json
-      parameters:
-      - description: Company ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Company payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/model.UpdateCompanyRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.CompanySuccessDoc'
-      security:
-      - BearerAuth: []
-      summary: Update Company Data
-      tags:
-      - Master Data
   /api/v1/master/departemen:
     get:
       produces:
@@ -4580,6 +4476,110 @@ paths:
       security:
       - BearerAuth: []
       summary: Update Permission
+      tags:
+      - Master Data
+  /api/v1/master/profile-perusahaan:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProfilePerusahaanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Profile Perusahaan Data
+      tags:
+      - Master Data
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Profile Perusahaan payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateProfilePerusahaanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.ProfilePerusahaanSuccessDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Profile Perusahaan Data
+      tags:
+      - Master Data
+  /api/v1/master/profile-perusahaan/{id}:
+    delete:
+      parameters:
+      - description: Profile Perusahaan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete Profile Perusahaan Data
+      tags:
+      - Master Data
+    get:
+      parameters:
+      - description: Profile Perusahaan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProfilePerusahaanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Profile Perusahaan Detail
+      tags:
+      - Master Data
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Profile Perusahaan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Profile Perusahaan payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateProfilePerusahaanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProfilePerusahaanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Update Profile Perusahaan Data
       tags:
       - Master Data
   /api/v1/master/warna:

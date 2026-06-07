@@ -68,12 +68,12 @@ func (h *MasterDataHandler) RegisterRoutes(router gin.IRouter, authMiddleware gi
 	master.PUT("/permissions/:id", RequirePermission(PermissionPermissionUpdate), h.UpdateHakAkses)
 	master.DELETE("/permissions/:id", RequirePermission(PermissionPermissionDelete), h.DeleteHakAkses)
 
-	// Company
-	master.GET("/company", RequirePermission(PermissionMasterCompanyRead), h.GetCompany)
-	master.GET("/company/:id", RequirePermission(PermissionMasterCompanyRead), h.GetCompanyByID)
-	master.POST("/company", RequirePermission(PermissionMasterCompanyCreate), h.CreateCompany)
-	master.PUT("/company/:id", RequirePermission(PermissionMasterCompanyUpdate), h.UpdateCompany)
-	master.DELETE("/company/:id", RequirePermission(PermissionMasterCompanyDelete), h.DeleteCompany)
+	// Profile Perusahaan
+	master.GET("/profile-perusahaan", RequirePermission(PermissionMasterProfilePerusahaanRead), h.GetProfilePerusahaan)
+	master.GET("/profile-perusahaan/:id", RequirePermission(PermissionMasterProfilePerusahaanRead), h.GetProfilePerusahaanByID)
+	master.POST("/profile-perusahaan", RequirePermission(PermissionMasterProfilePerusahaanCreate), h.CreateProfilePerusahaan)
+	master.PUT("/profile-perusahaan/:id", RequirePermission(PermissionMasterProfilePerusahaanUpdate), h.UpdateProfilePerusahaan)
+	master.DELETE("/profile-perusahaan/:id", RequirePermission(PermissionMasterProfilePerusahaanDelete), h.DeleteProfilePerusahaan)
 }
 
 // DEPARTEMEN
@@ -693,120 +693,125 @@ func (h *MasterDataHandler) DeleteHakAkses(c *gin.Context) {
 	response.Success(c, http.StatusOK, "permission deleted", nil)
 }
 
-// COMPANY
+// PROFILE PERUSAHAAN
 
-// GetCompany godoc
-// @Summary      Get Company Data
+// GetProfilePerusahaan godoc
+// @Summary      Get Profile Perusahaan Data
 // @Tags         Master Data
 // @Produce      json
 // @Security     BearerAuth
-// @Success      200  {object}  model.CompanySuccessDoc
-// @Router       /api/v1/master/company [get]
-func (h *MasterDataHandler) GetCompany(c *gin.Context) {
-	item, err := h.useCase.GetCompany(c.Request.Context())
+// @Success      200  {object}  model.ProfilePerusahaanSuccessDoc
+// @Router       /api/v1/master/profile-perusahaan [get]
+// func (h *MasterDataHandler) GetProfilePerusahaan(c *gin.Context) {
+func (h *MasterDataHandler) GetProfilePerusahaan(c *gin.Context) {
+	item, err := h.useCase.GetProfilePerusahaan(c.Request.Context())
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusOK, "company data retrieved", item)
+	response.Success(c, http.StatusOK, "profile perusahaan data retrieved", item)
 }
 
-// GetCompanyByID godoc
-// @Summary      Get Company Detail
+// GetProfilePerusahaanByID godoc
+// @Summary      Get Profile Perusahaan Detail
 // @Tags         Master Data
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      int  true  "Company ID"
-// @Success      200  {object}  model.CompanySuccessDoc
-// @Router       /api/v1/master/company/{id} [get]
-func (h *MasterDataHandler) GetCompanyByID(c *gin.Context) {
+// @Param        id   path      int  true  "Profile Perusahaan ID"
+// @Success      200  {object}  model.ProfilePerusahaanSuccessDoc
+// @Router       /api/v1/master/profile-perusahaan/{id} [get]
+// func (h *MasterDataHandler) GetProfilePerusahaanByID(c *gin.Context) {
+func (h *MasterDataHandler) GetProfilePerusahaanByID(c *gin.Context) {
 	id, err := parsePathInt32(c, "id")
 	if err != nil {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
 		return
 	}
 
-	item, err := h.useCase.GetCompanyByID(c.Request.Context(), id)
+	item, err := h.useCase.GetProfilePerusahaanByID(c.Request.Context(), id)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusOK, "company data retrieved", item)
+	response.Success(c, http.StatusOK, "profile perusahaan data retrieved", item)
 }
 
-// CreateCompany godoc
-// @Summary      Create Company Data
+// CreateProfilePerusahaan godoc
+// @Summary      Create Profile Perusahaan Data
 // @Tags         Master Data
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        payload  body      model.CreateCompanyRequest  true  "Company payload"
-// @Success      201      {object}  model.CompanySuccessDoc
+// @Param        payload  body      model.CreateProfilePerusahaanRequest  true  "Profile Perusahaan payload"
+// @Success      201      {object}  model.ProfilePerusahaanSuccessDoc
 // @Failure      409      {object}  model.LoginBadRequestDoc
-// @Router       /api/v1/master/company [post]
-func (h *MasterDataHandler) CreateCompany(c *gin.Context) {
-	var req model.CreateCompanyRequest
+// @Router       /api/v1/master/profile-perusahaan [post]
+// func (h *MasterDataHandler) CreateProfilePerusahaan(c *gin.Context) {
+func (h *MasterDataHandler) CreateProfilePerusahaan(c *gin.Context) {
+	var req model.CreateProfilePerusahaanRequest
 	if !BindJSON(c, &req) {
 		return
 	}
 
-	item, err := h.useCase.CreateCompany(c.Request.Context(), req)
+	item, err := h.useCase.CreateProfilePerusahaan(c.Request.Context(), req)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusCreated, "company data created", item)
+	response.Success(c, http.StatusCreated, "profile perusahaan data created", item)
 }
 
-// UpdateCompany godoc
-// @Summary      Update Company Data
+// UpdateProfilePerusahaan godoc
+// @Summary      Update Profile Perusahaan Data
 // @Tags         Master Data
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id       path      int                         true  "Company ID"
-// @Param        payload  body      model.UpdateCompanyRequest  true  "Company payload"
-// @Success      200      {object}  model.CompanySuccessDoc
-// @Router       /api/v1/master/company/{id} [put]
-func (h *MasterDataHandler) UpdateCompany(c *gin.Context) {
+// @Param        id       path      int                                   true  "Profile Perusahaan ID"
+// @Param        payload  body      model.UpdateProfilePerusahaanRequest  true  "Profile Perusahaan payload"
+// @Success      200      {object}  model.ProfilePerusahaanSuccessDoc
+// @Router       /api/v1/master/profile-perusahaan/{id} [put]
+// func (h *MasterDataHandler) UpdateProfilePerusahaan(c *gin.Context) {
+func (h *MasterDataHandler) UpdateProfilePerusahaan(c *gin.Context) {
 	id, err := parsePathInt32(c, "id")
 	if err != nil {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
 		return
 	}
 
-	var req model.UpdateCompanyRequest
+	var req model.UpdateProfilePerusahaanRequest
 	if !BindJSON(c, &req) {
 		return
 	}
 
-	item, err := h.useCase.UpdateCompany(c.Request.Context(), id, req)
+	item, err := h.useCase.UpdateProfilePerusahaan(c.Request.Context(), id, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusOK, "company data updated", item)
+	response.Success(c, http.StatusOK, "profile perusahaan data updated", item)
 }
 
-// DeleteCompany godoc
-// @Summary      Delete Company Data
+// DeleteProfilePerusahaan godoc
+// @Summary      Delete Profile Perusahaan Data
 // @Tags         Master Data
 // @Security     BearerAuth
-// @Param        id   path      int  true  "Company ID"
+// @Param        id   path      int  true  "Profile Perusahaan ID"
 // @Success      200  {object}  response.BaseResponse
-// @Router       /api/v1/master/company/{id} [delete]
-func (h *MasterDataHandler) DeleteCompany(c *gin.Context) {
+// @Router       /api/v1/master/profile-perusahaan/{id} [delete]
+// func (h *MasterDataHandler) DeleteProfilePerusahaan(c *gin.Context) {
+func (h *MasterDataHandler) DeleteProfilePerusahaan(c *gin.Context) {
 	id, err := parsePathInt32(c, "id")
 	if err != nil {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
 		return
 	}
 
-	if err := h.useCase.DeleteCompany(c.Request.Context(), id); err != nil {
+	if err := h.useCase.DeleteProfilePerusahaan(c.Request.Context(), id); err != nil {
 		h.handleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusOK, "company data deleted", nil)
+	response.Success(c, http.StatusOK, "profile perusahaan data deleted", nil)
 }
 
 // GetWarnaByID godoc
@@ -941,7 +946,7 @@ func (h *MasterDataHandler) handleError(c *gin.Context, err error) {
 		AbortWithError(c, NewHTTPError(http.StatusNotFound, err.Error(), nil))
 		return
 	}
-	if errors.Is(err, usecase.ErrMasterDataDuplicateCode) || errors.Is(err, usecase.ErrCompanyAlreadyExists) {
+	if errors.Is(err, usecase.ErrMasterDataDuplicateCode) || errors.Is(err, usecase.ErrProfilePerusahaanAlreadyExists) {
 		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), nil))
 		return
 	}

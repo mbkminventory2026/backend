@@ -61,10 +61,10 @@ const (
 	PermissionMasterJenisBarangUpdate = "MASTER_JENIS_BARANG_UPDATE"
 	PermissionMasterJenisBarangDelete = "MASTER_JENIS_BARANG_DELETE"
 
-	PermissionMasterCompanyRead   = "MASTER_COMPANY_READ"
-	PermissionMasterCompanyCreate = "MASTER_COMPANY_CREATE"
-	PermissionMasterCompanyUpdate = "MASTER_COMPANY_UPDATE"
-	PermissionMasterCompanyDelete = "MASTER_COMPANY_DELETE"
+	PermissionMasterProfilePerusahaanRead   = "MASTER_PROFILE_PERUSAHAAN_READ"
+	PermissionMasterProfilePerusahaanCreate = "MASTER_PROFILE_PERUSAHAAN_CREATE"
+	PermissionMasterProfilePerusahaanUpdate = "MASTER_PROFILE_PERUSAHAAN_UPDATE"
+	PermissionMasterProfilePerusahaanDelete = "MASTER_PROFILE_PERUSAHAAN_DELETE"
 
 	PermissionMasterDepartemenRead   = "MASTER_DEPARTEMEN_READ"
 	PermissionMasterDepartemenCreate = "MASTER_DEPARTEMEN_CREATE"
