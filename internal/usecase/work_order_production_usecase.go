@@ -643,7 +643,7 @@ func (u *WorkOrderProductionUseCase) CreateReturClient(ctx context.Context, idWo
 	_, err = u.repo.GetReturClientByWorkOrderID(ctx, idWo)
 	if err == nil {
 		return nil, ErrReturnAlreadySubmitted
-	} else if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+	} else if !errors.Is(err, pgx.ErrNoRows) {
 		return nil, fmt.Errorf("%w: failed to verify existing return", ErrWorkOrderServiceUnavailable)
 	}
 
