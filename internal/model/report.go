@@ -26,7 +26,6 @@ type MovementReportResponse struct {
 	Qty            int32  `json:"qty"`
 	Keterangan     string `json:"keterangan"`
 	NamaMaterial   string `json:"nama_material"`
-	Size           string `json:"size"`
 	Uom            string `json:"uom"`
 	WorkOrderModel string `json:"work_order_model"`
 }

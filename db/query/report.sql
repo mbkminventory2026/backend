@@ -36,39 +36,41 @@ ORDER BY
 
 -- name: GetMovementReport :many
 -- Mengambil laporan riwayat pergerakan stok masuk (received) dan keluar (surat jalan) secara kronologis
-SELECT 
+SELECT
     'IN'::text AS tipe,
     r.tanggal,
     r.qty::int AS qty,
     r.keterangan,
-    ml.description::text AS nama_material,
-    ml.size::text AS size,
-    ml.uom::text AS uom,
+    mli.description::text AS nama_material,
+    mli.unit::text AS uom,
     wo.model::text AS work_order_model
-FROM 
+FROM
     RECEIVED r
-JOIN 
-    MATERIAL_LIST ml ON r.id_material_list = ml.id_material_list
-JOIN 
+JOIN
+    MATERIAL_LIST_ITEM mli ON r.id_material_list_item = mli.id_material_list_item
+JOIN
+    MATERIAL_LIST ml ON ml.id_material_list = mli.id_material_list
+JOIN
     WORK_ORDER wo ON ml.id_wo = wo.id_wo
 
 UNION ALL
 
-SELECT 
+SELECT
     'OUT'::text AS tipe,
     sjc.tanggal,
     sjc.qty::int AS qty,
     sjc.keterangan,
-    ml.description::text AS nama_material,
-    ml.size::text AS size,
-    ml.uom::text AS uom,
+    mli.description::text AS nama_material,
+    mli.unit::text AS uom,
     wo.model::text AS work_order_model
-FROM 
+FROM
     SURAT_JALAN_CLIENT sjc
-JOIN 
-    MATERIAL_LIST ml ON sjc.id_material_list = ml.id_material_list
-JOIN 
+JOIN
+    MATERIAL_LIST_ITEM mli ON sjc.id_material_list_item = mli.id_material_list_item
+JOIN
+    MATERIAL_LIST ml ON ml.id_material_list = mli.id_material_list
+JOIN
     WORK_ORDER wo ON ml.id_wo = wo.id_wo
 
-ORDER BY 
+ORDER BY
     tanggal DESC, nama_material ASC;

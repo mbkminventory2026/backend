@@ -206,34 +206,41 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 		})
 	}
 
-	materials := make([]model.MaterialListResponse, 0, len(req.MaterialLists))
-	for _, materialReq := range req.MaterialLists {
+	// Buat Material List utama untuk WO (auto-create, satu ML default per WO).
+	defaultML, mlErr := qtx.CreateMaterialList(ctx, entity.CreateMaterialListParams{
+		IDWo: header.IDWo,
+		Name: "Material List Utama",
+	})
+	if mlErr != nil {
+		return nil, mapWorkOrderDBError(mlErr)
+	}
+
+	items := make([]model.MaterialListItemResponse, 0, len(req.MaterialListItems))
+	for _, itemReq := range req.MaterialListItems {
 		var idWoShell pgtype.Int4
 		var idWoTrim pgtype.Int4
 
-		// [DEBUG LOG] Pantau data apa yang sedang dibaca backend
-		fmt.Printf("[WO-DEBUG] Memproses Material: Desc='%s' | Color='%s'\n", materialReq.Description, materialReq.Color)
+		fmt.Printf("[WO-DEBUG] Memproses Material: Desc='%s' | Color='%s'\n", itemReq.Description, itemReq.Color)
 
-		// 1. Logika Pengait Otomatis ke WORK_ORDER_SHELL (Kain)
+		// Pengait otomatis ke WORK_ORDER_SHELL via color + deskripsi.
 		for _, s := range recordedShells {
-			// Skenario A: Warna match DAN teks deskripsi mirip
-			textMatch := strings.Contains(strings.ToLower(materialReq.Description), strings.ToLower(s.Deskripsi)) ||
-				strings.Contains(strings.ToLower(s.Deskripsi), strings.ToLower(materialReq.Description))
+			textMatch := strings.Contains(strings.ToLower(itemReq.Description), strings.ToLower(s.Deskripsi)) ||
+				strings.Contains(strings.ToLower(s.Deskripsi), strings.ToLower(itemReq.Description))
 
-			if strings.EqualFold(materialReq.Color, s.Color) && (textMatch || materialReq.Description == "") {
+			if strings.EqualFold(itemReq.Color, s.Color) && (textMatch || itemReq.Description == "") {
 				idWoShell = pgtype.Int4{Int32: s.ID, Valid: true}
 				fmt.Printf("   -> 🎉 MATCH FOUND ke Shell ID: %d (Deskripsi: %s)\n", s.ID, s.Deskripsi)
 				break
 			}
 		}
 
-		// 2. Logika Pengait Otomatis ke WORK_ORDER_TRIM (Aksesoris)
+		// Pengait otomatis ke WORK_ORDER_TRIM via color + item name.
 		if !idWoShell.Valid {
 			for _, t := range recordedTrims {
-				textMatch := strings.Contains(strings.ToLower(materialReq.Description), strings.ToLower(t.Item)) ||
-					strings.Contains(strings.ToLower(t.Item), strings.ToLower(materialReq.Description))
+				textMatch := strings.Contains(strings.ToLower(itemReq.Description), strings.ToLower(t.Item)) ||
+					strings.Contains(strings.ToLower(t.Item), strings.ToLower(itemReq.Description))
 
-				if strings.EqualFold(materialReq.Color, t.Color) && (textMatch || materialReq.Description == "") {
+				if strings.EqualFold(itemReq.Color, t.Color) && (textMatch || itemReq.Description == "") {
 					idWoTrim = pgtype.Int4{Int32: t.ID, Valid: true}
 					fmt.Printf("   -> 🎉 MATCH FOUND ke Trim ID: %d (Item: %s)\n", t.ID, t.Item)
 					break
@@ -241,42 +248,65 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 			}
 		}
 
-		// Skenario Fallback: Jika teks tidak ada yang mirip, tapi warna sama persis dengan kain tunggal
+		// Fallback: kalau hanya 1 shell di WO, paksa link by color.
 		if !idWoShell.Valid && !idWoTrim.Valid && len(recordedShells) == 1 {
-			if strings.EqualFold(materialReq.Color, recordedShells[0].Color) {
+			if strings.EqualFold(itemReq.Color, recordedShells[0].Color) {
 				idWoShell = pgtype.Int4{Int32: recordedShells[0].ID, Valid: true}
 				fmt.Printf("   -> ⚠️ FALLBACK MATCH (Hanya 1 Shell): Terhubung ke Shell ID %d karena kesamaan warna\n", recordedShells[0].ID)
 			}
 		}
 
-		// Jika tetap tidak ketemu match sama sekali
 		if !idWoShell.Valid && !idWoTrim.Valid {
 			fmt.Println("   -> ❌ NO MATCH FOUND: Kolom akan bernilai NULL di database.")
 		}
 
-		// 3. Eksekusi simpan ke database dengan parameter ter-update
-		material, materialErr := qtx.CreateMaterialList(ctx, entity.CreateMaterialListParams{
-			Description: materialReq.Description,
-			Size:        materialReq.Size,
-			Color:       materialReq.Color,
-			Uom:         materialReq.UOM,
-			IDWo:        header.IDWo,
-			IDWoShell:   idWoShell, // Hasil pencarian dinamis
-			IDWoTrim:    idWoTrim,  // Hasil pencarian dinamis
-		})
-		if materialErr != nil {
-			return nil, mapWorkOrderDBError(materialErr)
+		itemName := itemReq.Item
+		if itemName == "" {
+			itemName = itemReq.Description
 		}
 
-		materials = append(materials, model.MaterialListResponse{
-			ID:          material.IDMaterialList,
-			Description: material.Description,
-			Size:        material.Size,
-			Color:       material.Color,
-			UOM:         material.Uom,
-			CreatedAt:   material.CreatedAt.Time.Format(time.RFC3339),
+		mli, mliErr := qtx.CreateMaterialListItem(ctx, entity.CreateMaterialListItemParams{
+			IDMaterialList: defaultML.IDMaterialList,
+			Item:           itemName,
+			Description:    itemReq.Description,
+			Qty:            itemReq.Qty,
+			Unit:           itemReq.Unit,
+			EstPrice:       mustNumeric(itemReq.EstPrice),
+			IDWoShell:      idWoShell,
+			IDWoTrim:       idWoTrim,
 		})
+		if mliErr != nil {
+			return nil, mapWorkOrderDBError(mliErr)
+		}
+
+		itemResp := model.MaterialListItemResponse{
+			ID:          mli.IDMaterialListItem,
+			Item:        mli.Item,
+			Description: mli.Description,
+			Qty:         mli.Qty,
+			Unit:        mli.Unit,
+			EstPrice:    numericToFloat64(mli.EstPrice),
+			CreatedAt:   mli.CreatedAt.Time.Format(time.RFC3339),
+		}
+		if mli.IDWoShell.Valid {
+			v := mli.IDWoShell.Int32
+			itemResp.IDWoShell = &v
+		}
+		if mli.IDWoTrim.Valid {
+			v := mli.IDWoTrim.Int32
+			itemResp.IDWoTrim = &v
+		}
+		items = append(items, itemResp)
 	}
+
+	materials := []model.MaterialListResponse{{
+		ID:        defaultML.IDMaterialList,
+		IDWo:      defaultML.IDWo,
+		Name:      defaultML.Name,
+		IsLocked:  defaultML.IsLocked,
+		CreatedAt: defaultML.CreatedAt.Time.Format(time.RFC3339),
+		Items:     items,
+	}}
 
 	err = initializeApprovalWorkflow(ctx, qtx, "WORK_ORDER", header.IDWo, userID)
 	if err != nil {
@@ -623,13 +653,38 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id 
 
 	materials := make([]model.MaterialListResponse, 0, len(materialRows))
 	for _, row := range materialRows {
+		itemRows, itemErr := u.repo.ListMaterialListItemsByML(ctx, row.IDMaterialList)
+		if itemErr != nil {
+			return nil, fmt.Errorf("%w: failed to list material list items", ErrWorkOrderServiceUnavailable)
+		}
+		items := make([]model.MaterialListItemResponse, 0, len(itemRows))
+		for _, ir := range itemRows {
+			itemResp := model.MaterialListItemResponse{
+				ID:          ir.IDMaterialListItem,
+				Item:        ir.Item,
+				Description: ir.Description,
+				Qty:         ir.Qty,
+				Unit:        ir.Unit,
+				EstPrice:    numericToFloat64(ir.EstPrice),
+				CreatedAt:   ir.CreatedAt.Time.Format(time.RFC3339),
+			}
+			if ir.IDWoShell.Valid {
+				v := ir.IDWoShell.Int32
+				itemResp.IDWoShell = &v
+			}
+			if ir.IDWoTrim.Valid {
+				v := ir.IDWoTrim.Int32
+				itemResp.IDWoTrim = &v
+			}
+			items = append(items, itemResp)
+		}
 		materials = append(materials, model.MaterialListResponse{
-			ID:          row.IDMaterialList,
-			Description: row.Description,
-			Size:        row.Size,
-			Color:       row.Color,
-			UOM:         row.Uom,
-			CreatedAt:   row.CreatedAt.Time.Format(time.RFC3339),
+			ID:        row.IDMaterialList,
+			IDWo:      row.IDWo,
+			Name:      row.Name,
+			IsLocked:  row.IsLocked,
+			CreatedAt: row.CreatedAt.Time.Format(time.RFC3339),
+			Items:     items,
 		})
 	}
 

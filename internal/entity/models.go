@@ -92,18 +92,24 @@ type MarkerPlan struct {
 }
 
 type MaterialList struct {
-	IDMaterialList     int32              `json:"id_material_list"`
-	CreatedAt          pgtype.Timestamptz `json:"created_at"`
-	IDMaterialListItem int32              `json:"id_material_list_item"`
+	IDMaterialList int32              `json:"id_material_list"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	IDWo           int32              `json:"id_wo"`
+	Name           string             `json:"name"`
+	IsLocked       bool               `json:"is_locked"`
 }
 
 type MaterialListItem struct {
 	IDMaterialListItem int32              `json:"id_material_list_item"`
 	Description        string             `json:"description"`
-	IDWo               int32              `json:"id_wo"`
 	IDWoShell          pgtype.Int4        `json:"id_wo_shell"`
 	IDWoTrim           pgtype.Int4        `json:"id_wo_trim"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	IDMaterialList     int32              `json:"id_material_list"`
+	Item               string             `json:"item"`
+	Qty                int32              `json:"qty"`
+	Unit               string             `json:"unit"`
+	EstPrice           pgtype.Numeric     `json:"est_price"`
 }
 
 type Mitra struct {

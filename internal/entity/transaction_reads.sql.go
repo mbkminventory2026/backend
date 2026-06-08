@@ -237,12 +237,11 @@ SELECT
     sjc.id_material_list_item AS id_material_list,
     sjc.created_at,
     mli.description AS material_description,
-    COALESCE(wos.id_wo, wot.id_wo, mli.id_wo)::integer AS id_wo
+    ml.id_wo::integer AS id_wo
 FROM SURAT_JALAN_CLIENT sjc
 JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list_item = sjc.id_material_list_item
-LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = mli.id_wo_shell
-LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo_trim = mli.id_wo_trim
-JOIN WORK_ORDER wo ON wo.id_wo = COALESCE(wos.id_wo, wot.id_wo, mli.id_wo)
+JOIN MATERIAL_LIST ml ON ml.id_material_list = mli.id_material_list
+JOIN WORK_ORDER wo ON wo.id_wo = ml.id_wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE sjc.id_surat_jalan_client = $1
@@ -372,28 +371,25 @@ func (q *Queries) GetWorkOrderDetail(ctx context.Context, arg GetWorkOrderDetail
 const listMaterialListsByWorkOrderID = `-- name: ListMaterialListsByWorkOrderID :many
 SELECT
     ml.id_material_list,
-    mli.description,
-    ''::text AS size,
-    COALESCE(wos.color, wot.color)::text AS color,
-    COALESCE(wot.uom, 'yds')::text AS uom,
-    COALESCE(wos.id_wo, wot.id_wo, mli.id_wo)::integer AS id_wo,
-    ml.created_at
+    ml.id_wo,
+    ml.name,
+    ml.is_locked,
+    ml.created_at,
+    COUNT(mli.id_material_list_item)::integer AS item_count
 FROM MATERIAL_LIST ml
-JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list_item = ml.id_material_list_item
-LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = mli.id_wo_shell
-LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo_trim = mli.id_wo_trim
-WHERE COALESCE(wos.id_wo, wot.id_wo, mli.id_wo) = $1
+LEFT JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list = ml.id_material_list
+WHERE ml.id_wo = $1
+GROUP BY ml.id_material_list
 ORDER BY ml.id_material_list ASC
 `
 
 type ListMaterialListsByWorkOrderIDRow struct {
 	IDMaterialList int32              `json:"id_material_list"`
-	Description    string             `json:"description"`
-	Size           string             `json:"size"`
-	Color          string             `json:"color"`
-	Uom            string             `json:"uom"`
 	IDWo           int32              `json:"id_wo"`
+	Name           string             `json:"name"`
+	IsLocked       bool               `json:"is_locked"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	ItemCount      int32              `json:"item_count"`
 }
 
 func (q *Queries) ListMaterialListsByWorkOrderID(ctx context.Context, idWo int32) ([]ListMaterialListsByWorkOrderIDRow, error) {
@@ -407,12 +403,11 @@ func (q *Queries) ListMaterialListsByWorkOrderID(ctx context.Context, idWo int32
 		var i ListMaterialListsByWorkOrderIDRow
 		if err := rows.Scan(
 			&i.IDMaterialList,
-			&i.Description,
-			&i.Size,
-			&i.Color,
-			&i.Uom,
 			&i.IDWo,
+			&i.Name,
+			&i.IsLocked,
 			&i.CreatedAt,
+			&i.ItemCount,
 		); err != nil {
 			return nil, err
 		}
@@ -1211,13 +1206,12 @@ SELECT
     sjc.id_material_list_item AS id_material_list,
     sjc.created_at,
     mli.description AS material_description,
-    COALESCE(wos.id_wo, wot.id_wo, mli.id_wo)::integer AS id_wo,
+    ml.id_wo::integer AS id_wo,
     COUNT(*) OVER() AS total_count
 FROM SURAT_JALAN_CLIENT sjc
 JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list_item = sjc.id_material_list_item
-LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = mli.id_wo_shell
-LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo_trim = mli.id_wo_trim
-JOIN WORK_ORDER wo ON wo.id_wo = COALESCE(wos.id_wo, wot.id_wo, mli.id_wo)
+JOIN MATERIAL_LIST ml ON ml.id_material_list = mli.id_material_list
+JOIN WORK_ORDER wo ON wo.id_wo = ml.id_wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE (
@@ -1241,8 +1235,8 @@ ORDER BY
     CASE WHEN $3::text = 'keterangan' AND $4::bool THEN sjc.keterangan END DESC,
     CASE WHEN $3::text = 'material_description' AND NOT $4::bool THEN mli.description END ASC,
     CASE WHEN $3::text = 'material_description' AND $4::bool THEN mli.description END DESC,
-    CASE WHEN $3::text = 'id_wo' AND NOT $4::bool THEN COALESCE(wos.id_wo, wot.id_wo, mli.id_wo) END ASC,
-    CASE WHEN $3::text = 'id_wo' AND $4::bool THEN COALESCE(wos.id_wo, wot.id_wo, mli.id_wo) END DESC,
+    CASE WHEN $3::text = 'id_wo' AND NOT $4::bool THEN ml.id_wo END ASC,
+    CASE WHEN $3::text = 'id_wo' AND $4::bool THEN ml.id_wo END DESC,
     sjc.id_surat_jalan_client DESC
 LIMIT $6 OFFSET $5
 `

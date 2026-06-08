@@ -12,6 +12,7 @@ type Querier interface {
 	ApprovePRInternal(ctx context.Context, arg ApprovePRInternalParams) (ApprovePRInternalRow, error)
 	ApprovePasswordResetRequest(ctx context.Context, arg ApprovePasswordResetRequestParams) (ApprovePasswordResetRequestRow, error)
 	AutoCloseWorkOrders(ctx context.Context) error
+	CheckMaterialListBelongsToWO(ctx context.Context, arg CheckMaterialListBelongsToWOParams) (bool, error)
 	ClientCloseWorkOrder(ctx context.Context, idWo int32) (ClientCloseWorkOrderRow, error)
 	CloseWorkOrder(ctx context.Context, arg CloseWorkOrderParams) (CloseWorkOrderRow, error)
 	CountBarang(ctx context.Context, searchTerm string) (int64, error)
@@ -36,6 +37,7 @@ type Querier interface {
 	CreateKomponenSpreadingCuttingPlan(ctx context.Context, arg CreateKomponenSpreadingCuttingPlanParams) (KomponenSpreadingCuttingPlan, error)
 	CreateMarkerPlan(ctx context.Context, arg CreateMarkerPlanParams) (MarkerPlan, error)
 	CreateMaterialList(ctx context.Context, arg CreateMaterialListParams) (CreateMaterialListRow, error)
+	CreateMaterialListItem(ctx context.Context, arg CreateMaterialListItemParams) (CreateMaterialListItemRow, error)
 	CreateMitra(ctx context.Context, arg CreateMitraParams) (Mitra, error)
 	CreatePOClient(ctx context.Context, arg CreatePOClientParams) (PoClient, error)
 	CreatePOClientItem(ctx context.Context, arg CreatePOClientItemParams) (PoClientItem, error)
@@ -78,6 +80,8 @@ type Querier interface {
 	DeleteDepartemen(ctx context.Context, idDepartemen int32) (int64, error)
 	DeleteHakAkses(ctx context.Context, idHakAkses int32) (int64, error)
 	DeleteJenisBarang(ctx context.Context, idJenisBarang int32) (int64, error)
+	DeleteMaterialList(ctx context.Context, idMaterialList int32) error
+	DeleteMaterialListItem(ctx context.Context, idMaterialListItem int32) error
 	DeleteMitra(ctx context.Context, idMitra int32) (int64, error)
 	DeletePOClientItemsByPOClientID(ctx context.Context, idPoClient int32) error
 	DeletePenanggungJawabByPOClientID(ctx context.Context, idPoClient int32) error
@@ -105,6 +109,8 @@ type Querier interface {
 	// Mengecek material yang BALANCE-nya di bawah standar untuk trigger WebSocket layar berkedip
 	GetLowStockAlerts(ctx context.Context) ([]GetLowStockAlertsRow, error)
 	GetMarkerPlanByID(ctx context.Context, idMarkerPlan int32) (MarkerPlan, error)
+	GetMaterialList(ctx context.Context, idMaterialList int32) (GetMaterialListRow, error)
+	GetMaterialListItem(ctx context.Context, idMaterialListItem int32) (GetMaterialListItemRow, error)
 	GetMitraByID(ctx context.Context, idMitra int32) (Mitra, error)
 	// Mengambil laporan riwayat pergerakan stok masuk (received) dan keluar (surat jalan) secara kronologis
 	GetMovementReport(ctx context.Context) ([]GetMovementReportRow, error)
@@ -156,6 +162,7 @@ type Querier interface {
 	ListKomponenByMarkerPlanID(ctx context.Context, idMarkerPlan int32) ([]KomponenMarkerPlan, error)
 	ListKomponenBySpreadingPlanID(ctx context.Context, idSpreadingCuttingPlan int32) ([]KomponenSpreadingCuttingPlan, error)
 	ListMarkerPlans(ctx context.Context, arg ListMarkerPlansParams) ([]ListMarkerPlansRow, error)
+	ListMaterialListItemsByML(ctx context.Context, idMaterialList int32) ([]ListMaterialListItemsByMLRow, error)
 	ListMaterialListsByWorkOrderID(ctx context.Context, idWo int32) ([]ListMaterialListsByWorkOrderIDRow, error)
 	ListMitra(ctx context.Context, arg ListMitraParams) ([]Mitra, error)
 	ListPOClientItemsByPOClientID(ctx context.Context, idPoClient int32) ([]ListPOClientItemsByPOClientIDRow, error)
@@ -183,12 +190,14 @@ type Querier interface {
 	ListSuratJalanClients(ctx context.Context, arg ListSuratJalanClientsParams) ([]ListSuratJalanClientsRow, error)
 	ListSuratJalanInternals(ctx context.Context, arg ListSuratJalanInternalsParams) ([]ListSuratJalanInternalsRow, error)
 	ListTimelinePlans(ctx context.Context, arg ListTimelinePlansParams) ([]ListTimelinePlansRow, error)
+	ListUnlockedMaterialListsByWO(ctx context.Context, idWo int32) ([]ListUnlockedMaterialListsByWORow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
 	ListWarna(ctx context.Context, arg ListWarnaParams) ([]Warna, error)
 	ListWorkOrderShellSizesByWorkOrderID(ctx context.Context, idWo int32) ([]WorkOrderShellSize, error)
 	ListWorkOrderShellsByWorkOrderID(ctx context.Context, idWo int32) ([]WorkOrderShell, error)
 	ListWorkOrderTrimsByWorkOrderID(ctx context.Context, idWo int32) ([]WorkOrderTrim, error)
 	ListWorkOrders(ctx context.Context, arg ListWorkOrdersParams) ([]ListWorkOrdersRow, error)
+	LockMaterialList(ctx context.Context, idMaterialList int32) (LockMaterialListRow, error)
 	ReceiveInventory(ctx context.Context, arg ReceiveInventoryParams) (ReceiveInventoryRow, error)
 	RejectPasswordResetRequest(ctx context.Context, arg RejectPasswordResetRequestParams) (RejectPasswordResetRequestRow, error)
 	ResetUserPasswordTemporary(ctx context.Context, arg ResetUserPasswordTemporaryParams) (int64, error)
@@ -198,6 +207,8 @@ type Querier interface {
 	UpdateGlobalStatus(ctx context.Context, arg UpdateGlobalStatusParams) (UpdateGlobalStatusRow, error)
 	UpdateHakAkses(ctx context.Context, arg UpdateHakAksesParams) (HakAkse, error)
 	UpdateJenisBarang(ctx context.Context, arg UpdateJenisBarangParams) (JenisBarang, error)
+	UpdateMaterialList(ctx context.Context, arg UpdateMaterialListParams) (UpdateMaterialListRow, error)
+	UpdateMaterialListItem(ctx context.Context, arg UpdateMaterialListItemParams) (UpdateMaterialListItemRow, error)
 	UpdateMitra(ctx context.Context, arg UpdateMitraParams) (Mitra, error)
 	UpdatePOClient(ctx context.Context, arg UpdatePOClientParams) (PoClient, error)
 	UpdateProfilPerusahaan(ctx context.Context, arg UpdateProfilPerusahaanParams) (ProfilPerusahaan, error)

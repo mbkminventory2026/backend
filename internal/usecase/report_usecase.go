@@ -81,7 +81,6 @@ func (u *ReportUseCase) GetMovementReport(ctx context.Context) ([]model.Movement
 			Qty:            row.Qty,
 			Keterangan:     row.Keterangan,
 			NamaMaterial:   row.NamaMaterial,
-			Size:           row.Size,
 			Uom:            row.Uom,
 			WorkOrderModel: row.WorkOrderModel,
 		})

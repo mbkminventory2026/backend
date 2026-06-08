@@ -33,23 +33,25 @@ type CreateWorkOrderTrimRequest struct {
 	ProvidedBy  string  `json:"provided_by" binding:"required,oneof=client permata permatatex Client Permatatex"`
 }
 
-type CreateMaterialListRequest struct {
-	Description string `json:"description"`
-	Size        string `json:"size" binding:"required"`
-	Color       string `json:"color" binding:"required"`
-	UOM         string `json:"uom" binding:"required"`
+type CreateMaterialListItemRequest struct {
+	Item        string  `json:"item"`
+	Description string  `json:"description"`
+	Qty         int32   `json:"qty"`
+	Unit        string  `json:"unit" binding:"required"`
+	EstPrice    float64 `json:"est_price"`
+	Color       string  `json:"color"`
 }
 
 type CreateWorkOrderRequest struct {
-	Buyer          string                        `json:"buyer" binding:"required"`
-	Model          string                        `json:"model" binding:"required"`
-	Qty            int32                         `json:"qty" binding:"required,gt=0"`
-	FOBCMT         bool                          `json:"fob_cmt"`
-	Delivery       string                        `json:"delivery" binding:"required,datetime=2006-01-02"`
-	IDPOClientItem int32                         `json:"id_po_client_item" binding:"required,gt=0"`
-	Shells         []CreateWorkOrderShellRequest `json:"shells" binding:"required,min=1,dive"`
-	Trims          []CreateWorkOrderTrimRequest  `json:"trims" binding:"required,min=1,dive"`
-	MaterialLists  []CreateMaterialListRequest   `json:"material_lists" binding:"omitempty,dive"`
+	Buyer             string                            `json:"buyer" binding:"required"`
+	Model             string                            `json:"model" binding:"required"`
+	Qty               int32                             `json:"qty" binding:"required,gt=0"`
+	FOBCMT            bool                              `json:"fob_cmt"`
+	Delivery          string                            `json:"delivery" binding:"required,datetime=2006-01-02"`
+	IDPOClientItem    int32                             `json:"id_po_client_item" binding:"required,gt=0"`
+	Shells            []CreateWorkOrderShellRequest     `json:"shells" binding:"required,min=1,dive"`
+	Trims             []CreateWorkOrderTrimRequest      `json:"trims" binding:"required,min=1,dive"`
+	MaterialListItems []CreateMaterialListItemRequest   `json:"material_list_items" binding:"omitempty,dive"`
 }
 
 type WorkOrderShellSizeResponse struct {
@@ -89,13 +91,25 @@ type WorkOrderTrimResponse struct {
 	ProvidedBy  string  `json:"provided_by"`
 }
 
+type MaterialListItemResponse struct {
+	ID          int32   `json:"id_material_list_item"`
+	Item        string  `json:"item"`
+	Description string  `json:"description"`
+	Qty         int32   `json:"qty"`
+	Unit        string  `json:"unit"`
+	EstPrice    float64 `json:"est_price"`
+	IDWoShell   *int32  `json:"id_wo_shell,omitempty"`
+	IDWoTrim    *int32  `json:"id_wo_trim,omitempty"`
+	CreatedAt   string  `json:"created_at"`
+}
+
 type MaterialListResponse struct {
-	ID          int32  `json:"id_material_list"`
-	Description string `json:"description"`
-	Size        string `json:"size"`
-	Color       string `json:"color"`
-	UOM         string `json:"uom"`
-	CreatedAt   string `json:"created_at"`
+	ID        int32                      `json:"id_material_list"`
+	IDWo      int32                      `json:"id_wo"`
+	Name      string                     `json:"name"`
+	IsLocked  bool                       `json:"is_locked"`
+	CreatedAt string                     `json:"created_at"`
+	Items     []MaterialListItemResponse `json:"items"`
 }
 
 type WorkOrderResponse struct {

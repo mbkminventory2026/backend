@@ -83,27 +83,34 @@ INSERT INTO WORK_ORDER_TRIM (
 RETURNING id_wo_trim, item, description, color, code, cons, qty, uom, position, created_by, allow, id_wo, created_at, provided_by;
 
 -- name: CreateMaterialList :one
-WITH inserted_item AS (
-    INSERT INTO MATERIAL_LIST_ITEM (description, id_wo, id_wo_shell, id_wo_trim)
-    VALUES (
-        sqlc.arg(description), 
-        sqlc.arg(id_wo),
-        sqlc.narg(id_wo_shell), 
-        sqlc.narg(id_wo_trim)
-    )
-    RETURNING id_material_list_item, description, id_wo, id_wo_shell, id_wo_trim
+INSERT INTO MATERIAL_LIST (id_wo, name)
+VALUES (
+    sqlc.arg(id_wo),
+    sqlc.arg(name)
 )
-INSERT INTO MATERIAL_LIST (id_material_list_item)
-SELECT id_material_list_item FROM inserted_item
-RETURNING id_material_list,
-          (SELECT description FROM inserted_item) AS description,
-          (SELECT id_wo_shell FROM inserted_item) AS id_wo_shell,
-          (SELECT id_wo_trim FROM inserted_item) AS id_wo_trim,
-          sqlc.arg(size)::text AS size,
-          sqlc.arg(color)::text AS color,
-          sqlc.arg(uom)::text AS uom,
-          sqlc.arg(id_wo)::integer AS id_wo,
-          created_at;
+RETURNING id_material_list, id_wo, name, is_locked, created_at;
+
+-- name: CreateMaterialListItem :one
+INSERT INTO MATERIAL_LIST_ITEM (
+    id_material_list,
+    item,
+    description,
+    qty,
+    unit,
+    est_price,
+    id_wo_shell,
+    id_wo_trim
+) VALUES (
+    sqlc.arg(id_material_list),
+    sqlc.arg(item),
+    sqlc.arg(description),
+    sqlc.arg(qty),
+    sqlc.arg(unit),
+    sqlc.arg(est_price)::numeric,
+    sqlc.narg(id_wo_shell),
+    sqlc.narg(id_wo_trim)
+)
+RETURNING id_material_list_item, id_material_list, item, description, qty, unit, est_price, id_wo_shell, id_wo_trim, created_at;
 
 -- name: WorkOrderShellTotalQty :one
 SELECT COALESCE(SUM(qty), 0)::bigint AS total_qty
@@ -124,11 +131,6 @@ FROM WORK_ORDER wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo = wo.id_wo
 LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo = wo.id_wo
-LEFT JOIN MATERIAL_LIST_ITEM mli ON (
-    mli.id_wo = wo.id_wo
-    OR mli.id_wo_shell = wos.id_wo_shell
-    OR mli.id_wo_trim = wot.id_wo_trim
-)
-LEFT JOIN MATERIAL_LIST ml ON ml.id_material_list_item = mli.id_material_list_item
+LEFT JOIN MATERIAL_LIST ml ON ml.id_wo = wo.id_wo
 WHERE pci.id_po_client = sqlc.arg(id_po_client)
   AND (wos.id_wo_shell IS NOT NULL OR wot.id_wo_trim IS NOT NULL OR ml.id_material_list IS NOT NULL);
