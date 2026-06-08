@@ -28,3 +28,9 @@ type ExportedFile struct {
 type ExcelTemplateInfo struct {
 	Name string `json:"name"`
 }
+
+type ExcelTemplateListSuccessDoc struct {
+	Status  string              `json:"status" example:"success"`
+	Message string              `json:"message" example:"excel templates retrieved"`
+	Data    []ExcelTemplateInfo `json:"data"`
+}
