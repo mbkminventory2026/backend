@@ -11,6 +11,132 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getFinanceRecentPOClients = `-- name: GetFinanceRecentPOClients :many
+SELECT 
+    pc.id_po_client,
+    pc.po_number,
+    pc.tanggal,
+    m.nama_perusahaan AS mitra_name
+FROM PO_CLIENT pc
+JOIN MITRA m ON pc.id_mitra = m.id_mitra
+ORDER BY pc.created_at DESC
+LIMIT 5
+`
+
+type GetFinanceRecentPOClientsRow struct {
+	IDPoClient int32       `json:"id_po_client"`
+	PoNumber   string      `json:"po_number"`
+	Tanggal    pgtype.Date `json:"tanggal"`
+	MitraName  string      `json:"mitra_name"`
+}
+
+func (q *Queries) GetFinanceRecentPOClients(ctx context.Context) ([]GetFinanceRecentPOClientsRow, error) {
+	rows, err := q.db.Query(ctx, getFinanceRecentPOClients)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFinanceRecentPOClientsRow
+	for rows.Next() {
+		var i GetFinanceRecentPOClientsRow
+		if err := rows.Scan(
+			&i.IDPoClient,
+			&i.PoNumber,
+			&i.Tanggal,
+			&i.MitraName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getFinanceRecentPOInternals = `-- name: GetFinanceRecentPOInternals :many
+SELECT 
+    poi.id_po_internal,
+    poi.nama_po,
+    poi.tanggal,
+    poi.supplier_name
+FROM PO_INTERNAL poi
+ORDER BY poi.created_at DESC
+LIMIT 5
+`
+
+type GetFinanceRecentPOInternalsRow struct {
+	IDPoInternal int32       `json:"id_po_internal"`
+	NamaPo       string      `json:"nama_po"`
+	Tanggal      pgtype.Date `json:"tanggal"`
+	SupplierName string      `json:"supplier_name"`
+}
+
+func (q *Queries) GetFinanceRecentPOInternals(ctx context.Context) ([]GetFinanceRecentPOInternalsRow, error) {
+	rows, err := q.db.Query(ctx, getFinanceRecentPOInternals)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFinanceRecentPOInternalsRow
+	for rows.Next() {
+		var i GetFinanceRecentPOInternalsRow
+		if err := rows.Scan(
+			&i.IDPoInternal,
+			&i.NamaPo,
+			&i.Tanggal,
+			&i.SupplierName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getFinanceTotalPOClientThisMonth = `-- name: GetFinanceTotalPOClientThisMonth :one
+SELECT COUNT(*) FROM PO_CLIENT 
+WHERE EXTRACT(MONTH FROM tanggal) = EXTRACT(MONTH FROM CURRENT_DATE) 
+  AND EXTRACT(YEAR FROM tanggal) = EXTRACT(YEAR FROM CURRENT_DATE)
+`
+
+func (q *Queries) GetFinanceTotalPOClientThisMonth(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, getFinanceTotalPOClientThisMonth)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const getFinanceTotalPOInternalThisMonth = `-- name: GetFinanceTotalPOInternalThisMonth :one
+SELECT COUNT(*) FROM PO_INTERNAL 
+WHERE EXTRACT(MONTH FROM tanggal) = EXTRACT(MONTH FROM CURRENT_DATE) 
+  AND EXTRACT(YEAR FROM tanggal) = EXTRACT(YEAR FROM CURRENT_DATE)
+`
+
+func (q *Queries) GetFinanceTotalPOInternalThisMonth(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, getFinanceTotalPOInternalThisMonth)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const getFinanceTotalPRInternalThisMonth = `-- name: GetFinanceTotalPRInternalThisMonth :one
+SELECT COUNT(*) FROM PR_INTERNAL 
+WHERE EXTRACT(MONTH FROM tanggal) = EXTRACT(MONTH FROM CURRENT_DATE) 
+  AND EXTRACT(YEAR FROM tanggal) = EXTRACT(YEAR FROM CURRENT_DATE)
+`
+
+func (q *Queries) GetFinanceTotalPRInternalThisMonth(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, getFinanceTotalPRInternalThisMonth)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getLowStockAlerts = `-- name: GetLowStockAlerts :many
 SELECT 
     rm.ID_REKONSILIASI_MATERIAL,

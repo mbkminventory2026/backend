@@ -95,6 +95,11 @@ type Querier interface {
 	GetBarangByID(ctx context.Context, idBarang int32) (GetBarangByIDRow, error)
 	GetDailyReportsByWorkOrder(ctx context.Context, idWo int32) ([]GetDailyReportsByWorkOrderRow, error)
 	GetDepartemenByID(ctx context.Context, idDepartemen int32) (Departeman, error)
+	GetFinanceRecentPOClients(ctx context.Context) ([]GetFinanceRecentPOClientsRow, error)
+	GetFinanceRecentPOInternals(ctx context.Context) ([]GetFinanceRecentPOInternalsRow, error)
+	GetFinanceTotalPOClientThisMonth(ctx context.Context) (int64, error)
+	GetFinanceTotalPOInternalThisMonth(ctx context.Context) (int64, error)
+	GetFinanceTotalPRInternalThisMonth(ctx context.Context) (int64, error)
 	GetHakAksesByID(ctx context.Context, idHakAkses int32) (HakAkse, error)
 	GetJenisBarangByID(ctx context.Context, idJenisBarang int32) (JenisBarang, error)
 	// Mengecek material yang BALANCE-nya di bawah standar untuk trigger WebSocket layar berkedip

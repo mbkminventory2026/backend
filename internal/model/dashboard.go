@@ -104,3 +104,28 @@ type OperatorDashboardMetrics struct {
 	RasioReject       float64            `json:"rasio_reject"`
 	OngoingWorkOrders []OngoingWorkOrder `json:"ongoing_work_orders"`
 }
+
+// RecentPOClient representasi untuk daftar recent PO Client
+type RecentPOClient struct {
+	IDPoClient int32  `json:"id_po_client"`
+	PoNumber   string `json:"po_number"`
+	Tanggal    string `json:"tanggal"`
+	MitraName  string `json:"mitra_name"`
+}
+
+// RecentPOInternal representasi untuk daftar recent PO Internal
+type RecentPOInternal struct {
+	IDPoInternal int32  `json:"id_po_internal"`
+	NamaPo       string `json:"nama_po"`
+	Tanggal      string `json:"tanggal"`
+	SupplierName string `json:"supplier_name"`
+}
+
+// FinanceDashboardMetrics representasi seluruh metrik untuk Admin Keuangan
+type FinanceDashboardMetrics struct {
+	TotalPOClientThisMonth   int64              `json:"total_po_client_this_month"`
+	TotalPOInternalThisMonth int64              `json:"total_po_internal_this_month"`
+	TotalPRInternalThisMonth int64              `json:"total_pr_internal_this_month"`
+	RecentPOClients          []RecentPOClient   `json:"recent_po_clients"`
+	RecentPOInternals        []RecentPOInternal `json:"recent_po_internals"`
+}

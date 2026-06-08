@@ -61,3 +61,40 @@ GROUP BY
 ORDER BY 
     wo.DELIVERY ASC
 LIMIT 5;
+
+-- name: GetFinanceTotalPOClientThisMonth :one
+SELECT COUNT(*) FROM PO_CLIENT 
+WHERE EXTRACT(MONTH FROM tanggal) = EXTRACT(MONTH FROM CURRENT_DATE) 
+  AND EXTRACT(YEAR FROM tanggal) = EXTRACT(YEAR FROM CURRENT_DATE);
+
+-- name: GetFinanceTotalPOInternalThisMonth :one
+SELECT COUNT(*) FROM PO_INTERNAL 
+WHERE EXTRACT(MONTH FROM tanggal) = EXTRACT(MONTH FROM CURRENT_DATE) 
+  AND EXTRACT(YEAR FROM tanggal) = EXTRACT(YEAR FROM CURRENT_DATE);
+
+-- name: GetFinanceTotalPRInternalThisMonth :one
+SELECT COUNT(*) FROM PR_INTERNAL 
+WHERE EXTRACT(MONTH FROM tanggal) = EXTRACT(MONTH FROM CURRENT_DATE) 
+  AND EXTRACT(YEAR FROM tanggal) = EXTRACT(YEAR FROM CURRENT_DATE);
+
+-- name: GetFinanceRecentPOClients :many
+SELECT 
+    pc.id_po_client,
+    pc.po_number,
+    pc.tanggal,
+    m.nama_perusahaan AS mitra_name
+FROM PO_CLIENT pc
+JOIN MITRA m ON pc.id_mitra = m.id_mitra
+ORDER BY pc.created_at DESC
+LIMIT 5;
+
+-- name: GetFinanceRecentPOInternals :many
+SELECT 
+    poi.id_po_internal,
+    poi.nama_po,
+    poi.tanggal,
+    poi.supplier_name
+FROM PO_INTERNAL poi
+ORDER BY poi.created_at DESC
+LIMIT 5;
+

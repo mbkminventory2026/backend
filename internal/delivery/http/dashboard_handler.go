@@ -46,6 +46,7 @@ func (h *DashboardHandler) RegisterRoutes(router *gin.Engine, authMiddleware gin
 		api.GET("/logs", RequirePermission(PermissionLogRead), h.GetLogs)
 		api.POST("/dashboard/ai-estimation", RequirePermission(PermissionAIEstimationRead), h.PredictAIEstimation)
 		api.GET("/dashboard/operator", RequirePermission(PermissionDashboardRead), h.GetOperatorMetrics)
+		api.GET("/dashboard/finance", RequirePermission(PermissionDashboardRead), h.GetFinanceMetrics)
 	}
 
 	router.GET("/ws/alerts", authMiddleware, RequireInternalUser(), RequirePermission(PermissionDashboardRead), h.Alerts)
@@ -122,6 +123,23 @@ func (h *DashboardHandler) GetOperatorMetrics(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusOK, "Metrics operator berhasil diambil", result)
+}
+
+// GetFinanceMetrics mengambil metrik KPI dashboard Admin Keuangan
+// @Summary Ambil KPI Finance
+// @Description Mengambil metrics realtime untuk layar Finance Dashboard
+// @Tags Dashboard
+// @Produce json
+// @Security BearerAuth
+// @Router /api/v1/dashboard/finance [get]
+func (h *DashboardHandler) GetFinanceMetrics(c *gin.Context) {
+	result, err := h.useCase.GetFinanceDashboardMetrics(c.Request.Context())
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "Gagal memuat metrics finance", err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusOK, "Metrics finance berhasil diambil", result)
 }
 
 // Alerts menangani pendaftaran koneksi WebSocket

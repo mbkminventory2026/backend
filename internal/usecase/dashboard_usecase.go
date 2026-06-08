@@ -169,3 +169,59 @@ func (u *DashboardUseCase) GetOperatorDashboardMetrics(ctx context.Context) (*mo
 		OngoingWorkOrders: ongoingData,
 	}, nil
 }
+
+// GetFinanceDashboardMetrics mengambil data untuk dashboard Admin Keuangan
+func (u *DashboardUseCase) GetFinanceDashboardMetrics(ctx context.Context) (*model.FinanceDashboardMetrics, error) {
+	poClientCount, err := u.queries.GetFinanceTotalPOClientThisMonth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get po client count: %w", err)
+	}
+
+	poInternalCount, err := u.queries.GetFinanceTotalPOInternalThisMonth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get po internal count: %w", err)
+	}
+
+	prInternalCount, err := u.queries.GetFinanceTotalPRInternalThisMonth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get pr internal count: %w", err)
+	}
+
+	recentPOClients, err := u.queries.GetFinanceRecentPOClients(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent po clients: %w", err)
+	}
+
+	var parsedRecentPOClients []model.RecentPOClient
+	for _, pc := range recentPOClients {
+		parsedRecentPOClients = append(parsedRecentPOClients, model.RecentPOClient{
+			IDPoClient: pc.IDPoClient,
+			PoNumber:   pc.PoNumber,
+			Tanggal:    pc.Tanggal.Time.Format("2006-01-02"),
+			MitraName:  pc.MitraName,
+		})
+	}
+
+	recentPOInternals, err := u.queries.GetFinanceRecentPOInternals(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent po internals: %w", err)
+	}
+
+	var parsedRecentPOInternals []model.RecentPOInternal
+	for _, poi := range recentPOInternals {
+		parsedRecentPOInternals = append(parsedRecentPOInternals, model.RecentPOInternal{
+			IDPoInternal: poi.IDPoInternal,
+			NamaPo:       poi.NamaPo,
+			Tanggal:      poi.Tanggal.Time.Format("2006-01-02"),
+			SupplierName: poi.SupplierName,
+		})
+	}
+
+	return &model.FinanceDashboardMetrics{
+		TotalPOClientThisMonth:   poClientCount,
+		TotalPOInternalThisMonth: poInternalCount,
+		TotalPRInternalThisMonth: prInternalCount,
+		RecentPOClients:          parsedRecentPOClients,
+		RecentPOInternals:        parsedRecentPOInternals,
+	}, nil
+}
