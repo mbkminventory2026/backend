@@ -64,23 +64,31 @@ type UpdateBarangRequest struct {
 	StokMinimum   int32  `json:"stok_minimum"`
 }
 
-// Company
-type CreateCompanyRequest struct {
-	Nama   string `json:"nama" binding:"required"`
-	Alamat string `json:"alamat"`
-	Email  string `json:"email" binding:"omitempty,email"`
-	NoTelp string `json:"no_telp"`
-	About  string `json:"about"`
-	Logo   string `json:"logo"`
+// Profil Perusahaan
+type CreateProfilPerusahaanRequest struct {
+	Nama            string `json:"nama" binding:"required"`
+	Alamat          string `json:"alamat"`
+	Email           string `json:"email" binding:"omitempty,email"`
+	NoTelp          string `json:"no_telp"`
+	About           string `json:"about"`
+	Logo            string `json:"logo"`
+	BackgroundLogin string `json:"background_login"`
+	TextFooter      string `json:"text_footer"`
+	LinkWebsite     string `json:"link_website"`
+	Medsos          string `json:"medsos"`
 }
 
-type UpdateCompanyRequest struct {
-	Nama   string `json:"nama" binding:"required"`
-	Alamat string `json:"alamat"`
-	Email  string `json:"email" binding:"omitempty,email"`
-	NoTelp string `json:"no_telp"`
-	About  string `json:"about"`
-	Logo   string `json:"logo"`
+type UpdateProfilPerusahaanRequest struct {
+	Nama            string `json:"nama" binding:"required"`
+	Alamat          string `json:"alamat"`
+	Email           string `json:"email" binding:"omitempty,email"`
+	NoTelp          string `json:"no_telp"`
+	About           string `json:"about"`
+	Logo            string `json:"logo"`
+	BackgroundLogin string `json:"background_login"`
+	TextFooter      string `json:"text_footer"`
+	LinkWebsite     string `json:"link_website"`
+	Medsos          string `json:"medsos"`
 }
 
 // Hak Akses
@@ -150,15 +158,19 @@ type BarangResponse struct {
 	CreatedAt       string `json:"created_at"`
 }
 
-type CompanyResponse struct {
-	ID        int32  `json:"id_company"`
-	Nama      string `json:"nama"`
-	Alamat    string `json:"alamat"`
-	Email     string `json:"email"`
-	NoTelp    string `json:"no_telp"`
-	About     string `json:"about"`
-	Logo      string `json:"logo"`
-	CreatedAt string `json:"created_at"`
+type ProfilPerusahaanResponse struct {
+	ID              int32  `json:"id_profil_perusahaan"`
+	Nama            string `json:"nama"`
+	Alamat          string `json:"alamat"`
+	Email           string `json:"email"`
+	NoTelp          string `json:"no_telp"`
+	About           string `json:"about"`
+	Logo            string `json:"logo"`
+	BackgroundLogin string `json:"background_login"`
+	TextFooter      string `json:"text_footer"`
+	LinkWebsite     string `json:"link_website"`
+	Medsos          string `json:"medsos"`
+	CreatedAt       string `json:"created_at"`
 }
 
 type HakAksesResponse struct {
@@ -234,10 +246,10 @@ type ListPermissionsSuccessDoc struct {
 	Data    []HakAksesResponse `json:"data"`
 }
 
-type CompanySuccessDoc struct {
-	Status  string          `json:"status" example:"success"`
-	Message string          `json:"message" example:"company data retrieved"`
-	Data    CompanyResponse `json:"data"`
+type ProfilPerusahaanSuccessDoc struct {
+	Status  string                   `json:"status" example:"success"`
+	Message string                   `json:"message" example:"profil perusahaan data retrieved"`
+	Data    ProfilPerusahaanResponse `json:"data"`
 }
 
 type HakAksesSuccessDoc struct {

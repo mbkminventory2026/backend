@@ -1160,176 +1160,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/master/company": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Master Data"
-                ],
-                "summary": "Get Company Data",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.CompanySuccessDoc"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Master Data"
-                ],
-                "summary": "Create Company Data",
-                "parameters": [
-                    {
-                        "description": "Company payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.CreateCompanyRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/model.CompanySuccessDoc"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/model.LoginBadRequestDoc"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/master/company/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Master Data"
-                ],
-                "summary": "Get Company Detail",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Company ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.CompanySuccessDoc"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Master Data"
-                ],
-                "summary": "Update Company Data",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Company ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Company payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.UpdateCompanyRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.CompanySuccessDoc"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "tags": [
-                    "Master Data"
-                ],
-                "summary": "Delete Company Data",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Company ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.BaseResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/master/departemen": {
             "get": {
                 "security": [
@@ -3028,6 +2858,176 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/profil-perusahaan": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profil Perusahaan"
+                ],
+                "summary": "Get Profil Perusahaan Data",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ProfilPerusahaanSuccessDoc"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profil Perusahaan"
+                ],
+                "summary": "Create Profil Perusahaan Data",
+                "parameters": [
+                    {
+                        "description": "Profil Perusahaan payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateProfilPerusahaanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.ProfilPerusahaanSuccessDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/profil-perusahaan/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profil Perusahaan"
+                ],
+                "summary": "Get Profil Perusahaan Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Profil Perusahaan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ProfilPerusahaanSuccessDoc"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profil Perusahaan"
+                ],
+                "summary": "Update Profil Perusahaan Data",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Profil Perusahaan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Profil Perusahaan payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateProfilPerusahaanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ProfilPerusahaanSuccessDoc"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Profil Perusahaan"
+                ],
+                "summary": "Delete Profil Perusahaan Data",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Profil Perusahaan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
                         }
                     }
                 }
@@ -5324,51 +5324,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.CompanyResponse": {
-            "type": "object",
-            "properties": {
-                "about": {
-                    "type": "string"
-                },
-                "alamat": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "id_company": {
-                    "type": "integer"
-                },
-                "logo": {
-                    "type": "string"
-                },
-                "nama": {
-                    "type": "string"
-                },
-                "no_telp": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.CompanySuccessDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/model.CompanyResponse"
-                },
-                "message": {
-                    "type": "string",
-                    "example": "company data retrieved"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "success"
-                }
-            }
-        },
         "model.CreateBarangRequest": {
             "type": "object",
             "required": [
@@ -5415,32 +5370,6 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "success"
-                }
-            }
-        },
-        "model.CreateCompanyRequest": {
-            "type": "object",
-            "required": [
-                "nama"
-            ],
-            "properties": {
-                "about": {
-                    "type": "string"
-                },
-                "alamat": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "logo": {
-                    "type": "string"
-                },
-                "nama": {
-                    "type": "string"
-                },
-                "no_telp": {
-                    "type": "string"
                 }
             }
         },
@@ -6018,6 +5947,44 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "no_telp": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.CreateProfilPerusahaanRequest": {
+            "type": "object",
+            "required": [
+                "nama"
+            ],
+            "properties": {
+                "about": {
+                    "type": "string"
+                },
+                "alamat": {
+                    "type": "string"
+                },
+                "background_login": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "link_website": {
+                    "type": "string"
+                },
+                "logo": {
+                    "type": "string"
+                },
+                "medsos": {
+                    "type": "string"
+                },
+                "nama": {
+                    "type": "string"
+                },
+                "no_telp": {
+                    "type": "string"
+                },
+                "text_footer": {
                     "type": "string"
                 }
             }
@@ -8278,6 +8245,63 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ProfilPerusahaanResponse": {
+            "type": "object",
+            "properties": {
+                "about": {
+                    "type": "string"
+                },
+                "alamat": {
+                    "type": "string"
+                },
+                "background_login": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id_profil_perusahaan": {
+                    "type": "integer"
+                },
+                "link_website": {
+                    "type": "string"
+                },
+                "logo": {
+                    "type": "string"
+                },
+                "medsos": {
+                    "type": "string"
+                },
+                "nama": {
+                    "type": "string"
+                },
+                "no_telp": {
+                    "type": "string"
+                },
+                "text_footer": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ProfilPerusahaanSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.ProfilPerusahaanResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "profil perusahaan data retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.RatioMarkerResponse": {
             "type": "object",
             "properties": {
@@ -9151,32 +9175,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.UpdateCompanyRequest": {
-            "type": "object",
-            "required": [
-                "nama"
-            ],
-            "properties": {
-                "about": {
-                    "type": "string"
-                },
-                "alamat": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "logo": {
-                    "type": "string"
-                },
-                "nama": {
-                    "type": "string"
-                },
-                "no_telp": {
-                    "type": "string"
-                }
-            }
-        },
         "model.UpdateDepartemenRequest": {
             "type": "object",
             "required": [
@@ -9256,6 +9254,44 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tipe_perusahaan": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.UpdateProfilPerusahaanRequest": {
+            "type": "object",
+            "required": [
+                "nama"
+            ],
+            "properties": {
+                "about": {
+                    "type": "string"
+                },
+                "alamat": {
+                    "type": "string"
+                },
+                "background_login": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "link_website": {
+                    "type": "string"
+                },
+                "logo": {
+                    "type": "string"
+                },
+                "medsos": {
+                    "type": "string"
+                },
+                "nama": {
+                    "type": "string"
+                },
+                "no_telp": {
+                    "type": "string"
+                },
+                "text_footer": {
                     "type": "string"
                 }
             }

@@ -30,17 +30,6 @@ type Barang struct {
 	StokMinimum   int32              `json:"stok_minimum"`
 }
 
-type Company struct {
-	IDCompany int32              `json:"id_company"`
-	Nama      string             `json:"nama"`
-	Alamat    string             `json:"alamat"`
-	Email     string             `json:"email"`
-	NoTelp    string             `json:"no_telp"`
-	About     string             `json:"about"`
-	Logo      string             `json:"logo"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-}
-
 type Departeman struct {
 	IDDepartemen   int32              `json:"id_departemen"`
 	NamaDepartemen string             `json:"nama_departemen"`
@@ -276,6 +265,21 @@ type PrInternalItem struct {
 	Unit             string             `json:"unit"`
 	EstPrice         pgtype.Numeric     `json:"est_price"`
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
+type ProfilPerusahaan struct {
+	IDProfilPerusahaan int32              `json:"id_profil_perusahaan"`
+	Nama               string             `json:"nama"`
+	Alamat             string             `json:"alamat"`
+	Email              string             `json:"email"`
+	NoTelp             string             `json:"no_telp"`
+	About              string             `json:"about"`
+	Logo               string             `json:"logo"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	BackgroundLogin    string             `json:"background_login"`
+	TextFooter         string             `json:"text_footer"`
+	LinkWebsite        string             `json:"link_website"`
+	Medsos             []byte             `json:"medsos"`
 }
 
 type RatioMarker struct {

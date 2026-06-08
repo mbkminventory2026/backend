@@ -106,6 +106,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	profilPerusahaanUseCase, err := usecase.NewProfilPerusahaanUseCase(queries)
+	if err != nil {
+		logger.Error("failed to initialize profil perusahaan usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	transactionDocumentUseCase, err := usecase.NewTransactionDocumentUseCase(queries, dbPool)
 	if err != nil {
 		logger.Error("failed to initialize transaction document usecase", slog.String("error", err.Error()))
@@ -187,6 +194,13 @@ func main() {
 	masterDataHandler, err := httpdelivery.NewMasterDataHandler(masterDataUseCase)
 	if err != nil {
 		logger.Error("failed to initialize master data handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	profilPerusahaanHandler, err := httpdelivery.NewProfilPerusahaanHandler(profilPerusahaanUseCase)
+	if err != nil {
+		logger.Error("failed to initialize profil perusahaan handler", slog.String("error", err.Error()))
 		dbPool.Close()
 		os.Exit(1)
 	}
@@ -285,6 +299,7 @@ func main() {
 	userHandler.RegisterRoutes(router, authMiddleware)
 	roleHandler.RegisterRoutes(router, authMiddleware)
 	masterDataHandler.RegisterRoutes(router, authMiddleware)
+	profilPerusahaanHandler.RegisterRoutes(router, authMiddleware)
 	transactionDocumentHandler.RegisterRoutes(router, authMiddleware)
 	workOrderProductionHandler.RegisterRoutes(router, authMiddleware)
 	timelineProduksiHandler.RegisterRoutes(router, authMiddleware)

@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/jackc/pgconn"
@@ -15,10 +14,9 @@ import (
 )
 
 var (
-	ErrMasterDataNotFound      = errors.New("master data not found")
-	ErrMasterDataConflict      = errors.New("master data already exists")
-	ErrMasterDataDuplicateCode = errors.New("master data code already exists")
-	ErrCompanyAlreadyExists    = errors.New("company data already exists")
+	ErrMasterDataNotFound             = errors.New("master data not found")
+	ErrMasterDataConflict             = errors.New("master data already exists")
+	ErrMasterDataDuplicateCode        = errors.New("master data code already exists")
 
 	departemenSortColumns  = buildSortWhitelist("created_at", "id_departemen", "nama_departemen")
 	jenisBarangSortColumns = buildSortWhitelist("created_at", "id_jenis_barang", "kode", "nama_jenis_barang")
@@ -584,119 +582,7 @@ func (u *MasterDataUseCase) DeleteHakAkses(ctx context.Context, id int32) error 
 	return nil
 }
 
-// COMPANY
-func (u *MasterDataUseCase) GetCompany(ctx context.Context) (model.CompanyResponse, error) {
-	item, err := u.repo.GetCompany(ctx)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return model.CompanyResponse{}, ErrMasterDataNotFound
-		}
-		return model.CompanyResponse{}, err
-	}
 
-	return model.CompanyResponse{
-		ID:        item.IDCompany,
-		Nama:      item.Nama,
-		Alamat:    item.Alamat,
-		Email:     item.Email,
-		NoTelp:    item.NoTelp,
-		About:     item.About,
-		Logo:      item.Logo,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
-}
-
-func (u *MasterDataUseCase) GetCompanyByID(ctx context.Context, id int32) (model.CompanyResponse, error) {
-	item, err := u.repo.GetCompanyByID(ctx, id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return model.CompanyResponse{}, ErrMasterDataNotFound
-		}
-		return model.CompanyResponse{}, err
-	}
-
-	return model.CompanyResponse{
-		ID:        item.IDCompany,
-		Nama:      item.Nama,
-		Alamat:    item.Alamat,
-		Email:     item.Email,
-		NoTelp:    item.NoTelp,
-		About:     item.About,
-		Logo:      item.Logo,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
-}
-
-func (u *MasterDataUseCase) CreateCompany(ctx context.Context, req model.CreateCompanyRequest) (model.CompanyResponse, error) {
-	if _, err := u.repo.GetCompany(ctx); err == nil {
-		return model.CompanyResponse{}, ErrCompanyAlreadyExists
-	} else if !errors.Is(err, pgx.ErrNoRows) {
-		return model.CompanyResponse{}, fmt.Errorf("check existing company: %w", err)
-	}
-
-	item, err := u.repo.CreateCompany(ctx, entity.CreateCompanyParams{
-		Nama:   req.Nama,
-		Alamat: req.Alamat,
-		Email:  req.Email,
-		NoTelp: req.NoTelp,
-		About:  req.About,
-		Logo:   req.Logo,
-	})
-	if err != nil {
-		return model.CompanyResponse{}, mapMasterDataConflict(err)
-	}
-
-	return model.CompanyResponse{
-		ID:        item.IDCompany,
-		Nama:      item.Nama,
-		Alamat:    item.Alamat,
-		Email:     item.Email,
-		NoTelp:    item.NoTelp,
-		About:     item.About,
-		Logo:      item.Logo,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
-}
-
-func (u *MasterDataUseCase) UpdateCompany(ctx context.Context, id int32, req model.UpdateCompanyRequest) (model.CompanyResponse, error) {
-	item, err := u.repo.UpdateCompany(ctx, entity.UpdateCompanyParams{
-		IDCompany: id,
-		Nama:      req.Nama,
-		Alamat:    req.Alamat,
-		Email:     req.Email,
-		NoTelp:    req.NoTelp,
-		About:     req.About,
-		Logo:      req.Logo,
-	})
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return model.CompanyResponse{}, ErrMasterDataNotFound
-		}
-		return model.CompanyResponse{}, mapMasterDataConflict(err)
-	}
-
-	return model.CompanyResponse{
-		ID:        item.IDCompany,
-		Nama:      item.Nama,
-		Alamat:    item.Alamat,
-		Email:     item.Email,
-		NoTelp:    item.NoTelp,
-		About:     item.About,
-		Logo:      item.Logo,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
-}
-
-func (u *MasterDataUseCase) DeleteCompany(ctx context.Context, id int32) error {
-	affected, err := u.repo.DeleteCompany(ctx, id)
-	if err != nil {
-		return err
-	}
-	if affected == 0 {
-		return ErrMasterDataNotFound
-	}
-	return nil
-}
 
 func mapMasterDataConflict(err error) error {
 	var pgErr *pgconn.PgError

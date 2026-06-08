@@ -68,12 +68,6 @@ func (h *MasterDataHandler) RegisterRoutes(router gin.IRouter, authMiddleware gi
 	master.PUT("/permissions/:id", RequirePermission(PermissionPermissionUpdate), h.UpdateHakAkses)
 	master.DELETE("/permissions/:id", RequirePermission(PermissionPermissionDelete), h.DeleteHakAkses)
 
-	// Company
-	master.GET("/company", RequirePermission(PermissionMasterCompanyRead), h.GetCompany)
-	master.GET("/company/:id", RequirePermission(PermissionMasterCompanyRead), h.GetCompanyByID)
-	master.POST("/company", RequirePermission(PermissionMasterCompanyCreate), h.CreateCompany)
-	master.PUT("/company/:id", RequirePermission(PermissionMasterCompanyUpdate), h.UpdateCompany)
-	master.DELETE("/company/:id", RequirePermission(PermissionMasterCompanyDelete), h.DeleteCompany)
 }
 
 // DEPARTEMEN
@@ -693,121 +687,7 @@ func (h *MasterDataHandler) DeleteHakAkses(c *gin.Context) {
 	response.Success(c, http.StatusOK, "permission deleted", nil)
 }
 
-// COMPANY
 
-// GetCompany godoc
-// @Summary      Get Company Data
-// @Tags         Master Data
-// @Produce      json
-// @Security     BearerAuth
-// @Success      200  {object}  model.CompanySuccessDoc
-// @Router       /api/v1/master/company [get]
-func (h *MasterDataHandler) GetCompany(c *gin.Context) {
-	item, err := h.useCase.GetCompany(c.Request.Context())
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	response.Success(c, http.StatusOK, "company data retrieved", item)
-}
-
-// GetCompanyByID godoc
-// @Summary      Get Company Detail
-// @Tags         Master Data
-// @Produce      json
-// @Security     BearerAuth
-// @Param        id   path      int  true  "Company ID"
-// @Success      200  {object}  model.CompanySuccessDoc
-// @Router       /api/v1/master/company/{id} [get]
-func (h *MasterDataHandler) GetCompanyByID(c *gin.Context) {
-	id, err := parsePathInt32(c, "id")
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
-		return
-	}
-
-	item, err := h.useCase.GetCompanyByID(c.Request.Context(), id)
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	response.Success(c, http.StatusOK, "company data retrieved", item)
-}
-
-// CreateCompany godoc
-// @Summary      Create Company Data
-// @Tags         Master Data
-// @Accept       json
-// @Produce      json
-// @Security     BearerAuth
-// @Param        payload  body      model.CreateCompanyRequest  true  "Company payload"
-// @Success      201      {object}  model.CompanySuccessDoc
-// @Failure      409      {object}  model.LoginBadRequestDoc
-// @Router       /api/v1/master/company [post]
-func (h *MasterDataHandler) CreateCompany(c *gin.Context) {
-	var req model.CreateCompanyRequest
-	if !BindJSON(c, &req) {
-		return
-	}
-
-	item, err := h.useCase.CreateCompany(c.Request.Context(), req)
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	response.Success(c, http.StatusCreated, "company data created", item)
-}
-
-// UpdateCompany godoc
-// @Summary      Update Company Data
-// @Tags         Master Data
-// @Accept       json
-// @Produce      json
-// @Security     BearerAuth
-// @Param        id       path      int                         true  "Company ID"
-// @Param        payload  body      model.UpdateCompanyRequest  true  "Company payload"
-// @Success      200      {object}  model.CompanySuccessDoc
-// @Router       /api/v1/master/company/{id} [put]
-func (h *MasterDataHandler) UpdateCompany(c *gin.Context) {
-	id, err := parsePathInt32(c, "id")
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
-		return
-	}
-
-	var req model.UpdateCompanyRequest
-	if !BindJSON(c, &req) {
-		return
-	}
-
-	item, err := h.useCase.UpdateCompany(c.Request.Context(), id, req)
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	response.Success(c, http.StatusOK, "company data updated", item)
-}
-
-// DeleteCompany godoc
-// @Summary      Delete Company Data
-// @Tags         Master Data
-// @Security     BearerAuth
-// @Param        id   path      int  true  "Company ID"
-// @Success      200  {object}  response.BaseResponse
-// @Router       /api/v1/master/company/{id} [delete]
-func (h *MasterDataHandler) DeleteCompany(c *gin.Context) {
-	id, err := parsePathInt32(c, "id")
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
-		return
-	}
-
-	if err := h.useCase.DeleteCompany(c.Request.Context(), id); err != nil {
-		h.handleError(c, err)
-		return
-	}
-	response.Success(c, http.StatusOK, "company data deleted", nil)
-}
 
 // GetWarnaByID godoc
 // @Summary      Get Color Detail
@@ -941,7 +821,7 @@ func (h *MasterDataHandler) handleError(c *gin.Context, err error) {
 		AbortWithError(c, NewHTTPError(http.StatusNotFound, err.Error(), nil))
 		return
 	}
-	if errors.Is(err, usecase.ErrMasterDataDuplicateCode) || errors.Is(err, usecase.ErrCompanyAlreadyExists) {
+	if errors.Is(err, usecase.ErrMasterDataDuplicateCode) {
 		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), nil))
 		return
 	}
