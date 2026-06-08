@@ -23,10 +23,11 @@ func NewProfilPerusahaanHandler(useCase *usecase.ProfilPerusahaanUseCase) (*Prof
 }
 
 func (h *ProfilPerusahaanHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
-	// Independent group for profil-perusahaan
-	group := router.Group("/api/v1/profil-perusahaan").Use(authMiddleware, RequireInternalUser())
+	// Public route for landing page/login screen to get basic branding info
+	router.GET("/api/v1/profil-perusahaan", h.GetProfilPerusahaan)
 
-	group.GET("", RequirePermission(PermissionMasterProfilPerusahaanRead), h.GetProfilPerusahaan)
+	// Protected routes for management
+	group := router.Group("/api/v1/profil-perusahaan").Use(authMiddleware, RequireInternalUser())
 	group.GET("/:id", RequirePermission(PermissionMasterProfilPerusahaanRead), h.GetProfilPerusahaanByID)
 	group.POST("", RequirePermission(PermissionMasterProfilPerusahaanCreate), h.CreateProfilPerusahaan)
 	group.PUT("/:id", RequirePermission(PermissionMasterProfilPerusahaanUpdate), h.UpdateProfilPerusahaan)
