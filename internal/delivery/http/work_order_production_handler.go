@@ -184,12 +184,26 @@ func (h *WorkOrderProductionHandler) CreateWorkOrder(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.CreateWorkOrder(c.Request.Context(), userID, req)
+	res, err := h.useCase.CreateWorkOrder(c.Request.Context(), userID, req)
 	if err != nil {
-		h.handleError(c, err)
+		// Tambahkan pengecekan usecase error spesifik ini:
+		if errors.Is(err, usecase.ErrPOClientItemAlreadyAssigned) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "PO Client Item ini sudah memiliki Work Order aktif dan tidak dapat diduplikasi",
+			})
+			return
+		}
+
+		if errors.Is(err, usecase.ErrWorkOrderValidation) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal memproses pembuatan work order"})
 		return
 	}
-	response.Success(c, http.StatusCreated, "work order created", item)
+
+	response.Success(c, http.StatusCreated, "work order created", res)
 }
 
 // CloseWorkOrder godoc

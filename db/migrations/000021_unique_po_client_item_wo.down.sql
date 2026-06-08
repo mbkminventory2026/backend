@@ -1,0 +1,1 @@
+ALTER TABLE WORK_ORDER DROP CONSTRAINT IF EXISTS unique_id_po_client_item;

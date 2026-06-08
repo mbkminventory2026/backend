@@ -193,6 +193,56 @@ func (q *Queries) DeletePenanggungJawabByPOClientID(ctx context.Context, idPoCli
 	return err
 }
 
+const listAvailablePOClientItems = `-- name: ListAvailablePOClientItems :many
+SELECT 
+    pci.id_po_client_item,
+    pci.style,
+    pci.colour,
+    pci.qty,
+    pci.id_po_client
+FROM PO_CLIENT_ITEM pci
+WHERE NOT EXISTS (
+    SELECT 1 
+    FROM WORK_ORDER wo 
+    WHERE wo.id_po_client_item = pci.id_po_client_item
+)
+ORDER BY pci.created_at DESC
+`
+
+type ListAvailablePOClientItemsRow struct {
+	IDPoClientItem int32  `json:"id_po_client_item"`
+	Style          string `json:"style"`
+	Colour         string `json:"colour"`
+	Qty            int32  `json:"qty"`
+	IDPoClient     int32  `json:"id_po_client"`
+}
+
+func (q *Queries) ListAvailablePOClientItems(ctx context.Context) ([]ListAvailablePOClientItemsRow, error) {
+	rows, err := q.db.Query(ctx, listAvailablePOClientItems)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAvailablePOClientItemsRow
+	for rows.Next() {
+		var i ListAvailablePOClientItemsRow
+		if err := rows.Scan(
+			&i.IDPoClientItem,
+			&i.Style,
+			&i.Colour,
+			&i.Qty,
+			&i.IDPoClient,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updatePOClient = `-- name: UpdatePOClient :one
 UPDATE PO_CLIENT
 SET

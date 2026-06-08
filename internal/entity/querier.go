@@ -137,6 +137,7 @@ type Querier interface {
 	IssueInventory(ctx context.Context, arg IssueInventoryParams) (IssueInventoryRow, error)
 	ListApprovalDetailsByHeaderID(ctx context.Context, idOtoritas int32) ([]OtoritasDokumenDetail, error)
 	ListApprovalHistory(ctx context.Context, arg ListApprovalHistoryParams) ([]ListApprovalHistoryRow, error)
+	ListAvailablePOClientItems(ctx context.Context) ([]ListAvailablePOClientItemsRow, error)
 	ListBarang(ctx context.Context, arg ListBarangParams) ([]ListBarangRow, error)
 	ListDepartemen(ctx context.Context, arg ListDepartemenParams) ([]Departeman, error)
 	ListHakAkses(ctx context.Context, arg ListHakAksesParams) ([]HakAkse, error)

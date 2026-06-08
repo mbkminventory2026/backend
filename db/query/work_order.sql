@@ -78,14 +78,20 @@ RETURNING id_wo_trim, item, description, color, code, cons, qty, uom, position, 
 
 -- name: CreateMaterialList :one
 WITH inserted_item AS (
-    INSERT INTO MATERIAL_LIST_ITEM (description)
-    VALUES (sqlc.arg(description))
-    RETURNING id_material_list_item, description
+    INSERT INTO MATERIAL_LIST_ITEM (description, id_wo_shell, id_wo_trim)
+    VALUES (
+        sqlc.arg(description), 
+        sqlc.narg(id_wo_shell), 
+        sqlc.narg(id_wo_trim)
+    )
+    RETURNING id_material_list_item, description, id_wo_shell, id_wo_trim
 )
 INSERT INTO MATERIAL_LIST (id_material_list_item)
 SELECT id_material_list_item FROM inserted_item
 RETURNING id_material_list,
           (SELECT description FROM inserted_item) AS description,
+          (SELECT id_wo_shell FROM inserted_item) AS id_wo_shell,
+          (SELECT id_wo_trim FROM inserted_item) AS id_wo_trim,
           sqlc.arg(size)::text AS size,
           sqlc.arg(color)::text AS color,
           sqlc.arg(uom)::text AS uom,
@@ -111,6 +117,7 @@ FROM WORK_ORDER wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo = wo.id_wo
 LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo = wo.id_wo
-LEFT JOIN MATERIAL_LIST ml ON ml.id_wo = wo.id_wo
+LEFT JOIN MATERIAL_LIST_ITEM mli ON (mli.id_wo_shell = wos.id_wo_shell OR mli.id_wo_trim = wot.id_wo_trim)
+LEFT JOIN MATERIAL_LIST ml ON ml.id_material_list_item = mli.id_material_list_item
 WHERE pci.id_po_client = sqlc.arg(id_po_client)
   AND (wos.id_wo_shell IS NOT NULL OR wot.id_wo_trim IS NOT NULL OR ml.id_material_list IS NOT NULL);

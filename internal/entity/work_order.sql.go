@@ -17,7 +17,8 @@ FROM WORK_ORDER wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo = wo.id_wo
 LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo = wo.id_wo
-LEFT JOIN MATERIAL_LIST ml ON ml.id_wo = wo.id_wo
+LEFT JOIN MATERIAL_LIST_ITEM mli ON (mli.id_wo_shell = wos.id_wo_shell OR mli.id_wo_trim = wot.id_wo_trim)
+LEFT JOIN MATERIAL_LIST ml ON ml.id_material_list_item = mli.id_material_list_item
 WHERE pci.id_po_client = $1
   AND (wos.id_wo_shell IS NOT NULL OR wot.id_wo_trim IS NOT NULL OR ml.id_material_list IS NOT NULL)
 `
@@ -31,14 +32,20 @@ func (q *Queries) CountConfiguredWorkOrdersByPOClientID(ctx context.Context, idP
 
 const createMaterialList = `-- name: CreateMaterialList :one
 WITH inserted_item AS (
-    INSERT INTO MATERIAL_LIST_ITEM (description)
-    VALUES ($5)
-    RETURNING id_material_list_item, description
+    INSERT INTO MATERIAL_LIST_ITEM (description, id_wo_shell, id_wo_trim)
+    VALUES (
+        $5, 
+        $6, 
+        $7
+    )
+    RETURNING id_material_list_item, description, id_wo_shell, id_wo_trim
 )
 INSERT INTO MATERIAL_LIST (id_material_list_item)
 SELECT id_material_list_item FROM inserted_item
 RETURNING id_material_list,
           (SELECT description FROM inserted_item) AS description,
+          (SELECT id_wo_shell FROM inserted_item) AS id_wo_shell,
+          (SELECT id_wo_trim FROM inserted_item) AS id_wo_trim,
           $1::text AS size,
           $2::text AS color,
           $3::text AS uom,
@@ -47,16 +54,20 @@ RETURNING id_material_list,
 `
 
 type CreateMaterialListParams struct {
-	Size        string `json:"size"`
-	Color       string `json:"color"`
-	Uom         string `json:"uom"`
-	IDWo        int32  `json:"id_wo"`
-	Description string `json:"description"`
+	Size        string      `json:"size"`
+	Color       string      `json:"color"`
+	Uom         string      `json:"uom"`
+	IDWo        int32       `json:"id_wo"`
+	Description string      `json:"description"`
+	IDWoShell   pgtype.Int4 `json:"id_wo_shell"`
+	IDWoTrim    pgtype.Int4 `json:"id_wo_trim"`
 }
 
 type CreateMaterialListRow struct {
 	IDMaterialList int32              `json:"id_material_list"`
 	Description    string             `json:"description"`
+	IDWoShell      pgtype.Int4        `json:"id_wo_shell"`
+	IDWoTrim       pgtype.Int4        `json:"id_wo_trim"`
 	Size           string             `json:"size"`
 	Color          string             `json:"color"`
 	Uom            string             `json:"uom"`
@@ -71,11 +82,15 @@ func (q *Queries) CreateMaterialList(ctx context.Context, arg CreateMaterialList
 		arg.Uom,
 		arg.IDWo,
 		arg.Description,
+		arg.IDWoShell,
+		arg.IDWoTrim,
 	)
 	var i CreateMaterialListRow
 	err := row.Scan(
 		&i.IDMaterialList,
 		&i.Description,
+		&i.IDWoShell,
+		&i.IDWoTrim,
 		&i.Size,
 		&i.Color,
 		&i.Uom,

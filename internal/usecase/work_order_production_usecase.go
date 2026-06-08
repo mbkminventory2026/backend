@@ -27,6 +27,8 @@ var (
 	ErrWorkOrderNotOpen            = errors.New("cannot submit return: work order is not open")
 	ErrReturnAlreadySubmitted      = errors.New("return already submitted for this work order")
 
+	ErrPOClientItemAlreadyAssigned = errors.New("work order sudah dibuat untuk PO client item ini")
+
 	workOrderSortColumns         = buildSortWhitelist("created_at", "id_wo", "buyer", "model", "qty", "status", "po_number", "po_client_item_style")
 	productionSummarySortColumns = buildSortWhitelist("last_updated", "id_wo_shell_size", "model_name", "size", "target_qty", "cutting_qty", "sewing_qty", "qc_pass_qty", "packing_qty", "shipped_qty")
 )
@@ -88,6 +90,19 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 		return nil, mapWorkOrderDBError(err)
 	}
 
+	// Struct bantuan untuk melacak ID yang dihasilkan database selama runtime transaksi
+	type ShellTrack struct {
+		ID     int32
+		Fabric string
+		Color  string
+	}
+	type TrimTrack struct {
+		ID    int32
+		Item  string
+		Color string
+	}
+
+	recordedShells := make([]ShellTrack, 0, len(req.Shells))
 	shells := make([]model.WorkOrderShellResponse, 0, len(req.Shells))
 	for _, shellReq := range req.Shells {
 		shell, shellErr := qtx.CreateWorkOrderShell(ctx, entity.CreateWorkOrderShellParams{
@@ -101,6 +116,13 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 		if shellErr != nil {
 			return nil, mapWorkOrderDBError(shellErr)
 		}
+
+		// Simpan informasi kain untuk pencocokan material garmen nanti
+		recordedShells = append(recordedShells, ShellTrack{
+			ID:     shell.IDWoShell,
+			Fabric: shell.Fabric,
+			Color:  shell.Color,
+		})
 
 		sizes := make([]model.WorkOrderShellSizeResponse, 0, len(shellReq.Sizes))
 		for _, sizeReq := range shellReq.Sizes {
@@ -135,6 +157,7 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 		})
 	}
 
+	recordedTrims := make([]TrimTrack, 0, len(req.Trims))
 	trims := make([]model.WorkOrderTrimResponse, 0, len(req.Trims))
 	for _, trimReq := range req.Trims {
 		trim, trimErr := qtx.CreateWorkOrderTrim(ctx, entity.CreateWorkOrderTrimParams{
@@ -154,6 +177,13 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 			return nil, mapWorkOrderDBError(trimErr)
 		}
 
+		// Simpan informasi aksesoris (trim) untuk pencocokan material garmen nanti
+		recordedTrims = append(recordedTrims, TrimTrack{
+			ID:    trim.IDWoTrim,
+			Item:  trim.Item,
+			Color: trim.Color,
+		})
+
 		trims = append(trims, model.WorkOrderTrimResponse{
 			ID:          trim.IDWoTrim,
 			Item:        trim.Item,
@@ -172,12 +202,61 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 
 	materials := make([]model.MaterialListResponse, 0, len(req.MaterialLists))
 	for _, materialReq := range req.MaterialLists {
+		var idWoShell pgtype.Int4
+		var idWoTrim pgtype.Int4
+
+		// [DEBUG LOG] Pantau data apa yang sedang dibaca backend
+		fmt.Printf("[WO-DEBUG] Memproses Material: Desc='%s' | Color='%s'\n", materialReq.Description, materialReq.Color)
+
+		// 1. Logika Pengait Otomatis ke WORK_ORDER_SHELL (Kain)
+		for _, s := range recordedShells {
+			// Skenario A: Warna match DAN teks deskripsi mirip
+			textMatch := strings.Contains(strings.ToLower(materialReq.Description), strings.ToLower(s.Fabric)) || 
+						 strings.Contains(strings.ToLower(s.Fabric), strings.ToLower(materialReq.Description))
+			
+			if strings.EqualFold(materialReq.Color, s.Color) && (textMatch || materialReq.Description == "") {
+				idWoShell = pgtype.Int4{Int32: s.ID, Valid: true}
+				fmt.Printf("   -> 🎉 MATCH FOUND ke Shell ID: %d (Fabric: %s)\n", s.ID, s.Fabric)
+				break
+			}
+		}
+
+		// 2. Logika Pengait Otomatis ke WORK_ORDER_TRIM (Aksesoris)
+		if !idWoShell.Valid {
+			for _, t := range recordedTrims {
+				textMatch := strings.Contains(strings.ToLower(materialReq.Description), strings.ToLower(t.Item)) || 
+							 strings.Contains(strings.ToLower(t.Item), strings.ToLower(materialReq.Description))
+				
+				if strings.EqualFold(materialReq.Color, t.Color) && (textMatch || materialReq.Description == "") {
+					idWoTrim = pgtype.Int4{Int32: t.ID, Valid: true}
+					fmt.Printf("   -> 🎉 MATCH FOUND ke Trim ID: %d (Item: %s)\n", t.ID, t.Item)
+					break
+				}
+			}
+		}
+
+		// Skenario Fallback: Jika teks tidak ada yang mirip, tapi warna sama persis dengan kain tunggal
+		if !idWoShell.Valid && !idWoTrim.Valid && len(recordedShells) == 1 {
+			if strings.EqualFold(materialReq.Color, recordedShells[0].Color) {
+				idWoShell = pgtype.Int4{Int32: recordedShells[0].ID, Valid: true}
+				fmt.Printf("   -> ⚠️ FALLBACK MATCH (Hanya 1 Shell): Terhubung ke Shell ID %d karena kesamaan warna\n", recordedShells[0].ID)
+			}
+		}
+
+		// Jika tetap tidak ketemu match sama sekali
+		if !idWoShell.Valid && !idWoTrim.Valid {
+			fmt.Println("   -> ❌ NO MATCH FOUND: Kolom akan bernilai NULL di database.")
+		}
+
+		// 3. Eksekusi simpan ke database dengan parameter ter-update
 		material, materialErr := qtx.CreateMaterialList(ctx, entity.CreateMaterialListParams{
 			Description: materialReq.Description,
 			Size:        materialReq.Size,
 			Color:       materialReq.Color,
 			Uom:         materialReq.UOM,
 			IDWo:        header.IDWo,
+			IDWoShell:   idWoShell, // Hasil pencarian dinamis
+			IDWoTrim:    idWoTrim,  // Hasil pencarian dinamis
 		})
 		if materialErr != nil {
 			return nil, mapWorkOrderDBError(materialErr)
@@ -584,6 +663,11 @@ func mapWorkOrderDBError(err error) error {
 		switch pgErr.Code {
 		case "23503":
 			return ErrWorkOrderReferenceNotFound
+		case "23505":
+			if strings.Contains(pgErr.ConstraintName, "unique_id_po_client_item") {
+				return ErrPOClientItemAlreadyAssigned
+			}
+			return ErrPOClientItemAlreadyAssigned
 		}
 	}
 	return fmt.Errorf("%w: %v", ErrWorkOrderServiceUnavailable, err)
@@ -644,7 +728,9 @@ func (u *WorkOrderProductionUseCase) CreateReturClient(ctx context.Context, idWo
 		return nil, fmt.Errorf("%w: failed to fetch work order", ErrWorkOrderServiceUnavailable)
 	}
 
-	if wo.Status != "open" {
+	fmt.Printf("[RETUR-DEBUG] ID WO: %d, Status Saat Ini: '%s'\n", idWo, wo.Status)
+
+	if wo.Status != "open" && wo.Status != "pending" {
 		return nil, ErrWorkOrderNotOpen
 	}
 

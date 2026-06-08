@@ -76,3 +76,18 @@ SELECT COUNT(*)
 FROM WORK_ORDER wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 WHERE pci.id_po_client = sqlc.arg(id_po_client);
+
+-- name: ListAvailablePOClientItems :many
+SELECT 
+    pci.id_po_client_item,
+    pci.style,
+    pci.colour,
+    pci.qty,
+    pci.id_po_client
+FROM PO_CLIENT_ITEM pci
+WHERE NOT EXISTS (
+    SELECT 1 
+    FROM WORK_ORDER wo 
+    WHERE wo.id_po_client_item = pci.id_po_client_item
+)
+ORDER BY pci.created_at DESC;
