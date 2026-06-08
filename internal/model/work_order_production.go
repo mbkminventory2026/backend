@@ -215,4 +215,3 @@ type ReturClientListSuccessDoc struct {
 	Message string                  `json:"message" example:"retur client list retrieved"`
 	Data    ReturClientListResponse `json:"data"`
 }
-

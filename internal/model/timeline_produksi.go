@@ -100,7 +100,7 @@ type TimelinePlanListResponse struct {
 }
 
 type TimelinePlanListSuccessDoc struct {
-	Status  string                            `json:"status" example:"success"`
-	Message string                            `json:"message" example:"timeline plans retrieved"`
-	Data    TimelinePlanListResponse          `json:"data"`
+	Status  string                   `json:"status" example:"success"`
+	Message string                   `json:"message" example:"timeline plans retrieved"`
+	Data    TimelinePlanListResponse `json:"data"`
 }

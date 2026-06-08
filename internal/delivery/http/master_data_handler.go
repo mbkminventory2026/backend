@@ -687,8 +687,6 @@ func (h *MasterDataHandler) DeleteHakAkses(c *gin.Context) {
 	response.Success(c, http.StatusOK, "permission deleted", nil)
 }
 
-
-
 // GetWarnaByID godoc
 // @Summary      Get Color Detail
 // @Tags         Master Data
