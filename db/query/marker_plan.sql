@@ -61,7 +61,7 @@ SELECT
     mp.tanggal_efektif,
     mp.id_wo_shell,
     mp.created_at,
-    wos.fabric,
+    wos.deskripsi,
     wos.color,
     wo.id_wo,
     wo.buyer,
@@ -77,7 +77,7 @@ WHERE (
     mp.no_dokumen ILIKE '%' || sqlc.arg(search_term) || '%' OR
     wo.buyer ILIKE '%' || sqlc.arg(search_term) || '%' OR
     wo.model ILIKE '%' || sqlc.arg(search_term) || '%' OR
-    wos.fabric ILIKE '%' || sqlc.arg(search_term) || '%'
+    wos.deskripsi ILIKE '%' || sqlc.arg(search_term) || '%'
 ) AND (
     sqlc.narg(id_mitra)::integer IS NULL OR
     pc.id_mitra = sqlc.narg(id_mitra)::integer

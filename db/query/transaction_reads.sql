@@ -83,7 +83,7 @@ LIMIT 1;
 -- name: ListWorkOrderShellsByWorkOrderID :many
 SELECT
     id_wo_shell,
-    fabric,
+    deskripsi,
     cons,
     color,
     allow,

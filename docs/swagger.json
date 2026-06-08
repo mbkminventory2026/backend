@@ -963,7 +963,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Search by document number, model, buyer, fabric",
+                        "description": "Search by document number, model, buyer, deskripsi",
                         "name": "search",
                         "in": "query"
                     }
@@ -6737,7 +6737,7 @@
                 "berat_1_yd",
                 "color",
                 "cons",
-                "fabric",
+                "deskripsi",
                 "sizes"
             ],
             "properties": {
@@ -6756,7 +6756,7 @@
                     "type": "number",
                     "minimum": 0
                 },
-                "fabric": {
+                "deskripsi": {
                     "type": "string"
                 },
                 "sizes": {
@@ -7554,7 +7554,7 @@
                 "created_at": {
                     "type": "string"
                 },
-                "fabric": {
+                "deskripsi": {
                     "type": "string"
                 },
                 "id_marker_plan": {
@@ -10297,7 +10297,7 @@
                 "color": {
                     "type": "string"
                 },
-                "fabric": {
+                "deskripsi": {
                     "type": "string"
                 },
                 "id_timeline": {
@@ -10675,7 +10675,7 @@
                 "created_at": {
                     "type": "string"
                 },
-                "fabric": {
+                "deskripsi": {
                     "type": "string"
                 },
                 "id_wo_shell": {

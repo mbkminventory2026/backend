@@ -18,21 +18,21 @@ RETURNING id_wo, buyer, model, qty, fob_cmt, delivery, id_po_client_item, create
 
 -- name: CreateWorkOrderShell :one
 INSERT INTO WORK_ORDER_SHELL (
-    fabric,
+    deskripsi,
     cons,
     color,
     allow,
     berat_1_yd,
     id_wo
 ) VALUES (
-    sqlc.arg(fabric),
+    sqlc.arg(deskripsi),
     sqlc.arg(cons)::numeric,
     sqlc.arg(color),
     sqlc.arg(allow),
     sqlc.arg(berat_1_yd)::numeric,
     sqlc.arg(id_wo)
 )
-RETURNING id_wo_shell, fabric, cons, color, allow, berat_1_yd, id_wo, created_at;
+RETURNING id_wo_shell, deskripsi, cons, color, allow, berat_1_yd, id_wo, created_at;
 
 -- name: CreateWorkOrderShellSize :one
 INSERT INTO WORK_ORDER_SHELL_SIZE (

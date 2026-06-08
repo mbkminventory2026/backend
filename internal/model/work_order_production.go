@@ -9,7 +9,7 @@ type CreateWorkOrderShellSizeRequest struct {
 }
 
 type CreateWorkOrderShellRequest struct {
-	Fabric   string                            `json:"fabric" binding:"required"`
+	Deskripsi   string                            `json:"deskripsi" binding:"required"`
 	Cons     float64                           `json:"cons" binding:"required,gte=0"`
 	Color    string                            `json:"color" binding:"required"`
 	Allow    int32                             `json:"allow" binding:"required,gte=0"`
@@ -59,7 +59,7 @@ type WorkOrderShellSizeResponse struct {
 
 type WorkOrderShellResponse struct {
 	ID        int32                        `json:"id_wo_shell"`
-	Fabric    string                       `json:"fabric"`
+	Deskripsi string                       `json:"deskripsi"`
 	Cons      float64                      `json:"cons"`
 	Color     string                       `json:"color"`
 	Allow     int32                        `json:"allow"`

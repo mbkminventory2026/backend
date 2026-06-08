@@ -158,7 +158,7 @@ func (q *Queries) CreateWorkOrder(ctx context.Context, arg CreateWorkOrderParams
 
 const createWorkOrderShell = `-- name: CreateWorkOrderShell :one
 INSERT INTO WORK_ORDER_SHELL (
-    fabric,
+    deskripsi,
     cons,
     color,
     allow,
@@ -172,21 +172,21 @@ INSERT INTO WORK_ORDER_SHELL (
     $5::numeric,
     $6
 )
-RETURNING id_wo_shell, fabric, cons, color, allow, berat_1_yd, id_wo, created_at
+RETURNING id_wo_shell, deskripsi, cons, color, allow, berat_1_yd, id_wo, created_at
 `
 
 type CreateWorkOrderShellParams struct {
-	Fabric   string         `json:"fabric"`
-	Cons     pgtype.Numeric `json:"cons"`
-	Color    string         `json:"color"`
-	Allow    int32          `json:"allow"`
-	Berat1Yd pgtype.Numeric `json:"berat_1_yd"`
-	IDWo     int32          `json:"id_wo"`
+	Deskripsi string         `json:"deskripsi"`
+	Cons      pgtype.Numeric `json:"cons"`
+	Color     string         `json:"color"`
+	Allow     int32          `json:"allow"`
+	Berat1Yd  pgtype.Numeric `json:"berat_1_yd"`
+	IDWo      int32          `json:"id_wo"`
 }
 
 type CreateWorkOrderShellRow struct {
 	IDWoShell int32              `json:"id_wo_shell"`
-	Fabric    string             `json:"fabric"`
+	Deskripsi string             `json:"deskripsi"`
 	Cons      pgtype.Numeric     `json:"cons"`
 	Color     string             `json:"color"`
 	Allow     int32              `json:"allow"`
@@ -197,7 +197,7 @@ type CreateWorkOrderShellRow struct {
 
 func (q *Queries) CreateWorkOrderShell(ctx context.Context, arg CreateWorkOrderShellParams) (CreateWorkOrderShellRow, error) {
 	row := q.db.QueryRow(ctx, createWorkOrderShell,
-		arg.Fabric,
+		arg.Deskripsi,
 		arg.Cons,
 		arg.Color,
 		arg.Allow,
@@ -207,7 +207,7 @@ func (q *Queries) CreateWorkOrderShell(ctx context.Context, arg CreateWorkOrderS
 	var i CreateWorkOrderShellRow
 	err := row.Scan(
 		&i.IDWoShell,
-		&i.Fabric,
+		&i.Deskripsi,
 		&i.Cons,
 		&i.Color,
 		&i.Allow,

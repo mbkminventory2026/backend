@@ -107,7 +107,7 @@ type MarkerPlanListItem struct {
 	NoDokumen      string `json:"no_dokumen"`
 	TanggalEfektif string `json:"tanggal_efektif"`
 	IDWoShell      int32  `json:"id_wo_shell"`
-	Fabric         string `json:"fabric"`
+	Deskripsi      string `json:"deskripsi"`
 	Color          string `json:"color"`
 	IDWo           int32  `json:"id_wo"`
 	Buyer          string `json:"buyer"`

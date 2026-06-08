@@ -830,7 +830,7 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		// Shell 1: Fabric (Cotton Fleece, Navy)
 		var idShell1 int32
 		err = db.QueryRow(ctx, `
-			INSERT INTO WORK_ORDER_SHELL (FABRIC, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO, PROVIDED_BY, MATERIAL_TYPE)
+			INSERT INTO WORK_ORDER_SHELL (DESKRIPSI, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO, PROVIDED_BY, MATERIAL_TYPE)
 			VALUES ('Cotton Fleece', 0.35, 'Navy', 3, 0.22, $1, 'permata', 'fabric')
 			RETURNING ID_WO_SHELL
 		`, idWo1).Scan(&idShell1)
@@ -841,7 +841,7 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		// Shell 2: Fabric (Cotton Fleece, Maroon)
 		var idShell2 int32
 		err = db.QueryRow(ctx, `
-			INSERT INTO WORK_ORDER_SHELL (FABRIC, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO, PROVIDED_BY, MATERIAL_TYPE)
+			INSERT INTO WORK_ORDER_SHELL (DESKRIPSI, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO, PROVIDED_BY, MATERIAL_TYPE)
 			VALUES ('Cotton Fleece', 0.35, 'Maroon', 3, 0.22, $1, 'permata', 'fabric')
 			RETURNING ID_WO_SHELL
 		`, idWo1).Scan(&idShell2)
@@ -852,7 +852,7 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		// Shell 3: Interlining (2016F, White)
 		var idShell3 int32
 		err = db.QueryRow(ctx, `
-			INSERT INTO WORK_ORDER_SHELL (FABRIC, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO, PROVIDED_BY, MATERIAL_TYPE)
+			INSERT INTO WORK_ORDER_SHELL (DESKRIPSI, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO, PROVIDED_BY, MATERIAL_TYPE)
 			VALUES ('2016F', 0.1, 'White', 3, 0.05, $1, 'permata', 'interlining')
 			RETURNING ID_WO_SHELL
 		`, idWo1).Scan(&idShell3)
@@ -1006,7 +1006,7 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		// WO 2 Details: Shell
 		var idShellWO2 int32
 		err = db.QueryRow(ctx, `
-			INSERT INTO WORK_ORDER_SHELL (FABRIC, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO, PROVIDED_BY, MATERIAL_TYPE)
+			INSERT INTO WORK_ORDER_SHELL (DESKRIPSI, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO, PROVIDED_BY, MATERIAL_TYPE)
 			VALUES ('Cotton Combed 30s', 0.35, 'Maroon', 3, 0.22, $1, 'permata', 'fabric')
 			RETURNING ID_WO_SHELL
 		`, idWo2).Scan(&idShellWO2)

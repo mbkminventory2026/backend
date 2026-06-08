@@ -966,7 +966,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Search by document number, model, buyer, fabric",
+                        "description": "Search by document number, model, buyer, deskripsi",
                         "name": "search",
                         "in": "query"
                     }
@@ -6740,7 +6740,7 @@ const docTemplate = `{
                 "berat_1_yd",
                 "color",
                 "cons",
-                "fabric",
+                "deskripsi",
                 "sizes"
             ],
             "properties": {
@@ -6759,7 +6759,7 @@ const docTemplate = `{
                     "type": "number",
                     "minimum": 0
                 },
-                "fabric": {
+                "deskripsi": {
                     "type": "string"
                 },
                 "sizes": {
@@ -7557,7 +7557,7 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "fabric": {
+                "deskripsi": {
                     "type": "string"
                 },
                 "id_marker_plan": {
@@ -10300,7 +10300,7 @@ const docTemplate = `{
                 "color": {
                     "type": "string"
                 },
-                "fabric": {
+                "deskripsi": {
                     "type": "string"
                 },
                 "id_timeline": {
@@ -10678,7 +10678,7 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "fabric": {
+                "deskripsi": {
                     "type": "string"
                 },
                 "id_wo_shell": {

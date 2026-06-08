@@ -35,7 +35,7 @@ type WOShellPlanResponse struct {
 	StatusLoadingSewing    string `json:"status_loading_sewing"`
 	TglFinishingPacking    string `json:"tgl_finishing_packing,omitempty"`
 	StatusFinishingPacking string `json:"status_finishing_packing"`
-	Fabric                 string `json:"fabric,omitempty"`
+	Deskripsi              string `json:"deskripsi,omitempty"`
 	Color                  string `json:"color,omitempty"`
 }
 

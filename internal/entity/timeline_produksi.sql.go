@@ -98,7 +98,7 @@ SELECT
     wsp.TGL_EMBROO, wsp.STATUS_EMBROO,
     wsp.TGL_LOADING_SEWING, wsp.STATUS_LOADING_SEWING,
     wsp.TGL_FINISHING_PACKING, wsp.STATUS_FINISHING_PACKING,
-    wos.FABRIC, wos.COLOR
+    wos.DESKRIPSI, wos.COLOR
 FROM WO_SHELL_PLAN wsp
 JOIN WORK_ORDER_SHELL wos ON wsp.ID_WO_SHELL = wos.ID_WO_SHELL
 WHERE wsp.ID_TIMELINE = $1
@@ -118,7 +118,7 @@ type GetWOShellPlansByTimelineIDRow struct {
 	StatusLoadingSewing    string      `json:"status_loading_sewing"`
 	TglFinishingPacking    pgtype.Date `json:"tgl_finishing_packing"`
 	StatusFinishingPacking string      `json:"status_finishing_packing"`
-	Fabric                 string      `json:"fabric"`
+	Deskripsi              string      `json:"deskripsi"`
 	Color                  string      `json:"color"`
 }
 
@@ -144,7 +144,7 @@ func (q *Queries) GetWOShellPlansByTimelineID(ctx context.Context, idTimeline in
 			&i.StatusLoadingSewing,
 			&i.TglFinishingPacking,
 			&i.StatusFinishingPacking,
-			&i.Fabric,
+			&i.Deskripsi,
 			&i.Color,
 		); err != nil {
 			return nil, err

@@ -552,7 +552,7 @@ type WorkOrder struct {
 
 type WorkOrderShell struct {
 	IDWoShell    int32              `json:"id_wo_shell"`
-	Fabric       string             `json:"fabric"`
+	Deskripsi    string             `json:"deskripsi"`
 	Cons         pgtype.Numeric     `json:"cons"`
 	Color        string             `json:"color"`
 	Allow        int32              `json:"allow"`

@@ -185,7 +185,7 @@ func (u *TimelineProduksiUseCase) GetTimelinePlan(ctx context.Context, idTimelin
 			StatusLoadingSewing:    r.StatusLoadingSewing,
 			TglFinishingPacking:    formatDate(r.TglFinishingPacking),
 			StatusFinishingPacking: r.StatusFinishingPacking,
-			Fabric:                 r.Fabric,
+			Deskripsi:              r.Deskripsi,
 			Color:                  r.Color,
 		}
 	}

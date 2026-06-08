@@ -1402,7 +1402,7 @@ func (q *Queries) ListWorkOrderShellSizesByWorkOrderID(ctx context.Context, idWo
 const listWorkOrderShellsByWorkOrderID = `-- name: ListWorkOrderShellsByWorkOrderID :many
 SELECT
     id_wo_shell,
-    fabric,
+    deskripsi,
     cons,
     color,
     allow,
@@ -1416,7 +1416,7 @@ ORDER BY id_wo_shell ASC
 
 type ListWorkOrderShellsByWorkOrderIDRow struct {
 	IDWoShell int32              `json:"id_wo_shell"`
-	Fabric    string             `json:"fabric"`
+	Deskripsi string             `json:"deskripsi"`
 	Cons      pgtype.Numeric     `json:"cons"`
 	Color     string             `json:"color"`
 	Allow     int32              `json:"allow"`
@@ -1436,7 +1436,7 @@ func (q *Queries) ListWorkOrderShellsByWorkOrderID(ctx context.Context, idWo int
 		var i ListWorkOrderShellsByWorkOrderIDRow
 		if err := rows.Scan(
 			&i.IDWoShell,
-			&i.Fabric,
+			&i.Deskripsi,
 			&i.Cons,
 			&i.Color,
 			&i.Allow,

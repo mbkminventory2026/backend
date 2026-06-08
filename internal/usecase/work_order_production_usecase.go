@@ -92,9 +92,9 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 
 	// Struct bantuan untuk melacak ID yang dihasilkan database selama runtime transaksi
 	type ShellTrack struct {
-		ID     int32
-		Fabric string
-		Color  string
+		ID        int32
+		Deskripsi string
+		Color     string
 	}
 	type TrimTrack struct {
 		ID    int32
@@ -106,7 +106,7 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 	shells := make([]model.WorkOrderShellResponse, 0, len(req.Shells))
 	for _, shellReq := range req.Shells {
 		shell, shellErr := qtx.CreateWorkOrderShell(ctx, entity.CreateWorkOrderShellParams{
-			Fabric:   shellReq.Fabric,
+			Deskripsi: shellReq.Deskripsi,
 			Cons:     mustNumeric(shellReq.Cons),
 			Color:    shellReq.Color,
 			Allow:    shellReq.Allow,
@@ -119,9 +119,9 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 
 		// Simpan informasi kain untuk pencocokan material garmen nanti
 		recordedShells = append(recordedShells, ShellTrack{
-			ID:     shell.IDWoShell,
-			Fabric: shell.Fabric,
-			Color:  shell.Color,
+			ID:        shell.IDWoShell,
+			Deskripsi: shell.Deskripsi,
+			Color:     shell.Color,
 		})
 
 		sizes := make([]model.WorkOrderShellSizeResponse, 0, len(shellReq.Sizes))
@@ -147,7 +147,7 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 
 		shells = append(shells, model.WorkOrderShellResponse{
 			ID:        shell.IDWoShell,
-			Fabric:    shell.Fabric,
+			Deskripsi: shell.Deskripsi,
 			Cons:      numericToFloat64(shell.Cons),
 			Color:     shell.Color,
 			Allow:     shell.Allow,
@@ -211,12 +211,12 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 		// 1. Logika Pengait Otomatis ke WORK_ORDER_SHELL (Kain)
 		for _, s := range recordedShells {
 			// Skenario A: Warna match DAN teks deskripsi mirip
-			textMatch := strings.Contains(strings.ToLower(materialReq.Description), strings.ToLower(s.Fabric)) ||
-				strings.Contains(strings.ToLower(s.Fabric), strings.ToLower(materialReq.Description))
+			textMatch := strings.Contains(strings.ToLower(materialReq.Description), strings.ToLower(s.Deskripsi)) ||
+				strings.Contains(strings.ToLower(s.Deskripsi), strings.ToLower(materialReq.Description))
 
 			if strings.EqualFold(materialReq.Color, s.Color) && (textMatch || materialReq.Description == "") {
 				idWoShell = pgtype.Int4{Int32: s.ID, Valid: true}
-				fmt.Printf("   -> 🎉 MATCH FOUND ke Shell ID: %d (Fabric: %s)\n", s.ID, s.Fabric)
+				fmt.Printf("   -> 🎉 MATCH FOUND ke Shell ID: %d (Deskripsi: %s)\n", s.ID, s.Deskripsi)
 				break
 			}
 		}
@@ -584,7 +584,7 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id 
 	for _, row := range shellRows {
 		shells = append(shells, model.WorkOrderShellResponse{
 			ID:        row.IDWoShell,
-			Fabric:    row.Fabric,
+			Deskripsi: row.Deskripsi,
 			Cons:      numericToFloat64(row.Cons),
 			Color:     row.Color,
 			Allow:     row.Allow,
