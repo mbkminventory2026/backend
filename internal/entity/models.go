@@ -60,6 +60,13 @@ type KomponenMarkerPlan struct {
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 }
 
+type KomponenSpreadingCuttingPlan struct {
+	IDKomponenSpreading    int32              `json:"id_komponen_spreading"`
+	IDSpreadingCuttingPlan int32              `json:"id_spreading_cutting_plan"`
+	NamaKomponen           string             `json:"nama_komponen"`
+	CreatedAt              pgtype.Timestamptz `json:"created_at"`
+}
+
 type LogAktivita struct {
 	IDLog     int32              `json:"id_log"`
 	Aksi      string             `json:"aksi"`
@@ -292,8 +299,6 @@ type RatioMarker struct {
 	EfficiencyMarker     pgtype.Numeric     `json:"efficiency_marker"`
 	Allowance            pgtype.Numeric     `json:"allowance"`
 	ConsBuyer            pgtype.Numeric     `json:"cons_buyer"`
-	RollQty              int32              `json:"roll_qty"`
-	SambunganRoll        int32              `json:"sambungan_roll"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 	Plot                 int32              `json:"plot"`
 	LebarKain            pgtype.Numeric     `json:"lebar_kain"`
@@ -307,6 +312,34 @@ type RatioSizeMarker struct {
 	IDWoShellSize     int32              `json:"id_wo_shell_size"`
 	RatioPlan         int32              `json:"ratio_plan"`
 	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+}
+
+type RatioSizeSpreading struct {
+	IDRatioSizeSpreading int32              `json:"id_ratio_size_spreading"`
+	IDRatioSpreading     int32              `json:"id_ratio_spreading"`
+	IDWoShellSize        int32              `json:"id_wo_shell_size"`
+	RatioPlan            int32              `json:"ratio_plan"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+}
+
+type RatioSpreading struct {
+	IDRatioSpreading     int32              `json:"id_ratio_spreading"`
+	IDKomponenSpreading  int32              `json:"id_komponen_spreading"`
+	IDWoShell            int32              `json:"id_wo_shell"`
+	Cons                 pgtype.Numeric     `json:"cons"`
+	PlanSpreadingGelaran pgtype.Numeric     `json:"plan_spreading_gelaran"`
+	PanjangMarker        pgtype.Numeric     `json:"panjang_marker"`
+	EfficiencyMarker     pgtype.Numeric     `json:"efficiency_marker"`
+	Allowance            pgtype.Numeric     `json:"allowance"`
+	ConsBuyer            pgtype.Numeric     `json:"cons_buyer"`
+	RollQty              int32              `json:"roll_qty"`
+	SambunganRoll        int32              `json:"sambungan_roll"`
+	Reject               pgtype.Numeric     `json:"reject"`
+	Plot                 int32              `json:"plot"`
+	LebarKain            pgtype.Numeric     `json:"lebar_kain"`
+	PanjangMarkerUnit    string             `json:"panjang_marker_unit"`
+	Ket                  string             `json:"ket"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 }
 
 type Received struct {
@@ -403,6 +436,14 @@ type Role struct {
 type RoleHakAkse struct {
 	IDRole     int32 `json:"id_role"`
 	IDHakAkses int32 `json:"id_hak_akses"`
+}
+
+type SpreadingCuttingPlan struct {
+	IDSpreadingCuttingPlan int32              `json:"id_spreading_cutting_plan"`
+	NoDokumen              string             `json:"no_dokumen"`
+	TanggalEfektif         pgtype.Date        `json:"tanggal_efektif"`
+	IDWo                   int32              `json:"id_wo"`
+	CreatedAt              pgtype.Timestamptz `json:"created_at"`
 }
 
 type SuratJalanClient struct {

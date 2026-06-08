@@ -118,6 +118,8 @@ func (h *ApprovalHandler) GetDocumentAuditTrail(c *gin.Context) {
 		requiredPermission = PermissionMarkerPlanRead
 	case "TIMELINE_PRODUKSI":
 		requiredPermission = PermissionTimelineRead
+	case "SPREADING_CUTTING_PLAN":
+		requiredPermission = PermissionCuttingPlanRead
 	case "PACKING_LIST":
 		requiredPermission = PermissionPackingListRead
 	default:

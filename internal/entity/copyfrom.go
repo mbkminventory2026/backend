@@ -43,6 +43,40 @@ func (q *Queries) CreateRatioSizeMarker(ctx context.Context, arg []CreateRatioSi
 	return q.db.CopyFrom(ctx, []string{"ratio_size_marker"}, []string{"id_ratio_marker", "id_wo_shell_size", "ratio_plan"}, &iteratorForCreateRatioSizeMarker{rows: arg})
 }
 
+// iteratorForCreateRatioSizeSpreading implements pgx.CopyFromSource.
+type iteratorForCreateRatioSizeSpreading struct {
+	rows                 []CreateRatioSizeSpreadingParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForCreateRatioSizeSpreading) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForCreateRatioSizeSpreading) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].IDRatioSpreading,
+		r.rows[0].IDWoShellSize,
+		r.rows[0].RatioPlan,
+	}, nil
+}
+
+func (r iteratorForCreateRatioSizeSpreading) Err() error {
+	return nil
+}
+
+func (q *Queries) CreateRatioSizeSpreading(ctx context.Context, arg []CreateRatioSizeSpreadingParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"ratio_size_spreading"}, []string{"id_ratio_spreading", "id_wo_shell_size", "ratio_plan"}, &iteratorForCreateRatioSizeSpreading{rows: arg})
+}
+
 // iteratorForCreateWOShellPlan implements pgx.CopyFromSource.
 type iteratorForCreateWOShellPlan struct {
 	rows                 []CreateWOShellPlanParams

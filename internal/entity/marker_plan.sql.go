@@ -67,10 +67,10 @@ const createRatioMarker = `-- name: CreateRatioMarker :one
 INSERT INTO RATIO_MARKER (
     ID_KOMPONEN_MARKER, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN,
     PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER,
-    ROLL_QTY, SAMBUNGAN_ROLL, PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET
+    PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
-) RETURNING ID_RATIO_MARKER, ID_KOMPONEN_MARKER, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN, PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER, ROLL_QTY, SAMBUNGAN_ROLL, PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET, created_at
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+) RETURNING ID_RATIO_MARKER, ID_KOMPONEN_MARKER, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN, PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER, PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET, created_at
 `
 
 type CreateRatioMarkerParams struct {
@@ -82,8 +82,6 @@ type CreateRatioMarkerParams struct {
 	EfficiencyMarker     pgtype.Numeric `json:"efficiency_marker"`
 	Allowance            pgtype.Numeric `json:"allowance"`
 	ConsBuyer            pgtype.Numeric `json:"cons_buyer"`
-	RollQty              int32          `json:"roll_qty"`
-	SambunganRoll        int32          `json:"sambungan_roll"`
 	Plot                 int32          `json:"plot"`
 	LebarKain            pgtype.Numeric `json:"lebar_kain"`
 	PanjangMarkerUnit    string         `json:"panjang_marker_unit"`
@@ -100,8 +98,6 @@ type CreateRatioMarkerRow struct {
 	EfficiencyMarker     pgtype.Numeric     `json:"efficiency_marker"`
 	Allowance            pgtype.Numeric     `json:"allowance"`
 	ConsBuyer            pgtype.Numeric     `json:"cons_buyer"`
-	RollQty              int32              `json:"roll_qty"`
-	SambunganRoll        int32              `json:"sambungan_roll"`
 	Plot                 int32              `json:"plot"`
 	LebarKain            pgtype.Numeric     `json:"lebar_kain"`
 	PanjangMarkerUnit    string             `json:"panjang_marker_unit"`
@@ -119,8 +115,6 @@ func (q *Queries) CreateRatioMarker(ctx context.Context, arg CreateRatioMarkerPa
 		arg.EfficiencyMarker,
 		arg.Allowance,
 		arg.ConsBuyer,
-		arg.RollQty,
-		arg.SambunganRoll,
 		arg.Plot,
 		arg.LebarKain,
 		arg.PanjangMarkerUnit,
@@ -137,8 +131,6 @@ func (q *Queries) CreateRatioMarker(ctx context.Context, arg CreateRatioMarkerPa
 		&i.EfficiencyMarker,
 		&i.Allowance,
 		&i.ConsBuyer,
-		&i.RollQty,
-		&i.SambunganRoll,
 		&i.Plot,
 		&i.LebarKain,
 		&i.PanjangMarkerUnit,
@@ -312,7 +304,7 @@ func (q *Queries) ListMarkerPlans(ctx context.Context, arg ListMarkerPlansParams
 
 const listRatioByKomponenID = `-- name: ListRatioByKomponenID :many
 SELECT ID_RATIO_MARKER, ID_KOMPONEN_MARKER, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN,
-       PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER, ROLL_QTY, SAMBUNGAN_ROLL,
+       PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER,
        PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET, created_at
 FROM RATIO_MARKER
 WHERE ID_KOMPONEN_MARKER = $1
@@ -329,8 +321,6 @@ type ListRatioByKomponenIDRow struct {
 	EfficiencyMarker     pgtype.Numeric     `json:"efficiency_marker"`
 	Allowance            pgtype.Numeric     `json:"allowance"`
 	ConsBuyer            pgtype.Numeric     `json:"cons_buyer"`
-	RollQty              int32              `json:"roll_qty"`
-	SambunganRoll        int32              `json:"sambungan_roll"`
 	Plot                 int32              `json:"plot"`
 	LebarKain            pgtype.Numeric     `json:"lebar_kain"`
 	PanjangMarkerUnit    string             `json:"panjang_marker_unit"`
@@ -357,8 +347,6 @@ func (q *Queries) ListRatioByKomponenID(ctx context.Context, idKomponenMarker in
 			&i.EfficiencyMarker,
 			&i.Allowance,
 			&i.ConsBuyer,
-			&i.RollQty,
-			&i.SambunganRoll,
 			&i.Plot,
 			&i.LebarKain,
 			&i.PanjangMarkerUnit,

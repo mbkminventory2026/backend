@@ -329,6 +329,19 @@ definitions:
     - nama_komponen
     - ratios
     type: object
+  model.CreateKomponenSpreadingRequest:
+    properties:
+      nama_komponen:
+        type: string
+      ratios:
+        items:
+          $ref: '#/definitions/model.CreateRatioSpreadingRequest'
+        minItems: 1
+        type: array
+    required:
+    - nama_komponen
+    - ratios
+    type: object
   model.CreateMarkerPlanRequest:
     properties:
       components:
@@ -705,29 +718,15 @@ definitions:
       plot:
         minimum: 1
         type: integer
-      roll_qty:
-        minimum: 0
-        type: integer
-      sambungan_roll:
-        minimum: 0
-        type: integer
       sizes:
         items:
           $ref: '#/definitions/model.CreateRatioSizeMarkerRequest'
         minItems: 1
         type: array
     required:
-    - allowance
-    - cons
-    - efficiency_marker
     - id_wo_shell
-    - lebar_kain
-    - panjang_marker
     - panjang_marker_unit
-    - plan_spreading_gelaran
     - plot
-    - roll_qty
-    - sambungan_roll
     - sizes
     type: object
   model.CreateRatioSizeMarkerRequest:
@@ -739,7 +738,68 @@ definitions:
         type: integer
     required:
     - id_wo_shell_size
-    - ratio_plan
+    type: object
+  model.CreateRatioSizeSpreadingRequest:
+    properties:
+      id_wo_shell_size:
+        type: integer
+      ratio_plan:
+        minimum: 0
+        type: integer
+    required:
+    - id_wo_shell_size
+    type: object
+  model.CreateRatioSpreadingRequest:
+    properties:
+      allowance:
+        minimum: 0
+        type: number
+      cons:
+        minimum: 0
+        type: number
+      cons_buyer:
+        minimum: 0
+        type: number
+      efficiency_marker:
+        minimum: 0
+        type: number
+      id_wo_shell:
+        type: integer
+      ket:
+        type: string
+      lebar_kain:
+        minimum: 0
+        type: number
+      panjang_marker:
+        minimum: 0
+        type: number
+      panjang_marker_unit:
+        type: string
+      plan_spreading_gelaran:
+        minimum: 0
+        type: number
+      plot:
+        minimum: 1
+        type: integer
+      reject:
+        minimum: 0
+        type: number
+      roll_qty:
+        minimum: 0
+        type: integer
+      sambungan_roll:
+        minimum: 0
+        type: integer
+      sizes:
+        items:
+          $ref: '#/definitions/model.CreateRatioSizeSpreadingRequest'
+        minItems: 1
+        type: array
+    required:
+    - id_wo_shell
+    - panjang_marker_unit
+    - plot
+    - sizes
     type: object
   model.CreateRoleRequest:
     properties:
@@ -751,6 +811,25 @@ definitions:
         type: string
     required:
     - nama_role
+    type: object
+  model.CreateSpreadingCuttingPlanRequest:
+    properties:
+      components:
+        items:
+          $ref: '#/definitions/model.CreateKomponenSpreadingRequest'
+        minItems: 1
+        type: array
+      id_wo:
+        type: integer
+      no_dokumen:
+        type: string
+      tanggal_efektif:
+        type: string
+    required:
+    - components
+    - id_wo
+    - no_dokumen
+    - tanggal_efektif
     type: object
   model.CreateSuratJalanClientRequest:
     properties:
@@ -1150,6 +1229,21 @@ definitions:
       ratios:
         items:
           $ref: '#/definitions/model.RatioMarkerResponse'
+        type: array
+    type: object
+  model.KomponenSpreadingResponse:
+    properties:
+      created_at:
+        type: string
+      id_komponen_spreading:
+        type: integer
+      id_spreading_cutting_plan:
+        type: integer
+      nama_komponen:
+        type: string
+      ratios:
+        items:
+          $ref: '#/definitions/model.RatioSpreadingResponse'
         type: array
     type: object
   model.ListBarangSuccessDoc:
@@ -2263,10 +2357,6 @@ definitions:
         type: number
       plot:
         type: integer
-      roll_qty:
-        type: integer
-      sambungan_roll:
-        type: integer
       sizes:
         items:
           $ref: '#/definitions/model.RatioSizeMarkerResponse'
@@ -2286,6 +2376,62 @@ definitions:
         type: string
       size_qty:
         type: integer
+    type: object
+  model.RatioSizeSpreadingResponse:
+    properties:
+      id_ratio_size_spreading:
+        type: integer
+      id_ratio_spreading:
+        type: integer
+      id_wo_shell_size:
+        type: integer
+      ratio_plan:
+        type: integer
+      size:
+        type: string
+      size_qty:
+        type: integer
+    type: object
+  model.RatioSpreadingResponse:
+    properties:
+      allowance:
+        type: number
+      cons:
+        type: number
+      cons_buyer:
+        type: number
+      created_at:
+        type: string
+      efficiency_marker:
+        type: number
+      id_komponen_spreading:
+        type: integer
+      id_ratio_spreading:
+        type: integer
+      id_wo_shell:
+        type: integer
+      ket:
+        type: string
+      lebar_kain:
+        type: number
+      panjang_marker:
+        type: number
+      panjang_marker_unit:
+        type: string
+      plan_spreading_gelaran:
+        type: number
+      plot:
+        type: integer
+      reject:
+        type: number
+      roll_qty:
+        type: integer
+      sambungan_roll:
+        type: integer
+      sizes:
+        items:
+          $ref: '#/definitions/model.RatioSizeSpreadingResponse'
+        type: array
     type: object
   model.ReceiveInventoryRequest:
     properties:
@@ -2503,6 +2649,101 @@ definitions:
         example: success
         type: string
     type: object
+  model.SpreadingCuttingPlanErrorDetail:
+    properties:
+      code:
+        example: related_data_not_found
+        type: string
+    type: object
+  model.SpreadingCuttingPlanErrorDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.SpreadingCuttingPlanErrorDetail'
+      message:
+        example: related data not found
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.SpreadingCuttingPlanListItem:
+    properties:
+      buyer:
+        type: string
+      created_at:
+        type: string
+      id_spreading_cutting_plan:
+        type: integer
+      id_wo:
+        type: integer
+      model:
+        type: string
+      no_dokumen:
+        type: string
+      tanggal_efektif:
+        type: string
+    type: object
+  model.SpreadingCuttingPlanListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.SpreadingCuttingPlanListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.SpreadingCuttingPlanListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.SpreadingCuttingPlanListResponse'
+      message:
+        example: spreading cutting plans retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.SpreadingCuttingPlanResponse:
+    properties:
+      components:
+        items:
+          $ref: '#/definitions/model.KomponenSpreadingResponse'
+        type: array
+      created_at:
+        type: string
+      id_spreading_cutting_plan:
+        type: integer
+      id_wo:
+        type: integer
+      no_dokumen:
+        type: string
+      tanggal_efektif:
+        type: string
+    type: object
+  model.SpreadingCuttingPlanSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.SpreadingCuttingPlanResponse'
+      message:
+        example: spreading cutting plan created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.SpreadingCuttingPlanValidationErrorDoc:
+    properties:
+      error:
+        items:
+          $ref: '#/definitions/response.ValidationErrorItem'
+        type: array
+      message:
+        example: bad request
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
   model.StockReportPerKategoriResponse:
     properties:
       kategori:
@@ -2712,6 +2953,43 @@ definitions:
         type: string
       status:
         example: error
+        type: string
+    type: object
+  model.TimelinePlanListItem:
+    properties:
+      client_name:
+        type: string
+      created_at:
+        type: string
+      id_po_client:
+        type: integer
+      id_timeline:
+        type: integer
+      notes:
+        type: string
+      po_number:
+        type: string
+      tanggal_disusun:
+        type: string
+    type: object
+  model.TimelinePlanListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.TimelinePlanListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.TimelinePlanListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.TimelinePlanListResponse'
+      message:
+        example: timeline plans retrieved
+        type: string
+      status:
+        example: success
         type: string
     type: object
   model.TimelinePlanResponse:
@@ -3199,6 +3477,8 @@ definitions:
         type: string
       qty:
         type: integer
+      retur_file:
+        type: string
       status:
         type: string
     type: object
@@ -5645,6 +5925,108 @@ paths:
       summary: Update Role
       tags:
       - Roles
+  /api/v1/spreading-cutting-plans:
+    get:
+      description: Returns a paginated list of spreading cutting plans.
+      parameters:
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Search by document number, model, buyer
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SpreadingCuttingPlanListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.SpreadingCuttingPlanErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SpreadingCuttingPlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: List Spreading Cutting Plans
+      tags:
+      - Spreading Cutting Plan
+    post:
+      consumes:
+      - application/json
+      description: Create a spreading cutting plan with components, ratios, and ratio
+        size markers in a single transaction.
+      parameters:
+      - description: Spreading cutting plan payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateSpreadingCuttingPlanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.SpreadingCuttingPlanSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.SpreadingCuttingPlanValidationErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SpreadingCuttingPlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Spreading Cutting Plan
+      tags:
+      - Spreading Cutting Plan
+  /api/v1/spreading-cutting-plans/{id}:
+    get:
+      description: Returns a single spreading cutting plan with components, ratios,
+        and size breakdown.
+      parameters:
+      - description: Spreading Cutting Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SpreadingCuttingPlanSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.SpreadingCuttingPlanErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SpreadingCuttingPlanErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SpreadingCuttingPlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Spreading Cutting Plan Detail
+      tags:
+      - Spreading Cutting Plan
   /api/v1/surat-jalan-clients:
     get:
       description: Returns a paginated list of client delivery notes.
@@ -5816,6 +6198,53 @@ paths:
       tags:
       - Warehouse & Delivery
   /api/v1/timeline-plans:
+    get:
+      description: Get a paginated list of timeline plans
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - default: created_at
+        description: Sort by column
+        in: query
+        name: sort
+        type: string
+      - default: true
+        description: Sort descending
+        in: query
+        name: desc
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.TimelinePlanListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TimelinePlanErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TimelinePlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get List of Timeline Plans
+      tags:
+      - Timeline & Production Plan
     post:
       consumes:
       - application/json

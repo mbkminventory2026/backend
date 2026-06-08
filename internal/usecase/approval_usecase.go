@@ -65,6 +65,11 @@ func (u *ApprovalUseCase) getDocumentSummaryAndRequester(ctx context.Context, ta
 		if mpErr == nil {
 			return fmt.Sprintf("Marker Plan Dokumen: %s", mp.NoDokumen), "Admin Produksi"
 		}
+	case "SPREADING_CUTTING_PLAN":
+		scp, scpErr := u.repo.GetSpreadingCuttingPlanByID(ctx, docID)
+		if scpErr == nil {
+			return fmt.Sprintf("Spreading Cutting Plan Dokumen: %s", scp.NoDokumen), "Admin Produksi"
+		}
 	}
 	return fmt.Sprintf("Dokumen %s #%d", tableName, docID), "System"
 }
@@ -177,6 +182,8 @@ func (u *ApprovalUseCase) ProcessApprovalAction(ctx context.Context, userID int3
 		requiredPermission = "MARKER_PLAN_UPDATE"
 	case "TIMELINE_PRODUKSI":
 		requiredPermission = "TIMELINE_UPDATE"
+	case "SPREADING_CUTTING_PLAN":
+		requiredPermission = "CUTTING_PLAN_UPDATE"
 	default:
 		return fmt.Errorf("tipe dokumen %s tidak didukung", header.NamaTabelDokumen)
 	}
@@ -404,7 +411,7 @@ func (u *ApprovalUseCase) InitializeApprovalWorkflow(ctx context.Context, qtx en
 			return err
 		}
 
-	case "WORK_ORDER", "PO_INTERNAL", "MARKER_PLAN", "TIMELINE_PRODUKSI", "PACKING_LIST":
+	case "WORK_ORDER", "PO_INTERNAL", "MARKER_PLAN", "TIMELINE_PRODUKSI", "PACKING_LIST", "SPREADING_CUTTING_PLAN":
 		// Alur standar 2-langkah: Pembuat -> Manager
 		now := pgtype.Timestamptz{Time: time.Now(), Valid: true}
 		_, err = qtx.CreateApprovalDetail(ctx, entity.CreateApprovalDetailParams{

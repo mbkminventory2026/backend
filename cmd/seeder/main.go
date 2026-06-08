@@ -174,6 +174,10 @@ func syncSequences(ctx context.Context, db *pgxpool.Pool) error {
 		{"ratio_size_marker_id_ratio_size_marker_seq", "ratio_size_marker", "id_ratio_size_marker"},
 		{"timeline_plan_produksi_id_timeline_seq", "timeline_plan_produksi", "id_timeline"},
 		{"wo_shell_plan_id_wo_shell_plan_seq", "wo_shell_plan", "id_wo_shell_plan"},
+		{"spreading_cutting_plan_id_spreading_cutting_plan_seq", "spreading_cutting_plan", "id_spreading_cutting_plan"},
+		{"komponen_spreading_cutting_plan_id_komponen_spreading_seq", "komponen_spreading_cutting_plan", "id_komponen_spreading"},
+		{"ratio_spreading_id_ratio_spreading_seq", "ratio_spreading", "id_ratio_spreading"},
+		{"ratio_size_spreading_id_ratio_size_spreading_seq", "ratio_size_spreading", "id_ratio_size_spreading"},
 	}
 
 	for _, q := range queries {
@@ -1218,8 +1222,8 @@ func seedMarkerPlan(ctx context.Context, db *pgxpool.Pool) error {
 			INSERT INTO RATIO_MARKER (
 				ID_KOMPONEN_MARKER, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN,
 				PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER,
-				ROLL_QTY, SAMBUNGAN_ROLL, PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET
-			) VALUES ($1, $2, 0.350, 100, 35.000, 85.50, 3.00, 0.360, 2, 1, 1, 1.450, 'yard', 'Seeded Ratio')
+				PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET
+			) VALUES ($1, $2, 0.350, 100, 35.000, 85.50, 3.00, 0.360, 1, 1.450, 'yard', 'Seeded Ratio')
 			RETURNING ID_RATIO_MARKER
 		`, idKomponen, idShell).Scan(&idRatioMarker)
 	if err != nil {

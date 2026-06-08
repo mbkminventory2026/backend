@@ -15,8 +15,6 @@ type CreateRatioMarkerRequest struct {
 	EfficiencyMarker     float64                        `json:"efficiency_marker" binding:"gte=0"`
 	Allowance            float64                        `json:"allowance" binding:"gte=0"`
 	ConsBuyer            *float64                       `json:"cons_buyer" binding:"omitempty,gte=0"`
-	RollQty              int32                          `json:"roll_qty" binding:"gte=0"`
-	SambunganRoll        int32                          `json:"sambungan_roll" binding:"gte=0"`
 	Plot                 int32                          `json:"plot" binding:"required,gte=1"`
 	LebarKain            float64                        `json:"lebar_kain" binding:"gte=0"`
 	PanjangMarkerUnit    string                         `json:"panjang_marker_unit" binding:"required"`
@@ -55,8 +53,6 @@ type RatioMarkerResponse struct {
 	EfficiencyMarker     float64                   `json:"efficiency_marker"`
 	Allowance            float64                   `json:"allowance"`
 	ConsBuyer            *float64                  `json:"cons_buyer,omitempty"`
-	RollQty              int32                     `json:"roll_qty"`
-	SambunganRoll        int32                     `json:"sambungan_roll"`
 	Plot                 int32                     `json:"plot"`
 	LebarKain            float64                   `json:"lebar_kain"`
 	PanjangMarkerUnit    string                    `json:"panjang_marker_unit"`
