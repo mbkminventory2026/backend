@@ -40,7 +40,6 @@ CREATE INDEX IF NOT EXISTS idx_penanggung_jawab_id_po_client ON PENANGGUNG_JAWAB
 
 CREATE INDEX IF NOT EXISTS idx_work_order_buyer_lower ON WORK_ORDER (LOWER(BUYER));
 CREATE INDEX IF NOT EXISTS idx_work_order_model_lower ON WORK_ORDER (LOWER(MODEL));
-CREATE INDEX IF NOT EXISTS idx_work_order_status_lower ON WORK_ORDER (LOWER(STATUS));
 CREATE INDEX IF NOT EXISTS idx_work_order_created_at ON WORK_ORDER (created_at);
 CREATE INDEX IF NOT EXISTS idx_work_order_id_po_client_item ON WORK_ORDER (ID_PO_CLIENT_ITEM);
 CREATE INDEX IF NOT EXISTS idx_work_order_delivery ON WORK_ORDER (DELIVERY);
@@ -49,7 +48,6 @@ CREATE INDEX IF NOT EXISTS idx_pr_internal_nama_lower ON PR_INTERNAL (LOWER(NAMA
 CREATE INDEX IF NOT EXISTS idx_pr_internal_departemen_lower ON PR_INTERNAL (LOWER(DEPARTEMEN));
 CREATE INDEX IF NOT EXISTS idx_pr_internal_vendor_name_lower ON PR_INTERNAL (LOWER(VENDOR_NAME));
 CREATE INDEX IF NOT EXISTS idx_pr_internal_projek_lower ON PR_INTERNAL (LOWER(PROJEK));
-CREATE INDEX IF NOT EXISTS idx_pr_internal_status_lower ON PR_INTERNAL (LOWER(STATUS));
 CREATE INDEX IF NOT EXISTS idx_pr_internal_created_at ON PR_INTERNAL (created_at);
 CREATE INDEX IF NOT EXISTS idx_pr_internal_tanggal ON PR_INTERNAL (TANGGAL);
 CREATE INDEX IF NOT EXISTS idx_pr_internal_id_wo ON PR_INTERNAL (ID_WO);
