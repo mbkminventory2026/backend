@@ -6741,6 +6741,8 @@ const docTemplate = `{
                 "color",
                 "cons",
                 "deskripsi",
+                "material_type",
+                "provided_by",
                 "sizes"
             ],
             "properties": {
@@ -6761,6 +6763,25 @@ const docTemplate = `{
                 },
                 "deskripsi": {
                     "type": "string"
+                },
+                "material_type": {
+                    "type": "string",
+                    "enum": [
+                        "fabric",
+                        "interlining",
+                        "Fabric",
+                        "Interlining"
+                    ]
+                },
+                "provided_by": {
+                    "type": "string",
+                    "enum": [
+                        "client",
+                        "permata",
+                        "permatatex",
+                        "Client",
+                        "Permatatex"
+                    ]
                 },
                 "sizes": {
                     "type": "array",
@@ -10683,6 +10704,12 @@ const docTemplate = `{
                 },
                 "id_wo_shell": {
                     "type": "integer"
+                },
+                "material_type": {
+                    "type": "string"
+                },
+                "provided_by": {
+                    "type": "string"
                 },
                 "sizes": {
                     "type": "array",

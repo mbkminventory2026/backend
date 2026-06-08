@@ -1408,32 +1408,23 @@ SELECT
     allow,
     berat_1_yd,
     id_wo,
-    created_at
+    created_at,
+    provided_by,
+    material_type
 FROM WORK_ORDER_SHELL
 WHERE id_wo = $1
 ORDER BY id_wo_shell ASC
 `
 
-type ListWorkOrderShellsByWorkOrderIDRow struct {
-	IDWoShell int32              `json:"id_wo_shell"`
-	Deskripsi string             `json:"deskripsi"`
-	Cons      pgtype.Numeric     `json:"cons"`
-	Color     string             `json:"color"`
-	Allow     int32              `json:"allow"`
-	Berat1Yd  pgtype.Numeric     `json:"berat_1_yd"`
-	IDWo      int32              `json:"id_wo"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-}
-
-func (q *Queries) ListWorkOrderShellsByWorkOrderID(ctx context.Context, idWo int32) ([]ListWorkOrderShellsByWorkOrderIDRow, error) {
+func (q *Queries) ListWorkOrderShellsByWorkOrderID(ctx context.Context, idWo int32) ([]WorkOrderShell, error) {
 	rows, err := q.db.Query(ctx, listWorkOrderShellsByWorkOrderID, idWo)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListWorkOrderShellsByWorkOrderIDRow
+	var items []WorkOrderShell
 	for rows.Next() {
-		var i ListWorkOrderShellsByWorkOrderIDRow
+		var i WorkOrderShell
 		if err := rows.Scan(
 			&i.IDWoShell,
 			&i.Deskripsi,
@@ -1443,6 +1434,8 @@ func (q *Queries) ListWorkOrderShellsByWorkOrderID(ctx context.Context, idWo int
 			&i.Berat1Yd,
 			&i.IDWo,
 			&i.CreatedAt,
+			&i.ProvidedBy,
+			&i.MaterialType,
 		); err != nil {
 			return nil, err
 		}

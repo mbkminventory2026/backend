@@ -106,12 +106,14 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 	shells := make([]model.WorkOrderShellResponse, 0, len(req.Shells))
 	for _, shellReq := range req.Shells {
 		shell, shellErr := qtx.CreateWorkOrderShell(ctx, entity.CreateWorkOrderShellParams{
-			Deskripsi: shellReq.Deskripsi,
-			Cons:     mustNumeric(shellReq.Cons),
-			Color:    shellReq.Color,
-			Allow:    shellReq.Allow,
-			Berat1Yd: mustNumeric(shellReq.Berat1Yd),
-			IDWo:     header.IDWo,
+			Deskripsi:    shellReq.Deskripsi,
+			Cons:         mustNumeric(shellReq.Cons),
+			Color:        shellReq.Color,
+			Allow:        shellReq.Allow,
+			Berat1Yd:     mustNumeric(shellReq.Berat1Yd),
+			IDWo:         header.IDWo,
+			ProvidedBy:   shellReq.ProvidedBy,
+			MaterialType: shellReq.MaterialType,
 		})
 		if shellErr != nil {
 			return nil, mapWorkOrderDBError(shellErr)
@@ -146,14 +148,16 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 		}
 
 		shells = append(shells, model.WorkOrderShellResponse{
-			ID:        shell.IDWoShell,
-			Deskripsi: shell.Deskripsi,
-			Cons:      numericToFloat64(shell.Cons),
-			Color:     shell.Color,
-			Allow:     shell.Allow,
-			Berat1Yd:  numericToFloat64(shell.Berat1Yd),
-			CreatedAt: shell.CreatedAt.Time.Format(time.RFC3339),
-			Sizes:     sizes,
+			ID:           shell.IDWoShell,
+			Deskripsi:    shell.Deskripsi,
+			Cons:         numericToFloat64(shell.Cons),
+			Color:        shell.Color,
+			Allow:        shell.Allow,
+			Berat1Yd:     numericToFloat64(shell.Berat1Yd),
+			CreatedAt:    shell.CreatedAt.Time.Format(time.RFC3339),
+			ProvidedBy:   shell.ProvidedBy,
+			MaterialType: shell.MaterialType,
+			Sizes:        sizes,
 		})
 	}
 
@@ -583,14 +587,16 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id 
 	shells := make([]model.WorkOrderShellResponse, 0, len(shellRows))
 	for _, row := range shellRows {
 		shells = append(shells, model.WorkOrderShellResponse{
-			ID:        row.IDWoShell,
-			Deskripsi: row.Deskripsi,
-			Cons:      numericToFloat64(row.Cons),
-			Color:     row.Color,
-			Allow:     row.Allow,
-			Berat1Yd:  numericToFloat64(row.Berat1Yd),
-			CreatedAt: row.CreatedAt.Time.Format(time.RFC3339),
-			Sizes:     sizeMap[row.IDWoShell],
+			ID:           row.IDWoShell,
+			Deskripsi:    row.Deskripsi,
+			Cons:         numericToFloat64(row.Cons),
+			Color:        row.Color,
+			Allow:        row.Allow,
+			Berat1Yd:     numericToFloat64(row.Berat1Yd),
+			CreatedAt:    row.CreatedAt.Time.Format(time.RFC3339),
+			ProvidedBy:   row.ProvidedBy,
+			MaterialType: row.MaterialType,
+			Sizes:        sizeMap[row.IDWoShell],
 		})
 	}
 

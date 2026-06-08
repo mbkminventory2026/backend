@@ -9,12 +9,14 @@ type CreateWorkOrderShellSizeRequest struct {
 }
 
 type CreateWorkOrderShellRequest struct {
-	Deskripsi   string                            `json:"deskripsi" binding:"required"`
-	Cons     float64                           `json:"cons" binding:"required,gte=0"`
-	Color    string                            `json:"color" binding:"required"`
-	Allow    int32                             `json:"allow" binding:"required,gte=0"`
-	Berat1Yd float64                           `json:"berat_1_yd" binding:"required,gte=0"`
-	Sizes    []CreateWorkOrderShellSizeRequest `json:"sizes" binding:"required,min=1,dive"`
+	Deskripsi    string                            `json:"deskripsi" binding:"required"`
+	Cons         float64                           `json:"cons" binding:"required,gte=0"`
+	Color        string                            `json:"color" binding:"required"`
+	Allow        int32                             `json:"allow" binding:"required,gte=0"`
+	Berat1Yd     float64                           `json:"berat_1_yd" binding:"required,gte=0"`
+	ProvidedBy   string                            `json:"provided_by" binding:"required,oneof=client permata permatatex Client Permatatex"`
+	MaterialType string                            `json:"material_type" binding:"required,oneof=fabric interlining Fabric Interlining"`
+	Sizes        []CreateWorkOrderShellSizeRequest `json:"sizes" binding:"required,min=1,dive"`
 }
 
 type CreateWorkOrderTrimRequest struct {
@@ -58,14 +60,16 @@ type WorkOrderShellSizeResponse struct {
 }
 
 type WorkOrderShellResponse struct {
-	ID        int32                        `json:"id_wo_shell"`
-	Deskripsi string                       `json:"deskripsi"`
-	Cons      float64                      `json:"cons"`
-	Color     string                       `json:"color"`
-	Allow     int32                        `json:"allow"`
-	Berat1Yd  float64                      `json:"berat_1_yd"`
-	CreatedAt string                       `json:"created_at"`
-	Sizes     []WorkOrderShellSizeResponse `json:"sizes"`
+	ID           int32                        `json:"id_wo_shell"`
+	Deskripsi    string                       `json:"deskripsi"`
+	Cons         float64                      `json:"cons"`
+	Color        string                       `json:"color"`
+	Allow        int32                        `json:"allow"`
+	Berat1Yd     float64                      `json:"berat_1_yd"`
+	CreatedAt    string                       `json:"created_at"`
+	ProvidedBy   string                       `json:"provided_by"`
+	MaterialType string                       `json:"material_type"`
+	Sizes        []WorkOrderShellSizeResponse `json:"sizes"`
 }
 
 type WorkOrderTrimResponse struct {

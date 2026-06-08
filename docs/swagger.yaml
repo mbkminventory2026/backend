@@ -960,6 +960,21 @@ definitions:
         type: number
       deskripsi:
         type: string
+      material_type:
+        enum:
+        - fabric
+        - interlining
+        - Fabric
+        - Interlining
+        type: string
+      provided_by:
+        enum:
+        - client
+        - permata
+        - permatatex
+        - Client
+        - Permatatex
+        type: string
       sizes:
         items:
           $ref: '#/definitions/model.CreateWorkOrderShellSizeRequest'
@@ -971,6 +986,8 @@ definitions:
     - color
     - cons
     - deskripsi
+    - material_type
+    - provided_by
     - sizes
     type: object
   model.CreateWorkOrderShellSizeRequest:
@@ -3589,6 +3606,10 @@ definitions:
         type: string
       id_wo_shell:
         type: integer
+      material_type:
+        type: string
+      provided_by:
+        type: string
       sizes:
         items:
           $ref: '#/definitions/model.WorkOrderShellSizeResponse'

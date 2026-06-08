@@ -89,7 +89,9 @@ SELECT
     allow,
     berat_1_yd,
     id_wo,
-    created_at
+    created_at,
+    provided_by,
+    material_type
 FROM WORK_ORDER_SHELL
 WHERE id_wo = sqlc.arg(id_wo)
 ORDER BY id_wo_shell ASC;

@@ -163,39 +163,34 @@ INSERT INTO WORK_ORDER_SHELL (
     color,
     allow,
     berat_1_yd,
-    id_wo
+    id_wo,
+    provided_by,
+    material_type
 ) VALUES (
     $1,
     $2::numeric,
     $3,
     $4,
     $5::numeric,
-    $6
+    $6,
+    $7,
+    $8
 )
-RETURNING id_wo_shell, deskripsi, cons, color, allow, berat_1_yd, id_wo, created_at
+RETURNING id_wo_shell, deskripsi, cons, color, allow, berat_1_yd, id_wo, created_at, provided_by, material_type
 `
 
 type CreateWorkOrderShellParams struct {
-	Deskripsi string         `json:"deskripsi"`
-	Cons      pgtype.Numeric `json:"cons"`
-	Color     string         `json:"color"`
-	Allow     int32          `json:"allow"`
-	Berat1Yd  pgtype.Numeric `json:"berat_1_yd"`
-	IDWo      int32          `json:"id_wo"`
+	Deskripsi    string         `json:"deskripsi"`
+	Cons         pgtype.Numeric `json:"cons"`
+	Color        string         `json:"color"`
+	Allow        int32          `json:"allow"`
+	Berat1Yd     pgtype.Numeric `json:"berat_1_yd"`
+	IDWo         int32          `json:"id_wo"`
+	ProvidedBy   string         `json:"provided_by"`
+	MaterialType string         `json:"material_type"`
 }
 
-type CreateWorkOrderShellRow struct {
-	IDWoShell int32              `json:"id_wo_shell"`
-	Deskripsi string             `json:"deskripsi"`
-	Cons      pgtype.Numeric     `json:"cons"`
-	Color     string             `json:"color"`
-	Allow     int32              `json:"allow"`
-	Berat1Yd  pgtype.Numeric     `json:"berat_1_yd"`
-	IDWo      int32              `json:"id_wo"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-}
-
-func (q *Queries) CreateWorkOrderShell(ctx context.Context, arg CreateWorkOrderShellParams) (CreateWorkOrderShellRow, error) {
+func (q *Queries) CreateWorkOrderShell(ctx context.Context, arg CreateWorkOrderShellParams) (WorkOrderShell, error) {
 	row := q.db.QueryRow(ctx, createWorkOrderShell,
 		arg.Deskripsi,
 		arg.Cons,
@@ -203,8 +198,10 @@ func (q *Queries) CreateWorkOrderShell(ctx context.Context, arg CreateWorkOrderS
 		arg.Allow,
 		arg.Berat1Yd,
 		arg.IDWo,
+		arg.ProvidedBy,
+		arg.MaterialType,
 	)
-	var i CreateWorkOrderShellRow
+	var i WorkOrderShell
 	err := row.Scan(
 		&i.IDWoShell,
 		&i.Deskripsi,
@@ -214,6 +211,8 @@ func (q *Queries) CreateWorkOrderShell(ctx context.Context, arg CreateWorkOrderS
 		&i.Berat1Yd,
 		&i.IDWo,
 		&i.CreatedAt,
+		&i.ProvidedBy,
+		&i.MaterialType,
 	)
 	return i, err
 }

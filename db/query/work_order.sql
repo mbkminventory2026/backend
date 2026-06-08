@@ -23,16 +23,20 @@ INSERT INTO WORK_ORDER_SHELL (
     color,
     allow,
     berat_1_yd,
-    id_wo
+    id_wo,
+    provided_by,
+    material_type
 ) VALUES (
     sqlc.arg(deskripsi),
     sqlc.arg(cons)::numeric,
     sqlc.arg(color),
     sqlc.arg(allow),
     sqlc.arg(berat_1_yd)::numeric,
-    sqlc.arg(id_wo)
+    sqlc.arg(id_wo),
+    sqlc.arg(provided_by),
+    sqlc.arg(material_type)
 )
-RETURNING id_wo_shell, deskripsi, cons, color, allow, berat_1_yd, id_wo, created_at;
+RETURNING id_wo_shell, deskripsi, cons, color, allow, berat_1_yd, id_wo, created_at, provided_by, material_type;
 
 -- name: CreateWorkOrderShellSize :one
 INSERT INTO WORK_ORDER_SHELL_SIZE (
