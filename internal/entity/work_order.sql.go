@@ -17,7 +17,11 @@ FROM WORK_ORDER wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo = wo.id_wo
 LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo = wo.id_wo
-LEFT JOIN MATERIAL_LIST_ITEM mli ON (mli.id_wo_shell = wos.id_wo_shell OR mli.id_wo_trim = wot.id_wo_trim)
+LEFT JOIN MATERIAL_LIST_ITEM mli ON (
+    mli.id_wo = wo.id_wo
+    OR mli.id_wo_shell = wos.id_wo_shell
+    OR mli.id_wo_trim = wot.id_wo_trim
+)
 LEFT JOIN MATERIAL_LIST ml ON ml.id_material_list_item = mli.id_material_list_item
 WHERE pci.id_po_client = $1
   AND (wos.id_wo_shell IS NOT NULL OR wot.id_wo_trim IS NOT NULL OR ml.id_material_list IS NOT NULL)
@@ -32,13 +36,14 @@ func (q *Queries) CountConfiguredWorkOrdersByPOClientID(ctx context.Context, idP
 
 const createMaterialList = `-- name: CreateMaterialList :one
 WITH inserted_item AS (
-    INSERT INTO MATERIAL_LIST_ITEM (description, id_wo_shell, id_wo_trim)
+    INSERT INTO MATERIAL_LIST_ITEM (description, id_wo, id_wo_shell, id_wo_trim)
     VALUES (
         $5, 
+        $4,
         $6, 
         $7
     )
-    RETURNING id_material_list_item, description, id_wo_shell, id_wo_trim
+    RETURNING id_material_list_item, description, id_wo, id_wo_shell, id_wo_trim
 )
 INSERT INTO MATERIAL_LIST (id_material_list_item)
 SELECT id_material_list_item FROM inserted_item

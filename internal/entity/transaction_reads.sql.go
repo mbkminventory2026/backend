@@ -237,12 +237,12 @@ SELECT
     sjc.id_material_list_item AS id_material_list,
     sjc.created_at,
     mli.description AS material_description,
-    COALESCE(wos.id_wo, wot.id_wo)::integer AS id_wo
+    COALESCE(wos.id_wo, wot.id_wo, mli.id_wo)::integer AS id_wo
 FROM SURAT_JALAN_CLIENT sjc
 JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list_item = sjc.id_material_list_item
 LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = mli.id_wo_shell
 LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo_trim = mli.id_wo_trim
-JOIN WORK_ORDER wo ON wo.id_wo = COALESCE(wos.id_wo, wot.id_wo)
+JOIN WORK_ORDER wo ON wo.id_wo = COALESCE(wos.id_wo, wot.id_wo, mli.id_wo)
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE sjc.id_surat_jalan_client = $1
@@ -376,13 +376,13 @@ SELECT
     ''::text AS size,
     COALESCE(wos.color, wot.color)::text AS color,
     COALESCE(wot.uom, 'yds')::text AS uom,
-    COALESCE(wos.id_wo, wot.id_wo)::integer AS id_wo,
+    COALESCE(wos.id_wo, wot.id_wo, mli.id_wo)::integer AS id_wo,
     ml.created_at
 FROM MATERIAL_LIST ml
 JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list_item = ml.id_material_list_item
 LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = mli.id_wo_shell
 LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo_trim = mli.id_wo_trim
-WHERE COALESCE(wos.id_wo, wot.id_wo) = $1
+WHERE COALESCE(wos.id_wo, wot.id_wo, mli.id_wo) = $1
 ORDER BY ml.id_material_list ASC
 `
 
@@ -1211,13 +1211,13 @@ SELECT
     sjc.id_material_list_item AS id_material_list,
     sjc.created_at,
     mli.description AS material_description,
-    COALESCE(wos.id_wo, wot.id_wo)::integer AS id_wo,
+    COALESCE(wos.id_wo, wot.id_wo, mli.id_wo)::integer AS id_wo,
     COUNT(*) OVER() AS total_count
 FROM SURAT_JALAN_CLIENT sjc
 JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list_item = sjc.id_material_list_item
 LEFT JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = mli.id_wo_shell
 LEFT JOIN WORK_ORDER_TRIM wot ON wot.id_wo_trim = mli.id_wo_trim
-JOIN WORK_ORDER wo ON wo.id_wo = COALESCE(wos.id_wo, wot.id_wo)
+JOIN WORK_ORDER wo ON wo.id_wo = COALESCE(wos.id_wo, wot.id_wo, mli.id_wo)
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
 WHERE (
@@ -1241,8 +1241,8 @@ ORDER BY
     CASE WHEN $3::text = 'keterangan' AND $4::bool THEN sjc.keterangan END DESC,
     CASE WHEN $3::text = 'material_description' AND NOT $4::bool THEN mli.description END ASC,
     CASE WHEN $3::text = 'material_description' AND $4::bool THEN mli.description END DESC,
-    CASE WHEN $3::text = 'id_wo' AND NOT $4::bool THEN COALESCE(wos.id_wo, wot.id_wo) END ASC,
-    CASE WHEN $3::text = 'id_wo' AND $4::bool THEN COALESCE(wos.id_wo, wot.id_wo) END DESC,
+    CASE WHEN $3::text = 'id_wo' AND NOT $4::bool THEN COALESCE(wos.id_wo, wot.id_wo, mli.id_wo) END ASC,
+    CASE WHEN $3::text = 'id_wo' AND $4::bool THEN COALESCE(wos.id_wo, wot.id_wo, mli.id_wo) END DESC,
     sjc.id_surat_jalan_client DESC
 LIMIT $6 OFFSET $5
 `
