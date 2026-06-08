@@ -1834,176 +1834,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/master/profil-perusahaan": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Master Data"
-                ],
-                "summary": "Get Profil Perusahaan Data",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.ProfilPerusahaanSuccessDoc"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Master Data"
-                ],
-                "summary": "Create Profil Perusahaan Data",
-                "parameters": [
-                    {
-                        "description": "Profil Perusahaan payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.CreateProfilPerusahaanRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/model.ProfilPerusahaanSuccessDoc"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/model.LoginBadRequestDoc"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/master/profil-perusahaan/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Master Data"
-                ],
-                "summary": "Get Profil Perusahaan Detail",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Profil Perusahaan ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.ProfilPerusahaanSuccessDoc"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Master Data"
-                ],
-                "summary": "Update Profil Perusahaan Data",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Profil Perusahaan ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Profil Perusahaan payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.UpdateProfilPerusahaanRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.ProfilPerusahaanSuccessDoc"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "tags": [
-                    "Master Data"
-                ],
-                "summary": "Delete Profil Perusahaan Data",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Profil Perusahaan ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.BaseResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/master/warna": {
             "get": {
                 "security": [
@@ -3028,6 +2858,176 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/model.WorkOrderErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/profil-perusahaan": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profil Perusahaan"
+                ],
+                "summary": "Get Profil Perusahaan Data",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ProfilPerusahaanSuccessDoc"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profil Perusahaan"
+                ],
+                "summary": "Create Profil Perusahaan Data",
+                "parameters": [
+                    {
+                        "description": "Profil Perusahaan payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateProfilPerusahaanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.ProfilPerusahaanSuccessDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginBadRequestDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/profil-perusahaan/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profil Perusahaan"
+                ],
+                "summary": "Get Profil Perusahaan Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Profil Perusahaan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ProfilPerusahaanSuccessDoc"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profil Perusahaan"
+                ],
+                "summary": "Update Profil Perusahaan Data",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Profil Perusahaan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Profil Perusahaan payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateProfilPerusahaanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ProfilPerusahaanSuccessDoc"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Profil Perusahaan"
+                ],
+                "summary": "Delete Profil Perusahaan Data",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Profil Perusahaan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
                         }
                     }
                 }

@@ -68,12 +68,6 @@ func (h *MasterDataHandler) RegisterRoutes(router gin.IRouter, authMiddleware gi
 	master.PUT("/permissions/:id", RequirePermission(PermissionPermissionUpdate), h.UpdateHakAkses)
 	master.DELETE("/permissions/:id", RequirePermission(PermissionPermissionDelete), h.DeleteHakAkses)
 
-	// Profil Perusahaan
-	master.GET("/profil-perusahaan", RequirePermission(PermissionMasterProfilPerusahaanRead), h.GetProfilPerusahaan)
-	master.GET("/profil-perusahaan/:id", RequirePermission(PermissionMasterProfilPerusahaanRead), h.GetProfilPerusahaanByID)
-	master.POST("/profil-perusahaan", RequirePermission(PermissionMasterProfilPerusahaanCreate), h.CreateProfilPerusahaan)
-	master.PUT("/profil-perusahaan/:id", RequirePermission(PermissionMasterProfilPerusahaanUpdate), h.UpdateProfilPerusahaan)
-	master.DELETE("/profil-perusahaan/:id", RequirePermission(PermissionMasterProfilPerusahaanDelete), h.DeleteProfilPerusahaan)
 }
 
 // DEPARTEMEN
@@ -693,126 +687,7 @@ func (h *MasterDataHandler) DeleteHakAkses(c *gin.Context) {
 	response.Success(c, http.StatusOK, "permission deleted", nil)
 }
 
-// PROFIL PERUSAHAAN
 
-// GetProfilPerusahaan godoc
-// @Summary      Get Profil Perusahaan Data
-// @Tags         Master Data
-// @Produce      json
-// @Security     BearerAuth
-// @Success      200  {object}  model.ProfilPerusahaanSuccessDoc
-// @Router       /api/v1/master/profil-perusahaan [get]
-// func (h *MasterDataHandler) GetProfilPerusahaan(c *gin.Context) {
-func (h *MasterDataHandler) GetProfilPerusahaan(c *gin.Context) {
-	item, err := h.useCase.GetProfilPerusahaan(c.Request.Context())
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	response.Success(c, http.StatusOK, "profil perusahaan data retrieved", item)
-}
-
-// GetProfilPerusahaanByID godoc
-// @Summary      Get Profil Perusahaan Detail
-// @Tags         Master Data
-// @Produce      json
-// @Security     BearerAuth
-// @Param        id   path      int  true  "Profil Perusahaan ID"
-// @Success      200  {object}  model.ProfilPerusahaanSuccessDoc
-// @Router       /api/v1/master/profil-perusahaan/{id} [get]
-// func (h *MasterDataHandler) GetProfilPerusahaanByID(c *gin.Context) {
-func (h *MasterDataHandler) GetProfilPerusahaanByID(c *gin.Context) {
-	id, err := parsePathInt32(c, "id")
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
-		return
-	}
-
-	item, err := h.useCase.GetProfilPerusahaanByID(c.Request.Context(), id)
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	response.Success(c, http.StatusOK, "profil perusahaan data retrieved", item)
-}
-
-// CreateProfilPerusahaan godoc
-// @Summary      Create Profil Perusahaan Data
-// @Tags         Master Data
-// @Accept       json
-// @Produce      json
-// @Security     BearerAuth
-// @Param        payload  body      model.CreateProfilPerusahaanRequest  true  "Profil Perusahaan payload"
-// @Success      201      {object}  model.ProfilPerusahaanSuccessDoc
-// @Failure      409      {object}  model.LoginBadRequestDoc
-// @Router       /api/v1/master/profil-perusahaan [post]
-// func (h *MasterDataHandler) CreateProfilPerusahaan(c *gin.Context) {
-func (h *MasterDataHandler) CreateProfilPerusahaan(c *gin.Context) {
-	var req model.CreateProfilPerusahaanRequest
-	if !BindJSON(c, &req) {
-		return
-	}
-
-	item, err := h.useCase.CreateProfilPerusahaan(c.Request.Context(), req)
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	response.Success(c, http.StatusCreated, "profil perusahaan data created", item)
-}
-
-// UpdateProfilPerusahaan godoc
-// @Summary      Update Profil Perusahaan Data
-// @Tags         Master Data
-// @Accept       json
-// @Produce      json
-// @Security     BearerAuth
-// @Param        id       path      int                                   true  "Profil Perusahaan ID"
-// @Param        payload  body      model.UpdateProfilPerusahaanRequest  true  "Profil Perusahaan payload"
-// @Success      200      {object}  model.ProfilPerusahaanSuccessDoc
-// @Router       /api/v1/master/profil-perusahaan/{id} [put]
-// func (h *MasterDataHandler) UpdateProfilPerusahaan(c *gin.Context) {
-func (h *MasterDataHandler) UpdateProfilPerusahaan(c *gin.Context) {
-	id, err := parsePathInt32(c, "id")
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
-		return
-	}
-
-	var req model.UpdateProfilPerusahaanRequest
-	if !BindJSON(c, &req) {
-		return
-	}
-
-	item, err := h.useCase.UpdateProfilPerusahaan(c.Request.Context(), id, req)
-	if err != nil {
-		h.handleError(c, err)
-		return
-	}
-	response.Success(c, http.StatusOK, "profil perusahaan data updated", item)
-}
-
-// DeleteProfilPerusahaan godoc
-// @Summary      Delete Profil Perusahaan Data
-// @Tags         Master Data
-// @Security     BearerAuth
-// @Param        id   path      int  true  "Profil Perusahaan ID"
-// @Success      200  {object}  response.BaseResponse
-// @Router       /api/v1/master/profil-perusahaan/{id} [delete]
-// func (h *MasterDataHandler) DeleteProfilPerusahaan(c *gin.Context) {
-func (h *MasterDataHandler) DeleteProfilPerusahaan(c *gin.Context) {
-	id, err := parsePathInt32(c, "id")
-	if err != nil {
-		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
-		return
-	}
-
-	if err := h.useCase.DeleteProfilPerusahaan(c.Request.Context(), id); err != nil {
-		h.handleError(c, err)
-		return
-	}
-	response.Success(c, http.StatusOK, "profil perusahaan data deleted", nil)
-}
 
 // GetWarnaByID godoc
 // @Summary      Get Color Detail
@@ -946,7 +821,7 @@ func (h *MasterDataHandler) handleError(c *gin.Context, err error) {
 		AbortWithError(c, NewHTTPError(http.StatusNotFound, err.Error(), nil))
 		return
 	}
-	if errors.Is(err, usecase.ErrMasterDataDuplicateCode) || errors.Is(err, usecase.ErrProfilPerusahaanAlreadyExists) {
+	if errors.Is(err, usecase.ErrMasterDataDuplicateCode) {
 		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), nil))
 		return
 	}

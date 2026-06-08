@@ -4478,110 +4478,6 @@ paths:
       summary: Update Permission
       tags:
       - Master Data
-  /api/v1/master/profil-perusahaan:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.ProfilPerusahaanSuccessDoc'
-      security:
-      - BearerAuth: []
-      summary: Get Profil Perusahaan Data
-      tags:
-      - Master Data
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Profil Perusahaan payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/model.CreateProfilPerusahaanRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/model.ProfilPerusahaanSuccessDoc'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/model.LoginBadRequestDoc'
-      security:
-      - BearerAuth: []
-      summary: Create Profil Perusahaan Data
-      tags:
-      - Master Data
-  /api/v1/master/profil-perusahaan/{id}:
-    delete:
-      parameters:
-      - description: Profil Perusahaan ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.BaseResponse'
-      security:
-      - BearerAuth: []
-      summary: Delete Profil Perusahaan Data
-      tags:
-      - Master Data
-    get:
-      parameters:
-      - description: Profil Perusahaan ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.ProfilPerusahaanSuccessDoc'
-      security:
-      - BearerAuth: []
-      summary: Get Profil Perusahaan Detail
-      tags:
-      - Master Data
-    put:
-      consumes:
-      - application/json
-      parameters:
-      - description: Profil Perusahaan ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Profil Perusahaan payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/model.UpdateProfilPerusahaanRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.ProfilPerusahaanSuccessDoc'
-      security:
-      - BearerAuth: []
-      summary: Update Profil Perusahaan Data
-      tags:
-      - Master Data
   /api/v1/master/warna:
     get:
       parameters:
@@ -5236,6 +5132,110 @@ paths:
       summary: List Production Summary
       tags:
       - Work Order & Production
+  /api/v1/profil-perusahaan:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProfilPerusahaanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Profil Perusahaan Data
+      tags:
+      - Profil Perusahaan
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Profil Perusahaan payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateProfilPerusahaanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.ProfilPerusahaanSuccessDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.LoginBadRequestDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Profil Perusahaan Data
+      tags:
+      - Profil Perusahaan
+  /api/v1/profil-perusahaan/{id}:
+    delete:
+      parameters:
+      - description: Profil Perusahaan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete Profil Perusahaan Data
+      tags:
+      - Profil Perusahaan
+    get:
+      parameters:
+      - description: Profil Perusahaan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProfilPerusahaanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Profil Perusahaan Detail
+      tags:
+      - Profil Perusahaan
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Profil Perusahaan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Profil Perusahaan payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateProfilPerusahaanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProfilPerusahaanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Update Profil Perusahaan Data
+      tags:
+      - Profil Perusahaan
   /api/v1/reports/{divisi}:
     post:
       consumes:

@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/jackc/pgconn"
@@ -18,7 +17,6 @@ var (
 	ErrMasterDataNotFound             = errors.New("master data not found")
 	ErrMasterDataConflict             = errors.New("master data already exists")
 	ErrMasterDataDuplicateCode        = errors.New("master data code already exists")
-	ErrProfilPerusahaanAlreadyExists = errors.New("profil perusahaan data already exists")
 
 	departemenSortColumns  = buildSortWhitelist("created_at", "id_departemen", "nama_departemen")
 	jenisBarangSortColumns = buildSortWhitelist("created_at", "id_jenis_barang", "kode", "nama_jenis_barang")
@@ -584,119 +582,7 @@ func (u *MasterDataUseCase) DeleteHakAkses(ctx context.Context, id int32) error 
 	return nil
 }
 
-// PROFIL PERUSAHAAN
-func (u *MasterDataUseCase) GetProfilPerusahaan(ctx context.Context) (model.ProfilPerusahaanResponse, error) {
-	item, err := u.repo.GetProfilPerusahaan(ctx)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return model.ProfilPerusahaanResponse{}, ErrMasterDataNotFound
-		}
-		return model.ProfilPerusahaanResponse{}, err
-	}
 
-	return model.ProfilPerusahaanResponse{
-		ID:        item.IDProfilPerusahaan,
-		Nama:      item.Nama,
-		Alamat:    item.Alamat,
-		Email:     item.Email,
-		NoTelp:    item.NoTelp,
-		About:     item.About,
-		Logo:      item.Logo,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
-}
-
-func (u *MasterDataUseCase) GetProfilPerusahaanByID(ctx context.Context, id int32) (model.ProfilPerusahaanResponse, error) {
-	item, err := u.repo.GetProfilPerusahaanByID(ctx, id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return model.ProfilPerusahaanResponse{}, ErrMasterDataNotFound
-		}
-		return model.ProfilPerusahaanResponse{}, err
-	}
-
-	return model.ProfilPerusahaanResponse{
-		ID:        item.IDProfilPerusahaan,
-		Nama:      item.Nama,
-		Alamat:    item.Alamat,
-		Email:     item.Email,
-		NoTelp:    item.NoTelp,
-		About:     item.About,
-		Logo:      item.Logo,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
-}
-
-func (u *MasterDataUseCase) CreateProfilPerusahaan(ctx context.Context, req model.CreateProfilPerusahaanRequest) (model.ProfilPerusahaanResponse, error) {
-	if _, err := u.repo.GetProfilPerusahaan(ctx); err == nil {
-		return model.ProfilPerusahaanResponse{}, ErrProfilPerusahaanAlreadyExists
-	} else if !errors.Is(err, pgx.ErrNoRows) {
-		return model.ProfilPerusahaanResponse{}, fmt.Errorf("check existing profil perusahaan: %w", err)
-	}
-
-	item, err := u.repo.CreateProfilPerusahaan(ctx, entity.CreateProfilPerusahaanParams{
-		Nama:   req.Nama,
-		Alamat: req.Alamat,
-		Email:  req.Email,
-		NoTelp: req.NoTelp,
-		About:  req.About,
-		Logo:   req.Logo,
-	})
-	if err != nil {
-		return model.ProfilPerusahaanResponse{}, mapMasterDataConflict(err)
-	}
-
-	return model.ProfilPerusahaanResponse{
-		ID:        item.IDProfilPerusahaan,
-		Nama:      item.Nama,
-		Alamat:    item.Alamat,
-		Email:     item.Email,
-		NoTelp:    item.NoTelp,
-		About:     item.About,
-		Logo:      item.Logo,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
-}
-
-func (u *MasterDataUseCase) UpdateProfilPerusahaan(ctx context.Context, id int32, req model.UpdateProfilPerusahaanRequest) (model.ProfilPerusahaanResponse, error) {
-	item, err := u.repo.UpdateProfilPerusahaan(ctx, entity.UpdateProfilPerusahaanParams{
-		IDProfilPerusahaan: id,
-		Nama:                req.Nama,
-		Alamat:              req.Alamat,
-		Email:               req.Email,
-		NoTelp:              req.NoTelp,
-		About:               req.About,
-		Logo:                req.Logo,
-	})
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return model.ProfilPerusahaanResponse{}, ErrMasterDataNotFound
-		}
-		return model.ProfilPerusahaanResponse{}, mapMasterDataConflict(err)
-	}
-
-	return model.ProfilPerusahaanResponse{
-		ID:        item.IDProfilPerusahaan,
-		Nama:      item.Nama,
-		Alamat:    item.Alamat,
-		Email:     item.Email,
-		NoTelp:    item.NoTelp,
-		About:     item.About,
-		Logo:      item.Logo,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
-}
-
-func (u *MasterDataUseCase) DeleteProfilPerusahaan(ctx context.Context, id int32) error {
-	affected, err := u.repo.DeleteProfilPerusahaan(ctx, id)
-	if err != nil {
-		return err
-	}
-	if affected == 0 {
-		return ErrMasterDataNotFound
-	}
-	return nil
-}
 
 func mapMasterDataConflict(err error) error {
 	var pgErr *pgconn.PgError
