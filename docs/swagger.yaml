@@ -1058,6 +1058,66 @@ definitions:
       nama_departemen:
         type: string
     type: object
+  model.ExcelCellMutation:
+    properties:
+      cell:
+        type: string
+      sheet:
+        type: string
+      value: {}
+    required:
+    - cell
+    - sheet
+    type: object
+  model.ExcelRenderRequest:
+    properties:
+      cell_mutations:
+        items:
+          $ref: '#/definitions/model.ExcelCellMutation'
+        type: array
+      output_file_name:
+        type: string
+      row_mutations:
+        items:
+          $ref: '#/definitions/model.ExcelRowMutation'
+        type: array
+      template_name:
+        type: string
+    required:
+    - template_name
+    type: object
+  model.ExcelRowMutation:
+    properties:
+      sheet:
+        type: string
+      start_cell:
+        type: string
+      values:
+        items: {}
+        type: array
+    required:
+    - sheet
+    - start_cell
+    - values
+    type: object
+  model.ExcelTemplateInfo:
+    properties:
+      name:
+        type: string
+    type: object
+  model.ExcelTemplateListSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.ExcelTemplateInfo'
+        type: array
+      message:
+        example: excel templates retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.FactoryReportResponse:
     properties:
       created_at:
@@ -4075,6 +4135,17 @@ paths:
       summary: AI Delivery Date Estimation untuk Order Baru
       tags:
       - Dashboard
+  /api/v1/dashboard/finance:
+    get:
+      description: Mengambil metrics realtime untuk layar Finance Dashboard
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Ambil KPI Finance
+      tags:
+      - Dashboard
   /api/v1/dashboard/operator:
     get:
       description: Mengambil metrics realtime untuk layar Operator Dashboard
@@ -4086,6 +4157,75 @@ paths:
       summary: Ambil KPI Operator
       tags:
       - Dashboard
+  /api/v1/exports/excel/render:
+    post:
+      consumes:
+      - application/json
+      description: Renders an Excel workbook from a registered template and returns
+        it as a downloadable .xlsx file.
+      parameters:
+      - description: Excel render payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.ExcelRenderRequest'
+      produces:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Render Excel Template
+      tags:
+      - Exports
+  /api/v1/exports/excel/templates:
+    get:
+      description: Returns available Excel templates from the configured export template
+        directory.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ExcelTemplateListSuccessDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: List Excel Export Templates
+      tags:
+      - Exports
   /api/v1/inventory/issue:
     post:
       consumes:

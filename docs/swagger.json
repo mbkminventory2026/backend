@@ -638,6 +638,24 @@
                 }
             }
         },
+        "/api/v1/dashboard/finance": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil metrics realtime untuk layar Finance Dashboard",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Ambil KPI Finance",
+                "responses": {}
+            }
+        },
         "/api/v1/dashboard/operator": {
             "get": {
                 "security": [
@@ -654,6 +672,112 @@
                 ],
                 "summary": "Ambil KPI Operator",
                 "responses": {}
+            }
+        },
+        "/api/v1/exports/excel/render": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Renders an Excel workbook from a registered template and returns it as a downloadable .xlsx file.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ],
+                "tags": [
+                    "Exports"
+                ],
+                "summary": "Render Excel Template",
+                "parameters": [
+                    {
+                        "description": "Excel render payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ExcelRenderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/exports/excel/templates": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns available Excel templates from the configured export template directory.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Exports"
+                ],
+                "summary": "List Excel Export Templates",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ExcelTemplateListSuccessDoc"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    }
+                }
             }
         },
         "/api/v1/inventory/issue": {
@@ -6765,6 +6889,95 @@
                 },
                 "nama_departemen": {
                     "type": "string"
+                }
+            }
+        },
+        "model.ExcelCellMutation": {
+            "type": "object",
+            "required": [
+                "cell",
+                "sheet"
+            ],
+            "properties": {
+                "cell": {
+                    "type": "string"
+                },
+                "sheet": {
+                    "type": "string"
+                },
+                "value": {}
+            }
+        },
+        "model.ExcelRenderRequest": {
+            "type": "object",
+            "required": [
+                "template_name"
+            ],
+            "properties": {
+                "cell_mutations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ExcelCellMutation"
+                    }
+                },
+                "output_file_name": {
+                    "type": "string"
+                },
+                "row_mutations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ExcelRowMutation"
+                    }
+                },
+                "template_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ExcelRowMutation": {
+            "type": "object",
+            "required": [
+                "sheet",
+                "start_cell",
+                "values"
+            ],
+            "properties": {
+                "sheet": {
+                    "type": "string"
+                },
+                "start_cell": {
+                    "type": "string"
+                },
+                "values": {
+                    "type": "array",
+                    "items": {}
+                }
+            }
+        },
+        "model.ExcelTemplateInfo": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ExcelTemplateListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ExcelTemplateInfo"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "excel templates retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
