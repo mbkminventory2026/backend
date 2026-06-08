@@ -4,21 +4,21 @@ import "permatatex-inventory/pkg/response"
 
 type CreateRatioSizeMarkerRequest struct {
 	IDWoShellSize int32 `json:"id_wo_shell_size" binding:"required,gt=0"`
-	RatioPlan     int32 `json:"ratio_plan" binding:"required,gte=0"`
+	RatioPlan     int32 `json:"ratio_plan" binding:"gte=0"`
 }
 
 type CreateRatioMarkerRequest struct {
 	IDWoShell            int32                          `json:"id_wo_shell" binding:"required,gt=0"`
-	Cons                 float64                        `json:"cons" binding:"required,gte=0"`
-	PlanSpreadingGelaran float64                        `json:"plan_spreading_gelaran" binding:"required,gte=0"`
-	PanjangMarker        float64                        `json:"panjang_marker" binding:"required,gte=0"`
-	EfficiencyMarker     float64                        `json:"efficiency_marker" binding:"required,gte=0"`
-	Allowance            float64                        `json:"allowance" binding:"required,gte=0"`
+	Cons                 float64                        `json:"cons" binding:"gte=0"`
+	PlanSpreadingGelaran float64                        `json:"plan_spreading_gelaran" binding:"gte=0"`
+	PanjangMarker        float64                        `json:"panjang_marker" binding:"gte=0"`
+	EfficiencyMarker     float64                        `json:"efficiency_marker" binding:"gte=0"`
+	Allowance            float64                        `json:"allowance" binding:"gte=0"`
 	ConsBuyer            *float64                       `json:"cons_buyer" binding:"omitempty,gte=0"`
-	RollQty              int32                          `json:"roll_qty" binding:"required,gte=0"`
-	SambunganRoll        int32                          `json:"sambungan_roll" binding:"required,gte=0"`
+	RollQty              int32                          `json:"roll_qty" binding:"gte=0"`
+	SambunganRoll        int32                          `json:"sambungan_roll" binding:"gte=0"`
 	Plot                 int32                          `json:"plot" binding:"required,gte=1"`
-	LebarKain            float64                        `json:"lebar_kain" binding:"required,gte=0"`
+	LebarKain            float64                        `json:"lebar_kain" binding:"gte=0"`
 	PanjangMarkerUnit    string                         `json:"panjang_marker_unit" binding:"required"`
 	Ket                  string                         `json:"ket" binding:"omitempty"`
 	Sizes                []CreateRatioSizeMarkerRequest `json:"sizes" binding:"required,min=1,dive"`
