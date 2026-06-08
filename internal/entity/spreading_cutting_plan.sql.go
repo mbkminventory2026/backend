@@ -45,11 +45,10 @@ type CreateRatioSizeSpreadingParams struct {
 const createRatioSpreading = `-- name: CreateRatioSpreading :one
 INSERT INTO RATIO_SPREADING (
     ID_KOMPONEN_SPREADING, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN,
-    PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER,
-    ROLL_QTY, SAMBUNGAN_ROLL, REJECT, PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET
+    ALLOWANCE, ROLL_QTY, SAMBUNGAN_ROLL, REJECT, LEBAR_KAIN, KET
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
-) RETURNING ID_RATIO_SPREADING, ID_KOMPONEN_SPREADING, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN, PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER, ROLL_QTY, SAMBUNGAN_ROLL, REJECT, PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET, created_at
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+) RETURNING ID_RATIO_SPREADING, ID_KOMPONEN_SPREADING, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN, ALLOWANCE, ROLL_QTY, SAMBUNGAN_ROLL, REJECT, LEBAR_KAIN, KET, created_at
 `
 
 type CreateRatioSpreadingParams struct {
@@ -57,16 +56,11 @@ type CreateRatioSpreadingParams struct {
 	IDWoShell            int32          `json:"id_wo_shell"`
 	Cons                 pgtype.Numeric `json:"cons"`
 	PlanSpreadingGelaran pgtype.Numeric `json:"plan_spreading_gelaran"`
-	PanjangMarker        pgtype.Numeric `json:"panjang_marker"`
-	EfficiencyMarker     pgtype.Numeric `json:"efficiency_marker"`
 	Allowance            pgtype.Numeric `json:"allowance"`
-	ConsBuyer            pgtype.Numeric `json:"cons_buyer"`
 	RollQty              int32          `json:"roll_qty"`
 	SambunganRoll        int32          `json:"sambungan_roll"`
 	Reject               pgtype.Numeric `json:"reject"`
-	Plot                 int32          `json:"plot"`
 	LebarKain            pgtype.Numeric `json:"lebar_kain"`
-	PanjangMarkerUnit    string         `json:"panjang_marker_unit"`
 	Ket                  string         `json:"ket"`
 }
 
@@ -76,16 +70,11 @@ func (q *Queries) CreateRatioSpreading(ctx context.Context, arg CreateRatioSprea
 		arg.IDWoShell,
 		arg.Cons,
 		arg.PlanSpreadingGelaran,
-		arg.PanjangMarker,
-		arg.EfficiencyMarker,
 		arg.Allowance,
-		arg.ConsBuyer,
 		arg.RollQty,
 		arg.SambunganRoll,
 		arg.Reject,
-		arg.Plot,
 		arg.LebarKain,
-		arg.PanjangMarkerUnit,
 		arg.Ket,
 	)
 	var i RatioSpreading
@@ -95,16 +84,11 @@ func (q *Queries) CreateRatioSpreading(ctx context.Context, arg CreateRatioSprea
 		&i.IDWoShell,
 		&i.Cons,
 		&i.PlanSpreadingGelaran,
-		&i.PanjangMarker,
-		&i.EfficiencyMarker,
 		&i.Allowance,
-		&i.ConsBuyer,
 		&i.RollQty,
 		&i.SambunganRoll,
 		&i.Reject,
-		&i.Plot,
 		&i.LebarKain,
-		&i.PanjangMarkerUnit,
 		&i.Ket,
 		&i.CreatedAt,
 	)
@@ -191,8 +175,7 @@ func (q *Queries) ListKomponenBySpreadingPlanID(ctx context.Context, idSpreading
 
 const listRatioByKomponenSpreadingID = `-- name: ListRatioByKomponenSpreadingID :many
 SELECT ID_RATIO_SPREADING, ID_KOMPONEN_SPREADING, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN,
-       PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER, ROLL_QTY, SAMBUNGAN_ROLL,
-       REJECT, PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET, created_at
+       ALLOWANCE, ROLL_QTY, SAMBUNGAN_ROLL, REJECT, LEBAR_KAIN, KET, created_at
 FROM RATIO_SPREADING
 WHERE ID_KOMPONEN_SPREADING = $1
 ORDER BY ID_RATIO_SPREADING ASC
@@ -213,16 +196,11 @@ func (q *Queries) ListRatioByKomponenSpreadingID(ctx context.Context, idKomponen
 			&i.IDWoShell,
 			&i.Cons,
 			&i.PlanSpreadingGelaran,
-			&i.PanjangMarker,
-			&i.EfficiencyMarker,
 			&i.Allowance,
-			&i.ConsBuyer,
 			&i.RollQty,
 			&i.SambunganRoll,
 			&i.Reject,
-			&i.Plot,
 			&i.LebarKain,
-			&i.PanjangMarkerUnit,
 			&i.Ket,
 			&i.CreatedAt,
 		); err != nil {

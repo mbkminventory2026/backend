@@ -757,12 +757,6 @@ definitions:
       cons:
         minimum: 0
         type: number
-      cons_buyer:
-        minimum: 0
-        type: number
-      efficiency_marker:
-        minimum: 0
-        type: number
       id_wo_shell:
         type: integer
       ket:
@@ -770,17 +764,9 @@ definitions:
       lebar_kain:
         minimum: 0
         type: number
-      panjang_marker:
-        minimum: 0
-        type: number
-      panjang_marker_unit:
-        type: string
       plan_spreading_gelaran:
         minimum: 0
         type: number
-      plot:
-        minimum: 1
-        type: integer
       reject:
         minimum: 0
         type: number
@@ -797,8 +783,6 @@ definitions:
         type: array
     required:
     - id_wo_shell
-    - panjang_marker_unit
-    - plot
     - sizes
     type: object
   model.CreateRoleRequest:
@@ -2398,12 +2382,8 @@ definitions:
         type: number
       cons:
         type: number
-      cons_buyer:
-        type: number
       created_at:
         type: string
-      efficiency_marker:
-        type: number
       id_komponen_spreading:
         type: integer
       id_ratio_spreading:
@@ -2414,14 +2394,8 @@ definitions:
         type: string
       lebar_kain:
         type: number
-      panjang_marker:
-        type: number
-      panjang_marker_unit:
-        type: string
       plan_spreading_gelaran:
         type: number
-      plot:
-        type: integer
       reject:
         type: number
       roll_qty:

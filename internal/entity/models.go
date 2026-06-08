@@ -328,16 +328,11 @@ type RatioSpreading struct {
 	IDWoShell            int32              `json:"id_wo_shell"`
 	Cons                 pgtype.Numeric     `json:"cons"`
 	PlanSpreadingGelaran pgtype.Numeric     `json:"plan_spreading_gelaran"`
-	PanjangMarker        pgtype.Numeric     `json:"panjang_marker"`
-	EfficiencyMarker     pgtype.Numeric     `json:"efficiency_marker"`
 	Allowance            pgtype.Numeric     `json:"allowance"`
-	ConsBuyer            pgtype.Numeric     `json:"cons_buyer"`
 	RollQty              int32              `json:"roll_qty"`
 	SambunganRoll        int32              `json:"sambungan_roll"`
 	Reject               pgtype.Numeric     `json:"reject"`
-	Plot                 int32              `json:"plot"`
 	LebarKain            pgtype.Numeric     `json:"lebar_kain"`
-	PanjangMarkerUnit    string             `json:"panjang_marker_unit"`
 	Ket                  string             `json:"ket"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 }

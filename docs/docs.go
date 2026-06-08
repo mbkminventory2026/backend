@@ -6330,8 +6330,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "id_wo_shell",
-                "panjang_marker_unit",
-                "plot",
                 "sizes"
             ],
             "properties": {
@@ -6340,14 +6338,6 @@ const docTemplate = `{
                     "minimum": 0
                 },
                 "cons": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "cons_buyer": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "efficiency_marker": {
                     "type": "number",
                     "minimum": 0
                 },
@@ -6361,20 +6351,9 @@ const docTemplate = `{
                     "type": "number",
                     "minimum": 0
                 },
-                "panjang_marker": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "panjang_marker_unit": {
-                    "type": "string"
-                },
                 "plan_spreading_gelaran": {
                     "type": "number",
                     "minimum": 0
-                },
-                "plot": {
-                    "type": "integer",
-                    "minimum": 1
                 },
                 "reject": {
                     "type": "number",
@@ -8777,14 +8756,8 @@ const docTemplate = `{
                 "cons": {
                     "type": "number"
                 },
-                "cons_buyer": {
-                    "type": "number"
-                },
                 "created_at": {
                     "type": "string"
-                },
-                "efficiency_marker": {
-                    "type": "number"
                 },
                 "id_komponen_spreading": {
                     "type": "integer"
@@ -8801,17 +8774,8 @@ const docTemplate = `{
                 "lebar_kain": {
                     "type": "number"
                 },
-                "panjang_marker": {
-                    "type": "number"
-                },
-                "panjang_marker_unit": {
-                    "type": "string"
-                },
                 "plan_spreading_gelaran": {
                     "type": "number"
-                },
-                "plot": {
-                    "type": "integer"
                 },
                 "reject": {
                     "type": "number"
