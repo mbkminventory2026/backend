@@ -83,3 +83,24 @@ type UpdateWOShellPlanStatusSuccessDoc struct {
 	Status  string `json:"status" example:"success"`
 	Message string `json:"message" example:"wo shell plan status updated"`
 }
+
+type TimelinePlanListItem struct {
+	IDTimeline       int32  `json:"id_timeline"`
+	IDPoClient       int32  `json:"id_po_client"`
+	ClientName       string `json:"client_name"`
+	PoInternalNumber string `json:"po_number"`
+	TanggalDisusun   string `json:"tanggal_disusun"`
+	Notes            string `json:"notes"`
+	CreatedAt        string `json:"created_at"`
+}
+
+type TimelinePlanListResponse struct {
+	Items      []TimelinePlanListItem `json:"items"`
+	Pagination PaginationMeta         `json:"pagination"`
+}
+
+type TimelinePlanListSuccessDoc struct {
+	Status  string                            `json:"status" example:"success"`
+	Message string                            `json:"message" example:"timeline plans retrieved"`
+	Data    TimelinePlanListResponse          `json:"data"`
+}

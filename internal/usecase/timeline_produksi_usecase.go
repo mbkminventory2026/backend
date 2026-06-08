@@ -220,6 +220,49 @@ func (u *TimelineProduksiUseCase) UpdateWOShellPlanStatus(ctx context.Context, i
 	return nil
 }
 
+var timelineProduksiSortColumns = map[string]struct{}{
+	"id_timeline": {},
+	"created_at":  {},
+}
+
+func (u *TimelineProduksiUseCase) GetTimelinePlans(ctx context.Context, filter model.ListQueryFilter) (*model.TimelinePlanListResponse, error) {
+	page, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter, "id_timeline", true, timelineProduksiSortColumns)
+
+	rows, err := u.repo.ListTimelinePlans(ctx, entity.ListTimelinePlansParams{
+		SearchTerm: search,
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrWorkOrderServiceUnavailable, err.Error())
+	}
+
+	totalItems, err := u.repo.CountTimelinePlans(ctx, search)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrWorkOrderServiceUnavailable, err.Error())
+	}
+
+	items := make([]model.TimelinePlanListItem, len(rows))
+	for i, r := range rows {
+		items[i] = model.TimelinePlanListItem{
+			IDTimeline:       r.IDTimeline,
+			IDPoClient:       r.IDPoClient,
+			ClientName:       r.ClientName,
+			PoInternalNumber: r.PoNumber,
+			TanggalDisusun:   formatDate(r.TanggalDisusun),
+			Notes:            r.Notes,
+			CreatedAt:        r.CreatedAt.Time.Format(time.RFC3339),
+		}
+	}
+
+	return &model.TimelinePlanListResponse{
+		Items:      items,
+		Pagination: buildPagination(totalItems, page, limit),
+	}, nil
+}
+
 func parseOptionalDate(d *string) pgtype.Date {
 	if d == nil || *d == "" {
 		return pgtype.Date{Valid: false}
