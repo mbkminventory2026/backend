@@ -11,20 +11,24 @@ import (
 
 const createProfilPerusahaan = `-- name: CreateProfilPerusahaan :one
 INSERT INTO PROFIL_PERUSAHAAN (
-    nama, alamat, email, no_telp, about, logo
+    nama, alamat, email, no_telp, about, logo, background_login, text_footer, link_website, medsos
 ) VALUES (
-    $1, $2, $3, $4, $5, $6
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 )
-RETURNING id_profil_perusahaan, nama, alamat, email, no_telp, about, logo, created_at
+RETURNING id_profil_perusahaan, nama, alamat, email, no_telp, about, logo, created_at, background_login, text_footer, link_website, medsos
 `
 
 type CreateProfilPerusahaanParams struct {
-	Nama   string `json:"nama"`
-	Alamat string `json:"alamat"`
-	Email  string `json:"email"`
-	NoTelp string `json:"no_telp"`
-	About  string `json:"about"`
-	Logo   string `json:"logo"`
+	Nama            string `json:"nama"`
+	Alamat          string `json:"alamat"`
+	Email           string `json:"email"`
+	NoTelp          string `json:"no_telp"`
+	About           string `json:"about"`
+	Logo            string `json:"logo"`
+	BackgroundLogin string `json:"background_login"`
+	TextFooter      string `json:"text_footer"`
+	LinkWebsite     string `json:"link_website"`
+	Medsos          []byte `json:"medsos"`
 }
 
 func (q *Queries) CreateProfilPerusahaan(ctx context.Context, arg CreateProfilPerusahaanParams) (ProfilPerusahaan, error) {
@@ -35,6 +39,10 @@ func (q *Queries) CreateProfilPerusahaan(ctx context.Context, arg CreateProfilPe
 		arg.NoTelp,
 		arg.About,
 		arg.Logo,
+		arg.BackgroundLogin,
+		arg.TextFooter,
+		arg.LinkWebsite,
+		arg.Medsos,
 	)
 	var i ProfilPerusahaan
 	err := row.Scan(
@@ -46,6 +54,10 @@ func (q *Queries) CreateProfilPerusahaan(ctx context.Context, arg CreateProfilPe
 		&i.About,
 		&i.Logo,
 		&i.CreatedAt,
+		&i.BackgroundLogin,
+		&i.TextFooter,
+		&i.LinkWebsite,
+		&i.Medsos,
 	)
 	return i, err
 }
@@ -64,7 +76,7 @@ func (q *Queries) DeleteProfilPerusahaan(ctx context.Context, idProfilPerusahaan
 }
 
 const getProfilPerusahaan = `-- name: GetProfilPerusahaan :one
-SELECT id_profil_perusahaan, nama, alamat, email, no_telp, about, logo, created_at FROM PROFIL_PERUSAHAAN
+SELECT id_profil_perusahaan, nama, alamat, email, no_telp, about, logo, created_at, background_login, text_footer, link_website, medsos FROM PROFIL_PERUSAHAAN
 ORDER BY created_at DESC LIMIT 1
 `
 
@@ -80,12 +92,16 @@ func (q *Queries) GetProfilPerusahaan(ctx context.Context) (ProfilPerusahaan, er
 		&i.About,
 		&i.Logo,
 		&i.CreatedAt,
+		&i.BackgroundLogin,
+		&i.TextFooter,
+		&i.LinkWebsite,
+		&i.Medsos,
 	)
 	return i, err
 }
 
 const getProfilPerusahaanByID = `-- name: GetProfilPerusahaanByID :one
-SELECT id_profil_perusahaan, nama, alamat, email, no_telp, about, logo, created_at FROM PROFIL_PERUSAHAAN
+SELECT id_profil_perusahaan, nama, alamat, email, no_telp, about, logo, created_at, background_login, text_footer, link_website, medsos FROM PROFIL_PERUSAHAAN
 WHERE id_profil_perusahaan = $1 LIMIT 1
 `
 
@@ -101,15 +117,20 @@ func (q *Queries) GetProfilPerusahaanByID(ctx context.Context, idProfilPerusahaa
 		&i.About,
 		&i.Logo,
 		&i.CreatedAt,
+		&i.BackgroundLogin,
+		&i.TextFooter,
+		&i.LinkWebsite,
+		&i.Medsos,
 	)
 	return i, err
 }
 
 const updateProfilPerusahaan = `-- name: UpdateProfilPerusahaan :one
 UPDATE PROFIL_PERUSAHAAN
-SET nama = $2, alamat = $3, email = $4, no_telp = $5, about = $6, logo = $7
+SET nama = $2, alamat = $3, email = $4, no_telp = $5, about = $6, logo = $7,
+    background_login = $8, text_footer = $9, link_website = $10, medsos = $11
 WHERE id_profil_perusahaan = $1
-RETURNING id_profil_perusahaan, nama, alamat, email, no_telp, about, logo, created_at
+RETURNING id_profil_perusahaan, nama, alamat, email, no_telp, about, logo, created_at, background_login, text_footer, link_website, medsos
 `
 
 type UpdateProfilPerusahaanParams struct {
@@ -120,6 +141,10 @@ type UpdateProfilPerusahaanParams struct {
 	NoTelp             string `json:"no_telp"`
 	About              string `json:"about"`
 	Logo               string `json:"logo"`
+	BackgroundLogin    string `json:"background_login"`
+	TextFooter         string `json:"text_footer"`
+	LinkWebsite        string `json:"link_website"`
+	Medsos             []byte `json:"medsos"`
 }
 
 func (q *Queries) UpdateProfilPerusahaan(ctx context.Context, arg UpdateProfilPerusahaanParams) (ProfilPerusahaan, error) {
@@ -131,6 +156,10 @@ func (q *Queries) UpdateProfilPerusahaan(ctx context.Context, arg UpdateProfilPe
 		arg.NoTelp,
 		arg.About,
 		arg.Logo,
+		arg.BackgroundLogin,
+		arg.TextFooter,
+		arg.LinkWebsite,
+		arg.Medsos,
 	)
 	var i ProfilPerusahaan
 	err := row.Scan(
@@ -142,6 +171,10 @@ func (q *Queries) UpdateProfilPerusahaan(ctx context.Context, arg UpdateProfilPe
 		&i.About,
 		&i.Logo,
 		&i.CreatedAt,
+		&i.BackgroundLogin,
+		&i.TextFooter,
+		&i.LinkWebsite,
+		&i.Medsos,
 	)
 	return i, err
 }

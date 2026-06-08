@@ -39,14 +39,18 @@ func (u *ProfilPerusahaanUseCase) GetProfilPerusahaan(ctx context.Context) (mode
 	}
 
 	return model.ProfilPerusahaanResponse{
-		ID:        item.IDProfilPerusahaan,
-		Nama:      item.Nama,
-		Alamat:    item.Alamat,
-		Email:     item.Email,
-		NoTelp:    item.NoTelp,
-		About:     item.About,
-		Logo:      item.Logo,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+		ID:              item.IDProfilPerusahaan,
+		Nama:            item.Nama,
+		Alamat:          item.Alamat,
+		Email:           item.Email,
+		NoTelp:          item.NoTelp,
+		About:           item.About,
+		Logo:            item.Logo,
+		BackgroundLogin: item.BackgroundLogin,
+		TextFooter:      item.TextFooter,
+		LinkWebsite:     item.LinkWebsite,
+		Medsos:          string(item.Medsos),
+		CreatedAt:       item.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
 
@@ -60,14 +64,18 @@ func (u *ProfilPerusahaanUseCase) GetProfilPerusahaanByID(ctx context.Context, i
 	}
 
 	return model.ProfilPerusahaanResponse{
-		ID:        item.IDProfilPerusahaan,
-		Nama:      item.Nama,
-		Alamat:    item.Alamat,
-		Email:     item.Email,
-		NoTelp:    item.NoTelp,
-		About:     item.About,
-		Logo:      item.Logo,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+		ID:              item.IDProfilPerusahaan,
+		Nama:            item.Nama,
+		Alamat:          item.Alamat,
+		Email:           item.Email,
+		NoTelp:          item.NoTelp,
+		About:           item.About,
+		Logo:            item.Logo,
+		BackgroundLogin: item.BackgroundLogin,
+		TextFooter:      item.TextFooter,
+		LinkWebsite:     item.LinkWebsite,
+		Medsos:          string(item.Medsos),
+		CreatedAt:       item.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
 
@@ -78,31 +86,49 @@ func (u *ProfilPerusahaanUseCase) CreateProfilPerusahaan(ctx context.Context, re
 		return model.ProfilPerusahaanResponse{}, fmt.Errorf("check existing profil perusahaan: %w", err)
 	}
 
+	medsosBytes := []byte(req.Medsos)
+	if len(medsosBytes) == 0 {
+		medsosBytes = []byte("{}")
+	}
+
 	item, err := u.repo.CreateProfilPerusahaan(ctx, entity.CreateProfilPerusahaanParams{
-		Nama:   req.Nama,
-		Alamat: req.Alamat,
-		Email:  req.Email,
-		NoTelp: req.NoTelp,
-		About:  req.About,
-		Logo:   req.Logo,
+		Nama:            req.Nama,
+		Alamat:          req.Alamat,
+		Email:           req.Email,
+		NoTelp:          req.NoTelp,
+		About:           req.About,
+		Logo:            req.Logo,
+		BackgroundLogin: req.BackgroundLogin,
+		TextFooter:      req.TextFooter,
+		LinkWebsite:     req.LinkWebsite,
+		Medsos:          medsosBytes,
 	})
 	if err != nil {
 		return model.ProfilPerusahaanResponse{}, u.mapConflict(err)
 	}
 
 	return model.ProfilPerusahaanResponse{
-		ID:        item.IDProfilPerusahaan,
-		Nama:      item.Nama,
-		Alamat:    item.Alamat,
-		Email:     item.Email,
-		NoTelp:    item.NoTelp,
-		About:     item.About,
-		Logo:      item.Logo,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+		ID:              item.IDProfilPerusahaan,
+		Nama:            item.Nama,
+		Alamat:          item.Alamat,
+		Email:           item.Email,
+		NoTelp:          item.NoTelp,
+		About:           item.About,
+		Logo:            item.Logo,
+		BackgroundLogin: item.BackgroundLogin,
+		TextFooter:      item.TextFooter,
+		LinkWebsite:     item.LinkWebsite,
+		Medsos:          string(item.Medsos),
+		CreatedAt:       item.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
 
 func (u *ProfilPerusahaanUseCase) UpdateProfilPerusahaan(ctx context.Context, id int32, req model.UpdateProfilPerusahaanRequest) (model.ProfilPerusahaanResponse, error) {
+	medsosBytes := []byte(req.Medsos)
+	if len(medsosBytes) == 0 {
+		medsosBytes = []byte("{}")
+	}
+
 	item, err := u.repo.UpdateProfilPerusahaan(ctx, entity.UpdateProfilPerusahaanParams{
 		IDProfilPerusahaan: id,
 		Nama:                req.Nama,
@@ -111,6 +137,10 @@ func (u *ProfilPerusahaanUseCase) UpdateProfilPerusahaan(ctx context.Context, id
 		NoTelp:              req.NoTelp,
 		About:               req.About,
 		Logo:                req.Logo,
+		BackgroundLogin:     req.BackgroundLogin,
+		TextFooter:          req.TextFooter,
+		LinkWebsite:         req.LinkWebsite,
+		Medsos:              medsosBytes,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -120,14 +150,18 @@ func (u *ProfilPerusahaanUseCase) UpdateProfilPerusahaan(ctx context.Context, id
 	}
 
 	return model.ProfilPerusahaanResponse{
-		ID:        item.IDProfilPerusahaan,
-		Nama:      item.Nama,
-		Alamat:    item.Alamat,
-		Email:     item.Email,
-		NoTelp:    item.NoTelp,
-		About:     item.About,
-		Logo:      item.Logo,
-		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+		ID:              item.IDProfilPerusahaan,
+		Nama:            item.Nama,
+		Alamat:          item.Alamat,
+		Email:           item.Email,
+		NoTelp:          item.NoTelp,
+		About:           item.About,
+		Logo:            item.Logo,
+		BackgroundLogin: item.BackgroundLogin,
+		TextFooter:      item.TextFooter,
+		LinkWebsite:     item.LinkWebsite,
+		Medsos:          string(item.Medsos),
+		CreatedAt:       item.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
 

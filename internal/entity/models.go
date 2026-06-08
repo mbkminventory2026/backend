@@ -276,6 +276,10 @@ type ProfilPerusahaan struct {
 	About              string             `json:"about"`
 	Logo               string             `json:"logo"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	BackgroundLogin    string             `json:"background_login"`
+	TextFooter         string             `json:"text_footer"`
+	LinkWebsite        string             `json:"link_website"`
+	Medsos             []byte             `json:"medsos"`
 }
 
 type RatioMarker struct {

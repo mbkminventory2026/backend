@@ -5900,16 +5900,28 @@ const docTemplate = `{
                 "alamat": {
                     "type": "string"
                 },
+                "background_login": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
+                "link_website": {
+                    "type": "string"
+                },
                 "logo": {
+                    "type": "string"
+                },
+                "medsos": {
                     "type": "string"
                 },
                 "nama": {
                     "type": "string"
                 },
                 "no_telp": {
+                    "type": "string"
+                },
+                "text_footer": {
                     "type": "string"
                 }
             }
@@ -8167,6 +8179,9 @@ const docTemplate = `{
                 "alamat": {
                     "type": "string"
                 },
+                "background_login": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -8176,13 +8191,22 @@ const docTemplate = `{
                 "id_profil_perusahaan": {
                     "type": "integer"
                 },
+                "link_website": {
+                    "type": "string"
+                },
                 "logo": {
+                    "type": "string"
+                },
+                "medsos": {
                     "type": "string"
                 },
                 "nama": {
                     "type": "string"
                 },
                 "no_telp": {
+                    "type": "string"
+                },
+                "text_footer": {
                     "type": "string"
                 }
             }
@@ -9100,16 +9124,28 @@ const docTemplate = `{
                 "alamat": {
                     "type": "string"
                 },
+                "background_login": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
+                "link_website": {
+                    "type": "string"
+                },
                 "logo": {
+                    "type": "string"
+                },
+                "medsos": {
                     "type": "string"
                 },
                 "nama": {
                     "type": "string"
                 },
                 "no_telp": {
+                    "type": "string"
+                },
+                "text_footer": {
                     "type": "string"
                 }
             }

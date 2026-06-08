@@ -66,21 +66,29 @@ type UpdateBarangRequest struct {
 
 // Profil Perusahaan
 type CreateProfilPerusahaanRequest struct {
-	Nama   string `json:"nama" binding:"required"`
-	Alamat string `json:"alamat"`
-	Email  string `json:"email" binding:"omitempty,email"`
-	NoTelp string `json:"no_telp"`
-	About  string `json:"about"`
-	Logo   string `json:"logo"`
+	Nama            string `json:"nama" binding:"required"`
+	Alamat          string `json:"alamat"`
+	Email           string `json:"email" binding:"omitempty,email"`
+	NoTelp          string `json:"no_telp"`
+	About           string `json:"about"`
+	Logo            string `json:"logo"`
+	BackgroundLogin string `json:"background_login"`
+	TextFooter      string `json:"text_footer"`
+	LinkWebsite     string `json:"link_website"`
+	Medsos          string `json:"medsos"`
 }
 
 type UpdateProfilPerusahaanRequest struct {
-	Nama   string `json:"nama" binding:"required"`
-	Alamat string `json:"alamat"`
-	Email  string `json:"email" binding:"omitempty,email"`
-	NoTelp string `json:"no_telp"`
-	About  string `json:"about"`
-	Logo   string `json:"logo"`
+	Nama            string `json:"nama" binding:"required"`
+	Alamat          string `json:"alamat"`
+	Email           string `json:"email" binding:"omitempty,email"`
+	NoTelp          string `json:"no_telp"`
+	About           string `json:"about"`
+	Logo            string `json:"logo"`
+	BackgroundLogin string `json:"background_login"`
+	TextFooter      string `json:"text_footer"`
+	LinkWebsite     string `json:"link_website"`
+	Medsos          string `json:"medsos"`
 }
 
 // Hak Akses
@@ -151,14 +159,18 @@ type BarangResponse struct {
 }
 
 type ProfilPerusahaanResponse struct {
-	ID        int32  `json:"id_profil_perusahaan"`
-	Nama      string `json:"nama"`
-	Alamat    string `json:"alamat"`
-	Email     string `json:"email"`
-	NoTelp    string `json:"no_telp"`
-	About     string `json:"about"`
-	Logo      string `json:"logo"`
-	CreatedAt string `json:"created_at"`
+	ID              int32  `json:"id_profil_perusahaan"`
+	Nama            string `json:"nama"`
+	Alamat          string `json:"alamat"`
+	Email           string `json:"email"`
+	NoTelp          string `json:"no_telp"`
+	About           string `json:"about"`
+	Logo            string `json:"logo"`
+	BackgroundLogin string `json:"background_login"`
+	TextFooter      string `json:"text_footer"`
+	LinkWebsite     string `json:"link_website"`
+	Medsos          string `json:"medsos"`
+	CreatedAt       string `json:"created_at"`
 }
 
 type HakAksesResponse struct {
