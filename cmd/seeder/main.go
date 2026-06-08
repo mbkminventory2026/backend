@@ -793,6 +793,37 @@ func seedPOClient(ctx context.Context, db *pgxpool.Pool) error {
 		slog.Info("po client items seeded for PO Test")
 	}
 
+	// Seed another PO without Work Orders for testing
+	var existsPending bool
+	err = db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM PO_CLIENT WHERE PO_NUMBER = 'PO Test Pending')`).Scan(&existsPending)
+	if err != nil {
+		return err
+	}
+
+	if !existsPending {
+		var idPoClientPending int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO PO_CLIENT (PO_NUMBER, TANGGAL, SEASON, DELIVERY, PAYMENT_TERM, FILE, ID_MITRA)
+			VALUES ('PO Test Pending', '2026-06-01', 'Summer 2026', '2026-08-30', 'Net 30', 'po_test_pending_file.pdf', 4)
+			RETURNING ID_PO_CLIENT
+		`).Scan(&idPoClientPending)
+		if err != nil {
+			return err
+		}
+		slog.Info("po client seeded: PO Test Pending", slog.Int("id", int(idPoClientPending)))
+
+		_, err = db.Exec(ctx, `
+			INSERT INTO PO_CLIENT_ITEM (ID_PO_CLIENT, STYLE, COLOUR, DESCRIPTION, QTY, PRICE)
+			VALUES 
+			($1, 'PO Pending Item 1', 'Black', 'PO Pending 1 Item Description', 800, 15.00),
+			($1, 'PO Pending Item 2', 'White', 'PO Pending 2 Item Description', 1200, 14.50)
+		`, idPoClientPending)
+		if err != nil {
+			return err
+		}
+		slog.Info("po client items seeded for PO Test Pending")
+	}
+
 	return nil
 }
 
