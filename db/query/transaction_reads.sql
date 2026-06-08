@@ -123,7 +123,8 @@ SELECT
     created_by,
     allow,
     id_wo,
-    created_at
+    created_at,
+    provided_by
 FROM WORK_ORDER_TRIM
 WHERE id_wo = sqlc.arg(id_wo)
 ORDER BY id_wo_trim ASC;

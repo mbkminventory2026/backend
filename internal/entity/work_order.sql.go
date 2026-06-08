@@ -270,7 +270,8 @@ INSERT INTO WORK_ORDER_TRIM (
     position,
     created_by,
     allow,
-    id_wo
+    id_wo,
+    provided_by
 ) VALUES (
     $1,
     $2,
@@ -282,9 +283,10 @@ INSERT INTO WORK_ORDER_TRIM (
     $8,
     $9,
     $10,
-    $11
+    $11,
+    $12
 )
-RETURNING id_wo_trim, item, description, color, code, cons, qty, uom, position, created_by, allow, id_wo, created_at
+RETURNING id_wo_trim, item, description, color, code, cons, qty, uom, position, created_by, allow, id_wo, created_at, provided_by
 `
 
 type CreateWorkOrderTrimParams struct {
@@ -299,25 +301,10 @@ type CreateWorkOrderTrimParams struct {
 	CreatedBy   string         `json:"created_by"`
 	Allow       int32          `json:"allow"`
 	IDWo        int32          `json:"id_wo"`
+	ProvidedBy  string         `json:"provided_by"`
 }
 
-type CreateWorkOrderTrimRow struct {
-	IDWoTrim    int32              `json:"id_wo_trim"`
-	Item        string             `json:"item"`
-	Description string             `json:"description"`
-	Color       string             `json:"color"`
-	Code        string             `json:"code"`
-	Cons        pgtype.Numeric     `json:"cons"`
-	Qty         int32              `json:"qty"`
-	Uom         string             `json:"uom"`
-	Position    string             `json:"position"`
-	CreatedBy   string             `json:"created_by"`
-	Allow       int32              `json:"allow"`
-	IDWo        int32              `json:"id_wo"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-}
-
-func (q *Queries) CreateWorkOrderTrim(ctx context.Context, arg CreateWorkOrderTrimParams) (CreateWorkOrderTrimRow, error) {
+func (q *Queries) CreateWorkOrderTrim(ctx context.Context, arg CreateWorkOrderTrimParams) (WorkOrderTrim, error) {
 	row := q.db.QueryRow(ctx, createWorkOrderTrim,
 		arg.Item,
 		arg.Description,
@@ -330,8 +317,9 @@ func (q *Queries) CreateWorkOrderTrim(ctx context.Context, arg CreateWorkOrderTr
 		arg.CreatedBy,
 		arg.Allow,
 		arg.IDWo,
+		arg.ProvidedBy,
 	)
-	var i CreateWorkOrderTrimRow
+	var i WorkOrderTrim
 	err := row.Scan(
 		&i.IDWoTrim,
 		&i.Item,
@@ -346,6 +334,7 @@ func (q *Queries) CreateWorkOrderTrim(ctx context.Context, arg CreateWorkOrderTr
 		&i.Allow,
 		&i.IDWo,
 		&i.CreatedAt,
+		&i.ProvidedBy,
 	)
 	return i, err
 }

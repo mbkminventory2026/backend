@@ -1024,6 +1024,14 @@ definitions:
         type: string
       position:
         type: string
+      provided_by:
+        enum:
+        - client
+        - permata
+        - permatatex
+        - Client
+        - Permatatex
+        type: string
       qty:
         type: integer
       uom:
@@ -1034,6 +1042,7 @@ definitions:
     - color
     - cons
     - item
+    - provided_by
     - qty
     - uom
     type: object
@@ -3700,6 +3709,8 @@ definitions:
       item:
         type: string
       position:
+        type: string
+      provided_by:
         type: string
       qty:
         type: integer

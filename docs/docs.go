@@ -6820,6 +6820,7 @@ const docTemplate = `{
                 "color",
                 "cons",
                 "item",
+                "provided_by",
                 "qty",
                 "uom"
             ],
@@ -6849,6 +6850,16 @@ const docTemplate = `{
                 },
                 "position": {
                     "type": "string"
+                },
+                "provided_by": {
+                    "type": "string",
+                    "enum": [
+                        "client",
+                        "permata",
+                        "permatatex",
+                        "Client",
+                        "Permatatex"
+                    ]
                 },
                 "qty": {
                     "type": "integer"
@@ -10846,6 +10857,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "position": {
+                    "type": "string"
+                },
+                "provided_by": {
                     "type": "string"
                 },
                 "qty": {

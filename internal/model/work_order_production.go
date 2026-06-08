@@ -22,14 +22,15 @@ type CreateWorkOrderShellRequest struct {
 type CreateWorkOrderTrimRequest struct {
 	Item        string  `json:"item" binding:"required"`
 	Description string  `json:"description"`
-	Color       string  `json:"color" binding:"required"`
-	Code        string  `json:"code" binding:"required"`
+	Color       string  `json:"color"`
+	Code        string  `json:"code"`
 	Cons        float64 `json:"cons" binding:"required,gte=0"`
 	Qty         int32   `json:"qty" binding:"required,gt=0"`
 	UOM         string  `json:"uom" binding:"required"`
 	Position    string  `json:"position"`
 	CreatedBy   string  `json:"created_by"`
 	Allow       int32   `json:"allow" binding:"required,gte=0"`
+	ProvidedBy  string  `json:"provided_by" binding:"required,oneof=client permata permatatex Client Permatatex"`
 }
 
 type CreateMaterialListRequest struct {
@@ -85,6 +86,7 @@ type WorkOrderTrimResponse struct {
 	CreatedBy   string  `json:"created_by"`
 	Allow       int32   `json:"allow"`
 	CreatedAt   string  `json:"created_at"`
+	ProvidedBy  string  `json:"provided_by"`
 }
 
 type MaterialListResponse struct {

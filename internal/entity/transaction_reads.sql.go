@@ -1461,37 +1461,22 @@ SELECT
     created_by,
     allow,
     id_wo,
-    created_at
+    created_at,
+    provided_by
 FROM WORK_ORDER_TRIM
 WHERE id_wo = $1
 ORDER BY id_wo_trim ASC
 `
 
-type ListWorkOrderTrimsByWorkOrderIDRow struct {
-	IDWoTrim    int32              `json:"id_wo_trim"`
-	Item        string             `json:"item"`
-	Description string             `json:"description"`
-	Color       string             `json:"color"`
-	Code        string             `json:"code"`
-	Cons        pgtype.Numeric     `json:"cons"`
-	Qty         int32              `json:"qty"`
-	Uom         string             `json:"uom"`
-	Position    string             `json:"position"`
-	CreatedBy   string             `json:"created_by"`
-	Allow       int32              `json:"allow"`
-	IDWo        int32              `json:"id_wo"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-}
-
-func (q *Queries) ListWorkOrderTrimsByWorkOrderID(ctx context.Context, idWo int32) ([]ListWorkOrderTrimsByWorkOrderIDRow, error) {
+func (q *Queries) ListWorkOrderTrimsByWorkOrderID(ctx context.Context, idWo int32) ([]WorkOrderTrim, error) {
 	rows, err := q.db.Query(ctx, listWorkOrderTrimsByWorkOrderID, idWo)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListWorkOrderTrimsByWorkOrderIDRow
+	var items []WorkOrderTrim
 	for rows.Next() {
-		var i ListWorkOrderTrimsByWorkOrderIDRow
+		var i WorkOrderTrim
 		if err := rows.Scan(
 			&i.IDWoTrim,
 			&i.Item,
@@ -1506,6 +1491,7 @@ func (q *Queries) ListWorkOrderTrimsByWorkOrderID(ctx context.Context, idWo int3
 			&i.Allow,
 			&i.IDWo,
 			&i.CreatedAt,
+			&i.ProvidedBy,
 		); err != nil {
 			return nil, err
 		}

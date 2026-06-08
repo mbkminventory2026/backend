@@ -6817,6 +6817,7 @@
                 "color",
                 "cons",
                 "item",
+                "provided_by",
                 "qty",
                 "uom"
             ],
@@ -6846,6 +6847,16 @@
                 },
                 "position": {
                     "type": "string"
+                },
+                "provided_by": {
+                    "type": "string",
+                    "enum": [
+                        "client",
+                        "permata",
+                        "permatatex",
+                        "Client",
+                        "Permatatex"
+                    ]
                 },
                 "qty": {
                     "type": "integer"
@@ -10843,6 +10854,9 @@
                     "type": "string"
                 },
                 "position": {
+                    "type": "string"
+                },
+                "provided_by": {
                     "type": "string"
                 },
                 "qty": {

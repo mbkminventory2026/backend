@@ -176,6 +176,7 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 			CreatedBy:   trimReq.CreatedBy,
 			Allow:       trimReq.Allow,
 			IDWo:        header.IDWo,
+			ProvidedBy:  trimReq.ProvidedBy,
 		})
 		if trimErr != nil {
 			return nil, mapWorkOrderDBError(trimErr)
@@ -201,6 +202,7 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 			CreatedBy:   trim.CreatedBy,
 			Allow:       trim.Allow,
 			CreatedAt:   trim.CreatedAt.Time.Format(time.RFC3339),
+			ProvidedBy:  trim.ProvidedBy,
 		})
 	}
 
@@ -615,6 +617,7 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id 
 			CreatedBy:   row.CreatedBy,
 			Allow:       row.Allow,
 			CreatedAt:   row.CreatedAt.Time.Format(time.RFC3339),
+			ProvidedBy:  row.ProvidedBy,
 		})
 	}
 

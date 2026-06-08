@@ -64,7 +64,8 @@ INSERT INTO WORK_ORDER_TRIM (
     position,
     created_by,
     allow,
-    id_wo
+    id_wo,
+    provided_by
 ) VALUES (
     sqlc.arg(item),
     sqlc.arg(description),
@@ -76,9 +77,10 @@ INSERT INTO WORK_ORDER_TRIM (
     sqlc.arg(position),
     sqlc.arg(created_by),
     sqlc.arg(allow),
-    sqlc.arg(id_wo)
+    sqlc.arg(id_wo),
+    sqlc.arg(provided_by)
 )
-RETURNING id_wo_trim, item, description, color, code, cons, qty, uom, position, created_by, allow, id_wo, created_at;
+RETURNING id_wo_trim, item, description, color, code, cons, qty, uom, position, created_by, allow, id_wo, created_at, provided_by;
 
 -- name: CreateMaterialList :one
 WITH inserted_item AS (
