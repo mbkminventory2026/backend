@@ -12,6 +12,10 @@ func parsePathInt32(c *gin.Context, key string) (int32, error) {
 	return parseStringInt32(c.Param(key))
 }
 
+func parsePathInt64(c *gin.Context, key string) (int64, error) {
+	return parseStringInt64(c.Param(key))
+}
+
 func parseQueryInt32(c *gin.Context, key string, defaultValue int32) (int32, error) {
 	raw := c.DefaultQuery(key, strconv.FormatInt(int64(defaultValue), 10))
 	return parseStringInt32(raw)
@@ -28,4 +32,8 @@ func parseStringInt32(raw string) (int32, error) {
 	}
 
 	return int32(value), nil
+}
+
+func parseStringInt64(raw string) (int64, error) {
+	return strconv.ParseInt(raw, 10, 64)
 }

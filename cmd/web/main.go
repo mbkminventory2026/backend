@@ -205,6 +205,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	auditLogUseCase, err := usecase.NewAuditLogUseCase(queries)
+	if err != nil {
+		logger.Error("failed to initialize audit log usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	// 4. Handlers
 	authHandler, err := httpdelivery.NewAuthHandler(authUseCase)
 	if err != nil {
@@ -327,6 +334,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	auditLogHandler, err := httpdelivery.NewAuditLogHandler(auditLogUseCase)
+	if err != nil {
+		logger.Error("failed to initialize audit log handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	activityLogService, err := usecase.NewActivityLogService(queries, logger)
 	if err != nil {
 		logger.Error("failed to initialize activity log service", slog.String("error", err.Error()))
@@ -392,6 +406,7 @@ func main() {
 	dashboardHandler.RegisterRoutes(router, authMiddleware)
 	reportHandler.RegisterRoutes(router, authMiddleware)
 	excelExportHandler.RegisterRoutes(router, authMiddleware)
+	auditLogHandler.RegisterRoutes(router, authMiddleware)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
