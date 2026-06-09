@@ -28,15 +28,39 @@ WHERE id_material_list = sqlc.arg(id_material_list)
   AND is_locked = FALSE;
 
 -- name: GetMaterialListItem :one
-SELECT id_material_list_item, id_material_list, item, description, qty, unit, est_price, id_wo_shell, id_wo_trim, created_at
-FROM MATERIAL_LIST_ITEM
-WHERE id_material_list_item = sqlc.arg(id_material_list_item);
+SELECT 
+    mli.id_material_list_item, 
+    mli.id_material_list, 
+    mli.item, 
+    mli.description, 
+    mli.qty, 
+    mli.unit, 
+    mli.est_price, 
+    mli.id_wo_shell, 
+    mli.id_wo_trim, 
+    mli.created_at,
+    COALESCE((SELECT SUM(sjc.qty) FROM SURAT_JALAN_CLIENT sjc WHERE sjc.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_surat_jalan,
+    COALESCE((SELECT SUM(r.qty) FROM RECEIVED r WHERE r.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_received
+FROM MATERIAL_LIST_ITEM mli
+WHERE mli.id_material_list_item = sqlc.arg(id_material_list_item);
 
 -- name: ListMaterialListItemsByML :many
-SELECT id_material_list_item, id_material_list, item, description, qty, unit, est_price, id_wo_shell, id_wo_trim, created_at
-FROM MATERIAL_LIST_ITEM
-WHERE id_material_list = sqlc.arg(id_material_list)
-ORDER BY id_material_list_item ASC;
+SELECT 
+    mli.id_material_list_item, 
+    mli.id_material_list, 
+    mli.item, 
+    mli.description, 
+    mli.qty, 
+    mli.unit, 
+    mli.est_price, 
+    mli.id_wo_shell, 
+    mli.id_wo_trim, 
+    mli.created_at,
+    COALESCE((SELECT SUM(sjc.qty) FROM SURAT_JALAN_CLIENT sjc WHERE sjc.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_surat_jalan,
+    COALESCE((SELECT SUM(r.qty) FROM RECEIVED r WHERE r.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_received
+FROM MATERIAL_LIST_ITEM mli
+WHERE mli.id_material_list = sqlc.arg(id_material_list)
+ORDER BY mli.id_material_list_item ASC;
 
 -- name: UpdateMaterialListItem :one
 UPDATE MATERIAL_LIST_ITEM

@@ -93,15 +93,17 @@ type WorkOrderTrimResponse struct {
 }
 
 type MaterialListItemResponse struct {
-	ID          int32   `json:"id_material_list_item"`
-	Item        string  `json:"item"`
-	Description string  `json:"description"`
-	Qty         int32   `json:"qty"`
-	Unit        string  `json:"unit"`
-	EstPrice    float64 `json:"est_price"`
-	IDWoShell   *int32  `json:"id_wo_shell,omitempty"`
-	IDWoTrim    *int32  `json:"id_wo_trim,omitempty"`
-	CreatedAt   string  `json:"created_at"`
+	ID            int32   `json:"id_material_list_item"`
+	Item          string  `json:"item"`
+	Description   string  `json:"description"`
+	Qty           int32   `json:"qty"`
+	Unit          string  `json:"unit"`
+	EstPrice      float64 `json:"est_price"`
+	IDWoShell     *int32  `json:"id_wo_shell,omitempty"`
+	IDWoTrim      *int32  `json:"id_wo_trim,omitempty"`
+	CreatedAt     string  `json:"created_at"`
+	QtySuratJalan int32   `json:"qty_surat_jalan"`
+	QtyReceived   int32   `json:"qty_received"`
 }
 
 type MaterialListResponse struct {
