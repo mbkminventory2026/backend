@@ -118,13 +118,16 @@ func main() {
 	}
 
 	// 13. Seed Marker Plan
-	err = seedMarkerPlan(ctx, dbPool)
-	if err != nil {
-		slog.Error("failed to seed Marker Plan", slog.String("error", err.Error()))
-		os.Exit(1)
+	if err := seedMarkerPlan(ctx, dbPool); err != nil {
+		logger.Error("Failed to seed marker plan", slog.String("error", err.Error()))
 	}
 
-	// 14. Seed Timeline Plan
+	// 14. Seed Production Master
+	if err := seedProductionMaster(ctx, dbPool); err != nil {
+		logger.Error("Failed to seed production master", slog.String("error", err.Error()))
+	}
+
+	// 15. Seed Timeline Plan
 	err = seedTimelinePlan(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed Timeline Plan", slog.String("error", err.Error()))
@@ -179,6 +182,8 @@ func syncSequences(ctx context.Context, db *pgxpool.Pool) error {
 		{"komponen_spreading_cutting_plan_id_komponen_spreading_seq", "komponen_spreading_cutting_plan", "id_komponen_spreading"},
 		{"ratio_spreading_id_ratio_spreading_seq", "ratio_spreading", "id_ratio_spreading"},
 		{"ratio_size_spreading_id_ratio_size_spreading_seq", "ratio_size_spreading", "id_ratio_size_spreading"},
+		{"production_line_id_production_line_seq", "production_line", "id_production_line"},
+		{"production_status_plan_id_production_status_plan_seq", "production_status_plan", "id_production_status_plan"},
 	}
 
 	for _, q := range queries {
@@ -1444,5 +1449,40 @@ func seedMarkerPlan(ctx context.Context, db *pgxpool.Pool) error {
 	}
 	slog.Info("ratio size markers seeded for MP-2026-001")
 
+	return nil
+}
+
+func seedProductionMaster(ctx context.Context, db *pgxpool.Pool) error {
+	lines := []string{"Line 1", "Line 2", "Line 3"}
+	for _, l := range lines {
+		var exists bool
+		err := db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM PRODUCTION_LINE WHERE NAME = $1)`, l).Scan(&exists)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			_, err = db.Exec(ctx, `INSERT INTO PRODUCTION_LINE (name) VALUES ($1)`, l)
+			if err != nil {
+				return err
+			}
+			slog.Info("production line seeded", slog.String("name", l))
+		}
+	}
+
+	statuses := []string{"Done", "Plan Start", "Plan Finish", "Proses"}
+	for _, s := range statuses {
+		var exists bool
+		err := db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM PRODUCTION_STATUS_PLAN WHERE NAME = $1)`, s).Scan(&exists)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			_, err = db.Exec(ctx, `INSERT INTO PRODUCTION_STATUS_PLAN (name) VALUES ($1)`, s)
+			if err != nil {
+				return err
+			}
+			slog.Info("production status plan seeded", slog.String("name", s))
+		}
+	}
 	return nil
 }

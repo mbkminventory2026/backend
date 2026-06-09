@@ -184,6 +184,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	productionMasterUseCase, err := usecase.NewProductionMasterUseCase(queries)
+	if err != nil {
+		logger.Error("failed to initialize production master usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	excelRenderer, err := excel.NewRenderer(cfg.ExportTemplateDir)
 	if err != nil {
 		logger.Error("failed to initialize excel renderer", slog.String("error", err.Error()))
@@ -258,6 +265,13 @@ func main() {
 	timelineProduksiHandler, err := httpdelivery.NewTimelineProduksiHandler(timelineProduksiUseCase)
 	if err != nil {
 		logger.Error("failed to initialize timeline produksi handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	productionMasterHandler, err := httpdelivery.NewProductionMasterHandler(productionMasterUseCase)
+	if err != nil {
+		logger.Error("failed to initialize production master handler", slog.String("error", err.Error()))
 		dbPool.Close()
 		os.Exit(1)
 	}
@@ -354,6 +368,22 @@ func main() {
 	workOrderProductionHandler.RegisterRoutes(router, authMiddleware)
 	materialListHandler.RegisterRoutes(router, authMiddleware)
 	timelineProduksiHandler.RegisterRoutes(router, authMiddleware)
+	// Note: Register production master alongside other master data routes
+	productionMasterGroup := router.Group("/api/v1/master").Use(authMiddleware)
+	{
+		productionMasterGroup.GET("/production-lines", productionMasterHandler.ListProductionLines)
+		productionMasterGroup.GET("/production-lines/:id", productionMasterHandler.GetProductionLineByID)
+		productionMasterGroup.POST("/production-lines", productionMasterHandler.CreateProductionLine)
+		productionMasterGroup.PUT("/production-lines/:id", productionMasterHandler.UpdateProductionLine)
+		productionMasterGroup.DELETE("/production-lines/:id", productionMasterHandler.DeleteProductionLine)
+
+		productionMasterGroup.GET("/production-status-plans", productionMasterHandler.ListProductionStatusPlans)
+		productionMasterGroup.GET("/production-status-plans/:id", productionMasterHandler.GetProductionStatusPlanByID)
+		productionMasterGroup.POST("/production-status-plans", productionMasterHandler.CreateProductionStatusPlan)
+		productionMasterGroup.PUT("/production-status-plans/:id", productionMasterHandler.UpdateProductionStatusPlan)
+		productionMasterGroup.DELETE("/production-status-plans/:id", productionMasterHandler.DeleteProductionStatusPlan)
+	}
+
 	markerPlanHandler.RegisterRoutes(router, authMiddleware)
 	spreadingCuttingPlanHandler.RegisterRoutes(router, authMiddleware)
 	warehouseDeliveryHandler.RegisterRoutes(router, authMiddleware)
