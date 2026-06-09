@@ -1000,23 +1000,15 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 				return err
 			}
 
-			// Seed RECEIVED quantities for testing
-			var qtyReceived int32
-			switch i {
-			case 0:
-				qtyReceived = 500
-			case 1:
-				qtyReceived = 400
-			case 2:
-				qtyReceived = 200
-			}
-
-			_, err = db.Exec(ctx, `
-				INSERT INTO RECEIVED (TANGGAL, QTY, KETERANGAN, ID_MATERIAL_LIST_ITEM)
-				VALUES ('2026-06-05', $1, 'Penerimaan Awal', $2)
-			`, qtyReceived, idMLI)
-			if err != nil {
-				return err
+			// Seed RECEIVED quantity only for the first shell (Navy Fabric) to prevent migrate-down errors
+			if i == 0 {
+				_, err = db.Exec(ctx, `
+					INSERT INTO RECEIVED (TANGGAL, QTY, KETERANGAN, ID_MATERIAL_LIST_ITEM)
+					VALUES ('2026-06-05', 500, 'Penerimaan Awal', $1)
+				`, idMLI)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
