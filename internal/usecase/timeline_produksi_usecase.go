@@ -205,10 +205,11 @@ func (u *TimelineProduksiUseCase) UpdateWOShellPlanStatus(ctx context.Context, i
 	// Note: We use original positional parameters (Column2 - Column5)
 	err := u.repo.UpdateWOShellPlanStatus(ctx, entity.UpdateWOShellPlanStatusParams{
 		IDWoShellPlan: idWOShellPlan,
-		Column2:       req.StatusGelarCutting,
-		Column3:       req.StatusEmbroo,
-		Column4:       req.StatusLoadingSewing,
-		Column5:       req.StatusFinishingPacking,
+		Column2:       req.InLine,
+		Column3:       req.StatusGelarCutting,
+		Column4:       req.StatusEmbroo,
+		Column5:       req.StatusLoadingSewing,
+		Column6:       req.StatusFinishingPacking,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

@@ -234,10 +234,11 @@ func (q *Queries) ListTimelinePlans(ctx context.Context, arg ListTimelinePlansPa
 const updateWOShellPlanStatus = `-- name: UpdateWOShellPlanStatus :exec
 UPDATE WO_SHELL_PLAN
 SET 
-    STATUS_GELAR_CUTTING = COALESCE(NULLIF($2, ''), STATUS_GELAR_CUTTING),
-    STATUS_EMBROO = COALESCE(NULLIF($3, ''), STATUS_EMBROO),
-    STATUS_LOADING_SEWING = COALESCE(NULLIF($4, ''), STATUS_LOADING_SEWING),
-    STATUS_FINISHING_PACKING = COALESCE(NULLIF($5, ''), STATUS_FINISHING_PACKING)
+    IN_LINE = COALESCE(NULLIF($2, ''), IN_LINE),
+    STATUS_GELAR_CUTTING = COALESCE(NULLIF($3, ''), STATUS_GELAR_CUTTING),
+    STATUS_EMBROO = COALESCE(NULLIF($4, ''), STATUS_EMBROO),
+    STATUS_LOADING_SEWING = COALESCE(NULLIF($5, ''), STATUS_LOADING_SEWING),
+    STATUS_FINISHING_PACKING = COALESCE(NULLIF($6, ''), STATUS_FINISHING_PACKING)
 WHERE ID_WO_SHELL_PLAN = $1
 `
 
@@ -247,6 +248,7 @@ type UpdateWOShellPlanStatusParams struct {
 	Column3       interface{} `json:"column_3"`
 	Column4       interface{} `json:"column_4"`
 	Column5       interface{} `json:"column_5"`
+	Column6       interface{} `json:"column_6"`
 }
 
 func (q *Queries) UpdateWOShellPlanStatus(ctx context.Context, arg UpdateWOShellPlanStatusParams) error {
@@ -256,6 +258,7 @@ func (q *Queries) UpdateWOShellPlanStatus(ctx context.Context, arg UpdateWOShell
 		arg.Column3,
 		arg.Column4,
 		arg.Column5,
+		arg.Column6,
 	)
 	return err
 }

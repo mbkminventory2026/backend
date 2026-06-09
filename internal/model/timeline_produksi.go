@@ -49,6 +49,7 @@ type TimelinePlanResponse struct {
 }
 
 type UpdateWOShellPlanStatusRequest struct {
+	InLine                 string `json:"in_line" binding:"omitempty"`
 	StatusGelarCutting     string `json:"status_gelar_cutting" binding:"omitempty"`
 	StatusEmbroo           string `json:"status_embroo" binding:"omitempty"`
 	StatusLoadingSewing    string `json:"status_loading_sewing" binding:"omitempty"`
