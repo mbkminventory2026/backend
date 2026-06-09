@@ -471,6 +471,8 @@ func (h *TransactionDocumentHandler) handleError(c *gin.Context, err error) {
 		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.TransactionErrorDetail{Code: "pr_internal_already_approved"}))
 	case errors.Is(err, usecase.ErrPRInternalNotApproved):
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), model.TransactionErrorDetail{Code: "pr_internal_not_approved"}))
+	case errors.Is(err, usecase.ErrMaterialListAlreadyLocked):
+		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.TransactionErrorDetail{Code: "material_list_already_locked"}))
 	case errors.Is(err, usecase.ErrTransactionServiceUnavailable):
 		AbortWithError(c, NewHTTPError(http.StatusInternalServerError, err.Error(), model.TransactionErrorDetail{Code: "transaction_service_unavailable"}))
 	default:

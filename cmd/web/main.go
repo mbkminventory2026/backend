@@ -128,6 +128,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	materialListUseCase, err := usecase.NewMaterialListUseCase(queries, dbPool)
+	if err != nil {
+		logger.Error("failed to initialize material list usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	timelineProduksiUseCase, err := usecase.NewTimelineProduksiUseCase(queries, dbPool)
 	if err != nil {
 		logger.Error("failed to initialize timeline produksi usecase", slog.String("error", err.Error()))
@@ -241,6 +248,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	materialListHandler, err := httpdelivery.NewMaterialListHandler(materialListUseCase)
+	if err != nil {
+		logger.Error("failed to initialize material list handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	timelineProduksiHandler, err := httpdelivery.NewTimelineProduksiHandler(timelineProduksiUseCase)
 	if err != nil {
 		logger.Error("failed to initialize timeline produksi handler", slog.String("error", err.Error()))
@@ -338,6 +352,7 @@ func main() {
 	profilPerusahaanHandler.RegisterRoutes(router, authMiddleware)
 	transactionDocumentHandler.RegisterRoutes(router, authMiddleware)
 	workOrderProductionHandler.RegisterRoutes(router, authMiddleware)
+	materialListHandler.RegisterRoutes(router, authMiddleware)
 	timelineProduksiHandler.RegisterRoutes(router, authMiddleware)
 	markerPlanHandler.RegisterRoutes(router, authMiddleware)
 	spreadingCuttingPlanHandler.RegisterRoutes(router, authMiddleware)

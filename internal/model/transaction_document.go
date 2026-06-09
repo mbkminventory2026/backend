@@ -37,15 +37,16 @@ type CreatePRInternalItemRequest struct {
 }
 
 type CreatePRInternalRequest struct {
-	Tanggal       string                        `json:"tanggal" binding:"required,datetime=2006-01-02"`
-	Nama          string                        `json:"nama" binding:"required"`
-	Departemen    string                        `json:"departemen" binding:"required"`
-	VendorName    string                        `json:"vendor_name" binding:"required"`
-	VendorAddress string                        `json:"vendor_address"`
-	VendorTelp    string                        `json:"vendor_telp"`
-	Projek        string                        `json:"projek" binding:"required"`
-	IDWO          int32                         `json:"id_wo" binding:"required"`
-	Items         []CreatePRInternalItemRequest `json:"items" binding:"required,min=1,dive"`
+	Tanggal        string                        `json:"tanggal" binding:"required,datetime=2006-01-02"`
+	Nama           string                        `json:"nama" binding:"required"`
+	Departemen     string                        `json:"departemen" binding:"required"`
+	VendorName     string                        `json:"vendor_name" binding:"required"`
+	VendorAddress  string                        `json:"vendor_address"`
+	VendorTelp     string                        `json:"vendor_telp"`
+	Projek         string                        `json:"projek" binding:"required"`
+	IDWO           int32                         `json:"id_wo" binding:"required"`
+	IDMaterialList *int32                        `json:"id_material_list,omitempty"`
+	Items          []CreatePRInternalItemRequest `json:"items" binding:"required,min=1,dive"`
 }
 
 type CreatePOInternalItemRequest struct {
