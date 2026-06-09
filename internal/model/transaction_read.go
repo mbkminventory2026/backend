@@ -159,7 +159,7 @@ type SuratJalanClientListItem struct {
 	Tanggal             string `json:"tanggal"`
 	Qty                 int32  `json:"qty"`
 	Keterangan          string `json:"keterangan"`
-	IDMaterialList      int32  `json:"id_material_list"`
+	IDMaterialListItem  int32  `json:"id_material_list_item"`
 	MaterialDescription string `json:"material_description"`
 	IDWO                int32  `json:"id_wo"`
 	CreatedAt           string `json:"created_at"`
@@ -170,7 +170,7 @@ type SuratJalanClientDetailResponse struct {
 	Tanggal             string `json:"tanggal"`
 	Qty                 int32  `json:"qty"`
 	Keterangan          string `json:"keterangan"`
-	IDMaterialList      int32  `json:"id_material_list"`
+	IDMaterialListItem  int32  `json:"id_material_list_item"`
 	MaterialDescription string `json:"material_description"`
 	IDWO                int32  `json:"id_wo"`
 	CreatedAt           string `json:"created_at"`

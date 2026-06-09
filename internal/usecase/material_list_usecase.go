@@ -326,3 +326,68 @@ func itemLockedOrNotFound(repo entity.Querier, ctx context.Context, id int32) er
 	}
 	return ErrMaterialListItemNotFound
 }
+
+func (u *MaterialListUseCase) ListMaterialListsPaginated(ctx context.Context, search string, lockedOnly bool, limit, offset int32) (*model.MaterialListPageResponse, error) {
+	rows, err := u.repo.ListMaterialListsPaginated(ctx, entity.ListMaterialListsPaginatedParams{
+		LockedOnly: lockedOnly,
+		Search:     search,
+		Lim:        limit,
+		Off:        offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrMaterialListUnavailable, err)
+	}
+	items := make([]model.MaterialListPageItem, 0, len(rows))
+	total := int64(0)
+	for _, row := range rows {
+		total = row.TotalCount
+		items = append(items, model.MaterialListPageItem{
+			IDMaterialList:   row.IDMaterialList,
+			IDWo:             row.IDWo,
+			Name:             row.Name,
+			IsLocked:         row.IsLocked,
+			CreatedAt:        row.CreatedAt.Time.Format(time.RFC3339),
+			Buyer:            row.Buyer,
+			Model:            row.Model,
+			WoQty:            row.WoQty,
+			ItemCount:        row.ItemCount,
+			TotalQtySj:       row.TotalQtySj,
+			TotalQtyReceived: row.TotalQtyReceived,
+		})
+	}
+	page := int32(1)
+	if limit > 0 {
+		page = offset/limit + 1
+	}
+	return &model.MaterialListPageResponse{
+		Items:      items,
+		Pagination: buildPagination(total, page, limit),
+	}, nil
+}
+
+func (u *MaterialListUseCase) GetItemDetail(ctx context.Context, id int32) (*model.MaterialListItemDetailResponse, error) {
+	row, err := u.repo.GetMaterialListItemDetail(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrMaterialListItemNotFound
+		}
+		return nil, fmt.Errorf("%w: %v", ErrMaterialListUnavailable, err)
+	}
+	return &model.MaterialListItemDetailResponse{
+		IDMaterialListItem: row.IDMaterialListItem,
+		IDMaterialList:     row.IDMaterialList,
+		Item:               row.Item,
+		Description:        row.Description,
+		Qty:                row.Qty,
+		Unit:               row.Unit,
+		EstPrice:           numericToFloat64(row.EstPrice),
+		CreatedAt:          row.CreatedAt.Time.Format(time.RFC3339),
+		QtySuratJalan:      row.QtySuratJalan,
+		QtyReceived:        row.QtyReceived,
+		MlName:             row.MlName,
+		MlIsLocked:         row.MlIsLocked,
+		IDWo:               row.IDWo,
+		Buyer:              row.Buyer,
+		Model:              row.Model,
+	}, nil
+}

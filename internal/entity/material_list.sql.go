@@ -135,6 +135,76 @@ func (q *Queries) GetMaterialListItem(ctx context.Context, idMaterialListItem in
 	return i, err
 }
 
+const getMaterialListItemDetail = `-- name: GetMaterialListItemDetail :one
+SELECT
+    mli.id_material_list_item,
+    mli.id_material_list,
+    mli.item,
+    mli.description,
+    mli.qty,
+    mli.unit,
+    mli.est_price,
+    mli.id_wo_shell,
+    mli.id_wo_trim,
+    mli.created_at,
+    COALESCE((SELECT SUM(sjc.qty) FROM SURAT_JALAN_CLIENT sjc WHERE sjc.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_surat_jalan,
+    COALESCE((SELECT SUM(r.qty) FROM RECEIVED r WHERE r.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_received,
+    ml.name AS ml_name,
+    ml.is_locked AS ml_is_locked,
+    wo.id_wo,
+    wo.buyer,
+    wo.model
+FROM MATERIAL_LIST_ITEM mli
+JOIN MATERIAL_LIST ml ON ml.id_material_list = mli.id_material_list
+JOIN WORK_ORDER wo ON wo.id_wo = ml.id_wo
+WHERE mli.id_material_list_item = $1
+`
+
+type GetMaterialListItemDetailRow struct {
+	IDMaterialListItem int32              `json:"id_material_list_item"`
+	IDMaterialList     int32              `json:"id_material_list"`
+	Item               string             `json:"item"`
+	Description        string             `json:"description"`
+	Qty                int32              `json:"qty"`
+	Unit               string             `json:"unit"`
+	EstPrice           pgtype.Numeric     `json:"est_price"`
+	IDWoShell          pgtype.Int4        `json:"id_wo_shell"`
+	IDWoTrim           pgtype.Int4        `json:"id_wo_trim"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	QtySuratJalan      int32              `json:"qty_surat_jalan"`
+	QtyReceived        int32              `json:"qty_received"`
+	MlName             string             `json:"ml_name"`
+	MlIsLocked         bool               `json:"ml_is_locked"`
+	IDWo               int32              `json:"id_wo"`
+	Buyer              string             `json:"buyer"`
+	Model              string             `json:"model"`
+}
+
+func (q *Queries) GetMaterialListItemDetail(ctx context.Context, idMaterialListItem int32) (GetMaterialListItemDetailRow, error) {
+	row := q.db.QueryRow(ctx, getMaterialListItemDetail, idMaterialListItem)
+	var i GetMaterialListItemDetailRow
+	err := row.Scan(
+		&i.IDMaterialListItem,
+		&i.IDMaterialList,
+		&i.Item,
+		&i.Description,
+		&i.Qty,
+		&i.Unit,
+		&i.EstPrice,
+		&i.IDWoShell,
+		&i.IDWoTrim,
+		&i.CreatedAt,
+		&i.QtySuratJalan,
+		&i.QtyReceived,
+		&i.MlName,
+		&i.MlIsLocked,
+		&i.IDWo,
+		&i.Buyer,
+		&i.Model,
+	)
+	return i, err
+}
+
 const listMaterialListItemsByML = `-- name: ListMaterialListItemsByML :many
 SELECT 
     mli.id_material_list_item, 
@@ -191,6 +261,100 @@ func (q *Queries) ListMaterialListItemsByML(ctx context.Context, idMaterialList 
 			&i.CreatedAt,
 			&i.QtySuratJalan,
 			&i.QtyReceived,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listMaterialListsPaginated = `-- name: ListMaterialListsPaginated :many
+SELECT
+    ml.id_material_list,
+    ml.id_wo,
+    ml.name,
+    ml.is_locked,
+    ml.created_at,
+    wo.buyer,
+    wo.model,
+    wo.qty AS wo_qty,
+    (SELECT COUNT(*) FROM MATERIAL_LIST_ITEM WHERE id_material_list = ml.id_material_list)::integer AS item_count,
+    (SELECT COALESCE(SUM(sjc.qty), 0)
+     FROM SURAT_JALAN_CLIENT sjc
+     JOIN MATERIAL_LIST_ITEM mli2 ON mli2.id_material_list_item = sjc.id_material_list_item
+     WHERE mli2.id_material_list = ml.id_material_list)::integer AS total_qty_sj,
+    (SELECT COALESCE(SUM(r.qty), 0)
+     FROM RECEIVED r
+     JOIN MATERIAL_LIST_ITEM mli3 ON mli3.id_material_list_item = r.id_material_list_item
+     WHERE mli3.id_material_list = ml.id_material_list)::integer AS total_qty_received,
+    COUNT(*) OVER () AS total_count
+FROM MATERIAL_LIST ml
+JOIN WORK_ORDER wo ON wo.id_wo = ml.id_wo
+WHERE (NOT $1::boolean OR ml.is_locked = TRUE)
+  AND (
+    $2::text = ''
+    OR LOWER(wo.buyer) LIKE '%' || LOWER($2::text) || '%'
+    OR LOWER(wo.model) LIKE '%' || LOWER($2::text) || '%'
+    OR LOWER(ml.name) LIKE '%' || LOWER($2::text) || '%'
+  )
+ORDER BY ml.created_at DESC
+LIMIT $4
+OFFSET $3
+`
+
+type ListMaterialListsPaginatedParams struct {
+	LockedOnly bool   `json:"locked_only"`
+	Search     string `json:"search"`
+	Off        int32  `json:"off"`
+	Lim        int32  `json:"lim"`
+}
+
+type ListMaterialListsPaginatedRow struct {
+	IDMaterialList   int32              `json:"id_material_list"`
+	IDWo             int32              `json:"id_wo"`
+	Name             string             `json:"name"`
+	IsLocked         bool               `json:"is_locked"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	Buyer            string             `json:"buyer"`
+	Model            string             `json:"model"`
+	WoQty            int32              `json:"wo_qty"`
+	ItemCount        int32              `json:"item_count"`
+	TotalQtySj       int32              `json:"total_qty_sj"`
+	TotalQtyReceived int32              `json:"total_qty_received"`
+	TotalCount       int64              `json:"total_count"`
+}
+
+func (q *Queries) ListMaterialListsPaginated(ctx context.Context, arg ListMaterialListsPaginatedParams) ([]ListMaterialListsPaginatedRow, error) {
+	rows, err := q.db.Query(ctx, listMaterialListsPaginated,
+		arg.LockedOnly,
+		arg.Search,
+		arg.Off,
+		arg.Lim,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListMaterialListsPaginatedRow
+	for rows.Next() {
+		var i ListMaterialListsPaginatedRow
+		if err := rows.Scan(
+			&i.IDMaterialList,
+			&i.IDWo,
+			&i.Name,
+			&i.IsLocked,
+			&i.CreatedAt,
+			&i.Buyer,
+			&i.Model,
+			&i.WoQty,
+			&i.ItemCount,
+			&i.TotalQtySj,
+			&i.TotalQtyReceived,
+			&i.TotalCount,
 		); err != nil {
 			return nil, err
 		}
