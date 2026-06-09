@@ -26,7 +26,6 @@ Implemented in `feat/log`:
 Remaining backlog after batch one:
 
 - integrated end-to-end smoke testing with real operator login
-- audit logging for transaction modules
 
 Already completed after batch one:
 
@@ -37,6 +36,11 @@ Already completed after batch one:
   - `change password`
 - FE filter persistence to URL for non-table filters
 - FE detail formatting polish
+- audit logging for transaction modules:
+  - `po-client`
+  - `pr-internal`
+  - `po-internal`
+  - `work-order`
 
 ## Background
 

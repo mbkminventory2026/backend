@@ -27,7 +27,6 @@ This means the original batch-one implementation plan is complete.
 The remaining work has moved to a follow-up backlog:
 
 1. `Integrated Audit Log Smoke Test`
-2. `Audit Logs for Transaction Modules`
 
 ## Objective
 
@@ -81,6 +80,9 @@ Work:
 
 Goal:
 - expand audit logs to operational modules
+
+Status:
+- completed on `feat/log`
 
 Recommended first targets:
 - `pr-internal`
