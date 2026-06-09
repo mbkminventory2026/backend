@@ -134,6 +134,7 @@ type Querier interface {
 	GetPOInternalDetail(ctx context.Context, idPoInternal int32) (PoInternal, error)
 	GetPRInternalDetail(ctx context.Context, idPrInternal int32) (GetPRInternalDetailRow, error)
 	GetPackingListDetail(ctx context.Context, arg GetPackingListDetailParams) (GetPackingListDetailRow, error)
+	GetPasswordResetRequestByID(ctx context.Context, idPasswordResetRequest int32) (GetPasswordResetRequestByIDRow, error)
 	GetProductionLineByID(ctx context.Context, idProductionLine int32) (ProductionLine, error)
 	GetProductionRecentMarkerPlans(ctx context.Context) ([]GetProductionRecentMarkerPlansRow, error)
 	GetProductionRecentSpreadingCuttingPlans(ctx context.Context) ([]GetProductionRecentSpreadingCuttingPlansRow, error)

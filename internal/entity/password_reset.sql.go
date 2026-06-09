@@ -140,6 +140,79 @@ func (q *Queries) CreatePasswordResetRequest(ctx context.Context, arg CreatePass
 	return i, err
 }
 
+const getPasswordResetRequestByID = `-- name: GetPasswordResetRequestByID :one
+SELECT
+    pr.ID_PASSWORD_RESET_REQUEST,
+    pr.ID_USER,
+    u.USERNAME,
+    u.ID_ROLE,
+    r.NAMA_ROLE,
+    pr.REASON,
+    pr.STATUS,
+    pr.REQUESTED_AT,
+    pr.APPROVED_AT,
+    pr.REJECTED_AT,
+    pr.COMPLETED_AT,
+    pr.REJECTED_REASON,
+    pr.APPROVED_BY,
+    approver.USERNAME AS APPROVED_BY_USERNAME,
+    pr.REJECTED_BY,
+    rejector.USERNAME AS REJECTED_BY_USERNAME,
+    pr.created_at
+FROM PASSWORD_RESET_REQUESTS pr
+JOIN USERS u ON u.ID_USER = pr.ID_USER
+JOIN ROLES r ON r.ID_ROLE = u.ID_ROLE
+LEFT JOIN USERS approver ON approver.ID_USER = pr.APPROVED_BY
+LEFT JOIN USERS rejector ON rejector.ID_USER = pr.REJECTED_BY
+WHERE pr.ID_PASSWORD_RESET_REQUEST = $1
+LIMIT 1
+`
+
+type GetPasswordResetRequestByIDRow struct {
+	IDPasswordResetRequest int32              `json:"id_password_reset_request"`
+	IDUser                 int32              `json:"id_user"`
+	Username               string             `json:"username"`
+	IDRole                 int32              `json:"id_role"`
+	NamaRole               string             `json:"nama_role"`
+	Reason                 string             `json:"reason"`
+	Status                 string             `json:"status"`
+	RequestedAt            pgtype.Timestamptz `json:"requested_at"`
+	ApprovedAt             pgtype.Timestamptz `json:"approved_at"`
+	RejectedAt             pgtype.Timestamptz `json:"rejected_at"`
+	CompletedAt            pgtype.Timestamptz `json:"completed_at"`
+	RejectedReason         string             `json:"rejected_reason"`
+	ApprovedBy             pgtype.Int4        `json:"approved_by"`
+	ApprovedByUsername     pgtype.Text        `json:"approved_by_username"`
+	RejectedBy             pgtype.Int4        `json:"rejected_by"`
+	RejectedByUsername     pgtype.Text        `json:"rejected_by_username"`
+	CreatedAt              pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) GetPasswordResetRequestByID(ctx context.Context, idPasswordResetRequest int32) (GetPasswordResetRequestByIDRow, error) {
+	row := q.db.QueryRow(ctx, getPasswordResetRequestByID, idPasswordResetRequest)
+	var i GetPasswordResetRequestByIDRow
+	err := row.Scan(
+		&i.IDPasswordResetRequest,
+		&i.IDUser,
+		&i.Username,
+		&i.IDRole,
+		&i.NamaRole,
+		&i.Reason,
+		&i.Status,
+		&i.RequestedAt,
+		&i.ApprovedAt,
+		&i.RejectedAt,
+		&i.CompletedAt,
+		&i.RejectedReason,
+		&i.ApprovedBy,
+		&i.ApprovedByUsername,
+		&i.RejectedBy,
+		&i.RejectedByUsername,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const hasPendingPasswordResetRequest = `-- name: HasPendingPasswordResetRequest :one
 SELECT EXISTS (
     SELECT 1

@@ -481,19 +481,40 @@ func (u *AuthUseCase) RejectForgotPasswordRequest(ctx context.Context, requestID
 }
 
 func (u *AuthUseCase) getPasswordResetRequestForAudit(ctx context.Context, requestID int32) (*model.PasswordResetRequestResponse, error) {
-	requests, err := u.ListForgotPasswordRequests(ctx)
+	row, err := u.userRepo.GetPasswordResetRequestByID(ctx, requestID)
 	if err != nil {
-		return nil, err
-	}
-
-	for _, item := range requests {
-		if item.IDPasswordResetRequest == requestID {
-			copyItem := item
-			return &copyItem, nil
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrPasswordResetRequestNotFound
 		}
+		return nil, fmt.Errorf("%w: get password reset request detail", ErrAuthServiceUnavailable)
 	}
 
-	return nil, ErrPasswordResetRequestNotFound
+	item := model.PasswordResetRequestResponse{
+		IDPasswordResetRequest: row.IDPasswordResetRequest,
+		IDUser:                 row.IDUser,
+		Username:               row.Username,
+		IDRole:                 row.IDRole,
+		NamaRole:               row.NamaRole,
+		Reason:                 row.Reason,
+		Status:                 row.Status,
+		RequestedAt:            nullableTimestampString(row.RequestedAt),
+		ApprovedAt:             nullableTimestampString(row.ApprovedAt),
+		RejectedAt:             nullableTimestampString(row.RejectedAt),
+		CompletedAt:            nullableTimestampString(row.CompletedAt),
+		RejectedReason:         row.RejectedReason,
+		ApprovedByUsername:     row.ApprovedByUsername.String,
+		RejectedByUsername:     row.RejectedByUsername.String,
+	}
+	if row.ApprovedBy.Valid {
+		val := row.ApprovedBy.Int32
+		item.ApprovedBy = &val
+	}
+	if row.RejectedBy.Valid {
+		val := row.RejectedBy.Int32
+		item.RejectedBy = &val
+	}
+
+	return &item, nil
 }
 
 func (u *AuthUseCase) recordPasswordResetAudit(ctx context.Context, request model.PasswordResetRequestResponse, beforeSnapshot, afterSnapshot map[string]any, flow string) {
