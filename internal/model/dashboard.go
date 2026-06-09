@@ -129,3 +129,35 @@ type FinanceDashboardMetrics struct {
 	RecentPOClients          []RecentPOClient   `json:"recent_po_clients"`
 	RecentPOInternals        []RecentPOInternal `json:"recent_po_internals"`
 }
+
+type RecentTimeline struct {
+	IDTimeline     int32  `json:"id_timeline"`
+	TanggalDisusun string `json:"tanggal_disusun"`
+	Notes          string `json:"notes"`
+	PoNumber       string `json:"po_number"`
+}
+
+type RecentMarkerPlan struct {
+	IDMarkerPlan   int32  `json:"id_marker_plan"`
+	NoDokumen      string `json:"no_dokumen"`
+	TanggalEfektif string `json:"tanggal_efektif"`
+	Color          string `json:"color"`
+	Model          string `json:"model"`
+}
+
+type RecentSpreadingCuttingPlan struct {
+	IDSpreadingCuttingPlan int32  `json:"id_spreading_cutting_plan"`
+	NoDokumen              string `json:"no_dokumen"`
+	TanggalEfektif         string `json:"tanggal_efektif"`
+	Model                  string `json:"model"`
+}
+
+type ProductionDashboardMetrics struct {
+	TargetProduksiPcs                 int32                        `json:"target_produksi_pcs"`
+	TotalTimelineThisMonth            int64                        `json:"total_timeline_this_month"`
+	TotalMarkerPlanThisMonth          int64                        `json:"total_marker_plan_this_month"`
+	TotalSpreadingCuttingPlanThisMonth int64                       `json:"total_spreading_cutting_plan_this_month"`
+	RecentTimelines                   []RecentTimeline             `json:"recent_timelines"`
+	RecentMarkerPlans                 []RecentMarkerPlan           `json:"recent_marker_plans"`
+	RecentSpreadingCuttingPlans       []RecentSpreadingCuttingPlan `json:"recent_spreading_cutting_plans"`
+}

@@ -225,3 +225,83 @@ func (u *DashboardUseCase) GetFinanceDashboardMetrics(ctx context.Context) (*mod
 		RecentPOInternals:        parsedRecentPOInternals,
 	}, nil
 }
+
+// GetProductionDashboardMetrics mengambil data untuk dashboard Admin Produksi
+func (u *DashboardUseCase) GetProductionDashboardMetrics(ctx context.Context) (*model.ProductionDashboardMetrics, error) {
+	// Reusing GetOperatorTargetProduksiHariIni for target produksi
+	targetPcs, err := u.queries.GetOperatorTargetProduksiHariIni(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get target produksi: %w", err)
+	}
+
+	tlCount, err := u.queries.GetProductionTotalTimelineThisMonth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get timeline count: %w", err)
+	}
+
+	mpCount, err := u.queries.GetProductionTotalMarkerPlanThisMonth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get marker plan count: %w", err)
+	}
+
+	scpCount, err := u.queries.GetProductionTotalSpreadingCuttingPlanThisMonth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get scp count: %w", err)
+	}
+
+	recentTimelines, err := u.queries.GetProductionRecentTimelines(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent timelines: %w", err)
+	}
+
+	var parsedTimelines []model.RecentTimeline
+	for _, tl := range recentTimelines {
+		parsedTimelines = append(parsedTimelines, model.RecentTimeline{
+			IDTimeline:     tl.IDTimeline,
+			TanggalDisusun: tl.TanggalDisusun.Time.Format("2006-01-02"),
+			Notes:          tl.Notes,
+			PoNumber:       tl.PoNumber,
+		})
+	}
+
+	recentMPs, err := u.queries.GetProductionRecentMarkerPlans(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent marker plans: %w", err)
+	}
+
+	var parsedMPs []model.RecentMarkerPlan
+	for _, mp := range recentMPs {
+		parsedMPs = append(parsedMPs, model.RecentMarkerPlan{
+			IDMarkerPlan:   mp.IDMarkerPlan,
+			NoDokumen:      mp.NoDokumen,
+			TanggalEfektif: mp.TanggalEfektif.Time.Format("2006-01-02"),
+			Color:          mp.Color,
+			Model:          mp.Model,
+		})
+	}
+
+	recentSCPs, err := u.queries.GetProductionRecentSpreadingCuttingPlans(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent scps: %w", err)
+	}
+
+	var parsedSCPs []model.RecentSpreadingCuttingPlan
+	for _, scp := range recentSCPs {
+		parsedSCPs = append(parsedSCPs, model.RecentSpreadingCuttingPlan{
+			IDSpreadingCuttingPlan: scp.IDSpreadingCuttingPlan,
+			NoDokumen:              scp.NoDokumen,
+			TanggalEfektif:         scp.TanggalEfektif.Time.Format("2006-01-02"),
+			Model:                  scp.Model,
+		})
+	}
+
+	return &model.ProductionDashboardMetrics{
+		TargetProduksiPcs:                  targetPcs,
+		TotalTimelineThisMonth:             tlCount,
+		TotalMarkerPlanThisMonth:           mpCount,
+		TotalSpreadingCuttingPlanThisMonth: scpCount,
+		RecentTimelines:                    parsedTimelines,
+		RecentMarkerPlans:                  parsedMPs,
+		RecentSpreadingCuttingPlans:        parsedSCPs,
+	}, nil
+}
