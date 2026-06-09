@@ -44,15 +44,15 @@ type CreateMaterialListItemRequest struct {
 }
 
 type CreateWorkOrderRequest struct {
-	Buyer             string                            `json:"buyer" binding:"required"`
-	Model             string                            `json:"model" binding:"required"`
-	Qty               int32                             `json:"qty" binding:"required,gt=0"`
-	FOBCMT            bool                              `json:"fob_cmt"`
-	Delivery          string                            `json:"delivery" binding:"required,datetime=2006-01-02"`
-	IDPOClientItem    int32                             `json:"id_po_client_item" binding:"required,gt=0"`
-	Shells            []CreateWorkOrderShellRequest     `json:"shells" binding:"required,min=1,dive"`
-	Trims             []CreateWorkOrderTrimRequest      `json:"trims" binding:"required,min=1,dive"`
-	MaterialListItems []CreateMaterialListItemRequest   `json:"material_list_items" binding:"omitempty,dive"`
+	Buyer             string                          `json:"buyer" binding:"required"`
+	Model             string                          `json:"model" binding:"required"`
+	Qty               int32                           `json:"qty" binding:"required,gt=0"`
+	FOBCMT            bool                            `json:"fob_cmt"`
+	Delivery          string                          `json:"delivery" binding:"required,datetime=2006-01-02"`
+	IDPOClientItem    int32                           `json:"id_po_client_item" binding:"required,gt=0"`
+	Shells            []CreateWorkOrderShellRequest   `json:"shells" binding:"required,min=1,dive"`
+	Trims             []CreateWorkOrderTrimRequest    `json:"trims" binding:"required,min=1,dive"`
+	MaterialListItems []CreateMaterialListItemRequest `json:"material_list_items" binding:"omitempty,dive"`
 }
 
 type WorkOrderShellSizeResponse struct {

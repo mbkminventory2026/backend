@@ -1266,7 +1266,7 @@ func seedMarkerPlan(ctx context.Context, db *pgxpool.Pool) error {
 	if err != nil {
 		return err
 	}
-	
+
 	type SizeInfo struct {
 		ID   int32
 		Size string
@@ -1291,7 +1291,7 @@ func seedMarkerPlan(ctx context.Context, db *pgxpool.Pool) error {
 	if err != nil {
 		return err
 	}
-	
+
 	var sizesInterlining []SizeInfo
 	for rowsInterlining.Next() {
 		var sz SizeInfo

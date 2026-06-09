@@ -94,7 +94,6 @@ func (uc *ProductionMasterUseCase) DeleteProductionLine(ctx context.Context, id 
 	return err
 }
 
-
 // PRODUCTION STATUS PLAN
 
 func (uc *ProductionMasterUseCase) GetProductionStatusPlanByID(ctx context.Context, id int32) (model.ProductionStatusPlanResponse, error) {

@@ -153,13 +153,13 @@ type RecentSpreadingCuttingPlan struct {
 }
 
 type ProductionDashboardMetrics struct {
-	TargetProduksiPcs                 int32                        `json:"target_produksi_pcs"`
-	TotalTimelineThisMonth            int64                        `json:"total_timeline_this_month"`
-	TotalMarkerPlanThisMonth          int64                        `json:"total_marker_plan_this_month"`
-	TotalSpreadingCuttingPlanThisMonth int64                       `json:"total_spreading_cutting_plan_this_month"`
-	RecentTimelines                   []RecentTimeline             `json:"recent_timelines"`
-	RecentMarkerPlans                 []RecentMarkerPlan           `json:"recent_marker_plans"`
-	RecentSpreadingCuttingPlans       []RecentSpreadingCuttingPlan `json:"recent_spreading_cutting_plans"`
+	TargetProduksiPcs                  int32                        `json:"target_produksi_pcs"`
+	TotalTimelineThisMonth             int64                        `json:"total_timeline_this_month"`
+	TotalMarkerPlanThisMonth           int64                        `json:"total_marker_plan_this_month"`
+	TotalSpreadingCuttingPlanThisMonth int64                        `json:"total_spreading_cutting_plan_this_month"`
+	RecentTimelines                    []RecentTimeline             `json:"recent_timelines"`
+	RecentMarkerPlans                  []RecentMarkerPlan           `json:"recent_marker_plans"`
+	RecentSpreadingCuttingPlans        []RecentSpreadingCuttingPlan `json:"recent_spreading_cutting_plans"`
 }
 
 type RecentWarehouseSuratJalanClient struct {
@@ -193,13 +193,12 @@ type LowStockAlert struct {
 }
 
 type WarehouseDashboardMetrics struct {
-	TotalItems                               int64                               `json:"total_items"`
-	TotalSuratJalanClientThisMonth           int64                               `json:"total_surat_jalan_client_this_month"`
-	TotalSuratJalanInternalThisMonth         int64                               `json:"total_surat_jalan_internal_this_month"`
-	LowStockAlertsCount                      int64                               `json:"low_stock_alerts_count"`
-	RecentSuratJalanClients                  []RecentWarehouseSuratJalanClient   `json:"recent_surat_jalan_clients"`
-	RecentSuratJalanInternals                []RecentWarehouseSuratJalanInternal `json:"recent_surat_jalan_internals"`
-	RecentBarangs                            []RecentWarehouseBarang             `json:"recent_barangs"`
-	LowStockAlerts                           []LowStockAlert                     `json:"low_stock_alerts"`
+	TotalItems                       int64                               `json:"total_items"`
+	TotalSuratJalanClientThisMonth   int64                               `json:"total_surat_jalan_client_this_month"`
+	TotalSuratJalanInternalThisMonth int64                               `json:"total_surat_jalan_internal_this_month"`
+	LowStockAlertsCount              int64                               `json:"low_stock_alerts_count"`
+	RecentSuratJalanClients          []RecentWarehouseSuratJalanClient   `json:"recent_surat_jalan_clients"`
+	RecentSuratJalanInternals        []RecentWarehouseSuratJalanInternal `json:"recent_surat_jalan_internals"`
+	RecentBarangs                    []RecentWarehouseBarang             `json:"recent_barangs"`
+	LowStockAlerts                   []LowStockAlert                     `json:"low_stock_alerts"`
 }
-

@@ -15,12 +15,12 @@ import (
 )
 
 var (
-	ErrMaterialListNotFound      = errors.New("material list not found")
-	ErrMaterialListItemNotFound  = errors.New("material list item not found")
-	ErrMaterialListLocked        = errors.New("material list is locked")
-	ErrMaterialListWOMismatch    = errors.New("material list does not belong to this work order")
-	ErrMaterialListUnavailable   = errors.New("material list service unavailable")
-	ErrMaterialListValidation    = errors.New("invalid material list payload")
+	ErrMaterialListNotFound     = errors.New("material list not found")
+	ErrMaterialListItemNotFound = errors.New("material list item not found")
+	ErrMaterialListLocked       = errors.New("material list is locked")
+	ErrMaterialListWOMismatch   = errors.New("material list does not belong to this work order")
+	ErrMaterialListUnavailable  = errors.New("material list service unavailable")
+	ErrMaterialListValidation   = errors.New("invalid material list payload")
 )
 
 type MaterialListUseCase struct {
