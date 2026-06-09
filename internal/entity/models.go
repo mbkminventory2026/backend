@@ -281,6 +281,18 @@ type PrInternalItem struct {
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 }
 
+type ProductionLine struct {
+	IDProductionLine int32              `json:"id_production_line"`
+	Name             string             `json:"name"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
+type ProductionStatusPlan struct {
+	IDProductionStatusPlan int32              `json:"id_production_status_plan"`
+	Name                   string             `json:"name"`
+	CreatedAt              pgtype.Timestamptz `json:"created_at"`
+}
+
 type ProfilPerusahaan struct {
 	IDProfilPerusahaan int32              `json:"id_profil_perusahaan"`
 	Nama               string             `json:"nama"`
