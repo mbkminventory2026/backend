@@ -83,9 +83,21 @@ func (q *Queries) GetMaterialList(ctx context.Context, idMaterialList int32) (Ge
 }
 
 const getMaterialListItem = `-- name: GetMaterialListItem :one
-SELECT id_material_list_item, id_material_list, item, description, qty, unit, est_price, id_wo_shell, id_wo_trim, created_at
-FROM MATERIAL_LIST_ITEM
-WHERE id_material_list_item = $1
+SELECT 
+    mli.id_material_list_item, 
+    mli.id_material_list, 
+    mli.item, 
+    mli.description, 
+    mli.qty, 
+    mli.unit, 
+    mli.est_price, 
+    mli.id_wo_shell, 
+    mli.id_wo_trim, 
+    mli.created_at,
+    COALESCE((SELECT SUM(sjc.qty) FROM SURAT_JALAN_CLIENT sjc WHERE sjc.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_surat_jalan,
+    COALESCE((SELECT SUM(r.qty) FROM RECEIVED r WHERE r.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_received
+FROM MATERIAL_LIST_ITEM mli
+WHERE mli.id_material_list_item = $1
 `
 
 type GetMaterialListItemRow struct {
@@ -99,6 +111,8 @@ type GetMaterialListItemRow struct {
 	IDWoShell          pgtype.Int4        `json:"id_wo_shell"`
 	IDWoTrim           pgtype.Int4        `json:"id_wo_trim"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	QtySuratJalan      int32              `json:"qty_surat_jalan"`
+	QtyReceived        int32              `json:"qty_received"`
 }
 
 func (q *Queries) GetMaterialListItem(ctx context.Context, idMaterialListItem int32) (GetMaterialListItemRow, error) {
@@ -115,15 +129,29 @@ func (q *Queries) GetMaterialListItem(ctx context.Context, idMaterialListItem in
 		&i.IDWoShell,
 		&i.IDWoTrim,
 		&i.CreatedAt,
+		&i.QtySuratJalan,
+		&i.QtyReceived,
 	)
 	return i, err
 }
 
 const listMaterialListItemsByML = `-- name: ListMaterialListItemsByML :many
-SELECT id_material_list_item, id_material_list, item, description, qty, unit, est_price, id_wo_shell, id_wo_trim, created_at
-FROM MATERIAL_LIST_ITEM
-WHERE id_material_list = $1
-ORDER BY id_material_list_item ASC
+SELECT 
+    mli.id_material_list_item, 
+    mli.id_material_list, 
+    mli.item, 
+    mli.description, 
+    mli.qty, 
+    mli.unit, 
+    mli.est_price, 
+    mli.id_wo_shell, 
+    mli.id_wo_trim, 
+    mli.created_at,
+    COALESCE((SELECT SUM(sjc.qty) FROM SURAT_JALAN_CLIENT sjc WHERE sjc.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_surat_jalan,
+    COALESCE((SELECT SUM(r.qty) FROM RECEIVED r WHERE r.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_received
+FROM MATERIAL_LIST_ITEM mli
+WHERE mli.id_material_list = $1
+ORDER BY mli.id_material_list_item ASC
 `
 
 type ListMaterialListItemsByMLRow struct {
@@ -137,6 +165,8 @@ type ListMaterialListItemsByMLRow struct {
 	IDWoShell          pgtype.Int4        `json:"id_wo_shell"`
 	IDWoTrim           pgtype.Int4        `json:"id_wo_trim"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	QtySuratJalan      int32              `json:"qty_surat_jalan"`
+	QtyReceived        int32              `json:"qty_received"`
 }
 
 func (q *Queries) ListMaterialListItemsByML(ctx context.Context, idMaterialList int32) ([]ListMaterialListItemsByMLRow, error) {
@@ -159,6 +189,8 @@ func (q *Queries) ListMaterialListItemsByML(ctx context.Context, idMaterialList 
 			&i.IDWoShell,
 			&i.IDWoTrim,
 			&i.CreatedAt,
+			&i.QtySuratJalan,
+			&i.QtyReceived,
 		); err != nil {
 			return nil, err
 		}

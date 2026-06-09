@@ -188,7 +188,7 @@ func (u *MaterialListUseCase) CreateItem(ctx context.Context, idML int32, req mo
 }
 
 func (u *MaterialListUseCase) UpdateItem(ctx context.Context, id int32, req model.UpdateMaterialListItemBody) (*model.MaterialListItemResponse, error) {
-	mli, err := u.repo.UpdateMaterialListItem(ctx, entity.UpdateMaterialListItemParams{
+	_, err := u.repo.UpdateMaterialListItem(ctx, entity.UpdateMaterialListItemParams{
 		Item:               req.Item,
 		Description:        req.Description,
 		Qty:                req.Qty,
@@ -205,14 +205,21 @@ func (u *MaterialListUseCase) UpdateItem(ctx context.Context, id int32, req mode
 		return nil, fmt.Errorf("%w: %v", ErrMaterialListUnavailable, err)
 	}
 
+	mli, err := u.repo.GetMaterialListItem(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrMaterialListUnavailable, err)
+	}
+
 	resp := model.MaterialListItemResponse{
-		ID:          mli.IDMaterialListItem,
-		Item:        mli.Item,
-		Description: mli.Description,
-		Qty:         mli.Qty,
-		Unit:        mli.Unit,
-		EstPrice:    numericToFloat64(mli.EstPrice),
-		CreatedAt:   mli.CreatedAt.Time.Format(time.RFC3339),
+		ID:            mli.IDMaterialListItem,
+		Item:          mli.Item,
+		Description:   mli.Description,
+		Qty:           mli.Qty,
+		Unit:          mli.Unit,
+		EstPrice:      numericToFloat64(mli.EstPrice),
+		CreatedAt:     mli.CreatedAt.Time.Format(time.RFC3339),
+		QtySuratJalan: mli.QtySuratJalan,
+		QtyReceived:   mli.QtyReceived,
 	}
 	if mli.IDWoShell.Valid {
 		v := mli.IDWoShell.Int32
@@ -258,13 +265,15 @@ func buildMLResponse(ml listedML, mliRows []entity.ListMaterialListItemsByMLRow)
 	items := make([]model.MaterialListItemResponse, 0, len(mliRows))
 	for _, ir := range mliRows {
 		ri := model.MaterialListItemResponse{
-			ID:          ir.IDMaterialListItem,
-			Item:        ir.Item,
-			Description: ir.Description,
-			Qty:         ir.Qty,
-			Unit:        ir.Unit,
-			EstPrice:    numericToFloat64(ir.EstPrice),
-			CreatedAt:   ir.CreatedAt.Time.Format(time.RFC3339),
+			ID:            ir.IDMaterialListItem,
+			Item:          ir.Item,
+			Description:   ir.Description,
+			Qty:           ir.Qty,
+			Unit:          ir.Unit,
+			EstPrice:      numericToFloat64(ir.EstPrice),
+			CreatedAt:     ir.CreatedAt.Time.Format(time.RFC3339),
+			QtySuratJalan: ir.QtySuratJalan,
+			QtyReceived:   ir.QtyReceived,
 		}
 		if ir.IDWoShell.Valid {
 			v := ir.IDWoShell.Int32

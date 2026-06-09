@@ -632,13 +632,15 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id 
 		items := make([]model.MaterialListItemResponse, 0, len(itemRows))
 		for _, ir := range itemRows {
 			itemResp := model.MaterialListItemResponse{
-				ID:          ir.IDMaterialListItem,
-				Item:        ir.Item,
-				Description: ir.Description,
-				Qty:         ir.Qty,
-				Unit:        ir.Unit,
-				EstPrice:    numericToFloat64(ir.EstPrice),
-				CreatedAt:   ir.CreatedAt.Time.Format(time.RFC3339),
+				ID:            ir.IDMaterialListItem,
+				Item:          ir.Item,
+				Description:   ir.Description,
+				Qty:           ir.Qty,
+				Unit:          ir.Unit,
+				EstPrice:      numericToFloat64(ir.EstPrice),
+				CreatedAt:     ir.CreatedAt.Time.Format(time.RFC3339),
+				QtySuratJalan: ir.QtySuratJalan,
+				QtyReceived:   ir.QtyReceived,
 			}
 			if ir.IDWoShell.Valid {
 				v := ir.IDWoShell.Int32
