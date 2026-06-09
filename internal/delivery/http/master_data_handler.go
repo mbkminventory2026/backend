@@ -133,7 +133,7 @@ func (h *MasterDataHandler) CreateDepartemen(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.CreateDepartemen(c.Request.Context(), req)
+	item, err := h.useCase.CreateDepartemen(withAuditLogContext(c), req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -163,7 +163,7 @@ func (h *MasterDataHandler) UpdateDepartemen(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.UpdateDepartemen(c.Request.Context(), id, req)
+	item, err := h.useCase.UpdateDepartemen(withAuditLogContext(c), id, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -185,7 +185,7 @@ func (h *MasterDataHandler) DeleteDepartemen(c *gin.Context) {
 		return
 	}
 
-	if err := h.useCase.DeleteDepartemen(c.Request.Context(), id); err != nil {
+	if err := h.useCase.DeleteDepartemen(withAuditLogContext(c), id); err != nil {
 		h.handleError(c, err)
 		return
 	}
@@ -256,7 +256,7 @@ func (h *MasterDataHandler) CreateJenisBarang(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.CreateJenisBarang(c.Request.Context(), req)
+	item, err := h.useCase.CreateJenisBarang(withAuditLogContext(c), req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -287,7 +287,7 @@ func (h *MasterDataHandler) UpdateJenisBarang(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.UpdateJenisBarang(c.Request.Context(), id, req)
+	item, err := h.useCase.UpdateJenisBarang(withAuditLogContext(c), id, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -309,7 +309,7 @@ func (h *MasterDataHandler) DeleteJenisBarang(c *gin.Context) {
 		return
 	}
 
-	if err := h.useCase.DeleteJenisBarang(c.Request.Context(), id); err != nil {
+	if err := h.useCase.DeleteJenisBarang(withAuditLogContext(c), id); err != nil {
 		h.handleError(c, err)
 		return
 	}
@@ -379,7 +379,7 @@ func (h *MasterDataHandler) CreateMitra(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.CreateMitra(c.Request.Context(), req)
+	item, err := h.useCase.CreateMitra(withAuditLogContext(c), req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -409,7 +409,7 @@ func (h *MasterDataHandler) UpdateMitra(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.UpdateMitra(c.Request.Context(), id, req)
+	item, err := h.useCase.UpdateMitra(withAuditLogContext(c), id, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -431,7 +431,7 @@ func (h *MasterDataHandler) DeleteMitra(c *gin.Context) {
 		return
 	}
 
-	if err := h.useCase.DeleteMitra(c.Request.Context(), id); err != nil {
+	if err := h.useCase.DeleteMitra(withAuditLogContext(c), id); err != nil {
 		h.handleError(c, err)
 		return
 	}
@@ -504,7 +504,7 @@ func (h *MasterDataHandler) CreateBarang(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.CreateBarang(c.Request.Context(), req)
+	item, err := h.useCase.CreateBarang(withAuditLogContext(c), req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -535,7 +535,7 @@ func (h *MasterDataHandler) UpdateBarang(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.UpdateBarang(c.Request.Context(), id, req)
+	item, err := h.useCase.UpdateBarang(withAuditLogContext(c), id, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -557,7 +557,7 @@ func (h *MasterDataHandler) DeleteBarang(c *gin.Context) {
 		return
 	}
 
-	if err := h.useCase.DeleteBarang(c.Request.Context(), id); err != nil {
+	if err := h.useCase.DeleteBarang(withAuditLogContext(c), id); err != nil {
 		h.handleError(c, err)
 		return
 	}
@@ -752,7 +752,7 @@ func (h *MasterDataHandler) CreateWarna(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.CreateWarna(c.Request.Context(), req)
+	item, err := h.useCase.CreateWarna(withAuditLogContext(c), req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -782,7 +782,7 @@ func (h *MasterDataHandler) UpdateWarna(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.UpdateWarna(c.Request.Context(), id, req)
+	item, err := h.useCase.UpdateWarna(withAuditLogContext(c), id, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -804,7 +804,7 @@ func (h *MasterDataHandler) DeleteWarna(c *gin.Context) {
 		return
 	}
 
-	if err := h.useCase.DeleteWarna(c.Request.Context(), id); err != nil {
+	if err := h.useCase.DeleteWarna(withAuditLogContext(c), id); err != nil {
 		h.handleError(c, err)
 		return
 	}
