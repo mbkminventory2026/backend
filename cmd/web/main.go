@@ -101,14 +101,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	roleUseCase, err := usecase.NewRoleUseCase(queries, dbPool)
+	roleUseCase, err := usecase.NewRoleUseCase(queries, dbPool, auditLogUseCase)
 	if err != nil {
 		logger.Error("failed to initialize role usecase", slog.String("error", err.Error()))
 		dbPool.Close()
 		os.Exit(1)
 	}
 
-	masterDataUseCase, err := usecase.NewMasterDataUseCase(queries)
+	masterDataUseCase, err := usecase.NewMasterDataUseCase(queries, auditLogUseCase)
 	if err != nil {
 		logger.Error("failed to initialize master data usecase", slog.String("error", err.Error()))
 		dbPool.Close()

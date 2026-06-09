@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -27,11 +28,12 @@ var (
 )
 
 type RoleUseCase struct {
-	repo   entity.Querier
-	dbPool *pgxpool.Pool
+	repo     entity.Querier
+	dbPool   *pgxpool.Pool
+	auditLog *AuditLogUseCase
 }
 
-func NewRoleUseCase(repo entity.Querier, dbPool *pgxpool.Pool) (*RoleUseCase, error) {
+func NewRoleUseCase(repo entity.Querier, dbPool *pgxpool.Pool, auditLog *AuditLogUseCase) (*RoleUseCase, error) {
 	if repo == nil {
 		return nil, errors.New("role repository is required")
 	}
@@ -40,8 +42,9 @@ func NewRoleUseCase(repo entity.Querier, dbPool *pgxpool.Pool) (*RoleUseCase, er
 	}
 
 	return &RoleUseCase{
-		repo:   repo,
-		dbPool: dbPool,
+		repo:     repo,
+		dbPool:   dbPool,
+		auditLog: auditLog,
 	}, nil
 }
 
@@ -118,7 +121,14 @@ func (u *RoleUseCase) Create(ctx context.Context, req model.CreateRoleRequest) (
 		return nil, fmt.Errorf("%w: failed to commit transaction", ErrRoleServiceUnavailable)
 	}
 
-	return u.buildRoleResponse(ctx, role)
+	result, err := u.buildRoleResponse(ctx, role)
+	if err != nil {
+		return nil, err
+	}
+
+	u.recordCreateRoleAudit(ctx, result)
+
+	return result, nil
 }
 
 func (u *RoleUseCase) Update(ctx context.Context, id int32, req model.UpdateRoleRequest) (*model.RoleResponse, error) {
@@ -132,6 +142,11 @@ func (u *RoleUseCase) Update(ctx context.Context, id int32, req model.UpdateRole
 
 	if isReservedRole(existing.NamaRole) && existing.NamaRole != req.NamaRole {
 		return nil, ErrReservedRoleProtected
+	}
+
+	beforeRole, err := u.buildRoleResponse(ctx, existing)
+	if err != nil {
+		return nil, err
 	}
 
 	tx, err := u.dbPool.Begin(ctx)
@@ -170,7 +185,16 @@ func (u *RoleUseCase) Update(ctx context.Context, id int32, req model.UpdateRole
 		return nil, fmt.Errorf("%w: failed to commit transaction", ErrRoleServiceUnavailable)
 	}
 
-	return u.buildRoleResponse(ctx, role)
+	result, err := u.buildRoleResponse(ctx, role)
+	if err != nil {
+		return nil, err
+	}
+
+	beforeSnapshot := buildRoleAuditSnapshot(beforeRole)
+	afterSnapshot := buildRoleAuditSnapshot(result)
+	u.recordUpdateRoleAudit(ctx, result, beforeSnapshot, afterSnapshot)
+
+	return result, nil
 }
 
 func (u *RoleUseCase) Delete(ctx context.Context, id int32) error {
@@ -186,6 +210,11 @@ func (u *RoleUseCase) Delete(ctx context.Context, id int32) error {
 		return ErrReservedRoleProtected
 	}
 
+	existingDetail, err := u.buildRoleResponse(ctx, existing)
+	if err != nil {
+		return err
+	}
+
 	affected, err := u.repo.DeleteRole(ctx, id)
 	if err != nil {
 		if isRoleForeignKeyViolation(err) {
@@ -196,6 +225,9 @@ func (u *RoleUseCase) Delete(ctx context.Context, id int32) error {
 	if affected == 0 {
 		return ErrRoleManagementNotFound
 	}
+
+	u.recordDeleteRoleAudit(ctx, existingDetail)
+
 	return nil
 }
 
@@ -252,4 +284,97 @@ func isReservedRole(name string) bool {
 		return true
 	}
 	return false
+}
+
+func (u *RoleUseCase) recordCreateRoleAudit(ctx context.Context, role *model.RoleResponse) {
+	if u.auditLog == nil || role == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID: auditCtx.ActorUserID,
+		ActorRole:   auditCtx.ActorRole,
+		Action:      "CREATE",
+		Module:      "role-management",
+		EntityType:  "roles",
+		EntityID:    fmt.Sprintf("%d", role.IDRole),
+		EntityLabel: role.NamaRole,
+		Method:      auditCtx.Method,
+		Route:       auditCtx.Route,
+		AfterData:   buildRoleAuditSnapshot(role),
+	}); err != nil {
+		slog.Error("failed to record role create audit log", slog.String("error", err.Error()))
+	}
+}
+
+func (u *RoleUseCase) recordUpdateRoleAudit(ctx context.Context, role *model.RoleResponse, beforeSnapshot, afterSnapshot map[string]any) {
+	if u.auditLog == nil || role == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        "UPDATE",
+		Module:        "role-management",
+		EntityType:    "roles",
+		EntityID:      fmt.Sprintf("%d", role.IDRole),
+		EntityLabel:   role.NamaRole,
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		BeforeData:    beforeSnapshot,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(beforeSnapshot, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record role update audit log", slog.String("error", err.Error()))
+	}
+}
+
+func (u *RoleUseCase) recordDeleteRoleAudit(ctx context.Context, role *model.RoleResponse) {
+	if u.auditLog == nil || role == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID: auditCtx.ActorUserID,
+		ActorRole:   auditCtx.ActorRole,
+		Action:      "DELETE",
+		Module:      "role-management",
+		EntityType:  "roles",
+		EntityID:    fmt.Sprintf("%d", role.IDRole),
+		EntityLabel: role.NamaRole,
+		Method:      auditCtx.Method,
+		Route:       auditCtx.Route,
+		BeforeData:  buildRoleAuditSnapshot(role),
+	}); err != nil {
+		slog.Error("failed to record role delete audit log", slog.String("error", err.Error()))
+	}
+}
+
+func buildRoleAuditSnapshot(role *model.RoleResponse) map[string]any {
+	if role == nil {
+		return nil
+	}
+
+	return map[string]any{
+		"id_role":       role.IDRole,
+		"nama_role":     role.NamaRole,
+		"permissions":   role.Permissions,
+		"hak_akses_ids": role.HakAksesIDs,
+	}
 }

@@ -112,7 +112,7 @@ func (h *RoleHandler) Create(c *gin.Context) {
 		return
 	}
 
-	result, err := h.useCase.Create(c.Request.Context(), req)
+	result, err := h.useCase.Create(withAuditLogContext(c), req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -149,7 +149,7 @@ func (h *RoleHandler) Update(c *gin.Context) {
 		return
 	}
 
-	result, err := h.useCase.Update(c.Request.Context(), id, req)
+	result, err := h.useCase.Update(withAuditLogContext(c), id, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -179,7 +179,7 @@ func (h *RoleHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.useCase.Delete(c.Request.Context(), id); err != nil {
+	if err := h.useCase.Delete(withAuditLogContext(c), id); err != nil {
 		h.handleError(c, err)
 		return
 	}

@@ -3,6 +3,8 @@ package usecase
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgconn"
@@ -27,14 +29,15 @@ var (
 )
 
 type MasterDataUseCase struct {
-	repo entity.Querier
+	repo     entity.Querier
+	auditLog *AuditLogUseCase
 }
 
-func NewMasterDataUseCase(repo entity.Querier) (*MasterDataUseCase, error) {
+func NewMasterDataUseCase(repo entity.Querier, auditLog *AuditLogUseCase) (*MasterDataUseCase, error) {
 	if repo == nil {
 		return nil, errors.New("repository is required")
 	}
-	return &MasterDataUseCase{repo: repo}, nil
+	return &MasterDataUseCase{repo: repo, auditLog: auditLog}, nil
 }
 
 // DEPARTEMEN
@@ -533,7 +536,7 @@ func (u *MasterDataUseCase) CreateHakAkses(ctx context.Context, req model.Create
 		return model.HakAksesResponse{}, mapMasterDataConflict(err)
 	}
 
-	return model.HakAksesResponse{
+	result := model.HakAksesResponse{
 		ID:               item.IDHakAkses,
 		KodePermission:   item.KodePermission,
 		Nama:             item.NamaHalaman,
@@ -541,10 +544,19 @@ func (u *MasterDataUseCase) CreateHakAkses(ctx context.Context, req model.Create
 		DomainPermission: item.DomainPermission,
 		AksiPermission:   item.AksiPermission,
 		CreatedAt:        item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	}
+
+	u.recordHakAksesCreateAudit(ctx, result)
+
+	return result, nil
 }
 
 func (u *MasterDataUseCase) UpdateHakAkses(ctx context.Context, id int32, req model.UpdateHakAksesRequest) (model.HakAksesResponse, error) {
+	beforeItem, err := u.GetHakAksesByID(ctx, id)
+	if err != nil {
+		return model.HakAksesResponse{}, err
+	}
+
 	item, err := u.repo.UpdateHakAkses(ctx, entity.UpdateHakAksesParams{
 		IDHakAkses:       id,
 		KodePermission:   req.KodePermission,
@@ -560,7 +572,7 @@ func (u *MasterDataUseCase) UpdateHakAkses(ctx context.Context, id int32, req mo
 		return model.HakAksesResponse{}, mapMasterDataConflict(err)
 	}
 
-	return model.HakAksesResponse{
+	result := model.HakAksesResponse{
 		ID:               item.IDHakAkses,
 		KodePermission:   item.KodePermission,
 		Nama:             item.NamaHalaman,
@@ -568,10 +580,19 @@ func (u *MasterDataUseCase) UpdateHakAkses(ctx context.Context, id int32, req mo
 		DomainPermission: item.DomainPermission,
 		AksiPermission:   item.AksiPermission,
 		CreatedAt:        item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	}
+
+	u.recordHakAksesUpdateAudit(ctx, result, buildHakAksesAuditSnapshot(beforeItem), buildHakAksesAuditSnapshot(result))
+
+	return result, nil
 }
 
 func (u *MasterDataUseCase) DeleteHakAkses(ctx context.Context, id int32) error {
+	existing, err := u.GetHakAksesByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
 	affected, err := u.repo.DeleteHakAkses(ctx, id)
 	if err != nil {
 		return err
@@ -579,6 +600,9 @@ func (u *MasterDataUseCase) DeleteHakAkses(ctx context.Context, id int32) error 
 	if affected == 0 {
 		return ErrMasterDataNotFound
 	}
+
+	u.recordHakAksesDeleteAudit(ctx, existing)
+
 	return nil
 }
 
@@ -701,4 +725,95 @@ func pgTextToPtrString(t pgtype.Text) *string {
 	}
 	s := t.String
 	return &s
+}
+
+func (u *MasterDataUseCase) recordHakAksesCreateAudit(ctx context.Context, item model.HakAksesResponse) {
+	if u.auditLog == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID: auditCtx.ActorUserID,
+		ActorRole:   auditCtx.ActorRole,
+		Action:      "CREATE",
+		Module:      "role-management",
+		EntityType:  "hak_akses",
+		EntityID:    fmt.Sprintf("%d", item.ID),
+		EntityLabel: item.KodePermission,
+		Method:      auditCtx.Method,
+		Route:       auditCtx.Route,
+		AfterData:   buildHakAksesAuditSnapshot(item),
+	}); err != nil {
+		slog.Error("failed to record permission create audit log", slog.String("error", err.Error()))
+	}
+}
+
+func (u *MasterDataUseCase) recordHakAksesUpdateAudit(ctx context.Context, item model.HakAksesResponse, beforeSnapshot, afterSnapshot map[string]any) {
+	if u.auditLog == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        "UPDATE",
+		Module:        "role-management",
+		EntityType:    "hak_akses",
+		EntityID:      fmt.Sprintf("%d", item.ID),
+		EntityLabel:   item.KodePermission,
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		BeforeData:    beforeSnapshot,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(beforeSnapshot, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record permission update audit log", slog.String("error", err.Error()))
+	}
+}
+
+func (u *MasterDataUseCase) recordHakAksesDeleteAudit(ctx context.Context, item model.HakAksesResponse) {
+	if u.auditLog == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID: auditCtx.ActorUserID,
+		ActorRole:   auditCtx.ActorRole,
+		Action:      "DELETE",
+		Module:      "role-management",
+		EntityType:  "hak_akses",
+		EntityID:    fmt.Sprintf("%d", item.ID),
+		EntityLabel: item.KodePermission,
+		Method:      auditCtx.Method,
+		Route:       auditCtx.Route,
+		BeforeData:  buildHakAksesAuditSnapshot(item),
+	}); err != nil {
+		slog.Error("failed to record permission delete audit log", slog.String("error", err.Error()))
+	}
+}
+
+func buildHakAksesAuditSnapshot(item model.HakAksesResponse) map[string]any {
+	return map[string]any{
+		"id_hak_akses":      item.ID,
+		"kode_permission":   item.KodePermission,
+		"nama_halaman":      item.Nama,
+		"deskripsi":         item.Deskripsi,
+		"domain_permission": item.DomainPermission,
+		"aksi_permission":   item.AksiPermission,
+	}
 }

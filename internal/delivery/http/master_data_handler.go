@@ -628,7 +628,7 @@ func (h *MasterDataHandler) CreateHakAkses(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.CreateHakAkses(c.Request.Context(), req)
+	item, err := h.useCase.CreateHakAkses(withAuditLogContext(c), req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -658,7 +658,7 @@ func (h *MasterDataHandler) UpdateHakAkses(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.UpdateHakAkses(c.Request.Context(), id, req)
+	item, err := h.useCase.UpdateHakAkses(withAuditLogContext(c), id, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -680,7 +680,7 @@ func (h *MasterDataHandler) DeleteHakAkses(c *gin.Context) {
 		return
 	}
 
-	if err := h.useCase.DeleteHakAkses(c.Request.Context(), id); err != nil {
+	if err := h.useCase.DeleteHakAkses(withAuditLogContext(c), id); err != nil {
 		h.handleError(c, err)
 		return
 	}
