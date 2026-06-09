@@ -1214,6 +1214,18 @@ func seedMarkerPlan(ctx context.Context, db *pgxpool.Pool) error {
 		return fmt.Errorf("failed to find WO Shell for Navy Fabric WO Test 1: %w", err)
 	}
 
+	// Get Shell ID of WO 1 (White Interlining)
+	var idShellInterlining int32
+	err = db.QueryRow(ctx, `
+			SELECT wos.ID_WO_SHELL 
+			FROM WORK_ORDER_SHELL wos
+			JOIN WORK_ORDER wo ON wo.ID_WO = wos.ID_WO
+			WHERE wo.MODEL = 'WO Test 1' AND wos.MATERIAL_TYPE = 'interlining' LIMIT 1
+		`).Scan(&idShellInterlining)
+	if err != nil {
+		return fmt.Errorf("failed to find WO Shell for Interlining WO Test 1: %w", err)
+	}
+
 	// 2. Insert Marker Plan
 	var idMarkerPlan int32
 	err = db.QueryRow(ctx, `
@@ -1226,32 +1238,7 @@ func seedMarkerPlan(ctx context.Context, db *pgxpool.Pool) error {
 	}
 	slog.Info("marker plan seeded: MP-2026-001", slog.Int("id", int(idMarkerPlan)))
 
-	// 3. Insert Komponen Marker Plan
-	var idKomponen int32
-	err = db.QueryRow(ctx, `
-			INSERT INTO KOMPONEN_MARKER_PLAN (ID_MARKER_PLAN, NAMA_KOMPONEN)
-			VALUES ($1, 'Cotton Fleece Navy')
-			RETURNING ID_KOMPONEN_MARKER
-		`, idMarkerPlan).Scan(&idKomponen)
-	if err != nil {
-		return err
-	}
-
-	// 4. Insert Ratio Marker
-	var idRatioMarker int32
-	err = db.QueryRow(ctx, `
-			INSERT INTO RATIO_MARKER (
-				ID_KOMPONEN_MARKER, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN,
-				PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER,
-				PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET
-			) VALUES ($1, $2, 0.350, 100, 35.000, 85.50, 3.00, 0.360, 1, 1.450, 'yard', 'Seeded Ratio')
-			RETURNING ID_RATIO_MARKER
-		`, idKomponen, idShell).Scan(&idRatioMarker)
-	if err != nil {
-		return err
-	}
-
-	// 5. Get Shell size IDs of WO 1 (Navy Fabric: XS to XXL)
+	// 3. Get Shell size IDs of WO 1 (Navy Fabric: XS to XXL)
 	rows, err := db.Query(ctx, `
 			SELECT ID_WO_SHELL_SIZE, SIZE
 			FROM WORK_ORDER_SHELL_SIZE
@@ -1260,8 +1247,7 @@ func seedMarkerPlan(ctx context.Context, db *pgxpool.Pool) error {
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
-
+	
 	type SizeInfo struct {
 		ID   int32
 		Size string
@@ -1270,12 +1256,59 @@ func seedMarkerPlan(ctx context.Context, db *pgxpool.Pool) error {
 	for rows.Next() {
 		var sz SizeInfo
 		if err := rows.Scan(&sz.ID, &sz.Size); err != nil {
+			rows.Close()
 			return err
 		}
 		sizes = append(sizes, sz)
 	}
+	rows.Close()
 
-	// 6. Insert Ratio Size Markers
+	// Get Shell size IDs of WO 1 (White Interlining: XS to XXL)
+	rowsInterlining, err := db.Query(ctx, `
+			SELECT ID_WO_SHELL_SIZE, SIZE
+			FROM WORK_ORDER_SHELL_SIZE
+			WHERE ID_WO_SHELL = $1
+		`, idShellInterlining)
+	if err != nil {
+		return err
+	}
+	
+	var sizesInterlining []SizeInfo
+	for rowsInterlining.Next() {
+		var sz SizeInfo
+		if err := rowsInterlining.Scan(&sz.ID, &sz.Size); err != nil {
+			rowsInterlining.Close()
+			return err
+		}
+		sizesInterlining = append(sizesInterlining, sz)
+	}
+	rowsInterlining.Close()
+
+	// 4. Insert Komponen 1: Cotton Fleece Navy
+	var idKomponen1 int32
+	err = db.QueryRow(ctx, `
+			INSERT INTO KOMPONEN_MARKER_PLAN (ID_MARKER_PLAN, NAMA_KOMPONEN)
+			VALUES ($1, 'Cotton Fleece Navy')
+			RETURNING ID_KOMPONEN_MARKER
+		`, idMarkerPlan).Scan(&idKomponen1)
+	if err != nil {
+		return err
+	}
+
+	// Ratio 1 (Cut Pertama) for Komponen 1
+	var idRatio1Komponen1 int32
+	err = db.QueryRow(ctx, `
+			INSERT INTO RATIO_MARKER (
+				ID_KOMPONEN_MARKER, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN,
+				PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER,
+				PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET
+			) VALUES ($1, $2, 0.350, 50, 17.500, 85.50, 3.00, 0.360, 1, 1.450, 'yard', 'Cut Pertama')
+			RETURNING ID_RATIO_MARKER
+		`, idKomponen1, idShell).Scan(&idRatio1Komponen1)
+	if err != nil {
+		return err
+	}
+
 	for _, sz := range sizes {
 		var ratioPlan int32
 		switch sz.Size {
@@ -1297,7 +1330,100 @@ func seedMarkerPlan(ctx context.Context, db *pgxpool.Pool) error {
 		_, err = db.Exec(ctx, `
 				INSERT INTO RATIO_SIZE_MARKER (ID_RATIO_MARKER, ID_WO_SHELL_SIZE, RATIO_PLAN)
 				VALUES ($1, $2, $3)
-			`, idRatioMarker, sz.ID, ratioPlan)
+			`, idRatio1Komponen1, sz.ID, ratioPlan)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Ratio 2 (Cut Sisa) for Komponen 1
+	var idRatio2Komponen1 int32
+	err = db.QueryRow(ctx, `
+			INSERT INTO RATIO_MARKER (
+				ID_KOMPONEN_MARKER, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN,
+				PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER,
+				PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET
+			) VALUES ($1, $2, 0.350, 50, 17.500, 85.50, 3.00, 0.360, 2, 1.450, 'yard', 'Cut Sisa')
+			RETURNING ID_RATIO_MARKER
+		`, idKomponen1, idShell).Scan(&idRatio2Komponen1)
+	if err != nil {
+		return err
+	}
+
+	for _, sz := range sizes {
+		var ratioPlan int32
+		switch sz.Size {
+		case "XS":
+			ratioPlan = 1
+		case "S":
+			ratioPlan = 1
+		case "M":
+			ratioPlan = 2
+		case "L":
+			ratioPlan = 2
+		case "XL":
+			ratioPlan = 1
+		case "XXL":
+			ratioPlan = 1
+		default:
+			ratioPlan = 1
+		}
+		_, err = db.Exec(ctx, `
+				INSERT INTO RATIO_SIZE_MARKER (ID_RATIO_MARKER, ID_WO_SHELL_SIZE, RATIO_PLAN)
+				VALUES ($1, $2, $3)
+			`, idRatio2Komponen1, sz.ID, ratioPlan)
+		if err != nil {
+			return err
+		}
+	}
+
+	// 5. Insert Komponen 2: Interlining Plakat
+	var idKomponen2 int32
+	err = db.QueryRow(ctx, `
+			INSERT INTO KOMPONEN_MARKER_PLAN (ID_MARKER_PLAN, NAMA_KOMPONEN)
+			VALUES ($1, 'Interlining Plakat')
+			RETURNING ID_KOMPONEN_MARKER
+		`, idMarkerPlan).Scan(&idKomponen2)
+	if err != nil {
+		return err
+	}
+
+	// Ratio 1 for Komponen 2
+	var idRatio1Komponen2 int32
+	err = db.QueryRow(ctx, `
+			INSERT INTO RATIO_MARKER (
+				ID_KOMPONEN_MARKER, ID_WO_SHELL, CONS, PLAN_SPREADING_GELARAN,
+				PANJANG_MARKER, EFFICIENCY_MARKER, ALLOWANCE, CONS_BUYER,
+				PLOT, LEBAR_KAIN, PANJANG_MARKER_UNIT, KET
+			) VALUES ($1, $2, 0.100, 50, 5.000, 90.00, 3.00, 0.110, 1, 1.100, 'yard', 'Interlining Plakat')
+			RETURNING ID_RATIO_MARKER
+		`, idKomponen2, idShellInterlining).Scan(&idRatio1Komponen2)
+	if err != nil {
+		return err
+	}
+
+	for _, sz := range sizesInterlining {
+		var ratioPlan int32
+		switch sz.Size {
+		case "XS":
+			ratioPlan = 2
+		case "S":
+			ratioPlan = 3
+		case "M":
+			ratioPlan = 5
+		case "L":
+			ratioPlan = 5
+		case "XL":
+			ratioPlan = 3
+		case "XXL":
+			ratioPlan = 2
+		default:
+			ratioPlan = 1
+		}
+		_, err = db.Exec(ctx, `
+				INSERT INTO RATIO_SIZE_MARKER (ID_RATIO_MARKER, ID_WO_SHELL_SIZE, RATIO_PLAN)
+				VALUES ($1, $2, $3)
+			`, idRatio1Komponen2, sz.ID, ratioPlan)
 		if err != nil {
 			return err
 		}
