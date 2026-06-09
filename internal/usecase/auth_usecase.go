@@ -286,7 +286,7 @@ func (u *AuthUseCase) CreateForgotPasswordRequest(ctx context.Context, req model
 		return nil, fmt.Errorf("%w: create password reset request", ErrAuthServiceUnavailable)
 	}
 
-	return &model.PasswordResetRequestResponse{
+	response := &model.PasswordResetRequestResponse{
 		IDPasswordResetRequest: row.IDPasswordResetRequest,
 		IDUser:                 row.IDUser,
 		Username:               user.Username,
@@ -299,7 +299,11 @@ func (u *AuthUseCase) CreateForgotPasswordRequest(ctx context.Context, req model
 		RejectedAt:             nullableTimestampString(row.RejectedAt),
 		CompletedAt:            nullableTimestampString(row.CompletedAt),
 		RejectedReason:         row.RejectedReason,
-	}, nil
+	}
+
+	u.recordPasswordResetRequestCreateAudit(ctx, user, response)
+
+	return response, nil
 }
 
 func (u *AuthUseCase) ListForgotPasswordRequests(ctx context.Context) ([]model.PasswordResetRequestResponse, error) {
@@ -542,6 +546,44 @@ func (u *AuthUseCase) recordPasswordResetAudit(ctx context.Context, request mode
 		ChangedFields: buildChangedFieldsFromSnapshots(beforeSnapshot, afterSnapshot),
 	}); err != nil {
 		slog.Error("failed to record password reset audit log", slog.String("flow", flow), slog.String("error", err.Error()))
+	}
+}
+
+func (u *AuthUseCase) recordPasswordResetRequestCreateAudit(ctx context.Context, user entity.GetUserByUsernameRow, request *model.PasswordResetRequestResponse) {
+	if u.auditLog == nil || request == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	actorUserID := auditCtx.ActorUserID
+	if actorUserID == nil {
+		actorUserID = &user.IDUser
+	}
+
+	actorRole := auditCtx.ActorRole
+	if actorRole == "" {
+		actorRole = user.NamaRole
+	}
+
+	afterSnapshot := buildPasswordResetRequestAuditSnapshot(request)
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   actorUserID,
+		ActorRole:     actorRole,
+		Action:        "CREATE",
+		Module:        "user-management",
+		EntityType:    "password_reset_requests",
+		EntityID:      fmt.Sprintf("%d", request.IDPasswordResetRequest),
+		EntityLabel:   request.Username,
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(nil, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record password reset request create audit log", slog.String("error", err.Error()))
 	}
 }
 
