@@ -225,3 +225,174 @@ func (u *DashboardUseCase) GetFinanceDashboardMetrics(ctx context.Context) (*mod
 		RecentPOInternals:        parsedRecentPOInternals,
 	}, nil
 }
+
+// GetProductionDashboardMetrics mengambil data untuk dashboard Admin Produksi
+func (u *DashboardUseCase) GetProductionDashboardMetrics(ctx context.Context) (*model.ProductionDashboardMetrics, error) {
+	// Reusing GetOperatorTargetProduksiHariIni for target produksi
+	targetPcs, err := u.queries.GetOperatorTargetProduksiHariIni(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get target produksi: %w", err)
+	}
+
+	tlCount, err := u.queries.GetProductionTotalTimelineThisMonth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get timeline count: %w", err)
+	}
+
+	mpCount, err := u.queries.GetProductionTotalMarkerPlanThisMonth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get marker plan count: %w", err)
+	}
+
+	scpCount, err := u.queries.GetProductionTotalSpreadingCuttingPlanThisMonth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get scp count: %w", err)
+	}
+
+	recentTimelines, err := u.queries.GetProductionRecentTimelines(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent timelines: %w", err)
+	}
+
+	var parsedTimelines []model.RecentTimeline
+	for _, tl := range recentTimelines {
+		parsedTimelines = append(parsedTimelines, model.RecentTimeline{
+			IDTimeline:     tl.IDTimeline,
+			TanggalDisusun: tl.TanggalDisusun.Time.Format("2006-01-02"),
+			Notes:          tl.Notes,
+			PoNumber:       tl.PoNumber,
+		})
+	}
+
+	recentMPs, err := u.queries.GetProductionRecentMarkerPlans(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent marker plans: %w", err)
+	}
+
+	var parsedMPs []model.RecentMarkerPlan
+	for _, mp := range recentMPs {
+		parsedMPs = append(parsedMPs, model.RecentMarkerPlan{
+			IDMarkerPlan:   mp.IDMarkerPlan,
+			NoDokumen:      mp.NoDokumen,
+			TanggalEfektif: mp.TanggalEfektif.Time.Format("2006-01-02"),
+			Color:          mp.Color,
+			Model:          mp.Model,
+		})
+	}
+
+	recentSCPs, err := u.queries.GetProductionRecentSpreadingCuttingPlans(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent scps: %w", err)
+	}
+
+	var parsedSCPs []model.RecentSpreadingCuttingPlan
+	for _, scp := range recentSCPs {
+		parsedSCPs = append(parsedSCPs, model.RecentSpreadingCuttingPlan{
+			IDSpreadingCuttingPlan: scp.IDSpreadingCuttingPlan,
+			NoDokumen:              scp.NoDokumen,
+			TanggalEfektif:         scp.TanggalEfektif.Time.Format("2006-01-02"),
+			Model:                  scp.Model,
+		})
+	}
+
+	return &model.ProductionDashboardMetrics{
+		TargetProduksiPcs:                  targetPcs,
+		TotalTimelineThisMonth:             tlCount,
+		TotalMarkerPlanThisMonth:           mpCount,
+		TotalSpreadingCuttingPlanThisMonth: scpCount,
+		RecentTimelines:                    parsedTimelines,
+		RecentMarkerPlans:                  parsedMPs,
+		RecentSpreadingCuttingPlans:        parsedSCPs,
+	}, nil
+}
+
+// GetWarehouseDashboardMetrics mengambil data untuk dashboard Admin Gudang
+func (u *DashboardUseCase) GetWarehouseDashboardMetrics(ctx context.Context) (*model.WarehouseDashboardMetrics, error) {
+	totalItems, err := u.queries.GetWarehouseTotalItems(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get total items: %w", err)
+	}
+
+	sjClientCount, err := u.queries.GetWarehouseTotalSuratJalanClientThisMonth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get surat jalan client count: %w", err)
+	}
+
+	sjInternalCount, err := u.queries.GetWarehouseTotalSuratJalanInternalThisMonth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get surat jalan internal count: %w", err)
+	}
+
+	lowStocks, err := u.queries.GetLowStockAlerts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get low stock alerts: %w", err)
+	}
+
+	var parsedLowStocks []model.LowStockAlert
+	for _, ls := range lowStocks {
+		parsedLowStocks = append(parsedLowStocks, model.LowStockAlert{
+			IDRekonsiliasiMaterial: ls.IDRekonsiliasiMaterial,
+			Description:            ls.Description,
+			Size:                   ls.Size,
+			Balance:                ls.Balance,
+			LastBalance:            ls.LastBalance,
+			Satuan:                 ls.Satuan,
+			MinStock:               ls.MinStock,
+		})
+	}
+
+	recentSJC, err := u.queries.GetWarehouseRecentSuratJalanClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent surat jalan client: %w", err)
+	}
+
+	var parsedSJC []model.RecentWarehouseSuratJalanClient
+	for _, sj := range recentSJC {
+		parsedSJC = append(parsedSJC, model.RecentWarehouseSuratJalanClient{
+			IDSuratJalanClient:  sj.IDSuratJalanClient,
+			Tanggal:             sj.Tanggal.Time.Format("2006-01-02"),
+			Keterangan:          sj.Keterangan,
+			MaterialDescription: sj.MaterialDescription,
+		})
+	}
+
+	recentSJI, err := u.queries.GetWarehouseRecentSuratJalanInternal(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent surat jalan internal: %w", err)
+	}
+
+	var parsedSJI []model.RecentWarehouseSuratJalanInternal
+	for _, sj := range recentSJI {
+		parsedSJI = append(parsedSJI, model.RecentWarehouseSuratJalanInternal{
+			IDSuratJalanInternal: sj.IDSuratJalanInternal,
+			CreatedAt:            sj.CreatedAt.Time.Format("2006-01-02"),
+		})
+	}
+
+	recentBarang, err := u.queries.GetWarehouseRecentBarang(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent barang: %w", err)
+	}
+
+	var parsedBarang []model.RecentWarehouseBarang
+	for _, b := range recentBarang {
+		parsedBarang = append(parsedBarang, model.RecentWarehouseBarang{
+			IDBarang:    b.IDBarang,
+			NamaBarang:  b.NamaBarang,
+			Kode:        b.Kode,
+			StokMinimum: b.StokMinimum,
+			CreatedAt:   b.CreatedAt.Time.Format("2006-01-02"),
+		})
+	}
+
+	return &model.WarehouseDashboardMetrics{
+		TotalItems:                       totalItems,
+		TotalSuratJalanClientThisMonth:   sjClientCount,
+		TotalSuratJalanInternalThisMonth: sjInternalCount,
+		LowStockAlertsCount:              int64(len(parsedLowStocks)),
+		RecentSuratJalanClients:          parsedSJC,
+		RecentSuratJalanInternals:        parsedSJI,
+		RecentBarangs:                    parsedBarang,
+		LowStockAlerts:                   parsedLowStocks,
+	}, nil
+}

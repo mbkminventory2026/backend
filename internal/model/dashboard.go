@@ -129,3 +129,77 @@ type FinanceDashboardMetrics struct {
 	RecentPOClients          []RecentPOClient   `json:"recent_po_clients"`
 	RecentPOInternals        []RecentPOInternal `json:"recent_po_internals"`
 }
+
+type RecentTimeline struct {
+	IDTimeline     int32  `json:"id_timeline"`
+	TanggalDisusun string `json:"tanggal_disusun"`
+	Notes          string `json:"notes"`
+	PoNumber       string `json:"po_number"`
+}
+
+type RecentMarkerPlan struct {
+	IDMarkerPlan   int32  `json:"id_marker_plan"`
+	NoDokumen      string `json:"no_dokumen"`
+	TanggalEfektif string `json:"tanggal_efektif"`
+	Color          string `json:"color"`
+	Model          string `json:"model"`
+}
+
+type RecentSpreadingCuttingPlan struct {
+	IDSpreadingCuttingPlan int32  `json:"id_spreading_cutting_plan"`
+	NoDokumen              string `json:"no_dokumen"`
+	TanggalEfektif         string `json:"tanggal_efektif"`
+	Model                  string `json:"model"`
+}
+
+type ProductionDashboardMetrics struct {
+	TargetProduksiPcs                 int32                        `json:"target_produksi_pcs"`
+	TotalTimelineThisMonth            int64                        `json:"total_timeline_this_month"`
+	TotalMarkerPlanThisMonth          int64                        `json:"total_marker_plan_this_month"`
+	TotalSpreadingCuttingPlanThisMonth int64                       `json:"total_spreading_cutting_plan_this_month"`
+	RecentTimelines                   []RecentTimeline             `json:"recent_timelines"`
+	RecentMarkerPlans                 []RecentMarkerPlan           `json:"recent_marker_plans"`
+	RecentSpreadingCuttingPlans       []RecentSpreadingCuttingPlan `json:"recent_spreading_cutting_plans"`
+}
+
+type RecentWarehouseSuratJalanClient struct {
+	IDSuratJalanClient  int32  `json:"id_surat_jalan_client"`
+	Tanggal             string `json:"tanggal"`
+	Keterangan          string `json:"keterangan"`
+	MaterialDescription string `json:"material_description"`
+}
+
+type RecentWarehouseSuratJalanInternal struct {
+	IDSuratJalanInternal int32  `json:"id_surat_jalan_internal"`
+	CreatedAt            string `json:"created_at"`
+}
+
+type RecentWarehouseBarang struct {
+	IDBarang    int32  `json:"id_barang"`
+	NamaBarang  string `json:"nama_barang"`
+	Kode        string `json:"kode"`
+	StokMinimum int32  `json:"stok_minimum"`
+	CreatedAt   string `json:"created_at"`
+}
+
+type LowStockAlert struct {
+	IDRekonsiliasiMaterial int32  `json:"id_rekonsiliasi_material"`
+	Description            string `json:"description"`
+	Size                   string `json:"size"`
+	Balance                int32  `json:"balance"`
+	LastBalance            int32  `json:"last_balance"`
+	Satuan                 string `json:"satuan"`
+	MinStock               int32  `json:"min_stock"`
+}
+
+type WarehouseDashboardMetrics struct {
+	TotalItems                               int64                               `json:"total_items"`
+	TotalSuratJalanClientThisMonth           int64                               `json:"total_surat_jalan_client_this_month"`
+	TotalSuratJalanInternalThisMonth         int64                               `json:"total_surat_jalan_internal_this_month"`
+	LowStockAlertsCount                      int64                               `json:"low_stock_alerts_count"`
+	RecentSuratJalanClients                  []RecentWarehouseSuratJalanClient   `json:"recent_surat_jalan_clients"`
+	RecentSuratJalanInternals                []RecentWarehouseSuratJalanInternal `json:"recent_surat_jalan_internals"`
+	RecentBarangs                            []RecentWarehouseBarang             `json:"recent_barangs"`
+	LowStockAlerts                           []LowStockAlert                     `json:"low_stock_alerts"`
+}
+
