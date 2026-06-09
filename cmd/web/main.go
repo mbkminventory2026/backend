@@ -85,14 +85,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	authUseCase := usecase.NewAuthUseCase(queries, dbPool, turnstileUseCase, cfg.JWTSecret)
-
 	auditLogUseCase, err := usecase.NewAuditLogUseCase(queries)
 	if err != nil {
 		logger.Error("failed to initialize audit log usecase", slog.String("error", err.Error()))
 		dbPool.Close()
 		os.Exit(1)
 	}
+
+	authUseCase := usecase.NewAuthUseCase(queries, dbPool, turnstileUseCase, auditLogUseCase, cfg.JWTSecret)
 
 	userUseCase, err := usecase.NewUserUseCase(queries, dbPool, auditLogUseCase)
 	if err != nil {
