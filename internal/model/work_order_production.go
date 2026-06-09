@@ -39,7 +39,8 @@ type CreateMaterialListItemRequest struct {
 	Qty         int32   `json:"qty"`
 	Unit        string  `json:"unit" binding:"required"`
 	EstPrice    float64 `json:"est_price"`
-	Color       string  `json:"color"`
+	ShellIndex  *int    `json:"shell_index,omitempty"` // 0-based index into shells array
+	TrimIndex   *int    `json:"trim_index,omitempty"`  // 0-based index into trims array
 }
 
 type CreateWorkOrderRequest struct {

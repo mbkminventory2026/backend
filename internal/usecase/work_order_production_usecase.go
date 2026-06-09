@@ -220,44 +220,16 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 		var idWoShell pgtype.Int4
 		var idWoTrim pgtype.Int4
 
-		fmt.Printf("[WO-DEBUG] Memproses Material: Desc='%s' | Color='%s'\n", itemReq.Description, itemReq.Color)
-
-		// Pengait otomatis ke WORK_ORDER_SHELL via color + deskripsi.
-		for _, s := range recordedShells {
-			textMatch := strings.Contains(strings.ToLower(itemReq.Description), strings.ToLower(s.Deskripsi)) ||
-				strings.Contains(strings.ToLower(s.Deskripsi), strings.ToLower(itemReq.Description))
-
-			if strings.EqualFold(itemReq.Color, s.Color) && (textMatch || itemReq.Description == "") {
-				idWoShell = pgtype.Int4{Int32: s.ID, Valid: true}
-				fmt.Printf("   -> 🎉 MATCH FOUND ke Shell ID: %d (Deskripsi: %s)\n", s.ID, s.Deskripsi)
-				break
+		if itemReq.ShellIndex != nil {
+			idx := *itemReq.ShellIndex
+			if idx >= 0 && idx < len(recordedShells) {
+				idWoShell = pgtype.Int4{Int32: recordedShells[idx].ID, Valid: true}
 			}
-		}
-
-		// Pengait otomatis ke WORK_ORDER_TRIM via color + item name.
-		if !idWoShell.Valid {
-			for _, t := range recordedTrims {
-				textMatch := strings.Contains(strings.ToLower(itemReq.Description), strings.ToLower(t.Item)) ||
-					strings.Contains(strings.ToLower(t.Item), strings.ToLower(itemReq.Description))
-
-				if strings.EqualFold(itemReq.Color, t.Color) && (textMatch || itemReq.Description == "") {
-					idWoTrim = pgtype.Int4{Int32: t.ID, Valid: true}
-					fmt.Printf("   -> 🎉 MATCH FOUND ke Trim ID: %d (Item: %s)\n", t.ID, t.Item)
-					break
-				}
+		} else if itemReq.TrimIndex != nil {
+			idx := *itemReq.TrimIndex
+			if idx >= 0 && idx < len(recordedTrims) {
+				idWoTrim = pgtype.Int4{Int32: recordedTrims[idx].ID, Valid: true}
 			}
-		}
-
-		// Fallback: kalau hanya 1 shell di WO, paksa link by color.
-		if !idWoShell.Valid && !idWoTrim.Valid && len(recordedShells) == 1 {
-			if strings.EqualFold(itemReq.Color, recordedShells[0].Color) {
-				idWoShell = pgtype.Int4{Int32: recordedShells[0].ID, Valid: true}
-				fmt.Printf("   -> ⚠️ FALLBACK MATCH (Hanya 1 Shell): Terhubung ke Shell ID %d karena kesamaan warna\n", recordedShells[0].ID)
-			}
-		}
-
-		if !idWoShell.Valid && !idWoTrim.Valid {
-			fmt.Println("   -> ❌ NO MATCH FOUND: Kolom akan bernilai NULL di database.")
 		}
 
 		itemName := itemReq.Item
