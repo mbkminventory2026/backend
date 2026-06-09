@@ -34,6 +34,7 @@ import (
 	aigateway "permatatex-inventory/internal/gateway/ai"
 	turnstilegateway "permatatex-inventory/internal/gateway/turnstile"
 	"permatatex-inventory/internal/usecase"
+	excel "permatatex-inventory/pkg/exporter/excel"
 )
 
 func main() {
@@ -176,6 +177,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	excelRenderer, err := excel.NewRenderer(cfg.ExportTemplateDir)
+	if err != nil {
+		logger.Error("failed to initialize excel renderer", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	excelExportUseCase, err := usecase.NewExcelExportUseCase(excelRenderer)
+	if err != nil {
+		logger.Error("failed to initialize excel export usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	// 4. Handlers
 	authHandler, err := httpdelivery.NewAuthHandler(authUseCase)
 	if err != nil {
@@ -277,6 +292,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	excelExportHandler, err := httpdelivery.NewExcelExportHandler(excelExportUseCase)
+	if err != nil {
+		logger.Error("failed to initialize excel export handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	activityLogService, err := usecase.NewActivityLogService(queries, logger)
 	if err != nil {
 		logger.Error("failed to initialize activity log service", slog.String("error", err.Error()))
@@ -324,6 +346,7 @@ func main() {
 
 	dashboardHandler.RegisterRoutes(router, authMiddleware)
 	reportHandler.RegisterRoutes(router, authMiddleware)
+	excelExportHandler.RegisterRoutes(router, authMiddleware)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

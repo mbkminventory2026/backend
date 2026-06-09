@@ -211,9 +211,9 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 		// 1. Logika Pengait Otomatis ke WORK_ORDER_SHELL (Kain)
 		for _, s := range recordedShells {
 			// Skenario A: Warna match DAN teks deskripsi mirip
-			textMatch := strings.Contains(strings.ToLower(materialReq.Description), strings.ToLower(s.Fabric)) || 
-						 strings.Contains(strings.ToLower(s.Fabric), strings.ToLower(materialReq.Description))
-			
+			textMatch := strings.Contains(strings.ToLower(materialReq.Description), strings.ToLower(s.Fabric)) ||
+				strings.Contains(strings.ToLower(s.Fabric), strings.ToLower(materialReq.Description))
+
 			if strings.EqualFold(materialReq.Color, s.Color) && (textMatch || materialReq.Description == "") {
 				idWoShell = pgtype.Int4{Int32: s.ID, Valid: true}
 				fmt.Printf("   -> 🎉 MATCH FOUND ke Shell ID: %d (Fabric: %s)\n", s.ID, s.Fabric)
@@ -224,9 +224,9 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 		// 2. Logika Pengait Otomatis ke WORK_ORDER_TRIM (Aksesoris)
 		if !idWoShell.Valid {
 			for _, t := range recordedTrims {
-				textMatch := strings.Contains(strings.ToLower(materialReq.Description), strings.ToLower(t.Item)) || 
-							 strings.Contains(strings.ToLower(t.Item), strings.ToLower(materialReq.Description))
-				
+				textMatch := strings.Contains(strings.ToLower(materialReq.Description), strings.ToLower(t.Item)) ||
+					strings.Contains(strings.ToLower(t.Item), strings.ToLower(materialReq.Description))
+
 				if strings.EqualFold(materialReq.Color, t.Color) && (textMatch || materialReq.Description == "") {
 					idWoTrim = pgtype.Int4{Int32: t.ID, Valid: true}
 					fmt.Printf("   -> 🎉 MATCH FOUND ke Trim ID: %d (Item: %s)\n", t.ID, t.Item)

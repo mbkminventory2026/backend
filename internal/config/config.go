@@ -29,6 +29,7 @@ const (
 	defaultServerWriteTO   = "60s"
 	defaultServerIdleTO    = "120s"
 	defaultShutdownTO      = "15s"
+	defaultExportTemplate  = "templates/exports"
 )
 
 // Config stores all application settings loaded from .env or system environment.
@@ -60,6 +61,8 @@ type Config struct {
 
 	LoginRateLimitMaxAttempts int `mapstructure:"LOGIN_RATE_LIMIT_MAX_ATTEMPTS"`
 	LoginRateLimitWindowSec   int `mapstructure:"LOGIN_RATE_LIMIT_WINDOW_SECONDS"`
+
+	ExportTemplateDir string `mapstructure:"EXPORT_TEMPLATE_DIR"`
 }
 
 // Load reads configuration from .env (if present) and environment variables.
@@ -78,6 +81,7 @@ func Load() (*Config, error) {
 		"DB_HEALTH_CHECK_PERIOD_SECONDS", "DB_CONNECT_TIMEOUT_SECONDS",
 		"JWT_SECRET", "TURNSTILE_SECRET",
 		"LOGIN_RATE_LIMIT_MAX_ATTEMPTS", "LOGIN_RATE_LIMIT_WINDOW_SECONDS",
+		"EXPORT_TEMPLATE_DIR",
 	} {
 		if err := viper.BindEnv(key); err != nil {
 			return nil, fmt.Errorf("bind env %s: %w", key, err)
@@ -100,6 +104,7 @@ func Load() (*Config, error) {
 	viper.SetDefault("SERVER_WRITE_TIMEOUT", defaultServerWriteTO)
 	viper.SetDefault("SERVER_IDLE_TIMEOUT", defaultServerIdleTO)
 	viper.SetDefault("SHUTDOWN_TIMEOUT", defaultShutdownTO)
+	viper.SetDefault("EXPORT_TEMPLATE_DIR", defaultExportTemplate)
 
 	if err := viper.ReadInConfig(); err != nil {
 		var configNotFound viper.ConfigFileNotFoundError

@@ -131,16 +131,16 @@ func (u *ProfilPerusahaanUseCase) UpdateProfilPerusahaan(ctx context.Context, id
 
 	item, err := u.repo.UpdateProfilPerusahaan(ctx, entity.UpdateProfilPerusahaanParams{
 		IDProfilPerusahaan: id,
-		Nama:                req.Nama,
-		Alamat:              req.Alamat,
-		Email:               req.Email,
-		NoTelp:              req.NoTelp,
-		About:               req.About,
-		Logo:                req.Logo,
-		BackgroundLogin:     req.BackgroundLogin,
-		TextFooter:          req.TextFooter,
-		LinkWebsite:         req.LinkWebsite,
-		Medsos:              medsosBytes,
+		Nama:               req.Nama,
+		Alamat:             req.Alamat,
+		Email:              req.Email,
+		NoTelp:             req.NoTelp,
+		About:              req.About,
+		Logo:               req.Logo,
+		BackgroundLogin:    req.BackgroundLogin,
+		TextFooter:         req.TextFooter,
+		LinkWebsite:        req.LinkWebsite,
+		Medsos:             medsosBytes,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

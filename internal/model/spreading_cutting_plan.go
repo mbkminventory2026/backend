@@ -58,11 +58,11 @@ type RatioSpreadingResponse struct {
 }
 
 type KomponenSpreadingResponse struct {
-	IDKomponenSpreading       int32                    `json:"id_komponen_spreading"`
-	IDSpreadingCuttingPlan    int32                    `json:"id_spreading_cutting_plan"`
-	NamaKomponen              string                   `json:"nama_komponen"`
-	CreatedAt                 string                   `json:"created_at"`
-	Ratios                    []RatioSpreadingResponse `json:"ratios"`
+	IDKomponenSpreading    int32                    `json:"id_komponen_spreading"`
+	IDSpreadingCuttingPlan int32                    `json:"id_spreading_cutting_plan"`
+	NamaKomponen           string                   `json:"nama_komponen"`
+	CreatedAt              string                   `json:"created_at"`
+	Ratios                 []RatioSpreadingResponse `json:"ratios"`
 }
 
 type SpreadingCuttingPlanResponse struct {

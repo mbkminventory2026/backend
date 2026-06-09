@@ -952,10 +952,10 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 			var idMli int32
 			desc := fmt.Sprintf("WO Test 1 Shell %d Fabric", i+1)
 			err = db.QueryRow(ctx, `
-				INSERT INTO MATERIAL_LIST_ITEM (DESCRIPTION, ID_WO_SHELL, ID_WO_TRIM)
-				VALUES ($1, $2, NULL)
+				INSERT INTO MATERIAL_LIST_ITEM (DESCRIPTION, ID_WO, ID_WO_SHELL, ID_WO_TRIM)
+				VALUES ($1, $2, $3, NULL)
 				RETURNING ID_MATERIAL_LIST_ITEM
-			`, desc, idShell).Scan(&idMli)
+			`, desc, idWo1, idShell).Scan(&idMli)
 			if err != nil {
 				return err
 			}
@@ -970,10 +970,10 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 			var idMli int32
 			desc := fmt.Sprintf("WO Test 1 Trim %d", i+1)
 			err = db.QueryRow(ctx, `
-				INSERT INTO MATERIAL_LIST_ITEM (DESCRIPTION, ID_WO_SHELL, ID_WO_TRIM)
-				VALUES ($1, NULL, $2)
+				INSERT INTO MATERIAL_LIST_ITEM (DESCRIPTION, ID_WO, ID_WO_SHELL, ID_WO_TRIM)
+				VALUES ($1, $2, NULL, $3)
 				RETURNING ID_MATERIAL_LIST_ITEM
-			`, desc, idTrim).Scan(&idMli)
+			`, desc, idWo1, idTrim).Scan(&idMli)
 			if err != nil {
 				return err
 			}
@@ -1028,10 +1028,10 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		// WO 2 Details: Material List Item
 		var idMliWO2 int32
 		err = db.QueryRow(ctx, `
-			INSERT INTO MATERIAL_LIST_ITEM (DESCRIPTION, ID_WO_SHELL, ID_WO_TRIM)
-			VALUES ('WO Test 2 Fabric', $1, NULL)
+			INSERT INTO MATERIAL_LIST_ITEM (DESCRIPTION, ID_WO, ID_WO_SHELL, ID_WO_TRIM)
+			VALUES ('WO Test 2 Fabric', $1, $2, NULL)
 			RETURNING ID_MATERIAL_LIST_ITEM
-		`, idShellWO2).Scan(&idMliWO2)
+		`, idWo2, idShellWO2).Scan(&idMliWO2)
 		if err != nil {
 			return err
 		}

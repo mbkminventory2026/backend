@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	ErrMasterDataNotFound             = errors.New("master data not found")
-	ErrMasterDataConflict             = errors.New("master data already exists")
-	ErrMasterDataDuplicateCode        = errors.New("master data code already exists")
+	ErrMasterDataNotFound      = errors.New("master data not found")
+	ErrMasterDataConflict      = errors.New("master data already exists")
+	ErrMasterDataDuplicateCode = errors.New("master data code already exists")
 
 	departemenSortColumns  = buildSortWhitelist("created_at", "id_departemen", "nama_departemen")
 	jenisBarangSortColumns = buildSortWhitelist("created_at", "id_jenis_barang", "kode", "nama_jenis_barang")
@@ -581,8 +581,6 @@ func (u *MasterDataUseCase) DeleteHakAkses(ctx context.Context, id int32) error 
 	}
 	return nil
 }
-
-
 
 func mapMasterDataConflict(err error) error {
 	var pgErr *pgconn.PgError
