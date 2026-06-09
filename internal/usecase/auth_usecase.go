@@ -210,7 +210,7 @@ func (u *AuthUseCase) ChangePassword(ctx context.Context, userID int32, req mode
 		return nil, ErrPasswordConfirmationMismatch
 	}
 
-	userDetail, err := u.userRepo.GetUserByID(ctx, userID)
+	beforeUser, err := u.userRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrInvalidCredentials
@@ -218,7 +218,7 @@ func (u *AuthUseCase) ChangePassword(ctx context.Context, userID int32, req mode
 		return nil, fmt.Errorf("%w: get user detail", ErrAuthServiceUnavailable)
 	}
 
-	rawUser, err := u.userRepo.GetUserByUsername(ctx, userDetail.Username)
+	rawUser, err := u.userRepo.GetUserByUsername(ctx, beforeUser.Username)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrInvalidCredentials
@@ -248,13 +248,28 @@ func (u *AuthUseCase) ChangePassword(ctx context.Context, userID int32, req mode
 		return nil, ErrInvalidCredentials
 	}
 
+	afterUser, err := u.userRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrInvalidCredentials
+		}
+		return nil, fmt.Errorf("%w: get user detail after password change", ErrAuthServiceUnavailable)
+	}
+
 	var idMitra *int32
-	if userDetail.IDMitra.Valid {
-		val := userDetail.IDMitra.Int32
+	if afterUser.IDMitra.Valid {
+		val := afterUser.IDMitra.Int32
 		idMitra = &val
 	}
 
-	return u.issueLoginToken(ctx, userID, userDetail.IDRole, userDetail.NamaRole, idMitra, false)
+	res, err := u.issueLoginToken(ctx, userID, afterUser.IDRole, afterUser.NamaRole, idMitra, false)
+	if err != nil {
+		return nil, err
+	}
+
+	u.recordChangePasswordAudit(ctx, beforeUser, afterUser)
+
+	return res, nil
 }
 
 func (u *AuthUseCase) CreateForgotPasswordRequest(ctx context.Context, req model.ForgotPasswordRequestCreateRequest) (*model.PasswordResetRequestResponse, error) {
@@ -585,6 +600,65 @@ func (u *AuthUseCase) recordPasswordResetRequestCreateAudit(ctx context.Context,
 	}); err != nil {
 		slog.Error("failed to record password reset request create audit log", slog.String("error", err.Error()))
 	}
+}
+
+func (u *AuthUseCase) recordChangePasswordAudit(ctx context.Context, beforeUser, afterUser entity.GetUserByIDRow) {
+	if u.auditLog == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	beforeSnapshot := buildAuthUserAuditSnapshot(beforeUser)
+	afterSnapshot := buildAuthUserAuditSnapshot(afterUser)
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        "UPDATE",
+		Module:        "user-management",
+		EntityType:    "users",
+		EntityID:      fmt.Sprintf("%d", afterUser.IDUser),
+		EntityLabel:   afterUser.Username,
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		BeforeData:    beforeSnapshot,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(beforeSnapshot, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record change password audit log", slog.String("error", err.Error()))
+	}
+}
+
+func buildAuthUserAuditSnapshot(user entity.GetUserByIDRow) map[string]any {
+	snapshot := map[string]any{
+		"id_user":              user.IDUser,
+		"username":             user.Username,
+		"status":               user.Status,
+		"id_role":              user.IDRole,
+		"nama_role":            user.NamaRole,
+		"must_change_password": user.MustChangePassword,
+		"password_changed_at":  nullableTimestampString(user.PasswordChangedAt),
+		"created_at":           nullableTimestampString(user.CreatedAt),
+		"nama_departemen":      nullableTextString(user.NamaDepartemen),
+		"nama_perusahaan":      nullableTextString(user.NamaPerusahaan),
+	}
+
+	if user.IDDepartemen.Valid {
+		snapshot["id_departemen"] = user.IDDepartemen.Int32
+	} else {
+		snapshot["id_departemen"] = nil
+	}
+
+	if user.IDMitra.Valid {
+		snapshot["id_mitra"] = user.IDMitra.Int32
+	} else {
+		snapshot["id_mitra"] = nil
+	}
+
+	return snapshot
 }
 
 func buildPasswordResetRequestAuditSnapshot(request *model.PasswordResetRequestResponse) map[string]any {
