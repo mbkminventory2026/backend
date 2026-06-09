@@ -975,22 +975,27 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 			return err
 		}
 
-		// Material List Items for Shells and Trims of WO 1
-		var mliIDs []int32
+		// Material List utama untuk WO 1 (1 grouping container + N items).
+		var idMLWo1 int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO MATERIAL_LIST (ID_WO, NAME)
+			VALUES ($1, 'Material List Utama')
+			RETURNING ID_MATERIAL_LIST
+		`, idWo1).Scan(&idMLWo1)
+		if err != nil {
+			return err
+		}
 
 		// Shells Material List Items
 		for i, idShell := range []int32{idShell1, idShell2, idShell3} {
-			var idMli int32
 			desc := fmt.Sprintf("WO Test 1 Shell %d Fabric", i+1)
-			err = db.QueryRow(ctx, `
-				INSERT INTO MATERIAL_LIST_ITEM (DESCRIPTION, ID_WO, ID_WO_SHELL, ID_WO_TRIM)
-				VALUES ($1, $2, $3, NULL)
-				RETURNING ID_MATERIAL_LIST_ITEM
-			`, desc, idWo1, idShell).Scan(&idMli)
+			_, err = db.Exec(ctx, `
+				INSERT INTO MATERIAL_LIST_ITEM (ID_MATERIAL_LIST, ITEM, DESCRIPTION, QTY, UNIT, EST_PRICE, ID_WO_SHELL, ID_WO_TRIM)
+				VALUES ($1, $2, $3, 0, 'yds', 0, $4, NULL)
+			`, idMLWo1, desc, desc, idShell)
 			if err != nil {
 				return err
 			}
-			mliIDs = append(mliIDs, idMli)
 		}
 
 		// Trims Material List Items
@@ -998,25 +1003,11 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		trimIDs = append(trimIDs, idTrimButtonNavy, idTrimButtonMaroon)
 
 		for i, idTrim := range trimIDs {
-			var idMli int32
 			desc := fmt.Sprintf("WO Test 1 Trim %d", i+1)
-			err = db.QueryRow(ctx, `
-				INSERT INTO MATERIAL_LIST_ITEM (DESCRIPTION, ID_WO, ID_WO_SHELL, ID_WO_TRIM)
-				VALUES ($1, $2, NULL, $3)
-				RETURNING ID_MATERIAL_LIST_ITEM
-			`, desc, idWo1, idTrim).Scan(&idMli)
-			if err != nil {
-				return err
-			}
-			mliIDs = append(mliIDs, idMli)
-		}
-
-		// Insert into Material List
-		for _, idMli := range mliIDs {
 			_, err = db.Exec(ctx, `
-				INSERT INTO MATERIAL_LIST (ID_MATERIAL_LIST_ITEM)
-				VALUES ($1)
-			`, idMli)
+				INSERT INTO MATERIAL_LIST_ITEM (ID_MATERIAL_LIST, ITEM, DESCRIPTION, QTY, UNIT, EST_PRICE, ID_WO_SHELL, ID_WO_TRIM)
+				VALUES ($1, $2, $3, 0, 'pcs', 0, NULL, $4)
+			`, idMLWo1, desc, desc, idTrim)
 			if err != nil {
 				return err
 			}
@@ -1056,22 +1047,21 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 			}
 		}
 
-		// WO 2 Details: Material List Item
-		var idMliWO2 int32
+		// WO 2 Details: Material List utama + item.
+		var idMLWo2 int32
 		err = db.QueryRow(ctx, `
-			INSERT INTO MATERIAL_LIST_ITEM (DESCRIPTION, ID_WO, ID_WO_SHELL, ID_WO_TRIM)
-			VALUES ('WO Test 2 Fabric', $1, $2, NULL)
-			RETURNING ID_MATERIAL_LIST_ITEM
-		`, idWo2, idShellWO2).Scan(&idMliWO2)
+			INSERT INTO MATERIAL_LIST (ID_WO, NAME)
+			VALUES ($1, 'Material List Utama')
+			RETURNING ID_MATERIAL_LIST
+		`, idWo2).Scan(&idMLWo2)
 		if err != nil {
 			return err
 		}
 
-		// WO 2 Details: Material List
 		_, err = db.Exec(ctx, `
-			INSERT INTO MATERIAL_LIST (ID_MATERIAL_LIST_ITEM)
-			VALUES ($1)
-		`, idMliWO2)
+			INSERT INTO MATERIAL_LIST_ITEM (ID_MATERIAL_LIST, ITEM, DESCRIPTION, QTY, UNIT, EST_PRICE, ID_WO_SHELL, ID_WO_TRIM)
+			VALUES ($1, 'WO Test 2 Fabric', 'WO Test 2 Fabric', 0, 'yds', 0, $2, NULL)
+		`, idMLWo2, idShellWO2)
 		if err != nil {
 			return err
 		}
