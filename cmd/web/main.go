@@ -122,7 +122,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	transactionDocumentUseCase, err := usecase.NewTransactionDocumentUseCase(queries, dbPool)
+	transactionDocumentUseCase, err := usecase.NewTransactionDocumentUseCase(queries, dbPool, auditLogUseCase)
 	if err != nil {
 		logger.Error("failed to initialize transaction document usecase", slog.String("error", err.Error()))
 		dbPool.Close()
