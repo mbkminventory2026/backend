@@ -129,7 +129,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	workOrderProductionUseCase, err := usecase.NewWorkOrderProductionUseCase(queries, dbPool)
+	workOrderProductionUseCase, err := usecase.NewWorkOrderProductionUseCase(queries, dbPool, auditLogUseCase)
 	if err != nil {
 		logger.Error("failed to initialize work order production usecase", slog.String("error", err.Error()))
 		dbPool.Close()
