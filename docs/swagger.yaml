@@ -958,7 +958,22 @@ definitions:
       cons:
         minimum: 0
         type: number
-      fabric:
+      deskripsi:
+        type: string
+      material_type:
+        enum:
+        - fabric
+        - interlining
+        - Fabric
+        - Interlining
+        type: string
+      provided_by:
+        enum:
+        - client
+        - permata
+        - permatatex
+        - Client
+        - Permatatex
         type: string
       sizes:
         items:
@@ -970,7 +985,9 @@ definitions:
     - berat_1_yd
     - color
     - cons
-    - fabric
+    - deskripsi
+    - material_type
+    - provided_by
     - sizes
     type: object
   model.CreateWorkOrderShellSizeRequest:
@@ -1007,6 +1024,14 @@ definitions:
         type: string
       position:
         type: string
+      provided_by:
+        enum:
+        - client
+        - permata
+        - permatatex
+        - Client
+        - Permatatex
+        type: string
       qty:
         type: integer
       uom:
@@ -1017,6 +1042,7 @@ definitions:
     - color
     - cons
     - item
+    - provided_by
     - qty
     - uom
     type: object
@@ -1506,7 +1532,7 @@ definitions:
         type: string
       created_at:
         type: string
-      fabric:
+      deskripsi:
         type: string
       id_marker_plan:
         type: integer
@@ -3333,7 +3359,7 @@ definitions:
     properties:
       color:
         type: string
-      fabric:
+      deskripsi:
         type: string
       id_timeline:
         type: integer
@@ -3585,10 +3611,14 @@ definitions:
         type: number
       created_at:
         type: string
-      fabric:
+      deskripsi:
         type: string
       id_wo_shell:
         type: integer
+      material_type:
+        type: string
+      provided_by:
+        type: string
       sizes:
         items:
           $ref: '#/definitions/model.WorkOrderShellSizeResponse'
@@ -3679,6 +3709,8 @@ definitions:
       item:
         type: string
       position:
+        type: string
+      provided_by:
         type: string
       qty:
         type: integer
@@ -4336,7 +4368,7 @@ paths:
         in: query
         name: limit
         type: integer
-      - description: Search by document number, model, buyer, fabric
+      - description: Search by document number, model, buyer, deskripsi
         in: query
         name: search
         type: string

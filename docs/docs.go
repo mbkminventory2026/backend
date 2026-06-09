@@ -966,7 +966,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Search by document number, model, buyer, fabric",
+                        "description": "Search by document number, model, buyer, deskripsi",
                         "name": "search",
                         "in": "query"
                     }
@@ -6740,7 +6740,9 @@ const docTemplate = `{
                 "berat_1_yd",
                 "color",
                 "cons",
-                "fabric",
+                "deskripsi",
+                "material_type",
+                "provided_by",
                 "sizes"
             ],
             "properties": {
@@ -6759,8 +6761,27 @@ const docTemplate = `{
                     "type": "number",
                     "minimum": 0
                 },
-                "fabric": {
+                "deskripsi": {
                     "type": "string"
+                },
+                "material_type": {
+                    "type": "string",
+                    "enum": [
+                        "fabric",
+                        "interlining",
+                        "Fabric",
+                        "Interlining"
+                    ]
+                },
+                "provided_by": {
+                    "type": "string",
+                    "enum": [
+                        "client",
+                        "permata",
+                        "permatatex",
+                        "Client",
+                        "Permatatex"
+                    ]
                 },
                 "sizes": {
                     "type": "array",
@@ -6799,6 +6820,7 @@ const docTemplate = `{
                 "color",
                 "cons",
                 "item",
+                "provided_by",
                 "qty",
                 "uom"
             ],
@@ -6828,6 +6850,16 @@ const docTemplate = `{
                 },
                 "position": {
                     "type": "string"
+                },
+                "provided_by": {
+                    "type": "string",
+                    "enum": [
+                        "client",
+                        "permata",
+                        "permatatex",
+                        "Client",
+                        "Permatatex"
+                    ]
                 },
                 "qty": {
                     "type": "integer"
@@ -7557,7 +7589,7 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "fabric": {
+                "deskripsi": {
                     "type": "string"
                 },
                 "id_marker_plan": {
@@ -10300,7 +10332,7 @@ const docTemplate = `{
                 "color": {
                     "type": "string"
                 },
-                "fabric": {
+                "deskripsi": {
                     "type": "string"
                 },
                 "id_timeline": {
@@ -10678,11 +10710,17 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "fabric": {
+                "deskripsi": {
                     "type": "string"
                 },
                 "id_wo_shell": {
                     "type": "integer"
+                },
+                "material_type": {
+                    "type": "string"
+                },
+                "provided_by": {
+                    "type": "string"
                 },
                 "sizes": {
                     "type": "array",
@@ -10819,6 +10857,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "position": {
+                    "type": "string"
+                },
+                "provided_by": {
                     "type": "string"
                 },
                 "qty": {

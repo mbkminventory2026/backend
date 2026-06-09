@@ -204,7 +204,7 @@ SELECT
     mp.tanggal_efektif,
     mp.id_wo_shell,
     mp.created_at,
-    wos.fabric,
+    wos.deskripsi,
     wos.color,
     wo.id_wo,
     wo.buyer,
@@ -220,7 +220,7 @@ WHERE (
     mp.no_dokumen ILIKE '%' || $1 || '%' OR
     wo.buyer ILIKE '%' || $1 || '%' OR
     wo.model ILIKE '%' || $1 || '%' OR
-    wos.fabric ILIKE '%' || $1 || '%'
+    wos.deskripsi ILIKE '%' || $1 || '%'
 ) AND (
     $2::integer IS NULL OR
     pc.id_mitra = $2::integer
@@ -255,7 +255,7 @@ type ListMarkerPlansRow struct {
 	TanggalEfektif pgtype.Date        `json:"tanggal_efektif"`
 	IDWoShell      int32              `json:"id_wo_shell"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
-	Fabric         string             `json:"fabric"`
+	Deskripsi      string             `json:"deskripsi"`
 	Color          string             `json:"color"`
 	IDWo           int32              `json:"id_wo"`
 	Buyer          string             `json:"buyer"`
@@ -285,7 +285,7 @@ func (q *Queries) ListMarkerPlans(ctx context.Context, arg ListMarkerPlansParams
 			&i.TanggalEfektif,
 			&i.IDWoShell,
 			&i.CreatedAt,
-			&i.Fabric,
+			&i.Deskripsi,
 			&i.Color,
 			&i.IDWo,
 			&i.Buyer,

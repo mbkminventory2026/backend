@@ -963,7 +963,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Search by document number, model, buyer, fabric",
+                        "description": "Search by document number, model, buyer, deskripsi",
                         "name": "search",
                         "in": "query"
                     }
@@ -6737,7 +6737,9 @@
                 "berat_1_yd",
                 "color",
                 "cons",
-                "fabric",
+                "deskripsi",
+                "material_type",
+                "provided_by",
                 "sizes"
             ],
             "properties": {
@@ -6756,8 +6758,27 @@
                     "type": "number",
                     "minimum": 0
                 },
-                "fabric": {
+                "deskripsi": {
                     "type": "string"
+                },
+                "material_type": {
+                    "type": "string",
+                    "enum": [
+                        "fabric",
+                        "interlining",
+                        "Fabric",
+                        "Interlining"
+                    ]
+                },
+                "provided_by": {
+                    "type": "string",
+                    "enum": [
+                        "client",
+                        "permata",
+                        "permatatex",
+                        "Client",
+                        "Permatatex"
+                    ]
                 },
                 "sizes": {
                     "type": "array",
@@ -6796,6 +6817,7 @@
                 "color",
                 "cons",
                 "item",
+                "provided_by",
                 "qty",
                 "uom"
             ],
@@ -6825,6 +6847,16 @@
                 },
                 "position": {
                     "type": "string"
+                },
+                "provided_by": {
+                    "type": "string",
+                    "enum": [
+                        "client",
+                        "permata",
+                        "permatatex",
+                        "Client",
+                        "Permatatex"
+                    ]
                 },
                 "qty": {
                     "type": "integer"
@@ -7554,7 +7586,7 @@
                 "created_at": {
                     "type": "string"
                 },
-                "fabric": {
+                "deskripsi": {
                     "type": "string"
                 },
                 "id_marker_plan": {
@@ -10297,7 +10329,7 @@
                 "color": {
                     "type": "string"
                 },
-                "fabric": {
+                "deskripsi": {
                     "type": "string"
                 },
                 "id_timeline": {
@@ -10675,11 +10707,17 @@
                 "created_at": {
                     "type": "string"
                 },
-                "fabric": {
+                "deskripsi": {
                     "type": "string"
                 },
                 "id_wo_shell": {
                     "type": "integer"
+                },
+                "material_type": {
+                    "type": "string"
+                },
+                "provided_by": {
+                    "type": "string"
                 },
                 "sizes": {
                     "type": "array",
@@ -10816,6 +10854,9 @@
                     "type": "string"
                 },
                 "position": {
+                    "type": "string"
+                },
+                "provided_by": {
                     "type": "string"
                 },
                 "qty": {

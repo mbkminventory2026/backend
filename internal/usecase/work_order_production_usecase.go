@@ -92,9 +92,9 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 
 	// Struct bantuan untuk melacak ID yang dihasilkan database selama runtime transaksi
 	type ShellTrack struct {
-		ID     int32
-		Fabric string
-		Color  string
+		ID        int32
+		Deskripsi string
+		Color     string
 	}
 	type TrimTrack struct {
 		ID    int32
@@ -106,12 +106,14 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 	shells := make([]model.WorkOrderShellResponse, 0, len(req.Shells))
 	for _, shellReq := range req.Shells {
 		shell, shellErr := qtx.CreateWorkOrderShell(ctx, entity.CreateWorkOrderShellParams{
-			Fabric:   shellReq.Fabric,
-			Cons:     mustNumeric(shellReq.Cons),
-			Color:    shellReq.Color,
-			Allow:    shellReq.Allow,
-			Berat1Yd: mustNumeric(shellReq.Berat1Yd),
-			IDWo:     header.IDWo,
+			Deskripsi:    shellReq.Deskripsi,
+			Cons:         mustNumeric(shellReq.Cons),
+			Color:        shellReq.Color,
+			Allow:        shellReq.Allow,
+			Berat1Yd:     mustNumeric(shellReq.Berat1Yd),
+			IDWo:         header.IDWo,
+			ProvidedBy:   shellReq.ProvidedBy,
+			MaterialType: shellReq.MaterialType,
 		})
 		if shellErr != nil {
 			return nil, mapWorkOrderDBError(shellErr)
@@ -119,9 +121,9 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 
 		// Simpan informasi kain untuk pencocokan material garmen nanti
 		recordedShells = append(recordedShells, ShellTrack{
-			ID:     shell.IDWoShell,
-			Fabric: shell.Fabric,
-			Color:  shell.Color,
+			ID:        shell.IDWoShell,
+			Deskripsi: shell.Deskripsi,
+			Color:     shell.Color,
 		})
 
 		sizes := make([]model.WorkOrderShellSizeResponse, 0, len(shellReq.Sizes))
@@ -146,14 +148,16 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 		}
 
 		shells = append(shells, model.WorkOrderShellResponse{
-			ID:        shell.IDWoShell,
-			Fabric:    shell.Fabric,
-			Cons:      numericToFloat64(shell.Cons),
-			Color:     shell.Color,
-			Allow:     shell.Allow,
-			Berat1Yd:  numericToFloat64(shell.Berat1Yd),
-			CreatedAt: shell.CreatedAt.Time.Format(time.RFC3339),
-			Sizes:     sizes,
+			ID:           shell.IDWoShell,
+			Deskripsi:    shell.Deskripsi,
+			Cons:         numericToFloat64(shell.Cons),
+			Color:        shell.Color,
+			Allow:        shell.Allow,
+			Berat1Yd:     numericToFloat64(shell.Berat1Yd),
+			CreatedAt:    shell.CreatedAt.Time.Format(time.RFC3339),
+			ProvidedBy:   shell.ProvidedBy,
+			MaterialType: shell.MaterialType,
+			Sizes:        sizes,
 		})
 	}
 
@@ -172,6 +176,7 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 			CreatedBy:   trimReq.CreatedBy,
 			Allow:       trimReq.Allow,
 			IDWo:        header.IDWo,
+			ProvidedBy:  trimReq.ProvidedBy,
 		})
 		if trimErr != nil {
 			return nil, mapWorkOrderDBError(trimErr)
@@ -197,80 +202,83 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 			CreatedBy:   trim.CreatedBy,
 			Allow:       trim.Allow,
 			CreatedAt:   trim.CreatedAt.Time.Format(time.RFC3339),
+			ProvidedBy:  trim.ProvidedBy,
 		})
 	}
 
-	materials := make([]model.MaterialListResponse, 0, len(req.MaterialLists))
-	for _, materialReq := range req.MaterialLists {
+	// Buat Material List utama untuk WO (auto-create, satu ML default per WO).
+	defaultML, mlErr := qtx.CreateMaterialList(ctx, entity.CreateMaterialListParams{
+		IDWo: header.IDWo,
+		Name: "Material List Utama",
+	})
+	if mlErr != nil {
+		return nil, mapWorkOrderDBError(mlErr)
+	}
+
+	items := make([]model.MaterialListItemResponse, 0, len(req.MaterialListItems))
+	for _, itemReq := range req.MaterialListItems {
 		var idWoShell pgtype.Int4
 		var idWoTrim pgtype.Int4
 
-		// [DEBUG LOG] Pantau data apa yang sedang dibaca backend
-		fmt.Printf("[WO-DEBUG] Memproses Material: Desc='%s' | Color='%s'\n", materialReq.Description, materialReq.Color)
-
-		// 1. Logika Pengait Otomatis ke WORK_ORDER_SHELL (Kain)
-		for _, s := range recordedShells {
-			// Skenario A: Warna match DAN teks deskripsi mirip
-			textMatch := strings.Contains(strings.ToLower(materialReq.Description), strings.ToLower(s.Fabric)) ||
-				strings.Contains(strings.ToLower(s.Fabric), strings.ToLower(materialReq.Description))
-
-			if strings.EqualFold(materialReq.Color, s.Color) && (textMatch || materialReq.Description == "") {
-				idWoShell = pgtype.Int4{Int32: s.ID, Valid: true}
-				fmt.Printf("   -> 🎉 MATCH FOUND ke Shell ID: %d (Fabric: %s)\n", s.ID, s.Fabric)
-				break
+		if itemReq.ShellIndex != nil {
+			idx := *itemReq.ShellIndex
+			if idx >= 0 && idx < len(recordedShells) {
+				idWoShell = pgtype.Int4{Int32: recordedShells[idx].ID, Valid: true}
+			}
+		} else if itemReq.TrimIndex != nil {
+			idx := *itemReq.TrimIndex
+			if idx >= 0 && idx < len(recordedTrims) {
+				idWoTrim = pgtype.Int4{Int32: recordedTrims[idx].ID, Valid: true}
 			}
 		}
 
-		// 2. Logika Pengait Otomatis ke WORK_ORDER_TRIM (Aksesoris)
-		if !idWoShell.Valid {
-			for _, t := range recordedTrims {
-				textMatch := strings.Contains(strings.ToLower(materialReq.Description), strings.ToLower(t.Item)) ||
-					strings.Contains(strings.ToLower(t.Item), strings.ToLower(materialReq.Description))
-
-				if strings.EqualFold(materialReq.Color, t.Color) && (textMatch || materialReq.Description == "") {
-					idWoTrim = pgtype.Int4{Int32: t.ID, Valid: true}
-					fmt.Printf("   -> 🎉 MATCH FOUND ke Trim ID: %d (Item: %s)\n", t.ID, t.Item)
-					break
-				}
-			}
+		itemName := itemReq.Item
+		if itemName == "" {
+			itemName = itemReq.Description
 		}
 
-		// Skenario Fallback: Jika teks tidak ada yang mirip, tapi warna sama persis dengan kain tunggal
-		if !idWoShell.Valid && !idWoTrim.Valid && len(recordedShells) == 1 {
-			if strings.EqualFold(materialReq.Color, recordedShells[0].Color) {
-				idWoShell = pgtype.Int4{Int32: recordedShells[0].ID, Valid: true}
-				fmt.Printf("   -> ⚠️ FALLBACK MATCH (Hanya 1 Shell): Terhubung ke Shell ID %d karena kesamaan warna\n", recordedShells[0].ID)
-			}
-		}
-
-		// Jika tetap tidak ketemu match sama sekali
-		if !idWoShell.Valid && !idWoTrim.Valid {
-			fmt.Println("   -> ❌ NO MATCH FOUND: Kolom akan bernilai NULL di database.")
-		}
-
-		// 3. Eksekusi simpan ke database dengan parameter ter-update
-		material, materialErr := qtx.CreateMaterialList(ctx, entity.CreateMaterialListParams{
-			Description: materialReq.Description,
-			Size:        materialReq.Size,
-			Color:       materialReq.Color,
-			Uom:         materialReq.UOM,
-			IDWo:        header.IDWo,
-			IDWoShell:   idWoShell, // Hasil pencarian dinamis
-			IDWoTrim:    idWoTrim,  // Hasil pencarian dinamis
+		mli, mliErr := qtx.CreateMaterialListItem(ctx, entity.CreateMaterialListItemParams{
+			IDMaterialList: defaultML.IDMaterialList,
+			Item:           itemName,
+			Description:    itemReq.Description,
+			Qty:            itemReq.Qty,
+			Unit:           itemReq.Unit,
+			EstPrice:       mustNumeric(itemReq.EstPrice),
+			IDWoShell:      idWoShell,
+			IDWoTrim:       idWoTrim,
 		})
-		if materialErr != nil {
-			return nil, mapWorkOrderDBError(materialErr)
+		if mliErr != nil {
+			return nil, mapWorkOrderDBError(mliErr)
 		}
 
-		materials = append(materials, model.MaterialListResponse{
-			ID:          material.IDMaterialList,
-			Description: material.Description,
-			Size:        material.Size,
-			Color:       material.Color,
-			UOM:         material.Uom,
-			CreatedAt:   material.CreatedAt.Time.Format(time.RFC3339),
-		})
+		itemResp := model.MaterialListItemResponse{
+			ID:          mli.IDMaterialListItem,
+			Item:        mli.Item,
+			Description: mli.Description,
+			Qty:         mli.Qty,
+			Unit:        mli.Unit,
+			EstPrice:    numericToFloat64(mli.EstPrice),
+			CreatedAt:   mli.CreatedAt.Time.Format(time.RFC3339),
+		}
+		if mli.IDWoShell.Valid {
+			v := mli.IDWoShell.Int32
+			itemResp.IDWoShell = &v
+		}
+		if mli.IDWoTrim.Valid {
+			v := mli.IDWoTrim.Int32
+			itemResp.IDWoTrim = &v
+		}
+		items = append(items, itemResp)
 	}
+
+	materials := []model.MaterialListResponse{{
+		ID:        defaultML.IDMaterialList,
+		IDWo:      defaultML.IDWo,
+		Name:      defaultML.Name,
+		IsLocked:  defaultML.IsLocked,
+		CreatedAt: defaultML.CreatedAt.Time.Format(time.RFC3339),
+		Items:     items,
+	}}
 
 	err = initializeApprovalWorkflow(ctx, qtx, "WORK_ORDER", header.IDWo, userID)
 	if err != nil {
@@ -583,14 +591,16 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id 
 	shells := make([]model.WorkOrderShellResponse, 0, len(shellRows))
 	for _, row := range shellRows {
 		shells = append(shells, model.WorkOrderShellResponse{
-			ID:        row.IDWoShell,
-			Fabric:    row.Fabric,
-			Cons:      numericToFloat64(row.Cons),
-			Color:     row.Color,
-			Allow:     row.Allow,
-			Berat1Yd:  numericToFloat64(row.Berat1Yd),
-			CreatedAt: row.CreatedAt.Time.Format(time.RFC3339),
-			Sizes:     sizeMap[row.IDWoShell],
+			ID:           row.IDWoShell,
+			Deskripsi:    row.Deskripsi,
+			Cons:         numericToFloat64(row.Cons),
+			Color:        row.Color,
+			Allow:        row.Allow,
+			Berat1Yd:     numericToFloat64(row.Berat1Yd),
+			CreatedAt:    row.CreatedAt.Time.Format(time.RFC3339),
+			ProvidedBy:   row.ProvidedBy,
+			MaterialType: row.MaterialType,
+			Sizes:        sizeMap[row.IDWoShell],
 		})
 	}
 
@@ -609,18 +619,44 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id 
 			CreatedBy:   row.CreatedBy,
 			Allow:       row.Allow,
 			CreatedAt:   row.CreatedAt.Time.Format(time.RFC3339),
+			ProvidedBy:  row.ProvidedBy,
 		})
 	}
 
 	materials := make([]model.MaterialListResponse, 0, len(materialRows))
 	for _, row := range materialRows {
+		itemRows, itemErr := u.repo.ListMaterialListItemsByML(ctx, row.IDMaterialList)
+		if itemErr != nil {
+			return nil, fmt.Errorf("%w: failed to list material list items", ErrWorkOrderServiceUnavailable)
+		}
+		items := make([]model.MaterialListItemResponse, 0, len(itemRows))
+		for _, ir := range itemRows {
+			itemResp := model.MaterialListItemResponse{
+				ID:          ir.IDMaterialListItem,
+				Item:        ir.Item,
+				Description: ir.Description,
+				Qty:         ir.Qty,
+				Unit:        ir.Unit,
+				EstPrice:    numericToFloat64(ir.EstPrice),
+				CreatedAt:   ir.CreatedAt.Time.Format(time.RFC3339),
+			}
+			if ir.IDWoShell.Valid {
+				v := ir.IDWoShell.Int32
+				itemResp.IDWoShell = &v
+			}
+			if ir.IDWoTrim.Valid {
+				v := ir.IDWoTrim.Int32
+				itemResp.IDWoTrim = &v
+			}
+			items = append(items, itemResp)
+		}
 		materials = append(materials, model.MaterialListResponse{
-			ID:          row.IDMaterialList,
-			Description: row.Description,
-			Size:        row.Size,
-			Color:       row.Color,
-			UOM:         row.Uom,
-			CreatedAt:   row.CreatedAt.Time.Format(time.RFC3339),
+			ID:        row.IDMaterialList,
+			IDWo:      row.IDWo,
+			Name:      row.Name,
+			IsLocked:  row.IsLocked,
+			CreatedAt: row.CreatedAt.Time.Format(time.RFC3339),
+			Items:     items,
 		})
 	}
 

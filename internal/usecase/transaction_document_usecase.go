@@ -24,6 +24,7 @@ var (
 	ErrPOClientLockedForUpdate       = errors.New("po client cannot be updated because it is already used by work orders")
 	ErrPRInternalAlreadyApproved     = errors.New("pr internal is already approved")
 	ErrPRInternalNotApproved         = errors.New("pr internal is not approved yet")
+	ErrMaterialListAlreadyLocked     = errors.New("material list already linked to another PR internal")
 
 	poClientSortColumns   = buildSortWhitelist("created_at", "id_po_client", "po_number", "tanggal", "season", "delivery", "mitra_name")
 	prInternalSortColumns = buildSortWhitelist("created_at", "id_pr_internal", "tanggal", "nama", "departemen", "vendor_name", "projek", "status")
@@ -293,6 +294,26 @@ func (u *TransactionDocumentUseCase) CreatePRInternal(ctx context.Context, actor
 
 	qtx := entity.New(tx)
 
+	if req.IDMaterialList != nil {
+		exists, err := qtx.CheckMaterialListBelongsToWO(ctx, entity.CheckMaterialListBelongsToWOParams{
+			IDMaterialList: *req.IDMaterialList,
+			IDWo:           req.IDWO,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("%w: failed to validate material list", ErrTransactionServiceUnavailable)
+		}
+		if !exists {
+			return nil, ErrTransactionValidation
+		}
+		ml, err := qtx.GetMaterialList(ctx, *req.IDMaterialList)
+		if err != nil {
+			return nil, fmt.Errorf("%w: failed to load material list", ErrTransactionServiceUnavailable)
+		}
+		if ml.IsLocked {
+			return nil, ErrMaterialListAlreadyLocked
+		}
+	}
+
 	user, err := qtx.GetUserByID(ctx, actorUserID)
 	if err != nil {
 		return nil, fmt.Errorf("%w: failed to fetch user for PR internal", ErrTransactionServiceUnavailable)
@@ -318,6 +339,12 @@ func (u *TransactionDocumentUseCase) CreatePRInternal(ctx context.Context, actor
 	})
 	if err != nil {
 		return nil, mapTransactionDBError(err)
+	}
+
+	if req.IDMaterialList != nil {
+		if _, err := qtx.LockMaterialList(ctx, *req.IDMaterialList); err != nil {
+			return nil, fmt.Errorf("%w: failed to lock material list", ErrTransactionServiceUnavailable)
+		}
 	}
 
 	items := make([]model.PRInternalItemResponse, 0, len(req.Items))

@@ -97,7 +97,7 @@ func (h *MarkerPlanHandler) GetMarkerPlan(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        page    query     int     false  "Page (default 1)"
 // @Param        limit   query     int     false  "Limit (default 20)"
-// @Param        search  query     string  false  "Search by document number, model, buyer, fabric"
+// @Param        search  query     string  false  "Search by document number, model, buyer, deskripsi"
 // @Success      200     {object}  model.MarkerPlanListSuccessDoc
 // @Failure      400     {object}  model.MarkerPlanErrorDoc
 // @Failure      500     {object}  model.MarkerPlanErrorDoc

@@ -237,7 +237,7 @@ func (u *MarkerPlanUseCase) ListMarkerPlans(ctx context.Context, filter model.Tr
 			NoDokumen:      row.NoDokumen,
 			TanggalEfektif: formatDate(row.TanggalEfektif),
 			IDWoShell:      row.IDWoShell,
-			Fabric:         row.Fabric,
+			Deskripsi:      row.Deskripsi,
 			Color:          row.Color,
 			IDWo:           row.IDWo,
 			Buyer:          row.Buyer,
