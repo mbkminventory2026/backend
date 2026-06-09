@@ -4,6 +4,34 @@ Date: 2026-06-09
 Branch: `feat/log`
 Depends on: `2026-06-09-audit-log-v2-design.md`
 
+## Status Snapshot
+
+Completed:
+
+- Step 1. Database foundation
+- Step 2. Query foundation
+- Step 3. Backend model and usecase foundation
+- Step 4. Backend HTTP endpoints
+- Step 5. Users audit logging
+- Step 6. Roles and permissions audit logging
+- Step 7. Master data audit logging
+- Step 8. Frontend API foundation
+- Step 9. Frontend route and operator menu
+- Step 10. Frontend detail viewer
+- Step 11. Final quality control
+
+This means the original batch-one implementation plan is complete.
+
+## Next Active Subtasks
+
+The remaining work has moved to a follow-up backlog:
+
+1. `Integrated Audit Log Smoke Test`
+2. `Audit Logs for Auth and Approval Flows`
+3. `Audit Logs for Transaction Modules`
+4. `Frontend Filter Persistence`
+5. `Audit Log Detail Polish`
+
 ## Objective
 
 Implement Audit Log V2 batch one for operator-only history log with field-level before/after changes for:
@@ -21,179 +49,58 @@ Implement Audit Log V2 batch one for operator-only history log with field-level 
 
 The work will be delivered in small, reviewable commits. Each step must keep the project buildable before moving to the next one.
 
-## Step Breakdown
+## Follow-Up Breakdown
 
-### Step 1. Database foundation
-
-Goal:
-- create new `audit_logs` table
-
-Work:
-- add migration `up/down`
-- include indexes for common list filters:
-  - `created_at`
-  - `actor_user_id`
-  - `module`
-  - `entity_type`
-  - `action`
-
-Expected commit:
-- `feat(db): add audit logs table`
-
-### Step 2. Query foundation
+### Follow-Up 1. Integrated audit log smoke test
 
 Goal:
-- provide sqlc queries for creating and reading audit logs
+- validate the finished batch one flow end-to-end with real auth/session data
 
 Work:
-- add `db/query/audit_logs.sql`
-- generate sqlc code
-- support:
-  - insert audit log
-  - list audit logs with filters
-  - count audit logs
-  - get audit log by id
+- login as operator
+- create/update/delete records from supported modules
+- confirm logs appear in backend and FE correctly
+- confirm non-operator access is blocked
 
-Expected commit:
-- `feat(db): add audit log sqlc queries`
-
-### Step 3. Backend model and usecase foundation
+### Follow-Up 2. Auth and approval flow coverage
 
 Goal:
-- introduce normalized DTOs and core usecase methods
+- extend audit logs beyond CRUD resource pages into access-control workflows
 
 Work:
-- add request/response models
-- add diff item model
-- add `AuditLogUseCase`
-- add helper functions for:
-  - snapshot normalization
-  - changed field calculation
-  - operator-only list/detail handling
+- `approve/reject user`
+- `assign role to user`
+- `password reset request approve/reject/reset`
 
-Expected commit:
-- `feat(backend): add audit log models and usecase foundation`
-
-### Step 4. Backend HTTP endpoints
+### Follow-Up 3. Transaction module coverage
 
 Goal:
-- expose dedicated operator-only API
+- expand audit logs to operational modules
 
-Work:
-- add `AuditLogHandler`
-- register:
-  - `GET /api/v1/activity-logs`
-  - `GET /api/v1/activity-logs/:id`
-- enforce:
-  - auth
-  - internal user
-  - operator role
-  - `LOG_READ`
-- update Swagger
+Recommended first targets:
+- `pr-internal`
+- `po-internal`
+- `po-client`
+- `work-order`
 
-Expected commit:
-- `feat(backend): add activity log API endpoints`
-
-### Step 5. Users audit logging
+### Follow-Up 4. Frontend filter persistence
 
 Goal:
-- record audit logs for user create, update, delete
+- persist non-table audit log filters in URL so operator can refresh/share state
 
 Work:
-- capture `before_data`, `after_data`, and `changed_fields`
-- set:
-  - `module = user-management`
-  - `entity_type = users`
-  - `entity_label = username`
+- sync `action`, `module`, `entityType`, `dateFrom`, `dateTo` into route search params
 
-Expected commit:
-- `feat(backend): record audit logs for users`
-
-### Step 6. Roles and permissions audit logging
+### Follow-Up 5. Frontend detail polish
 
 Goal:
-- record audit logs for role and permission create, update, delete
+- make audit log detail easier to read in daily operator use
 
 Work:
-- `roles`
-- `hak_akses`
-
-Expected commit:
-- `feat(backend): record audit logs for roles and permissions`
-
-### Step 7. Master data audit logging
-
-Goal:
-- record audit logs for selected master data
-
-Work:
-- `departemen`
-- `barang`
-- `jenis_barang`
-- `mitra`
-- `warna`
-
-Expected commit:
-- `feat(backend): record audit logs for master data`
-
-### Step 8. Frontend API foundation
-
-Goal:
-- add FE client for the new operator log module
-
-Work:
-- add API methods for:
-  - list logs
-  - get log detail
-- define FE-side types
-
-Expected commit:
-- `feat(frontend): add activity log API client`
-
-### Step 9. Frontend route and operator menu
-
-Goal:
-- expose the module in operator navigation only
-
-Work:
-- add sidenav item `History Log`
-- add route `/history-log`
-- add route-level permission check
-
-Expected commit:
-- `feat(frontend): add operator history log route and page`
-
-### Step 10. Frontend detail viewer
-
-Goal:
-- allow operator to inspect changes
-
-Work:
-- build table with filters and pagination
-- add detail modal or drawer
-- prioritize `changed_fields`
-- show `before_data` and `after_data`
-
-Expected commit:
-- `feat(frontend): add activity log detail viewer`
-
-### Step 11. Final quality control
-
-Goal:
-- make the full batch releasable
-
-Work:
-- backend:
-  - `make migrate-up-docker`
-  - `make db-gen`
-  - `go build ./...`
-  - `make swag`
-  - `make lint`
-- frontend:
-  - `npm run build`
-
-Expected commit:
-- `chore: regenerate docs and run quality checks`
+- friendlier field labels
+- improved JSON formatting
+- stronger module/entity badges
+- optional diff grouping by section
 
 ## Testing Strategy
 
@@ -231,11 +138,6 @@ Control:
 
 ## Done Definition
 
-This batch is complete when:
+Original batch one is already complete.
 
-- operator can open a dedicated `History Log` page
-- only operator can access it
-- list and detail endpoints work
-- users, roles, permissions, and selected master data produce audit logs on CUD
-- update logs include field-level before/after changes
-- quality checks pass
+The next implementation cycle should start from the follow-up backlog above, not from the completed batch-one steps.

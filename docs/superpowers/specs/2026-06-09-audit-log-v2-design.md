@@ -4,6 +4,33 @@ Date: 2026-06-09
 Branch: `feat/log`
 Scope: Backend + Frontend foundation for operator-only history log with field-level before/after tracking
 
+## Current Status
+
+Implemented in `feat/log`:
+
+- new `audit_logs` table and sqlc queries
+- dedicated backend API:
+  - `GET /api/v1/activity-logs`
+  - `GET /api/v1/activity-logs/:id`
+- operator-only frontend `History Log` page
+- field-level audit logging for:
+  - `users`
+  - `roles`
+  - `permissions`
+  - `departemen`
+  - `barang`
+  - `jenis_barang`
+  - `mitra`
+  - `warna`
+
+Remaining backlog after batch one:
+
+- integrated end-to-end smoke testing with real operator login
+- audit logging for auth and approval flows
+- audit logging for transaction modules
+- FE filter persistence to URL for non-table filters
+- FE detail formatting polish
+
 ## Background
 
 Permatatex already has a legacy activity log foundation:
@@ -55,7 +82,7 @@ This gives better audit quality than patching the legacy structure, while avoidi
 
 ## Batch 1 Scope
 
-Batch one covers only:
+Batch one covers:
 
 - `users`
 - `roles`
@@ -65,6 +92,8 @@ Batch one covers only:
 - `jenis_barang`
 - `mitra`
 - `warna`
+
+Batch one is now implemented on branch `feat/log`.
 
 ## Architecture
 
