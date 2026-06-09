@@ -161,3 +161,45 @@ type ProductionDashboardMetrics struct {
 	RecentMarkerPlans                 []RecentMarkerPlan           `json:"recent_marker_plans"`
 	RecentSpreadingCuttingPlans       []RecentSpreadingCuttingPlan `json:"recent_spreading_cutting_plans"`
 }
+
+type RecentWarehouseSuratJalanClient struct {
+	IDSuratJalanClient  int32  `json:"id_surat_jalan_client"`
+	Tanggal             string `json:"tanggal"`
+	Keterangan          string `json:"keterangan"`
+	MaterialDescription string `json:"material_description"`
+}
+
+type RecentWarehouseSuratJalanInternal struct {
+	IDSuratJalanInternal int32  `json:"id_surat_jalan_internal"`
+	CreatedAt            string `json:"created_at"`
+}
+
+type RecentWarehouseBarang struct {
+	IDBarang    int32  `json:"id_barang"`
+	NamaBarang  string `json:"nama_barang"`
+	Kode        string `json:"kode"`
+	StokMinimum int32  `json:"stok_minimum"`
+	CreatedAt   string `json:"created_at"`
+}
+
+type LowStockAlert struct {
+	IDRekonsiliasiMaterial int32  `json:"id_rekonsiliasi_material"`
+	Description            string `json:"description"`
+	Size                   string `json:"size"`
+	Balance                int32  `json:"balance"`
+	LastBalance            int32  `json:"last_balance"`
+	Satuan                 string `json:"satuan"`
+	MinStock               int32  `json:"min_stock"`
+}
+
+type WarehouseDashboardMetrics struct {
+	TotalItems                               int64                               `json:"total_items"`
+	TotalSuratJalanClientThisMonth           int64                               `json:"total_surat_jalan_client_this_month"`
+	TotalSuratJalanInternalThisMonth         int64                               `json:"total_surat_jalan_internal_this_month"`
+	LowStockAlertsCount                      int64                               `json:"low_stock_alerts_count"`
+	RecentSuratJalanClients                  []RecentWarehouseSuratJalanClient   `json:"recent_surat_jalan_clients"`
+	RecentSuratJalanInternals                []RecentWarehouseSuratJalanInternal `json:"recent_surat_jalan_internals"`
+	RecentBarangs                            []RecentWarehouseBarang             `json:"recent_barangs"`
+	LowStockAlerts                           []LowStockAlert                     `json:"low_stock_alerts"`
+}
+
