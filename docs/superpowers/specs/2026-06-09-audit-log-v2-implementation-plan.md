@@ -27,10 +27,7 @@ This means the original batch-one implementation plan is complete.
 The remaining work has moved to a follow-up backlog:
 
 1. `Integrated Audit Log Smoke Test`
-2. `Audit Logs for Auth and Approval Flows`
-3. `Audit Logs for Transaction Modules`
-4. `Frontend Filter Persistence`
-5. `Audit Log Detail Polish`
+2. `Audit Logs for Transaction Modules`
 
 ## Objective
 
@@ -56,6 +53,10 @@ The work will be delivered in small, reviewable commits. Each step must keep the
 Goal:
 - validate the finished batch one flow end-to-end with real auth/session data
 
+Status:
+- pending
+- blocked on local Playwright browser availability in the current Windows environment
+
 Work:
 - login as operator
 - create/update/delete records from supported modules
@@ -67,10 +68,14 @@ Work:
 Goal:
 - extend audit logs beyond CRUD resource pages into access-control workflows
 
+Status:
+- completed on `feat/log`
+
 Work:
 - `approve/reject user`
 - `assign role to user`
-- `password reset request approve/reject/reset`
+- `password reset request create/approve/reject`
+- `change password`
 
 ### Follow-Up 3. Transaction module coverage
 
@@ -88,6 +93,9 @@ Recommended first targets:
 Goal:
 - persist non-table audit log filters in URL so operator can refresh/share state
 
+Status:
+- completed on `feat/log`
+
 Work:
 - sync `action`, `module`, `entityType`, `dateFrom`, `dateTo` into route search params
 
@@ -95,6 +103,9 @@ Work:
 
 Goal:
 - make audit log detail easier to read in daily operator use
+
+Status:
+- completed on `feat/log`
 
 Work:
 - friendlier field labels

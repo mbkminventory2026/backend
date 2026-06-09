@@ -26,8 +26,15 @@ Implemented in `feat/log`:
 Remaining backlog after batch one:
 
 - integrated end-to-end smoke testing with real operator login
-- audit logging for auth and approval flows
 - audit logging for transaction modules
+
+Already completed after batch one:
+
+- audit logging for auth and approval flows:
+  - `approve/reject user`
+  - `assign role to user`
+  - `password reset request create/approve/reject`
+  - `change password`
 - FE filter persistence to URL for non-table filters
 - FE detail formatting polish
 
