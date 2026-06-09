@@ -296,7 +296,7 @@ func (h *UserHandler) Approve(c *gin.Context) {
 		return
 	}
 
-	result, err := h.useCase.Approve(c.Request.Context(), id, req.Username)
+	result, err := h.useCase.Approve(withAuditLogContext(c), id, req.Username)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -321,7 +321,7 @@ func (h *UserHandler) Reject(c *gin.Context) {
 		return
 	}
 
-	err = h.useCase.Reject(c.Request.Context(), id)
+	err = h.useCase.Reject(withAuditLogContext(c), id)
 	if err != nil {
 		h.handleError(c, err)
 		return
