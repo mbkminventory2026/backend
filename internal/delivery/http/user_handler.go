@@ -64,7 +64,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 		actorUserID = &userID
 	}
 
-	result, err := h.useCase.Create(c.Request.Context(), actorUserID, req)
+	result, err := h.useCase.Create(withAuditLogContext(c), actorUserID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -160,7 +160,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 		actorUserID = &userID
 	}
 
-	result, err := h.useCase.Update(c.Request.Context(), id, actorUserID, req)
+	result, err := h.useCase.Update(withAuditLogContext(c), id, actorUserID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -260,7 +260,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	err = h.useCase.Delete(c.Request.Context(), id)
+	err = h.useCase.Delete(withAuditLogContext(c), id)
 	if err != nil {
 		h.handleError(c, err)
 		return

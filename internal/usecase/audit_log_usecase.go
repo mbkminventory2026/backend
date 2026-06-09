@@ -39,36 +39,40 @@ func (u *AuditLogUseCase) Record(ctx context.Context, req model.AuditLogRecordRe
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if err := validateAuditLogRecordRequest(req); err != nil {
+	enrichedReq, err := u.enrichAuditLogRecordRequest(ctx, req)
+	if err != nil {
+		return err
+	}
+	if err := validateAuditLogRecordRequest(enrichedReq); err != nil {
 		return err
 	}
 
-	beforeData, err := marshalOptionalAuditSnapshot(req.BeforeData)
+	beforeData, err := marshalOptionalAuditSnapshot(enrichedReq.BeforeData)
 	if err != nil {
 		return fmt.Errorf("%w: before_data", ErrAuditLogValidation)
 	}
 
-	afterData, err := marshalOptionalAuditSnapshot(req.AfterData)
+	afterData, err := marshalOptionalAuditSnapshot(enrichedReq.AfterData)
 	if err != nil {
 		return fmt.Errorf("%w: after_data", ErrAuditLogValidation)
 	}
 
-	changedFields, err := json.Marshal(req.ChangedFields)
+	changedFields, err := json.Marshal(enrichedReq.ChangedFields)
 	if err != nil {
 		return fmt.Errorf("%w: changed_fields", ErrAuditLogValidation)
 	}
 
 	_, err = u.repo.CreateAuditLog(ctx, entity.CreateAuditLogParams{
-		ActorUserID:   toPgInt4(req.ActorUserID),
-		ActorUsername: strings.TrimSpace(req.ActorUsername),
-		ActorRole:     strings.TrimSpace(req.ActorRole),
-		Action:        strings.ToUpper(strings.TrimSpace(req.Action)),
-		Module:        strings.TrimSpace(req.Module),
-		EntityType:    strings.TrimSpace(req.EntityType),
-		EntityID:      strings.TrimSpace(req.EntityID),
-		EntityLabel:   strings.TrimSpace(req.EntityLabel),
-		Method:        strings.ToUpper(strings.TrimSpace(req.Method)),
-		Route:         strings.TrimSpace(req.Route),
+		ActorUserID:   toPgInt4(enrichedReq.ActorUserID),
+		ActorUsername: strings.TrimSpace(enrichedReq.ActorUsername),
+		ActorRole:     strings.TrimSpace(enrichedReq.ActorRole),
+		Action:        strings.ToUpper(strings.TrimSpace(enrichedReq.Action)),
+		Module:        strings.TrimSpace(enrichedReq.Module),
+		EntityType:    strings.TrimSpace(enrichedReq.EntityType),
+		EntityID:      strings.TrimSpace(enrichedReq.EntityID),
+		EntityLabel:   strings.TrimSpace(enrichedReq.EntityLabel),
+		Method:        strings.ToUpper(strings.TrimSpace(enrichedReq.Method)),
+		Route:         strings.TrimSpace(enrichedReq.Route),
 		BeforeData:    beforeData,
 		AfterData:     afterData,
 		ChangedFields: changedFields,
@@ -78,6 +82,33 @@ func (u *AuditLogUseCase) Record(ctx context.Context, req model.AuditLogRecordRe
 	}
 
 	return nil
+}
+
+func (u *AuditLogUseCase) enrichAuditLogRecordRequest(ctx context.Context, req model.AuditLogRecordRequest) (model.AuditLogRecordRequest, error) {
+	if req.ActorUserID == nil {
+		return req, nil
+	}
+
+	if strings.TrimSpace(req.ActorUsername) != "" && strings.TrimSpace(req.ActorRole) != "" {
+		return req, nil
+	}
+
+	user, err := u.repo.GetUserByID(ctx, *req.ActorUserID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return req, ErrAuditLogValidation
+		}
+		return req, fmt.Errorf("%w: failed to resolve actor user", ErrAuditLogServiceUnavailable)
+	}
+
+	if strings.TrimSpace(req.ActorUsername) == "" {
+		req.ActorUsername = user.Username
+	}
+	if strings.TrimSpace(req.ActorRole) == "" {
+		req.ActorRole = user.NamaRole
+	}
+
+	return req, nil
 }
 
 func (u *AuditLogUseCase) List(ctx context.Context, filter model.AuditLogListFilter) (*model.AuditLogListResponse, error) {

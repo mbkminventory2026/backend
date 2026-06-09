@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgconn"
@@ -28,11 +29,12 @@ var (
 )
 
 type UserUseCase struct {
-	repo   entity.Querier
-	dbPool *pgxpool.Pool
+	repo     entity.Querier
+	dbPool   *pgxpool.Pool
+	auditLog *AuditLogUseCase
 }
 
-func NewUserUseCase(repo entity.Querier, dbPool *pgxpool.Pool) (*UserUseCase, error) {
+func NewUserUseCase(repo entity.Querier, dbPool *pgxpool.Pool, auditLog *AuditLogUseCase) (*UserUseCase, error) {
 	if repo == nil {
 		return nil, errors.New("user repository is required")
 	}
@@ -41,8 +43,9 @@ func NewUserUseCase(repo entity.Querier, dbPool *pgxpool.Pool) (*UserUseCase, er
 	}
 
 	return &UserUseCase{
-		repo:   repo,
-		dbPool: dbPool,
+		repo:     repo,
+		dbPool:   dbPool,
+		auditLog: auditLog,
 	}, nil
 }
 
@@ -139,31 +142,19 @@ func (u *UserUseCase) Create(ctx context.Context, actorUserID *int32, req model.
 		return nil, fmt.Errorf("%w: failed to commit transaction", ErrUserServiceUnavailable)
 	}
 
-	var resDept *int32
-	if user.IDDepartemen.Valid {
-		val := user.IDDepartemen.Int32
-		resDept = &val
+	result, err := u.GetByID(ctx, user.IDUser)
+	if err != nil {
+		return nil, err
 	}
-
-	var resMitra *int32
-	if user.IDMitra.Valid {
-		val := user.IDMitra.Int32
-		resMitra = &val
+	result.TemporaryPassword = temporaryPassword
+	if result.NamaRole == "" {
+		result.NamaRole = role.NamaRole
 	}
+	result.HakAksesIDs = req.HakAksesIDs
 
-	return &model.UserResponse{
-		IDUser:             user.IDUser,
-		Username:           user.Username,
-		Status:             user.Status,
-		IDRole:             user.IDRole,
-		NamaRole:           role.NamaRole,
-		MustChangePassword: user.MustChangePassword,
-		IDDepartemen:       resDept,
-		IDMitra:            resMitra,
-		CreatedAt:          user.CreatedAt.Time.Format(time.RFC3339),
-		TemporaryPassword:  temporaryPassword,
-		HakAksesIDs:        req.HakAksesIDs,
-	}, nil
+	u.recordCreateUserAudit(ctx, result)
+
+	return result, nil
 }
 
 func (u *UserUseCase) List(ctx context.Context, filter model.ListUsersFilter) ([]model.UserResponse, int64, error) {
@@ -366,37 +357,50 @@ func (u *UserUseCase) Update(ctx context.Context, id int32, actorUserID *int32, 
 		return nil, err
 	}
 
-	var resDept *int32
-	if updatedUser.IDDepartemen.Valid {
-		val := updatedUser.IDDepartemen.Int32
-		resDept = &val
+	result, err := u.GetByID(ctx, updatedUser.IDUser)
+	if err != nil {
+		return nil, err
+	}
+	if result.NamaRole == "" {
+		result.NamaRole = role.NamaRole
+	}
+	if result.PasswordChangedAt == "" {
+		result.PasswordChangedAt = nullableTimestampString(passwordChangedAt)
+	}
+	if len(result.HakAksesIDs) == 0 {
+		result.HakAksesIDs = permissionIDs
 	}
 
-	var resMitra *int32
-	if updatedUser.IDMitra.Valid {
-		val := updatedUser.IDMitra.Int32
-		resMitra = &val
-	}
-
-	return &model.UserResponse{
-		IDUser:             updatedUser.IDUser,
-		Username:           updatedUser.Username,
-		Status:             updatedUser.Status,
-		IDRole:             updatedUser.IDRole,
-		NamaRole:           role.NamaRole,
-		MustChangePassword: updatedUser.MustChangePassword,
-		IDDepartemen:       resDept,
-		IDMitra:            resMitra,
-		CreatedAt:          updatedUser.CreatedAt.Time.Format(time.RFC3339),
-		PasswordChangedAt:  nullableTimestampString(passwordChangedAt),
+	beforeSnapshot := buildUserAuditSnapshot(&model.UserResponse{
+		IDUser:             userForUpdate.IDUser,
+		Username:           userForUpdate.Username,
+		Status:             userForUpdate.Status,
+		IDRole:             userForUpdate.IDRole,
+		NamaRole:           userForUpdate.NamaRole,
+		MustChangePassword: userForUpdate.MustChangePassword,
+		IDDepartemen:       nullableInt32Pointer(userForUpdate.IDDepartemen),
+		IDMitra:            nullableInt32Pointer(userForUpdate.IDMitra),
+		NamaDepartemen:     nullableTextString(userForUpdate.NamaDepartemen),
+		NamaPerusahaan:     nullableTextString(userForUpdate.NamaPerusahaan),
+		CreatedAt:          userForUpdate.CreatedAt.Time.Format(time.RFC3339),
+		PasswordChangedAt:  nullableTimestampString(userForUpdate.PasswordChangedAt),
 		HakAksesIDs:        permissionIDs,
-	}, nil
+	})
+	afterSnapshot := buildUserAuditSnapshot(result)
+	u.recordUpdateUserAudit(ctx, result, beforeSnapshot, afterSnapshot)
+
+	return result, nil
 }
 
 func (u *UserUseCase) Delete(ctx context.Context, idUser int32) error {
 	// Critical Validation: Protect Super Admin
 	if idUser == 1 {
 		return ErrCannotDeleteSuperAdmin
+	}
+
+	existing, err := u.GetByID(ctx, idUser)
+	if err != nil {
+		return err
 	}
 
 	affected, err := u.repo.DeleteUser(ctx, idUser)
@@ -406,6 +410,8 @@ func (u *UserUseCase) Delete(ctx context.Context, idUser int32) error {
 	if affected == 0 {
 		return ErrUserNotFound
 	}
+
+	u.recordDeleteUserAudit(ctx, existing)
 
 	return nil
 }
@@ -475,6 +481,136 @@ func (u *UserUseCase) ReplacePermissions(ctx context.Context, idUser int32, hakA
 func isUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+}
+
+func (u *UserUseCase) recordCreateUserAudit(ctx context.Context, user *model.UserResponse) {
+	if u.auditLog == nil || user == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID: auditCtx.ActorUserID,
+		ActorRole:   auditCtx.ActorRole,
+		Action:      "CREATE",
+		Module:      "user-management",
+		EntityType:  "users",
+		EntityID:    fmt.Sprintf("%d", user.IDUser),
+		EntityLabel: user.Username,
+		Method:      auditCtx.Method,
+		Route:       auditCtx.Route,
+		AfterData:   buildUserAuditSnapshot(user),
+	}); err != nil {
+		slog.Error("failed to record user create audit log", slog.String("error", err.Error()))
+	}
+}
+
+func (u *UserUseCase) recordUpdateUserAudit(ctx context.Context, user *model.UserResponse, beforeSnapshot, afterSnapshot map[string]any) {
+	if u.auditLog == nil || user == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        "UPDATE",
+		Module:        "user-management",
+		EntityType:    "users",
+		EntityID:      fmt.Sprintf("%d", user.IDUser),
+		EntityLabel:   user.Username,
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		BeforeData:    beforeSnapshot,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(beforeSnapshot, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record user update audit log", slog.String("error", err.Error()))
+	}
+}
+
+func (u *UserUseCase) recordDeleteUserAudit(ctx context.Context, user *model.UserResponse) {
+	if u.auditLog == nil || user == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID: auditCtx.ActorUserID,
+		ActorRole:   auditCtx.ActorRole,
+		Action:      "DELETE",
+		Module:      "user-management",
+		EntityType:  "users",
+		EntityID:    fmt.Sprintf("%d", user.IDUser),
+		EntityLabel: user.Username,
+		Method:      auditCtx.Method,
+		Route:       auditCtx.Route,
+		BeforeData:  buildUserAuditSnapshot(user),
+	}); err != nil {
+		slog.Error("failed to record user delete audit log", slog.String("error", err.Error()))
+	}
+}
+
+func buildUserAuditSnapshot(user *model.UserResponse) map[string]any {
+	if user == nil {
+		return nil
+	}
+
+	snapshot := map[string]any{
+		"id_user":              user.IDUser,
+		"username":             user.Username,
+		"status":               user.Status,
+		"id_role":              user.IDRole,
+		"nama_role":            user.NamaRole,
+		"must_change_password": user.MustChangePassword,
+		"nama_departemen":      user.NamaDepartemen,
+		"nama_perusahaan":      user.NamaPerusahaan,
+		"password_changed_at":  user.PasswordChangedAt,
+		"hak_akses_ids":        user.HakAksesIDs,
+	}
+
+	if user.IDDepartemen != nil {
+		snapshot["id_departemen"] = *user.IDDepartemen
+	} else {
+		snapshot["id_departemen"] = nil
+	}
+
+	if user.IDMitra != nil {
+		snapshot["id_mitra"] = *user.IDMitra
+	} else {
+		snapshot["id_mitra"] = nil
+	}
+
+	return snapshot
+}
+
+func nullableInt32Pointer(value pgtype.Int4) *int32 {
+	if !value.Valid {
+		return nil
+	}
+
+	val := value.Int32
+	return &val
+}
+
+func nullableTextString(value pgtype.Text) string {
+	if !value.Valid {
+		return ""
+	}
+
+	return value.String
 }
 
 func isForeignKeyViolation(err error) bool {

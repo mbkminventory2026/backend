@@ -86,7 +86,15 @@ func main() {
 	}
 
 	authUseCase := usecase.NewAuthUseCase(queries, dbPool, turnstileUseCase, cfg.JWTSecret)
-	userUseCase, err := usecase.NewUserUseCase(queries, dbPool)
+
+	auditLogUseCase, err := usecase.NewAuditLogUseCase(queries)
+	if err != nil {
+		logger.Error("failed to initialize audit log usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	userUseCase, err := usecase.NewUserUseCase(queries, dbPool, auditLogUseCase)
 	if err != nil {
 		logger.Error("failed to initialize user usecase", slog.String("error", err.Error()))
 		dbPool.Close()
@@ -201,13 +209,6 @@ func main() {
 	excelExportUseCase, err := usecase.NewExcelExportUseCase(excelRenderer)
 	if err != nil {
 		logger.Error("failed to initialize excel export usecase", slog.String("error", err.Error()))
-		dbPool.Close()
-		os.Exit(1)
-	}
-
-	auditLogUseCase, err := usecase.NewAuditLogUseCase(queries)
-	if err != nil {
-		logger.Error("failed to initialize audit log usecase", slog.String("error", err.Error()))
 		dbPool.Close()
 		os.Exit(1)
 	}
