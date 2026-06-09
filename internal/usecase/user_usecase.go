@@ -417,7 +417,12 @@ func (u *UserUseCase) Delete(ctx context.Context, idUser int32) error {
 }
 
 func (u *UserUseCase) AssignRole(ctx context.Context, idUser int32, idRole int32) (*model.UserResponse, error) {
-	_, err := u.repo.UpdateUserRole(ctx, entity.UpdateUserRoleParams{
+	beforeUser, err := u.GetByID(ctx, idUser)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = u.repo.UpdateUserRole(ctx, entity.UpdateUserRoleParams{
 		IDUser: idUser,
 		IDRole: idRole,
 	})
@@ -431,7 +436,14 @@ func (u *UserUseCase) AssignRole(ctx context.Context, idUser int32, idRole int32
 		return nil, fmt.Errorf("%w: failed to assign role", ErrUserServiceUnavailable)
 	}
 
-	return u.GetByID(ctx, idUser)
+	result, err := u.GetByID(ctx, idUser)
+	if err != nil {
+		return nil, err
+	}
+
+	u.recordAssignRoleAudit(ctx, result, buildUserAuditSnapshot(beforeUser), buildUserAuditSnapshot(result))
+
+	return result, nil
 }
 
 func (u *UserUseCase) ReplacePermissions(ctx context.Context, idUser int32, hakAksesIDs []int32) (*model.UserResponse, error) {
@@ -821,5 +833,33 @@ func (u *UserUseCase) recordRejectUserAudit(ctx context.Context, user *model.Use
 		ChangedFields: buildChangedFieldsFromSnapshots(beforeSnapshot, afterSnapshot),
 	}); err != nil {
 		slog.Error("failed to record user rejection audit log", slog.String("error", err.Error()))
+	}
+}
+
+func (u *UserUseCase) recordAssignRoleAudit(ctx context.Context, user *model.UserResponse, beforeSnapshot, afterSnapshot map[string]any) {
+	if u.auditLog == nil || user == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        "UPDATE",
+		Module:        "user-management",
+		EntityType:    "users",
+		EntityID:      fmt.Sprintf("%d", user.IDUser),
+		EntityLabel:   user.Username,
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		BeforeData:    beforeSnapshot,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(beforeSnapshot, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record user role assignment audit log", slog.String("error", err.Error()))
 	}
 }

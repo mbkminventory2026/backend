@@ -196,7 +196,7 @@ func (h *UserHandler) AssignRole(c *gin.Context) {
 		return
 	}
 
-	result, err := h.useCase.AssignRole(c.Request.Context(), id, req.IDRole)
+	result, err := h.useCase.AssignRole(withAuditLogContext(c), id, req.IDRole)
 	if err != nil {
 		h.handleError(c, err)
 		return
