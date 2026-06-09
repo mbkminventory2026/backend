@@ -305,3 +305,94 @@ func (u *DashboardUseCase) GetProductionDashboardMetrics(ctx context.Context) (*
 		RecentSpreadingCuttingPlans:        parsedSCPs,
 	}, nil
 }
+
+// GetWarehouseDashboardMetrics mengambil data untuk dashboard Admin Gudang
+func (u *DashboardUseCase) GetWarehouseDashboardMetrics(ctx context.Context) (*model.WarehouseDashboardMetrics, error) {
+	totalItems, err := u.queries.GetWarehouseTotalItems(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get total items: %w", err)
+	}
+
+	sjClientCount, err := u.queries.GetWarehouseTotalSuratJalanClientThisMonth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get surat jalan client count: %w", err)
+	}
+
+	sjInternalCount, err := u.queries.GetWarehouseTotalSuratJalanInternalThisMonth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get surat jalan internal count: %w", err)
+	}
+
+	lowStocks, err := u.queries.GetLowStockAlerts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get low stock alerts: %w", err)
+	}
+
+	var parsedLowStocks []model.LowStockAlert
+	for _, ls := range lowStocks {
+		parsedLowStocks = append(parsedLowStocks, model.LowStockAlert{
+			IDRekonsiliasiMaterial: ls.IDRekonsiliasiMaterial,
+			Description:            ls.Description,
+			Size:                   ls.Size,
+			Balance:                ls.Balance,
+			LastBalance:            ls.LastBalance,
+			Satuan:                 ls.Satuan,
+			MinStock:               ls.MinStock,
+		})
+	}
+
+	recentSJC, err := u.queries.GetWarehouseRecentSuratJalanClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent surat jalan client: %w", err)
+	}
+
+	var parsedSJC []model.RecentWarehouseSuratJalanClient
+	for _, sj := range recentSJC {
+		parsedSJC = append(parsedSJC, model.RecentWarehouseSuratJalanClient{
+			IDSuratJalanClient:  sj.IDSuratJalanClient,
+			Tanggal:             sj.Tanggal.Time.Format("2006-01-02"),
+			Keterangan:          sj.Keterangan,
+			MaterialDescription: sj.MaterialDescription,
+		})
+	}
+
+	recentSJI, err := u.queries.GetWarehouseRecentSuratJalanInternal(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent surat jalan internal: %w", err)
+	}
+
+	var parsedSJI []model.RecentWarehouseSuratJalanInternal
+	for _, sj := range recentSJI {
+		parsedSJI = append(parsedSJI, model.RecentWarehouseSuratJalanInternal{
+			IDSuratJalanInternal: sj.IDSuratJalanInternal,
+			CreatedAt:            sj.CreatedAt.Time.Format("2006-01-02"),
+		})
+	}
+
+	recentBarang, err := u.queries.GetWarehouseRecentBarang(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent barang: %w", err)
+	}
+
+	var parsedBarang []model.RecentWarehouseBarang
+	for _, b := range recentBarang {
+		parsedBarang = append(parsedBarang, model.RecentWarehouseBarang{
+			IDBarang:    b.IDBarang,
+			NamaBarang:  b.NamaBarang,
+			Kode:        b.Kode,
+			StokMinimum: b.StokMinimum,
+			CreatedAt:   b.CreatedAt.Time.Format("2006-01-02"),
+		})
+	}
+
+	return &model.WarehouseDashboardMetrics{
+		TotalItems:                       totalItems,
+		TotalSuratJalanClientThisMonth:   sjClientCount,
+		TotalSuratJalanInternalThisMonth: sjInternalCount,
+		LowStockAlertsCount:              int64(len(parsedLowStocks)),
+		RecentSuratJalanClients:          parsedSJC,
+		RecentSuratJalanInternals:        parsedSJI,
+		RecentBarangs:                    parsedBarang,
+		LowStockAlerts:                   parsedLowStocks,
+	}, nil
+}

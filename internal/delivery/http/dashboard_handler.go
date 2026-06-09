@@ -48,6 +48,7 @@ func (h *DashboardHandler) RegisterRoutes(router *gin.Engine, authMiddleware gin
 		api.GET("/dashboard/operator", RequirePermission(PermissionDashboardRead), h.GetOperatorMetrics)
 		api.GET("/dashboard/finance", RequirePermission(PermissionDashboardRead), h.GetFinanceMetrics)
 		api.GET("/dashboard/production", RequirePermission(PermissionDashboardRead), h.GetProductionMetrics)
+		api.GET("/dashboard/warehouse", RequirePermission(PermissionDashboardRead), h.GetWarehouseMetrics)
 	}
 
 	router.GET("/ws/alerts", authMiddleware, RequireInternalUser(), RequirePermission(PermissionDashboardRead), h.Alerts)
@@ -158,6 +159,23 @@ func (h *DashboardHandler) GetProductionMetrics(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusOK, "Metrics production berhasil diambil", result)
+}
+
+// GetWarehouseMetrics mengambil metrik KPI dashboard Admin Gudang
+// @Summary Ambil KPI Warehouse
+// @Description Mengambil metrics realtime untuk layar Warehouse Dashboard
+// @Tags Dashboard
+// @Produce json
+// @Security BearerAuth
+// @Router /api/v1/dashboard/warehouse [get]
+func (h *DashboardHandler) GetWarehouseMetrics(c *gin.Context) {
+	result, err := h.useCase.GetWarehouseDashboardMetrics(c.Request.Context())
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "Gagal memuat metrics warehouse", err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusOK, "Metrics warehouse berhasil diambil", result)
 }
 
 // Alerts menangani pendaftaran koneksi WebSocket
