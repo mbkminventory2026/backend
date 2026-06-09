@@ -144,6 +144,11 @@ func (u *MarkerPlanUseCase) GetMarkerPlan(ctx context.Context, idMarkerPlan int3
 		return nil, fmt.Errorf("%w: %s", ErrWorkOrderServiceUnavailable, err.Error())
 	}
 
+	headerQtyReceived, err := u.repo.GetReceivedQtyByWOShellID(ctx, pgtype.Int4{Int32: header.IDWoShell, Valid: true})
+	if err != nil {
+		headerQtyReceived = 0
+	}
+
 	compRows, err := u.repo.ListKomponenByMarkerPlanID(ctx, idMarkerPlan)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrWorkOrderServiceUnavailable, err.Error())
@@ -175,10 +180,16 @@ func (u *MarkerPlanUseCase) GetMarkerPlan(ctx context.Context, idMarkerPlan int3
 				}
 			}
 
+			ratioQtyReceived, rqErr := u.repo.GetReceivedQtyByWOShellID(ctx, pgtype.Int4{Int32: rRow.IDWoShell, Valid: true})
+			if rqErr != nil {
+				ratioQtyReceived = 0
+			}
+
 			ratios[j] = model.RatioMarkerResponse{
 				IDRatioMarker:        rRow.IDRatioMarker,
 				IDKomponenMarker:     rRow.IDKomponenMarker,
 				IDWoShell:            rRow.IDWoShell,
+				QtyFabricReceived:    float64(ratioQtyReceived),
 				Cons:                 numericToFloat64(rRow.Cons),
 				PlanSpreadingGelaran: numericToFloat64(rRow.PlanSpreadingGelaran),
 				PanjangMarker:        numericToFloat64(rRow.PanjangMarker),
@@ -204,12 +215,17 @@ func (u *MarkerPlanUseCase) GetMarkerPlan(ctx context.Context, idMarkerPlan int3
 	}
 
 	return &model.MarkerPlanResponse{
-		IDMarkerPlan:   header.IDMarkerPlan,
-		NoDokumen:      header.NoDokumen,
-		TanggalEfektif: formatDate(header.TanggalEfektif),
-		IDWoShell:      header.IDWoShell,
-		CreatedAt:      header.CreatedAt.Time.Format(time.RFC3339),
-		Components:     components,
+		IDMarkerPlan:      header.IDMarkerPlan,
+		NoDokumen:         header.NoDokumen,
+		TanggalEfektif:    formatDate(header.TanggalEfektif),
+		IDWoShell:         header.IDWoShell,
+		Color:             header.Color,
+		FabricDescription: header.FabricDescription,
+		Style:             header.Style,
+		Model:             header.Model,
+		QtyFabricReceived: float64(headerQtyReceived),
+		CreatedAt:         header.CreatedAt.Time.Format(time.RFC3339),
+		Components:        components,
 	}, nil
 }
 

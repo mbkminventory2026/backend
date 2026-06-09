@@ -6,6 +6,8 @@ package entity
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
@@ -108,7 +110,7 @@ type Querier interface {
 	GetJenisBarangByID(ctx context.Context, idJenisBarang int32) (JenisBarang, error)
 	// Mengecek material yang BALANCE-nya di bawah standar untuk trigger WebSocket layar berkedip
 	GetLowStockAlerts(ctx context.Context) ([]GetLowStockAlertsRow, error)
-	GetMarkerPlanByID(ctx context.Context, idMarkerPlan int32) (MarkerPlan, error)
+	GetMarkerPlanByID(ctx context.Context, idMarkerPlan int32) (GetMarkerPlanByIDRow, error)
 	GetMaterialList(ctx context.Context, idMaterialList int32) (GetMaterialListRow, error)
 	GetMaterialListItem(ctx context.Context, idMaterialListItem int32) (GetMaterialListItemRow, error)
 	GetMitraByID(ctx context.Context, idMitra int32) (Mitra, error)
@@ -125,6 +127,7 @@ type Querier interface {
 	GetPackingListDetail(ctx context.Context, arg GetPackingListDetailParams) (GetPackingListDetailRow, error)
 	GetProfilPerusahaan(ctx context.Context) (ProfilPerusahaan, error)
 	GetProfilPerusahaanByID(ctx context.Context, idProfilPerusahaan int32) (ProfilPerusahaan, error)
+	GetReceivedQtyByWOShellID(ctx context.Context, idWoShell pgtype.Int4) (int64, error)
 	GetRekonsiliasiMaterialStock(ctx context.Context, idRekonsiliasiMaterial int32) (GetRekonsiliasiMaterialStockRow, error)
 	GetReturClientByWorkOrderID(ctx context.Context, idWo int32) (ReturClient, error)
 	GetRoleByID(ctx context.Context, idRole int32) (Role, error)

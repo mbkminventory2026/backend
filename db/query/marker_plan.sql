@@ -29,9 +29,21 @@ INSERT INTO RATIO_SIZE_MARKER (
 );
 
 -- name: GetMarkerPlanByID :one
-SELECT ID_MARKER_PLAN, NO_DOKUMEN, TANGGAL_EFEKTIF, ID_WO_SHELL, created_at
-FROM MARKER_PLAN
-WHERE ID_MARKER_PLAN = $1 LIMIT 1;
+SELECT 
+    mp.id_marker_plan, 
+    mp.no_dokumen, 
+    mp.tanggal_efektif, 
+    mp.id_wo_shell, 
+    mp.created_at,
+    wos.color,
+    wos.deskripsi AS fabric_description,
+    pci.style,
+    wo.model
+FROM MARKER_PLAN mp
+JOIN WORK_ORDER_SHELL wos ON mp.id_wo_shell = wos.id_wo_shell
+JOIN WORK_ORDER wo ON wos.id_wo = wo.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+WHERE mp.id_marker_plan = $1 LIMIT 1;
 
 -- name: ListKomponenByMarkerPlanID :many
 SELECT ID_KOMPONEN_MARKER, ID_MARKER_PLAN, NAMA_KOMPONEN, created_at
@@ -95,3 +107,10 @@ ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'buyer' AND sqlc.arg(sort_desc)::bool THEN wo.buyer END DESC,
     mp.id_marker_plan DESC
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
+
+-- name: GetReceivedQtyByWOShellID :one
+SELECT COALESCE(SUM(r.QTY), 0)::bigint AS total_qty_received
+FROM RECEIVED r
+JOIN MATERIAL_LIST_ITEM mli ON r.ID_MATERIAL_LIST_ITEM = mli.ID_MATERIAL_LIST_ITEM
+WHERE mli.ID_WO_SHELL = $1;
+

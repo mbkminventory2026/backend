@@ -163,6 +163,7 @@ func syncSequences(ctx context.Context, db *pgxpool.Pool) error {
 		{"work_order_trim_id_wo_trim_seq", "work_order_trim", "id_wo_trim"},
 		{"material_list_item_id_material_list_item_seq", "material_list_item", "id_material_list_item"},
 		{"material_list_id_material_list_seq", "material_list", "id_material_list"},
+		{"received_id_received_seq", "received", "id_received"},
 		{"report_cutting_id_report_cutting_seq", "report_cutting", "id_report_cutting"},
 		{"report_sewing_id_report_sewing_seq", "report_sewing", "id_report_sewing"},
 		{"report_qc_finish_id_report_qc_finishing_seq", "report_qc_finish", "id_report_qc_finishing"},
@@ -989,10 +990,31 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		// Shells Material List Items
 		for i, idShell := range []int32{idShell1, idShell2, idShell3} {
 			desc := fmt.Sprintf("WO Test 1 Shell %d Fabric", i+1)
-			_, err = db.Exec(ctx, `
+			var idMLI int32
+			err = db.QueryRow(ctx, `
 				INSERT INTO MATERIAL_LIST_ITEM (ID_MATERIAL_LIST, ITEM, DESCRIPTION, QTY, UNIT, EST_PRICE, ID_WO_SHELL, ID_WO_TRIM)
 				VALUES ($1, $2, $3, 0, 'yds', 0, $4, NULL)
-			`, idMLWo1, desc, desc, idShell)
+				RETURNING ID_MATERIAL_LIST_ITEM
+			`, idMLWo1, desc, desc, idShell).Scan(&idMLI)
+			if err != nil {
+				return err
+			}
+
+			// Seed RECEIVED quantities for testing
+			var qtyReceived int32
+			switch i {
+			case 0:
+				qtyReceived = 500
+			case 1:
+				qtyReceived = 400
+			case 2:
+				qtyReceived = 200
+			}
+
+			_, err = db.Exec(ctx, `
+				INSERT INTO RECEIVED (TANGGAL, QTY, KETERANGAN, ID_MATERIAL_LIST_ITEM)
+				VALUES ('2026-06-05', $1, 'Penerimaan Awal', $2)
+			`, qtyReceived, idMLI)
 			if err != nil {
 				return err
 			}

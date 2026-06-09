@@ -361,20 +361,26 @@ definitions:
     - no_dokumen
     - tanggal_efektif
     type: object
-  model.CreateMaterialListRequest:
+  model.CreateMaterialListItemRequest:
     properties:
-      color:
-        type: string
       description:
         type: string
-      size:
+      est_price:
+        type: number
+      item:
         type: string
-      uom:
+      qty:
+        type: integer
+      shell_index:
+        description: 0-based index into shells array
+        type: integer
+      trim_index:
+        description: 0-based index into trims array
+        type: integer
+      unit:
         type: string
     required:
-    - color
-    - size
-    - uom
+    - unit
     type: object
   model.CreateMitraRequest:
     properties:
@@ -545,6 +551,8 @@ definitions:
     properties:
       departemen:
         type: string
+      id_material_list:
+        type: integer
       id_wo:
         type: integer
       items:
@@ -918,9 +926,9 @@ definitions:
         type: boolean
       id_po_client_item:
         type: integer
-      material_lists:
+      material_list_items:
         items:
-          $ref: '#/definitions/model.CreateMaterialListRequest'
+          $ref: '#/definitions/model.CreateMaterialListItemRequest'
         type: array
       model:
         type: string
@@ -1038,8 +1046,6 @@ definitions:
         type: string
     required:
     - allow
-    - code
-    - color
     - cons
     - item
     - provided_by
@@ -1569,17 +1575,27 @@ definitions:
     type: object
   model.MarkerPlanResponse:
     properties:
+      color:
+        type: string
       components:
         items:
           $ref: '#/definitions/model.KomponenMarkerPlanResponse'
         type: array
       created_at:
         type: string
+      fabric_description:
+        type: string
       id_marker_plan:
         type: integer
       id_wo_shell:
         type: integer
+      model:
+        type: string
       no_dokumen:
+        type: string
+      qty_fabric_received:
+        type: number
+      style:
         type: string
       tanggal_efektif:
         type: string
@@ -1608,19 +1624,42 @@ definitions:
         example: error
         type: string
     type: object
-  model.MaterialListResponse:
+  model.MaterialListItemResponse:
     properties:
-      color:
-        type: string
       created_at:
         type: string
       description:
         type: string
+      est_price:
+        type: number
+      id_material_list_item:
+        type: integer
+      id_wo_shell:
+        type: integer
+      id_wo_trim:
+        type: integer
+      item:
+        type: string
+      qty:
+        type: integer
+      unit:
+        type: string
+    type: object
+  model.MaterialListResponse:
+    properties:
+      created_at:
+        type: string
       id_material_list:
         type: integer
-      size:
-        type: string
-      uom:
+      id_wo:
+        type: integer
+      is_locked:
+        type: boolean
+      items:
+        items:
+          $ref: '#/definitions/model.MaterialListItemResponse'
+        type: array
+      name:
         type: string
     type: object
   model.MitraResponse:
@@ -1652,8 +1691,6 @@ definitions:
         type: string
       qty:
         type: integer
-      size:
-        type: string
       tanggal:
         type: string
       tipe:
@@ -2427,6 +2464,8 @@ definitions:
         type: number
       plot:
         type: integer
+      qty_fabric_received:
+        type: number
       sizes:
         items:
           $ref: '#/definitions/model.RatioSizeMarkerResponse'

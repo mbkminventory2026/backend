@@ -147,22 +147,64 @@ type CreateRatioSizeMarkerParams struct {
 }
 
 const getMarkerPlanByID = `-- name: GetMarkerPlanByID :one
-SELECT ID_MARKER_PLAN, NO_DOKUMEN, TANGGAL_EFEKTIF, ID_WO_SHELL, created_at
-FROM MARKER_PLAN
-WHERE ID_MARKER_PLAN = $1 LIMIT 1
+SELECT 
+    mp.id_marker_plan, 
+    mp.no_dokumen, 
+    mp.tanggal_efektif, 
+    mp.id_wo_shell, 
+    mp.created_at,
+    wos.color,
+    wos.deskripsi AS fabric_description,
+    pci.style,
+    wo.model
+FROM MARKER_PLAN mp
+JOIN WORK_ORDER_SHELL wos ON mp.id_wo_shell = wos.id_wo_shell
+JOIN WORK_ORDER wo ON wos.id_wo = wo.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+WHERE mp.id_marker_plan = $1 LIMIT 1
 `
 
-func (q *Queries) GetMarkerPlanByID(ctx context.Context, idMarkerPlan int32) (MarkerPlan, error) {
+type GetMarkerPlanByIDRow struct {
+	IDMarkerPlan      int32              `json:"id_marker_plan"`
+	NoDokumen         string             `json:"no_dokumen"`
+	TanggalEfektif    pgtype.Date        `json:"tanggal_efektif"`
+	IDWoShell         int32              `json:"id_wo_shell"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+	Color             string             `json:"color"`
+	FabricDescription string             `json:"fabric_description"`
+	Style             string             `json:"style"`
+	Model             string             `json:"model"`
+}
+
+func (q *Queries) GetMarkerPlanByID(ctx context.Context, idMarkerPlan int32) (GetMarkerPlanByIDRow, error) {
 	row := q.db.QueryRow(ctx, getMarkerPlanByID, idMarkerPlan)
-	var i MarkerPlan
+	var i GetMarkerPlanByIDRow
 	err := row.Scan(
 		&i.IDMarkerPlan,
 		&i.NoDokumen,
 		&i.TanggalEfektif,
 		&i.IDWoShell,
 		&i.CreatedAt,
+		&i.Color,
+		&i.FabricDescription,
+		&i.Style,
+		&i.Model,
 	)
 	return i, err
+}
+
+const getReceivedQtyByWOShellID = `-- name: GetReceivedQtyByWOShellID :one
+SELECT COALESCE(SUM(r.QTY), 0)::bigint AS total_qty_received
+FROM RECEIVED r
+JOIN MATERIAL_LIST_ITEM mli ON r.ID_MATERIAL_LIST_ITEM = mli.ID_MATERIAL_LIST_ITEM
+WHERE mli.ID_WO_SHELL = $1
+`
+
+func (q *Queries) GetReceivedQtyByWOShellID(ctx context.Context, idWoShell pgtype.Int4) (int64, error) {
+	row := q.db.QueryRow(ctx, getReceivedQtyByWOShellID, idWoShell)
+	var total_qty_received int64
+	err := row.Scan(&total_qty_received)
+	return total_qty_received, err
 }
 
 const listKomponenByMarkerPlanID = `-- name: ListKomponenByMarkerPlanID :many

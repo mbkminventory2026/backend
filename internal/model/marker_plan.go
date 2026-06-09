@@ -47,6 +47,7 @@ type RatioMarkerResponse struct {
 	IDRatioMarker        int32                     `json:"id_ratio_marker"`
 	IDKomponenMarker     int32                     `json:"id_komponen_marker"`
 	IDWoShell            int32                     `json:"id_wo_shell"`
+	QtyFabricReceived    float64                   `json:"qty_fabric_received"`
 	Cons                 float64                   `json:"cons"`
 	PlanSpreadingGelaran float64                   `json:"plan_spreading_gelaran"`
 	PanjangMarker        float64                   `json:"panjang_marker"`
@@ -70,12 +71,17 @@ type KomponenMarkerPlanResponse struct {
 }
 
 type MarkerPlanResponse struct {
-	IDMarkerPlan   int32                        `json:"id_marker_plan"`
-	NoDokumen      string                       `json:"no_dokumen"`
-	TanggalEfektif string                       `json:"tanggal_efektif"`
-	IDWoShell      int32                        `json:"id_wo_shell"`
-	CreatedAt      string                       `json:"created_at"`
-	Components     []KomponenMarkerPlanResponse `json:"components"`
+	IDMarkerPlan      int32                        `json:"id_marker_plan"`
+	NoDokumen         string                       `json:"no_dokumen"`
+	TanggalEfektif    string                       `json:"tanggal_efektif"`
+	IDWoShell         int32                        `json:"id_wo_shell"`
+	Color             string                       `json:"color"`
+	FabricDescription string                       `json:"fabric_description"`
+	Style             string                       `json:"style"`
+	Model             string                       `json:"model"`
+	QtyFabricReceived float64                      `json:"qty_fabric_received"`
+	CreatedAt         string                       `json:"created_at"`
+	Components        []KomponenMarkerPlanResponse `json:"components"`
 }
 
 // Swagger documentation support types

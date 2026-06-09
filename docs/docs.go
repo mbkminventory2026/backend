@@ -5894,24 +5894,33 @@ const docTemplate = `{
                 }
             }
         },
-        "model.CreateMaterialListRequest": {
+        "model.CreateMaterialListItemRequest": {
             "type": "object",
             "required": [
-                "color",
-                "size",
-                "uom"
+                "unit"
             ],
             "properties": {
-                "color": {
-                    "type": "string"
-                },
                 "description": {
                     "type": "string"
                 },
-                "size": {
+                "est_price": {
+                    "type": "number"
+                },
+                "item": {
                     "type": "string"
                 },
-                "uom": {
+                "qty": {
+                    "type": "integer"
+                },
+                "shell_index": {
+                    "description": "0-based index into shells array",
+                    "type": "integer"
+                },
+                "trim_index": {
+                    "description": "0-based index into trims array",
+                    "type": "integer"
+                },
+                "unit": {
                     "type": "string"
                 }
             }
@@ -6166,6 +6175,9 @@ const docTemplate = `{
             "properties": {
                 "departemen": {
                     "type": "string"
+                },
+                "id_material_list": {
+                    "type": "integer"
                 },
                 "id_wo": {
                     "type": "integer"
@@ -6705,10 +6717,10 @@ const docTemplate = `{
                 "id_po_client_item": {
                     "type": "integer"
                 },
-                "material_lists": {
+                "material_list_items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.CreateMaterialListRequest"
+                        "$ref": "#/definitions/model.CreateMaterialListItemRequest"
                     }
                 },
                 "model": {
@@ -6816,8 +6828,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "allow",
-                "code",
-                "color",
                 "cons",
                 "item",
                 "provided_by",
@@ -7645,6 +7655,9 @@ const docTemplate = `{
         "model.MarkerPlanResponse": {
             "type": "object",
             "properties": {
+                "color": {
+                    "type": "string"
+                },
                 "components": {
                     "type": "array",
                     "items": {
@@ -7654,13 +7667,25 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "fabric_description": {
+                    "type": "string"
+                },
                 "id_marker_plan": {
                     "type": "integer"
                 },
                 "id_wo_shell": {
                     "type": "integer"
                 },
+                "model": {
+                    "type": "string"
+                },
                 "no_dokumen": {
+                    "type": "string"
+                },
+                "qty_fabric_received": {
+                    "type": "number"
+                },
+                "style": {
                     "type": "string"
                 },
                 "tanggal_efektif": {
@@ -7703,25 +7728,60 @@ const docTemplate = `{
                 }
             }
         },
-        "model.MaterialListResponse": {
+        "model.MaterialListItemResponse": {
             "type": "object",
             "properties": {
-                "color": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
                 "description": {
                     "type": "string"
                 },
+                "est_price": {
+                    "type": "number"
+                },
+                "id_material_list_item": {
+                    "type": "integer"
+                },
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "id_wo_trim": {
+                    "type": "integer"
+                },
+                "item": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.MaterialListResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "id_material_list": {
                     "type": "integer"
                 },
-                "size": {
-                    "type": "string"
+                "id_wo": {
+                    "type": "integer"
                 },
-                "uom": {
+                "is_locked": {
+                    "type": "boolean"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.MaterialListItemResponse"
+                    }
+                },
+                "name": {
                     "type": "string"
                 }
             }
@@ -7769,9 +7829,6 @@ const docTemplate = `{
                 },
                 "qty": {
                     "type": "integer"
-                },
-                "size": {
-                    "type": "string"
                 },
                 "tanggal": {
                     "type": "string"
@@ -8937,6 +8994,9 @@ const docTemplate = `{
                 },
                 "plot": {
                     "type": "integer"
+                },
+                "qty_fabric_received": {
+                    "type": "number"
                 },
                 "sizes": {
                     "type": "array",
