@@ -28,9 +28,19 @@ INSERT INTO RATIO_SIZE_SPREADING (
 );
 
 -- name: GetSpreadingCuttingPlanByID :one
-SELECT ID_SPREADING_CUTTING_PLAN, NO_DOKUMEN, TANGGAL_EFEKTIF, ID_WO, created_at
-FROM SPREADING_CUTTING_PLAN
-WHERE ID_SPREADING_CUTTING_PLAN = $1 LIMIT 1;
+SELECT 
+    scp.id_spreading_cutting_plan, 
+    scp.no_dokumen, 
+    scp.tanggal_efektif, 
+    scp.id_wo, 
+    scp.created_at,
+    pci.style,
+    wo.model,
+    wo.buyer
+FROM SPREADING_CUTTING_PLAN scp
+JOIN WORK_ORDER wo ON scp.id_wo = wo.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+WHERE scp.id_spreading_cutting_plan = $1 LIMIT 1;
 
 -- name: ListKomponenBySpreadingPlanID :many
 SELECT ID_KOMPONEN_SPREADING, ID_SPREADING_CUTTING_PLAN, NAMA_KOMPONEN, created_at

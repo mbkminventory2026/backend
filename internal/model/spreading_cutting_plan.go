@@ -70,6 +70,9 @@ type SpreadingCuttingPlanResponse struct {
 	NoDokumen              string                      `json:"no_dokumen"`
 	TanggalEfektif         string                      `json:"tanggal_efektif"`
 	IDWo                   int32                       `json:"id_wo"`
+	Style                  string                      `json:"style"`
+	Model                  string                      `json:"model"`
+	Buyer                  string                      `json:"buyer"`
 	CreatedAt              string                      `json:"created_at"`
 	Components             []KomponenSpreadingResponse `json:"components"`
 }

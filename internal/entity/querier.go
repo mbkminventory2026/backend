@@ -160,7 +160,7 @@ type Querier interface {
 	GetRoleByName(ctx context.Context, namaRole string) (Role, error)
 	GetSizeByID(ctx context.Context, idSize int32) (MasterSize, error)
 	GetSizeByName(ctx context.Context, btrim string) (MasterSize, error)
-	GetSpreadingCuttingPlanByID(ctx context.Context, idSpreadingCuttingPlan int32) (SpreadingCuttingPlan, error)
+	GetSpreadingCuttingPlanByID(ctx context.Context, idSpreadingCuttingPlan int32) (GetSpreadingCuttingPlanByIDRow, error)
 	// Mengambil laporan stok material yang teragregasi per kategori barang garmen
 	GetStockReportPerKategori(ctx context.Context) ([]GetStockReportPerKategoriRow, error)
 	// Mengambil laporan stok material yang teragregasi per lokasi penyimpanan rak
