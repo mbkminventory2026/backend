@@ -26,6 +26,7 @@ func (h *MaterialListHandler) RegisterRoutes(router gin.IRouter, authMiddleware 
 	v1 := router.Group("/api/v1").Use(authMiddleware)
 	internalOnly := RequireInternalUser()
 
+	v1.GET("/material-lists", RequirePermission(PermissionWORead), h.ListPaginated)
 	v1.GET("/work-orders/:id/material-lists", RequirePermission(PermissionWORead), h.ListByWO)
 	v1.POST("/work-orders/:id/material-lists", internalOnly, RequirePermission(PermissionWOUpdate), h.Create)
 
@@ -34,6 +35,7 @@ func (h *MaterialListHandler) RegisterRoutes(router gin.IRouter, authMiddleware 
 	v1.DELETE("/material-lists/:id", internalOnly, RequirePermission(PermissionWOUpdate), h.Delete)
 
 	v1.POST("/material-lists/:id/items", internalOnly, RequirePermission(PermissionWOUpdate), h.CreateItem)
+	v1.GET("/material-list-items/:id", RequirePermission(PermissionWORead), h.GetItem)
 	v1.PATCH("/material-list-items/:id", internalOnly, RequirePermission(PermissionWOUpdate), h.UpdateItem)
 	v1.DELETE("/material-list-items/:id", internalOnly, RequirePermission(PermissionWOUpdate), h.DeleteItem)
 }
@@ -167,6 +169,35 @@ func (h *MaterialListHandler) DeleteItem(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusOK, "material list item deleted", nil)
+}
+
+func (h *MaterialListHandler) GetItem(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid material list item id", nil))
+		return
+	}
+	res, err := h.useCase.GetItemDetail(c.Request.Context(), id)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "material list item retrieved", res)
+}
+
+func (h *MaterialListHandler) ListPaginated(c *gin.Context) {
+	filter, err := parseListQuery(c, 20)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid query params", nil))
+		return
+	}
+	lockedOnly := c.Query("locked_only") != "false"
+	res, err := h.useCase.ListMaterialListsPaginated(c.Request.Context(), filter.Search, lockedOnly, filter.Limit, filter.Offset)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "material lists retrieved", res)
 }
 
 func (h *MaterialListHandler) handleError(c *gin.Context, err error) {

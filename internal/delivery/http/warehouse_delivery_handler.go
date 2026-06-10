@@ -36,6 +36,15 @@ func (h *WarehouseDeliveryHandler) RegisterRoutes(router gin.IRouter, authMiddle
 	v1.GET("/surat-jalan-internals", internalOnly, RequirePermission(PermissionSuratJalanInternalRead), h.ListSuratJalanInternals)
 	v1.GET("/surat-jalan-internals/:id", internalOnly, RequirePermission(PermissionSuratJalanInternalRead), h.GetSuratJalanInternalDetail)
 	v1.POST("/surat-jalan/:type", internalOnly, RequirePermission(PermissionSuratJalanCreate), h.CreateSuratJalan)
+
+	v1.GET("/received", RequirePermission(PermissionInventoryReceive), h.ListReceived)
+	v1.POST("/received", internalOnly, RequirePermission(PermissionInventoryReceive), h.CreateSimpleReceived)
+	v1.GET("/received/:id", RequirePermission(PermissionInventoryReceive), h.GetReceivedByID)
+	v1.PUT("/received/:id", internalOnly, RequirePermission(PermissionInventoryReceive), h.UpdateSimpleReceived)
+	v1.DELETE("/received/:id", internalOnly, RequirePermission(PermissionInventoryReceive), h.DeleteSimpleReceived)
+
+	v1.GET("/material-list-items/:id/history", RequirePermission(PermissionWORead), h.GetMLIHistory)
+	v1.DELETE("/surat-jalan-clients/:id", internalOnly, RequirePermission(PermissionSuratJalanCreate), h.DeleteSuratJalanClient)
 }
 
 // ReceiveInventory godoc
@@ -349,6 +358,105 @@ func (h *WarehouseDeliveryHandler) GetSuratJalanInternalDetail(c *gin.Context) {
 	response.Success(c, http.StatusOK, "surat jalan internal retrieved", item)
 }
 
+func (h *WarehouseDeliveryHandler) ListReceived(c *gin.Context) {
+	filter, err := parseListQuery(c, 20)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid query params", nil))
+		return
+	}
+	res, err := h.useCase.ListReceived(c.Request.Context(), filter.Search, filter.Limit, filter.Offset)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "received list retrieved", res)
+}
+
+func (h *WarehouseDeliveryHandler) CreateSimpleReceived(c *gin.Context) {
+	var req model.CreateSimpleReceivedRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+	item, err := h.useCase.CreateSimpleReceived(c.Request.Context(), req)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusCreated, "received created", item)
+}
+
+func (h *WarehouseDeliveryHandler) GetReceivedByID(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid received id", nil))
+		return
+	}
+	item, err := h.useCase.GetReceivedByID(c.Request.Context(), id)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "received retrieved", item)
+}
+
+func (h *WarehouseDeliveryHandler) UpdateSimpleReceived(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid received id", nil))
+		return
+	}
+	var req model.UpdateSimpleReceivedRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+	item, err := h.useCase.UpdateSimpleReceived(c.Request.Context(), id, req)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "received updated", item)
+}
+
+func (h *WarehouseDeliveryHandler) DeleteSimpleReceived(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid received id", nil))
+		return
+	}
+	if err := h.useCase.DeleteSimpleReceived(c.Request.Context(), id); err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "received deleted", nil)
+}
+
+func (h *WarehouseDeliveryHandler) GetMLIHistory(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid material list item id", nil))
+		return
+	}
+	res, err := h.useCase.GetMLIHistory(c.Request.Context(), id)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "history retrieved", res)
+}
+
+func (h *WarehouseDeliveryHandler) DeleteSuratJalanClient(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid surat jalan client id", nil))
+		return
+	}
+	if err := h.useCase.DeleteSuratJalanClient(c.Request.Context(), id); err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "surat jalan client deleted", nil)
+}
+
 func (h *WarehouseDeliveryHandler) handleError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, usecase.ErrWarehouseValidation):
@@ -361,6 +469,10 @@ func (h *WarehouseDeliveryHandler) handleError(c *gin.Context, err error) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), model.WarehouseErrorDetail{Code: "related_data_not_found"}))
 	case errors.Is(err, usecase.ErrSuratJalanTypeUnsupported):
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), model.WarehouseErrorDetail{Code: "unsupported_surat_jalan_type"}))
+	case errors.Is(err, usecase.ErrSuratJalanExceedsMLIQty):
+		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.WarehouseErrorDetail{Code: "surat_jalan_exceeds_mli_qty"}))
+	case errors.Is(err, usecase.ErrReceivedExceedsSuratJalan):
+		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), model.WarehouseErrorDetail{Code: "received_exceeds_surat_jalan"}))
 	case errors.Is(err, usecase.ErrWarehouseServiceUnavailable):
 		AbortWithError(c, NewHTTPError(http.StatusInternalServerError, err.Error(), model.WarehouseErrorDetail{Code: "warehouse_service_unavailable"}))
 	default:

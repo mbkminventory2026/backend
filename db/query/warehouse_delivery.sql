@@ -140,3 +140,73 @@ SET
     balance = balance - sqlc.arg(qty)
 WHERE id_rekonsiliasi_material = sqlc.arg(id_rekonsiliasi_material)
 RETURNING id_rekonsiliasi_material, last_balance, balance;
+
+-- name: CreateReceivedSimple :one
+INSERT INTO RECEIVED (tanggal, qty, keterangan, id_material_list_item)
+VALUES (sqlc.arg(tanggal)::date, sqlc.arg(qty), sqlc.arg(keterangan), sqlc.arg(id_material_list_item))
+RETURNING id_received, tanggal, qty, keterangan, id_material_list_item, created_at;
+
+-- name: ListReceived :many
+SELECT
+    r.id_received,
+    r.tanggal,
+    r.qty,
+    r.keterangan,
+    r.id_material_list_item,
+    r.created_at,
+    mli.item AS material_item,
+    mli.description AS material_description,
+    ml.id_wo,
+    COUNT(*) OVER () AS total_count
+FROM RECEIVED r
+JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list_item = r.id_material_list_item
+JOIN MATERIAL_LIST ml ON ml.id_material_list = mli.id_material_list
+WHERE (
+    sqlc.arg(search)::text = ''
+    OR LOWER(mli.item) LIKE '%' || LOWER(sqlc.arg(search)::text) || '%'
+    OR LOWER(mli.description) LIKE '%' || LOWER(sqlc.arg(search)::text) || '%'
+    OR LOWER(r.keterangan) LIKE '%' || LOWER(sqlc.arg(search)::text) || '%'
+)
+ORDER BY r.created_at DESC
+LIMIT sqlc.arg(lim)
+OFFSET sqlc.arg(off);
+
+-- name: GetReceivedByID :one
+SELECT
+    r.id_received,
+    r.tanggal,
+    r.qty,
+    r.keterangan,
+    r.id_material_list_item,
+    r.created_at,
+    mli.item AS material_item,
+    mli.description AS material_description,
+    ml.id_wo
+FROM RECEIVED r
+JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list_item = r.id_material_list_item
+JOIN MATERIAL_LIST ml ON ml.id_material_list = mli.id_material_list
+WHERE r.id_received = sqlc.arg(id_received);
+
+-- name: UpdateReceivedSimple :one
+UPDATE RECEIVED
+SET tanggal = sqlc.arg(tanggal)::date, qty = sqlc.arg(qty), keterangan = sqlc.arg(keterangan)
+WHERE id_received = sqlc.arg(id_received)
+RETURNING id_received, tanggal, qty, keterangan, id_material_list_item, created_at;
+
+-- name: DeleteReceivedSimple :exec
+DELETE FROM RECEIVED WHERE id_received = sqlc.arg(id_received);
+
+-- name: ListReceivedByMLI :many
+SELECT id_received, tanggal, qty, keterangan, id_material_list_item, created_at
+FROM RECEIVED
+WHERE id_material_list_item = sqlc.arg(id_material_list_item)
+ORDER BY created_at DESC;
+
+-- name: ListSuratJalanClientByMLI :many
+SELECT id_surat_jalan_client, tanggal, qty, keterangan, id_material_list_item, created_at
+FROM SURAT_JALAN_CLIENT
+WHERE id_material_list_item = sqlc.arg(id_material_list_item)
+ORDER BY created_at DESC;
+
+-- name: DeleteSuratJalanClient :exec
+DELETE FROM SURAT_JALAN_CLIENT WHERE id_surat_jalan_client = sqlc.arg(id_surat_jalan_client);
