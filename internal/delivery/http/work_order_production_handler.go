@@ -184,7 +184,7 @@ func (h *WorkOrderProductionHandler) CreateWorkOrder(c *gin.Context) {
 		return
 	}
 
-	res, err := h.useCase.CreateWorkOrder(c.Request.Context(), userID, req)
+	res, err := h.useCase.CreateWorkOrder(withAuditLogContext(c), userID, req)
 	if err != nil {
 		// Tambahkan pengecekan usecase error spesifik ini:
 		if errors.Is(err, usecase.ErrPOClientItemAlreadyAssigned) {
@@ -233,7 +233,7 @@ func (h *WorkOrderProductionHandler) CloseWorkOrder(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.CloseWorkOrder(c.Request.Context(), id, userID)
+	item, err := h.useCase.CloseWorkOrder(withAuditLogContext(c), id, userID)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -413,7 +413,7 @@ func (h *WorkOrderProductionHandler) ClientCloseWorkOrder(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.ClientCloseWorkOrder(c.Request.Context(), id, mitraID)
+	item, err := h.useCase.ClientCloseWorkOrder(withAuditLogContext(c), id, mitraID)
 	if err != nil {
 		h.handleError(c, err)
 		return

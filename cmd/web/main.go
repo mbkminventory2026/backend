@@ -85,22 +85,30 @@ func main() {
 		os.Exit(1)
 	}
 
-	authUseCase := usecase.NewAuthUseCase(queries, dbPool, turnstileUseCase, cfg.JWTSecret)
-	userUseCase, err := usecase.NewUserUseCase(queries, dbPool)
+	auditLogUseCase, err := usecase.NewAuditLogUseCase(queries)
+	if err != nil {
+		logger.Error("failed to initialize audit log usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	authUseCase := usecase.NewAuthUseCase(queries, dbPool, turnstileUseCase, auditLogUseCase, cfg.JWTSecret)
+
+	userUseCase, err := usecase.NewUserUseCase(queries, dbPool, auditLogUseCase)
 	if err != nil {
 		logger.Error("failed to initialize user usecase", slog.String("error", err.Error()))
 		dbPool.Close()
 		os.Exit(1)
 	}
 
-	roleUseCase, err := usecase.NewRoleUseCase(queries, dbPool)
+	roleUseCase, err := usecase.NewRoleUseCase(queries, dbPool, auditLogUseCase)
 	if err != nil {
 		logger.Error("failed to initialize role usecase", slog.String("error", err.Error()))
 		dbPool.Close()
 		os.Exit(1)
 	}
 
-	masterDataUseCase, err := usecase.NewMasterDataUseCase(queries)
+	masterDataUseCase, err := usecase.NewMasterDataUseCase(queries, auditLogUseCase)
 	if err != nil {
 		logger.Error("failed to initialize master data usecase", slog.String("error", err.Error()))
 		dbPool.Close()
@@ -114,14 +122,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	transactionDocumentUseCase, err := usecase.NewTransactionDocumentUseCase(queries, dbPool)
+	transactionDocumentUseCase, err := usecase.NewTransactionDocumentUseCase(queries, dbPool, auditLogUseCase)
 	if err != nil {
 		logger.Error("failed to initialize transaction document usecase", slog.String("error", err.Error()))
 		dbPool.Close()
 		os.Exit(1)
 	}
 
-	workOrderProductionUseCase, err := usecase.NewWorkOrderProductionUseCase(queries, dbPool)
+	workOrderProductionUseCase, err := usecase.NewWorkOrderProductionUseCase(queries, dbPool, auditLogUseCase)
 	if err != nil {
 		logger.Error("failed to initialize work order production usecase", slog.String("error", err.Error()))
 		dbPool.Close()
@@ -327,6 +335,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	auditLogHandler, err := httpdelivery.NewAuditLogHandler(auditLogUseCase)
+	if err != nil {
+		logger.Error("failed to initialize audit log handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	activityLogService, err := usecase.NewActivityLogService(queries, logger)
 	if err != nil {
 		logger.Error("failed to initialize activity log service", slog.String("error", err.Error()))
@@ -392,6 +407,7 @@ func main() {
 	dashboardHandler.RegisterRoutes(router, authMiddleware)
 	reportHandler.RegisterRoutes(router, authMiddleware)
 	excelExportHandler.RegisterRoutes(router, authMiddleware)
+	auditLogHandler.RegisterRoutes(router, authMiddleware)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

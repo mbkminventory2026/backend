@@ -19,6 +19,139 @@
     "host": "localhost:8080",
     "basePath": "/",
     "paths": {
+        "/api/v1/activity-logs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves paginated audit log history for operator users.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Audit Logs"
+                ],
+                "summary": "List activity logs",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit fallback",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Action filter",
+                        "name": "action",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Module filter",
+                        "name": "module",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Entity type filter",
+                        "name": "entityType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Actor user ID filter",
+                        "name": "actorUserId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Date from (YYYY-MM-DD or RFC3339)",
+                        "name": "dateFrom",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Date to (YYYY-MM-DD or RFC3339)",
+                        "name": "dateTo",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field",
+                        "name": "sortBy",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Sort descending",
+                        "name": "sortDesc",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.AuditLogListSuccessDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/activity-logs/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a single audit log detail for operator users.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Audit Logs"
+                ],
+                "summary": "Get activity log detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Audit log ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.AuditLogDetailSuccessDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/approvals/action": {
             "post": {
                 "security": [
@@ -671,6 +804,42 @@
                     "Dashboard"
                 ],
                 "summary": "Ambil KPI Operator",
+                "responses": {}
+            }
+        },
+        "/api/v1/dashboard/production": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil metrics realtime untuk layar Production Dashboard",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Ambil KPI Production",
+                "responses": {}
+            }
+        },
+        "/api/v1/dashboard/warehouse": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil metrics realtime untuk layar Warehouse Dashboard",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Ambil KPI Warehouse",
                 "responses": {}
             }
         },
@@ -5595,6 +5764,152 @@
                 }
             }
         },
+        "model.AuditLogChangedField": {
+            "type": "object",
+            "properties": {
+                "after": {},
+                "before": {},
+                "field": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.AuditLogDetailResponse": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "actor_role": {
+                    "type": "string"
+                },
+                "actor_user_id": {
+                    "type": "integer"
+                },
+                "actor_username": {
+                    "type": "string"
+                },
+                "after_data": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "before_data": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "changed_fields": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.AuditLogChangedField"
+                    }
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "entity_id": {
+                    "type": "string"
+                },
+                "entity_label": {
+                    "type": "string"
+                },
+                "entity_type": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "module": {
+                    "type": "string"
+                },
+                "route": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.AuditLogDetailSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.AuditLogDetailResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "activity log detail retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.AuditLogListItem": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "actor_role": {
+                    "type": "string"
+                },
+                "actor_user_id": {
+                    "type": "integer"
+                },
+                "actor_username": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "entity_id": {
+                    "type": "string"
+                },
+                "entity_label": {
+                    "type": "string"
+                },
+                "entity_type": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "module": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.AuditLogListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.AuditLogListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/model.PaginationMeta"
+                }
+            }
+        },
+        "model.AuditLogListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.AuditLogListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "activity logs retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.AuthServiceUnavailableErrorDetail": {
             "type": "object",
             "properties": {
@@ -7750,6 +8065,12 @@
                     "type": "string"
                 },
                 "qty": {
+                    "type": "integer"
+                },
+                "qty_received": {
+                    "type": "integer"
+                },
+                "qty_surat_jalan": {
                     "type": "integer"
                 },
                 "unit": {
@@ -10250,6 +10571,9 @@
         "model.UpdateWOShellPlanStatusRequest": {
             "type": "object",
             "properties": {
+                "in_line": {
+                    "type": "string"
+                },
                 "status_embroo": {
                     "type": "string"
                 },

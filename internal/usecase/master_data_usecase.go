@@ -3,6 +3,8 @@ package usecase
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgconn"
@@ -27,14 +29,15 @@ var (
 )
 
 type MasterDataUseCase struct {
-	repo entity.Querier
+	repo     entity.Querier
+	auditLog *AuditLogUseCase
 }
 
-func NewMasterDataUseCase(repo entity.Querier) (*MasterDataUseCase, error) {
+func NewMasterDataUseCase(repo entity.Querier, auditLog *AuditLogUseCase) (*MasterDataUseCase, error) {
 	if repo == nil {
 		return nil, errors.New("repository is required")
 	}
-	return &MasterDataUseCase{repo: repo}, nil
+	return &MasterDataUseCase{repo: repo, auditLog: auditLog}, nil
 }
 
 // DEPARTEMEN
@@ -90,14 +93,23 @@ func (u *MasterDataUseCase) CreateDepartemen(ctx context.Context, req model.Crea
 		return model.DepartemenResponse{}, mapMasterDataConflict(err)
 	}
 
-	return model.DepartemenResponse{
+	result := model.DepartemenResponse{
 		ID:        item.IDDepartemen,
 		Nama:      item.NamaDepartemen,
 		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	}
+
+	u.recordDepartemenCreateAudit(ctx, result)
+
+	return result, nil
 }
 
 func (u *MasterDataUseCase) UpdateDepartemen(ctx context.Context, id int32, req model.UpdateDepartemenRequest) (model.DepartemenResponse, error) {
+	beforeItem, err := u.GetDepartemenByID(ctx, id)
+	if err != nil {
+		return model.DepartemenResponse{}, err
+	}
+
 	item, err := u.repo.UpdateDepartemen(ctx, entity.UpdateDepartemenParams{
 		IDDepartemen:   id,
 		NamaDepartemen: req.NamaDepartemen,
@@ -106,14 +118,23 @@ func (u *MasterDataUseCase) UpdateDepartemen(ctx context.Context, id int32, req 
 		return model.DepartemenResponse{}, mapMasterDataConflict(err)
 	}
 
-	return model.DepartemenResponse{
+	result := model.DepartemenResponse{
 		ID:        item.IDDepartemen,
 		Nama:      item.NamaDepartemen,
 		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	}
+
+	u.recordDepartemenUpdateAudit(ctx, result, buildDepartemenAuditSnapshot(beforeItem), buildDepartemenAuditSnapshot(result))
+
+	return result, nil
 }
 
 func (u *MasterDataUseCase) DeleteDepartemen(ctx context.Context, id int32) error {
+	existing, err := u.GetDepartemenByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
 	affected, err := u.repo.DeleteDepartemen(ctx, id)
 	if err != nil {
 		return err
@@ -121,6 +142,9 @@ func (u *MasterDataUseCase) DeleteDepartemen(ctx context.Context, id int32) erro
 	if affected == 0 {
 		return ErrMasterDataNotFound
 	}
+
+	u.recordDepartemenDeleteAudit(ctx, existing)
+
 	return nil
 }
 
@@ -182,15 +206,24 @@ func (u *MasterDataUseCase) CreateJenisBarang(ctx context.Context, req model.Cre
 		return model.JenisBarangResponse{}, mapMasterDataConflict(err)
 	}
 
-	return model.JenisBarangResponse{
+	result := model.JenisBarangResponse{
 		ID:        item.IDJenisBarang,
 		Nama:      item.NamaJenisBarang,
 		Kode:      item.Kode,
 		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	}
+
+	u.recordJenisBarangCreateAudit(ctx, result)
+
+	return result, nil
 }
 
 func (u *MasterDataUseCase) UpdateJenisBarang(ctx context.Context, id int32, req model.UpdateJenisBarangRequest) (model.JenisBarangResponse, error) {
+	beforeItem, err := u.GetJenisBarangByID(ctx, id)
+	if err != nil {
+		return model.JenisBarangResponse{}, err
+	}
+
 	item, err := u.repo.UpdateJenisBarang(ctx, entity.UpdateJenisBarangParams{
 		IDJenisBarang:   id,
 		NamaJenisBarang: req.NamaJenisBarang,
@@ -200,15 +233,24 @@ func (u *MasterDataUseCase) UpdateJenisBarang(ctx context.Context, id int32, req
 		return model.JenisBarangResponse{}, mapMasterDataConflict(err)
 	}
 
-	return model.JenisBarangResponse{
+	result := model.JenisBarangResponse{
 		ID:        item.IDJenisBarang,
 		Nama:      item.NamaJenisBarang,
 		Kode:      item.Kode,
 		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	}
+
+	u.recordJenisBarangUpdateAudit(ctx, result, buildJenisBarangAuditSnapshot(beforeItem), buildJenisBarangAuditSnapshot(result))
+
+	return result, nil
 }
 
 func (u *MasterDataUseCase) DeleteJenisBarang(ctx context.Context, id int32) error {
+	existing, err := u.GetJenisBarangByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
 	affected, err := u.repo.DeleteJenisBarang(ctx, id)
 	if err != nil {
 		return err
@@ -216,6 +258,9 @@ func (u *MasterDataUseCase) DeleteJenisBarang(ctx context.Context, id int32) err
 	if affected == 0 {
 		return ErrMasterDataNotFound
 	}
+
+	u.recordJenisBarangDeleteAudit(ctx, existing)
+
 	return nil
 }
 
@@ -292,7 +337,7 @@ func (u *MasterDataUseCase) CreateMitra(ctx context.Context, req model.CreateMit
 		return model.MitraResponse{}, mapMasterDataConflict(err)
 	}
 
-	return model.MitraResponse{
+	result := model.MitraResponse{
 		ID:             item.IDMitra,
 		NamaPerusahaan: item.NamaPerusahaan,
 		TipePerusahaan: item.TipePerusahaan,
@@ -302,10 +347,19 @@ func (u *MasterDataUseCase) CreateMitra(ctx context.Context, req model.CreateMit
 		Kota:           item.Kota,
 		KodePos:        item.KodePos,
 		CreatedAt:      item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	}
+
+	u.recordMitraCreateAudit(ctx, result)
+
+	return result, nil
 }
 
 func (u *MasterDataUseCase) UpdateMitra(ctx context.Context, id int32, req model.UpdateMitraRequest) (model.MitraResponse, error) {
+	beforeItem, err := u.GetMitraByID(ctx, id)
+	if err != nil {
+		return model.MitraResponse{}, err
+	}
+
 	item, err := u.repo.UpdateMitra(ctx, entity.UpdateMitraParams{
 		IDMitra:        id,
 		NamaPerusahaan: req.NamaPerusahaan,
@@ -320,7 +374,7 @@ func (u *MasterDataUseCase) UpdateMitra(ctx context.Context, id int32, req model
 		return model.MitraResponse{}, mapMasterDataConflict(err)
 	}
 
-	return model.MitraResponse{
+	result := model.MitraResponse{
 		ID:             item.IDMitra,
 		NamaPerusahaan: item.NamaPerusahaan,
 		TipePerusahaan: item.TipePerusahaan,
@@ -330,10 +384,19 @@ func (u *MasterDataUseCase) UpdateMitra(ctx context.Context, id int32, req model
 		Kota:           item.Kota,
 		KodePos:        item.KodePos,
 		CreatedAt:      item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	}
+
+	u.recordMitraUpdateAudit(ctx, result, buildMitraAuditSnapshot(beforeItem), buildMitraAuditSnapshot(result))
+
+	return result, nil
 }
 
 func (u *MasterDataUseCase) DeleteMitra(ctx context.Context, id int32) error {
+	existing, err := u.GetMitraByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
 	affected, err := u.repo.DeleteMitra(ctx, id)
 	if err != nil {
 		return err
@@ -341,6 +404,9 @@ func (u *MasterDataUseCase) DeleteMitra(ctx context.Context, id int32) error {
 	if affected == 0 {
 		return ErrMasterDataNotFound
 	}
+
+	u.recordMitraDeleteAudit(ctx, existing)
+
 	return nil
 }
 
@@ -417,18 +483,22 @@ func (u *MasterDataUseCase) CreateBarang(ctx context.Context, req model.CreateBa
 		return model.BarangResponse{}, mapMasterDataConflict(err)
 	}
 
-	return model.BarangResponse{
-		ID:          item.IDBarang,
-		Nama:        item.NamaBarang,
-		Kode:        item.Kode,
-		Satuan:      item.Satuan,
-		LokasiRak:   item.LokasiRak,
-		StokMinimum: item.StokMinimum,
-		CreatedAt:   item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	result, err := u.GetBarangByID(ctx, item.IDBarang)
+	if err != nil {
+		return model.BarangResponse{}, err
+	}
+
+	u.recordBarangCreateAudit(ctx, result)
+
+	return result, nil
 }
 
 func (u *MasterDataUseCase) UpdateBarang(ctx context.Context, id int32, req model.UpdateBarangRequest) (model.BarangResponse, error) {
+	beforeItem, err := u.GetBarangByID(ctx, id)
+	if err != nil {
+		return model.BarangResponse{}, err
+	}
+
 	item, err := u.repo.UpdateBarang(ctx, entity.UpdateBarangParams{
 		IDBarang:      id,
 		NamaBarang:    req.NamaBarang,
@@ -443,18 +513,22 @@ func (u *MasterDataUseCase) UpdateBarang(ctx context.Context, id int32, req mode
 		return model.BarangResponse{}, mapMasterDataConflict(err)
 	}
 
-	return model.BarangResponse{
-		ID:          item.IDBarang,
-		Nama:        item.NamaBarang,
-		Kode:        item.Kode,
-		Satuan:      item.Satuan,
-		LokasiRak:   item.LokasiRak,
-		StokMinimum: item.StokMinimum,
-		CreatedAt:   item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	result, err := u.GetBarangByID(ctx, item.IDBarang)
+	if err != nil {
+		return model.BarangResponse{}, err
+	}
+
+	u.recordBarangUpdateAudit(ctx, result, buildBarangAuditSnapshot(beforeItem), buildBarangAuditSnapshot(result))
+
+	return result, nil
 }
 
 func (u *MasterDataUseCase) DeleteBarang(ctx context.Context, id int32) error {
+	existing, err := u.GetBarangByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
 	affected, err := u.repo.DeleteBarang(ctx, id)
 	if err != nil {
 		return err
@@ -462,6 +536,9 @@ func (u *MasterDataUseCase) DeleteBarang(ctx context.Context, id int32) error {
 	if affected == 0 {
 		return ErrMasterDataNotFound
 	}
+
+	u.recordBarangDeleteAudit(ctx, existing)
+
 	return nil
 }
 
@@ -533,7 +610,7 @@ func (u *MasterDataUseCase) CreateHakAkses(ctx context.Context, req model.Create
 		return model.HakAksesResponse{}, mapMasterDataConflict(err)
 	}
 
-	return model.HakAksesResponse{
+	result := model.HakAksesResponse{
 		ID:               item.IDHakAkses,
 		KodePermission:   item.KodePermission,
 		Nama:             item.NamaHalaman,
@@ -541,10 +618,19 @@ func (u *MasterDataUseCase) CreateHakAkses(ctx context.Context, req model.Create
 		DomainPermission: item.DomainPermission,
 		AksiPermission:   item.AksiPermission,
 		CreatedAt:        item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	}
+
+	u.recordHakAksesCreateAudit(ctx, result)
+
+	return result, nil
 }
 
 func (u *MasterDataUseCase) UpdateHakAkses(ctx context.Context, id int32, req model.UpdateHakAksesRequest) (model.HakAksesResponse, error) {
+	beforeItem, err := u.GetHakAksesByID(ctx, id)
+	if err != nil {
+		return model.HakAksesResponse{}, err
+	}
+
 	item, err := u.repo.UpdateHakAkses(ctx, entity.UpdateHakAksesParams{
 		IDHakAkses:       id,
 		KodePermission:   req.KodePermission,
@@ -560,7 +646,7 @@ func (u *MasterDataUseCase) UpdateHakAkses(ctx context.Context, id int32, req mo
 		return model.HakAksesResponse{}, mapMasterDataConflict(err)
 	}
 
-	return model.HakAksesResponse{
+	result := model.HakAksesResponse{
 		ID:               item.IDHakAkses,
 		KodePermission:   item.KodePermission,
 		Nama:             item.NamaHalaman,
@@ -568,10 +654,19 @@ func (u *MasterDataUseCase) UpdateHakAkses(ctx context.Context, id int32, req mo
 		DomainPermission: item.DomainPermission,
 		AksiPermission:   item.AksiPermission,
 		CreatedAt:        item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	}
+
+	u.recordHakAksesUpdateAudit(ctx, result, buildHakAksesAuditSnapshot(beforeItem), buildHakAksesAuditSnapshot(result))
+
+	return result, nil
 }
 
 func (u *MasterDataUseCase) DeleteHakAkses(ctx context.Context, id int32) error {
+	existing, err := u.GetHakAksesByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
 	affected, err := u.repo.DeleteHakAkses(ctx, id)
 	if err != nil {
 		return err
@@ -579,6 +674,9 @@ func (u *MasterDataUseCase) DeleteHakAkses(ctx context.Context, id int32) error 
 	if affected == 0 {
 		return ErrMasterDataNotFound
 	}
+
+	u.recordHakAksesDeleteAudit(ctx, existing)
+
 	return nil
 }
 
@@ -648,15 +746,24 @@ func (u *MasterDataUseCase) CreateWarna(ctx context.Context, req model.CreateWar
 		return model.WarnaResponse{}, mapMasterDataConflict(err)
 	}
 
-	return model.WarnaResponse{
+	result := model.WarnaResponse{
 		ID:        item.IDWarna,
 		NamaWarna: item.NamaWarna,
 		KodeHex:   pgTextToPtrString(item.KodeHex),
 		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	}
+
+	u.recordWarnaCreateAudit(ctx, result)
+
+	return result, nil
 }
 
 func (u *MasterDataUseCase) UpdateWarna(ctx context.Context, id int32, req model.UpdateWarnaRequest) (model.WarnaResponse, error) {
+	beforeItem, err := u.GetWarnaByID(ctx, id)
+	if err != nil {
+		return model.WarnaResponse{}, err
+	}
+
 	item, err := u.repo.UpdateWarna(ctx, entity.UpdateWarnaParams{
 		IDWarna:   id,
 		NamaWarna: req.NamaWarna,
@@ -669,15 +776,24 @@ func (u *MasterDataUseCase) UpdateWarna(ctx context.Context, id int32, req model
 		return model.WarnaResponse{}, mapMasterDataConflict(err)
 	}
 
-	return model.WarnaResponse{
+	result := model.WarnaResponse{
 		ID:        item.IDWarna,
 		NamaWarna: item.NamaWarna,
 		KodeHex:   pgTextToPtrString(item.KodeHex),
 		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	}
+
+	u.recordWarnaUpdateAudit(ctx, result, buildWarnaAuditSnapshot(beforeItem), buildWarnaAuditSnapshot(result))
+
+	return result, nil
 }
 
 func (u *MasterDataUseCase) DeleteWarna(ctx context.Context, id int32) error {
+	existing, err := u.GetWarnaByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
 	affected, err := u.repo.DeleteWarna(ctx, id)
 	if err != nil {
 		return err
@@ -685,6 +801,9 @@ func (u *MasterDataUseCase) DeleteWarna(ctx context.Context, id int32) error {
 	if affected == 0 {
 		return ErrMasterDataNotFound
 	}
+
+	u.recordWarnaDeleteAudit(ctx, existing)
+
 	return nil
 }
 
@@ -701,4 +820,237 @@ func pgTextToPtrString(t pgtype.Text) *string {
 	}
 	s := t.String
 	return &s
+}
+
+func (u *MasterDataUseCase) recordHakAksesCreateAudit(ctx context.Context, item model.HakAksesResponse) {
+	if u.auditLog == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID: auditCtx.ActorUserID,
+		ActorRole:   auditCtx.ActorRole,
+		Action:      "CREATE",
+		Module:      "role-management",
+		EntityType:  "hak_akses",
+		EntityID:    fmt.Sprintf("%d", item.ID),
+		EntityLabel: item.KodePermission,
+		Method:      auditCtx.Method,
+		Route:       auditCtx.Route,
+		AfterData:   buildHakAksesAuditSnapshot(item),
+	}); err != nil {
+		slog.Error("failed to record permission create audit log", slog.String("error", err.Error()))
+	}
+}
+
+func (u *MasterDataUseCase) recordHakAksesUpdateAudit(ctx context.Context, item model.HakAksesResponse, beforeSnapshot, afterSnapshot map[string]any) {
+	if u.auditLog == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        "UPDATE",
+		Module:        "role-management",
+		EntityType:    "hak_akses",
+		EntityID:      fmt.Sprintf("%d", item.ID),
+		EntityLabel:   item.KodePermission,
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		BeforeData:    beforeSnapshot,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(beforeSnapshot, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record permission update audit log", slog.String("error", err.Error()))
+	}
+}
+
+func (u *MasterDataUseCase) recordHakAksesDeleteAudit(ctx context.Context, item model.HakAksesResponse) {
+	if u.auditLog == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID: auditCtx.ActorUserID,
+		ActorRole:   auditCtx.ActorRole,
+		Action:      "DELETE",
+		Module:      "role-management",
+		EntityType:  "hak_akses",
+		EntityID:    fmt.Sprintf("%d", item.ID),
+		EntityLabel: item.KodePermission,
+		Method:      auditCtx.Method,
+		Route:       auditCtx.Route,
+		BeforeData:  buildHakAksesAuditSnapshot(item),
+	}); err != nil {
+		slog.Error("failed to record permission delete audit log", slog.String("error", err.Error()))
+	}
+}
+
+func buildHakAksesAuditSnapshot(item model.HakAksesResponse) map[string]any {
+	return map[string]any{
+		"id_hak_akses":      item.ID,
+		"kode_permission":   item.KodePermission,
+		"nama_halaman":      item.Nama,
+		"deskripsi":         item.Deskripsi,
+		"domain_permission": item.DomainPermission,
+		"aksi_permission":   item.AksiPermission,
+	}
+}
+
+func (u *MasterDataUseCase) recordDepartemenCreateAudit(ctx context.Context, item model.DepartemenResponse) {
+	u.recordMasterDataAudit(ctx, "CREATE", "departemen", fmt.Sprintf("%d", item.ID), item.Nama, nil, buildDepartemenAuditSnapshot(item))
+}
+
+func (u *MasterDataUseCase) recordDepartemenUpdateAudit(ctx context.Context, item model.DepartemenResponse, beforeSnapshot, afterSnapshot map[string]any) {
+	u.recordMasterDataAudit(ctx, "UPDATE", "departemen", fmt.Sprintf("%d", item.ID), item.Nama, beforeSnapshot, afterSnapshot)
+}
+
+func (u *MasterDataUseCase) recordDepartemenDeleteAudit(ctx context.Context, item model.DepartemenResponse) {
+	u.recordMasterDataAudit(ctx, "DELETE", "departemen", fmt.Sprintf("%d", item.ID), item.Nama, buildDepartemenAuditSnapshot(item), nil)
+}
+
+func buildDepartemenAuditSnapshot(item model.DepartemenResponse) map[string]any {
+	return map[string]any{
+		"id_departemen":   item.ID,
+		"nama_departemen": item.Nama,
+	}
+}
+
+func (u *MasterDataUseCase) recordJenisBarangCreateAudit(ctx context.Context, item model.JenisBarangResponse) {
+	u.recordMasterDataAudit(ctx, "CREATE", "jenis_barang", fmt.Sprintf("%d", item.ID), item.Nama, nil, buildJenisBarangAuditSnapshot(item))
+}
+
+func (u *MasterDataUseCase) recordJenisBarangUpdateAudit(ctx context.Context, item model.JenisBarangResponse, beforeSnapshot, afterSnapshot map[string]any) {
+	u.recordMasterDataAudit(ctx, "UPDATE", "jenis_barang", fmt.Sprintf("%d", item.ID), item.Nama, beforeSnapshot, afterSnapshot)
+}
+
+func (u *MasterDataUseCase) recordJenisBarangDeleteAudit(ctx context.Context, item model.JenisBarangResponse) {
+	u.recordMasterDataAudit(ctx, "DELETE", "jenis_barang", fmt.Sprintf("%d", item.ID), item.Nama, buildJenisBarangAuditSnapshot(item), nil)
+}
+
+func buildJenisBarangAuditSnapshot(item model.JenisBarangResponse) map[string]any {
+	return map[string]any{
+		"id_jenis_barang":   item.ID,
+		"nama_jenis_barang": item.Nama,
+		"kode":              item.Kode,
+	}
+}
+
+func (u *MasterDataUseCase) recordMitraCreateAudit(ctx context.Context, item model.MitraResponse) {
+	u.recordMasterDataAudit(ctx, "CREATE", "mitra", fmt.Sprintf("%d", item.ID), item.NamaPerusahaan, nil, buildMitraAuditSnapshot(item))
+}
+
+func (u *MasterDataUseCase) recordMitraUpdateAudit(ctx context.Context, item model.MitraResponse, beforeSnapshot, afterSnapshot map[string]any) {
+	u.recordMasterDataAudit(ctx, "UPDATE", "mitra", fmt.Sprintf("%d", item.ID), item.NamaPerusahaan, beforeSnapshot, afterSnapshot)
+}
+
+func (u *MasterDataUseCase) recordMitraDeleteAudit(ctx context.Context, item model.MitraResponse) {
+	u.recordMasterDataAudit(ctx, "DELETE", "mitra", fmt.Sprintf("%d", item.ID), item.NamaPerusahaan, buildMitraAuditSnapshot(item), nil)
+}
+
+func buildMitraAuditSnapshot(item model.MitraResponse) map[string]any {
+	return map[string]any{
+		"id_mitra":        item.ID,
+		"nama_perusahaan": item.NamaPerusahaan,
+		"tipe_perusahaan": item.TipePerusahaan,
+		"email":           item.Email,
+		"no_telp":         item.NoTelp,
+		"alamat":          item.Alamat,
+		"kota":            item.Kota,
+		"kode_pos":        item.KodePos,
+	}
+}
+
+func (u *MasterDataUseCase) recordBarangCreateAudit(ctx context.Context, item model.BarangResponse) {
+	u.recordMasterDataAudit(ctx, "CREATE", "barang", fmt.Sprintf("%d", item.ID), item.Nama, nil, buildBarangAuditSnapshot(item))
+}
+
+func (u *MasterDataUseCase) recordBarangUpdateAudit(ctx context.Context, item model.BarangResponse, beforeSnapshot, afterSnapshot map[string]any) {
+	u.recordMasterDataAudit(ctx, "UPDATE", "barang", fmt.Sprintf("%d", item.ID), item.Nama, beforeSnapshot, afterSnapshot)
+}
+
+func (u *MasterDataUseCase) recordBarangDeleteAudit(ctx context.Context, item model.BarangResponse) {
+	u.recordMasterDataAudit(ctx, "DELETE", "barang", fmt.Sprintf("%d", item.ID), item.Nama, buildBarangAuditSnapshot(item), nil)
+}
+
+func buildBarangAuditSnapshot(item model.BarangResponse) map[string]any {
+	return map[string]any{
+		"id_barang":         item.ID,
+		"nama_barang":       item.Nama,
+		"kode":              item.Kode,
+		"nama_perusahaan":   item.NamaPerusahaan,
+		"nama_jenis_barang": item.NamaJenisBarang,
+		"satuan":            item.Satuan,
+		"lokasi_rak":        item.LokasiRak,
+		"stok_minimum":      item.StokMinimum,
+	}
+}
+
+func (u *MasterDataUseCase) recordWarnaCreateAudit(ctx context.Context, item model.WarnaResponse) {
+	u.recordMasterDataAudit(ctx, "CREATE", "warna", fmt.Sprintf("%d", item.ID), item.NamaWarna, nil, buildWarnaAuditSnapshot(item))
+}
+
+func (u *MasterDataUseCase) recordWarnaUpdateAudit(ctx context.Context, item model.WarnaResponse, beforeSnapshot, afterSnapshot map[string]any) {
+	u.recordMasterDataAudit(ctx, "UPDATE", "warna", fmt.Sprintf("%d", item.ID), item.NamaWarna, beforeSnapshot, afterSnapshot)
+}
+
+func (u *MasterDataUseCase) recordWarnaDeleteAudit(ctx context.Context, item model.WarnaResponse) {
+	u.recordMasterDataAudit(ctx, "DELETE", "warna", fmt.Sprintf("%d", item.ID), item.NamaWarna, buildWarnaAuditSnapshot(item), nil)
+}
+
+func buildWarnaAuditSnapshot(item model.WarnaResponse) map[string]any {
+	return map[string]any{
+		"id_warna":   item.ID,
+		"nama_warna": item.NamaWarna,
+		"kode_hex":   item.KodeHex,
+	}
+}
+
+func (u *MasterDataUseCase) recordMasterDataAudit(ctx context.Context, action, entityType, entityID, entityLabel string, beforeSnapshot, afterSnapshot map[string]any) {
+	if u.auditLog == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	recordRequest := model.AuditLogRecordRequest{
+		ActorUserID: auditCtx.ActorUserID,
+		ActorRole:   auditCtx.ActorRole,
+		Action:      action,
+		Module:      "master-data",
+		EntityType:  entityType,
+		EntityID:    entityID,
+		EntityLabel: entityLabel,
+		Method:      auditCtx.Method,
+		Route:       auditCtx.Route,
+		BeforeData:  beforeSnapshot,
+		AfterData:   afterSnapshot,
+	}
+
+	if action == "UPDATE" {
+		recordRequest.ChangedFields = buildChangedFieldsFromSnapshots(beforeSnapshot, afterSnapshot)
+	}
+
+	if err := u.auditLog.Record(ctx, recordRequest); err != nil {
+		slog.Error("failed to record master data audit log", slog.String("entity_type", entityType), slog.String("action", action), slog.String("error", err.Error()))
+	}
 }

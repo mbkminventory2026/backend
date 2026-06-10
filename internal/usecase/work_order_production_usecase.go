@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -34,11 +35,12 @@ var (
 )
 
 type WorkOrderProductionUseCase struct {
-	repo   entity.Querier
-	dbPool *pgxpool.Pool
+	repo     entity.Querier
+	dbPool   *pgxpool.Pool
+	auditLog *AuditLogUseCase
 }
 
-func NewWorkOrderProductionUseCase(repo entity.Querier, dbPool *pgxpool.Pool) (*WorkOrderProductionUseCase, error) {
+func NewWorkOrderProductionUseCase(repo entity.Querier, dbPool *pgxpool.Pool, auditLog *AuditLogUseCase) (*WorkOrderProductionUseCase, error) {
 	if repo == nil {
 		return nil, errors.New("work order repository is required")
 	}
@@ -47,8 +49,9 @@ func NewWorkOrderProductionUseCase(repo entity.Querier, dbPool *pgxpool.Pool) (*
 	}
 
 	return &WorkOrderProductionUseCase{
-		repo:   repo,
-		dbPool: dbPool,
+		repo:     repo,
+		dbPool:   dbPool,
+		auditLog: auditLog,
 	}, nil
 }
 
@@ -289,7 +292,7 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 		return nil, fmt.Errorf("%w: failed to commit transaction", ErrWorkOrderServiceUnavailable)
 	}
 
-	return &model.WorkOrderResponse{
+	result := &model.WorkOrderResponse{
 		ID:             header.IDWo,
 		Buyer:          header.Buyer,
 		Model:          header.Model,
@@ -302,13 +305,22 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 		Shells:         shells,
 		Trims:          trims,
 		MaterialLists:  materials,
-	}, nil
+	}
+
+	u.recordWorkOrderCreateAudit(ctx, result)
+
+	return result, nil
 }
 
 func (u *WorkOrderProductionUseCase) CloseWorkOrder(ctx context.Context, id int32, closerUserID int32) (*model.WorkOrderStatusResponse, error) {
 	// First run auto-close to catch any auto-closable work orders
 	if err := u.repo.AutoCloseWorkOrders(ctx); err != nil {
 		return nil, fmt.Errorf("%w: failed to run auto-close", ErrWorkOrderServiceUnavailable)
+	}
+
+	beforeItem, err := u.GetWorkOrderDetail(ctx, id, nil)
+	if err != nil {
+		return nil, err
 	}
 
 	current, err := u.repo.GetWorkOrderDetail(ctx, entity.GetWorkOrderDetailParams{
@@ -336,12 +348,21 @@ func (u *WorkOrderProductionUseCase) CloseWorkOrder(ctx context.Context, id int3
 		return nil, mapWorkOrderDBError(err)
 	}
 
-	return &model.WorkOrderStatusResponse{
+	result := &model.WorkOrderStatusResponse{
 		ID:             updated.IDWo,
 		Status:         updated.Status,
 		ClosedByUserID: nullableInt32Ptr(updated.ClosedByUserID),
 		ClosedAt:       nullableTimestampString(updated.ClosedAt),
-	}, nil
+	}
+
+	afterItem, err := u.GetWorkOrderDetail(ctx, id, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	u.recordWorkOrderCloseAudit(ctx, result, buildWorkOrderAuditSnapshotFromDetail(beforeItem), buildWorkOrderAuditSnapshotFromDetail(afterItem))
+
+	return result, nil
 }
 
 func (u *WorkOrderProductionUseCase) CreateFactoryReport(ctx context.Context, division string, req model.CreateFactoryReportRequest) (*model.FactoryReportResponse, error) {
@@ -805,6 +826,11 @@ func (u *WorkOrderProductionUseCase) ClientCloseWorkOrder(ctx context.Context, i
 		return nil, fmt.Errorf("%w: failed to run auto-close", ErrWorkOrderServiceUnavailable)
 	}
 
+	beforeItem, err := u.GetWorkOrderDetail(ctx, idWo, idMitra)
+	if err != nil {
+		return nil, err
+	}
+
 	// Fetch WO and verify it exists and is open
 	wo, err := u.repo.GetWorkOrderDetail(ctx, entity.GetWorkOrderDetailParams{
 		IDWo:    idWo,
@@ -835,10 +861,19 @@ func (u *WorkOrderProductionUseCase) ClientCloseWorkOrder(ctx context.Context, i
 		return nil, mapWorkOrderDBError(err)
 	}
 
-	return &model.WorkOrderStatusResponse{
+	result := &model.WorkOrderStatusResponse{
 		ID:     updated.IDWo,
 		Status: updated.Status,
-	}, nil
+	}
+
+	afterItem, err := u.GetWorkOrderDetail(ctx, idWo, idMitra)
+	if err != nil {
+		return nil, err
+	}
+
+	u.recordWorkOrderClientCloseAudit(ctx, result, buildWorkOrderAuditSnapshotFromDetail(beforeItem), buildWorkOrderAuditSnapshotFromDetail(afterItem))
+
+	return result, nil
 }
 
 func (u *WorkOrderProductionUseCase) GetDailyReportsByWorkOrder(ctx context.Context, idWo int32) (*model.DailyReportListResponse, error) {
@@ -899,4 +934,277 @@ func (u *WorkOrderProductionUseCase) ListReturClients(ctx context.Context, filte
 		Items:      items,
 		Pagination: buildPagination(total, page, limit),
 	}, nil
+}
+
+func (u *WorkOrderProductionUseCase) recordWorkOrderCreateAudit(ctx context.Context, item *model.WorkOrderResponse) {
+	if u.auditLog == nil || item == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	afterSnapshot := buildWorkOrderAuditSnapshot(item)
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        "CREATE",
+		Module:        "work-order-production",
+		EntityType:    "work_orders",
+		EntityID:      fmt.Sprintf("%d", item.ID),
+		EntityLabel:   item.Model,
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(nil, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record work order create audit log", slog.String("error", err.Error()))
+	}
+}
+
+func (u *WorkOrderProductionUseCase) recordWorkOrderCloseAudit(ctx context.Context, item *model.WorkOrderStatusResponse, beforeSnapshot, afterSnapshot map[string]any) {
+	if u.auditLog == nil || item == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        "UPDATE",
+		Module:        "work-order-production",
+		EntityType:    "work_orders",
+		EntityID:      fmt.Sprintf("%d", item.ID),
+		EntityLabel:   fmt.Sprintf("Work Order #%d", item.ID),
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		BeforeData:    beforeSnapshot,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(beforeSnapshot, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record work order close audit log", slog.String("error", err.Error()))
+	}
+}
+
+func (u *WorkOrderProductionUseCase) recordWorkOrderClientCloseAudit(ctx context.Context, item *model.WorkOrderStatusResponse, beforeSnapshot, afterSnapshot map[string]any) {
+	if u.auditLog == nil || item == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        "UPDATE",
+		Module:        "work-order-production",
+		EntityType:    "work_orders",
+		EntityID:      fmt.Sprintf("%d", item.ID),
+		EntityLabel:   fmt.Sprintf("Work Order #%d", item.ID),
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		BeforeData:    beforeSnapshot,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(beforeSnapshot, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record work order client close audit log", slog.String("error", err.Error()))
+	}
+}
+
+func buildWorkOrderAuditSnapshot(item *model.WorkOrderResponse) map[string]any {
+	if item == nil {
+		return nil
+	}
+
+	shells := make([]map[string]any, 0, len(item.Shells))
+	for _, shell := range item.Shells {
+		sizes := make([]map[string]any, 0, len(shell.Sizes))
+		for _, size := range shell.Sizes {
+			sizes = append(sizes, map[string]any{
+				"id_wo_shell_size": size.ID,
+				"size":             size.Size,
+				"qty":              size.Qty,
+				"ratio":            size.Ratio,
+			})
+		}
+
+		shells = append(shells, map[string]any{
+			"id_wo_shell":   shell.ID,
+			"deskripsi":     shell.Deskripsi,
+			"cons":          shell.Cons,
+			"color":         shell.Color,
+			"allow":         shell.Allow,
+			"berat_1_yd":    shell.Berat1Yd,
+			"provided_by":   shell.ProvidedBy,
+			"material_type": shell.MaterialType,
+			"sizes":         sizes,
+		})
+	}
+
+	trims := make([]map[string]any, 0, len(item.Trims))
+	for _, trim := range item.Trims {
+		trims = append(trims, map[string]any{
+			"id_wo_trim":  trim.ID,
+			"item":        trim.Item,
+			"description": trim.Description,
+			"color":       trim.Color,
+			"code":        trim.Code,
+			"cons":        trim.Cons,
+			"qty":         trim.Qty,
+			"uom":         trim.UOM,
+			"position":    trim.Position,
+			"created_by":  trim.CreatedBy,
+			"allow":       trim.Allow,
+			"provided_by": trim.ProvidedBy,
+		})
+	}
+
+	materialLists := make([]map[string]any, 0, len(item.MaterialLists))
+	for _, material := range item.MaterialLists {
+		materialItems := make([]map[string]any, 0, len(material.Items))
+		for _, row := range material.Items {
+			materialItems = append(materialItems, map[string]any{
+				"id_material_list_item": row.ID,
+				"item":                  row.Item,
+				"description":           row.Description,
+				"qty":                   row.Qty,
+				"unit":                  row.Unit,
+				"est_price":             row.EstPrice,
+				"id_wo_shell":           row.IDWoShell,
+				"id_wo_trim":            row.IDWoTrim,
+				"qty_surat_jalan":       row.QtySuratJalan,
+				"qty_received":          row.QtyReceived,
+			})
+		}
+
+		materialLists = append(materialLists, map[string]any{
+			"id_material_list": material.ID,
+			"id_wo":            material.IDWo,
+			"name":             material.Name,
+			"is_locked":        material.IsLocked,
+			"items":            materialItems,
+		})
+	}
+
+	return map[string]any{
+		"id_wo":             item.ID,
+		"buyer":             item.Buyer,
+		"model":             item.Model,
+		"qty":               item.Qty,
+		"fob_cmt":           item.FOBCMT,
+		"delivery":          item.Delivery,
+		"id_po_client_item": item.IDPOClientItem,
+		"status":            item.Status,
+		"closed_by_user_id": item.ClosedByUserID,
+		"closed_at":         item.ClosedAt,
+		"created_at":        item.CreatedAt,
+		"shells":            shells,
+		"trims":             trims,
+		"material_lists":    materialLists,
+	}
+}
+
+func buildWorkOrderAuditSnapshotFromDetail(item *model.WorkOrderDetailResponse) map[string]any {
+	if item == nil {
+		return nil
+	}
+
+	shells := make([]map[string]any, 0, len(item.Shells))
+	for _, shell := range item.Shells {
+		sizes := make([]map[string]any, 0, len(shell.Sizes))
+		for _, size := range shell.Sizes {
+			sizes = append(sizes, map[string]any{
+				"id_wo_shell_size": size.ID,
+				"size":             size.Size,
+				"qty":              size.Qty,
+				"ratio":            size.Ratio,
+			})
+		}
+
+		shells = append(shells, map[string]any{
+			"id_wo_shell":   shell.ID,
+			"deskripsi":     shell.Deskripsi,
+			"cons":          shell.Cons,
+			"color":         shell.Color,
+			"allow":         shell.Allow,
+			"berat_1_yd":    shell.Berat1Yd,
+			"provided_by":   shell.ProvidedBy,
+			"material_type": shell.MaterialType,
+			"sizes":         sizes,
+		})
+	}
+
+	trims := make([]map[string]any, 0, len(item.Trims))
+	for _, trim := range item.Trims {
+		trims = append(trims, map[string]any{
+			"id_wo_trim":  trim.ID,
+			"item":        trim.Item,
+			"description": trim.Description,
+			"color":       trim.Color,
+			"code":        trim.Code,
+			"cons":        trim.Cons,
+			"qty":         trim.Qty,
+			"uom":         trim.UOM,
+			"position":    trim.Position,
+			"created_by":  trim.CreatedBy,
+			"allow":       trim.Allow,
+			"provided_by": trim.ProvidedBy,
+		})
+	}
+
+	materialLists := make([]map[string]any, 0, len(item.MaterialLists))
+	for _, material := range item.MaterialLists {
+		materialItems := make([]map[string]any, 0, len(material.Items))
+		for _, row := range material.Items {
+			materialItems = append(materialItems, map[string]any{
+				"id_material_list_item": row.ID,
+				"item":                  row.Item,
+				"description":           row.Description,
+				"qty":                   row.Qty,
+				"unit":                  row.Unit,
+				"est_price":             row.EstPrice,
+				"id_wo_shell":           row.IDWoShell,
+				"id_wo_trim":            row.IDWoTrim,
+				"qty_surat_jalan":       row.QtySuratJalan,
+				"qty_received":          row.QtyReceived,
+			})
+		}
+
+		materialLists = append(materialLists, map[string]any{
+			"id_material_list": material.ID,
+			"id_wo":            material.IDWo,
+			"name":             material.Name,
+			"is_locked":        material.IsLocked,
+			"items":            materialItems,
+		})
+	}
+
+	return map[string]any{
+		"id_wo":                item.ID,
+		"buyer":                item.Buyer,
+		"model":                item.Model,
+		"qty":                  item.Qty,
+		"fob_cmt":              item.FOBCMT,
+		"delivery":             item.Delivery,
+		"id_po_client_item":    item.IDPOClientItem,
+		"status":               item.Status,
+		"closed_by_user_id":    item.ClosedByUserID,
+		"closed_at":            item.ClosedAt,
+		"po_number":            item.PONumber,
+		"po_client_item_style": item.POClientItemStyle,
+		"created_at":           item.CreatedAt,
+		"shells":               shells,
+		"trims":                trims,
+		"material_lists":       materialLists,
+		"retur":                item.Retur,
+	}
 }

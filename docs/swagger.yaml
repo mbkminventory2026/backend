@@ -158,6 +158,104 @@ definitions:
     required:
     - id_role
     type: object
+  model.AuditLogChangedField:
+    properties:
+      after: {}
+      before: {}
+      field:
+        type: string
+    type: object
+  model.AuditLogDetailResponse:
+    properties:
+      action:
+        type: string
+      actor_role:
+        type: string
+      actor_user_id:
+        type: integer
+      actor_username:
+        type: string
+      after_data:
+        additionalProperties: {}
+        type: object
+      before_data:
+        additionalProperties: {}
+        type: object
+      changed_fields:
+        items:
+          $ref: '#/definitions/model.AuditLogChangedField'
+        type: array
+      created_at:
+        type: string
+      entity_id:
+        type: string
+      entity_label:
+        type: string
+      entity_type:
+        type: string
+      id:
+        type: integer
+      method:
+        type: string
+      module:
+        type: string
+      route:
+        type: string
+    type: object
+  model.AuditLogDetailSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.AuditLogDetailResponse'
+      message:
+        example: activity log detail retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.AuditLogListItem:
+    properties:
+      action:
+        type: string
+      actor_role:
+        type: string
+      actor_user_id:
+        type: integer
+      actor_username:
+        type: string
+      created_at:
+        type: string
+      entity_id:
+        type: string
+      entity_label:
+        type: string
+      entity_type:
+        type: string
+      id:
+        type: integer
+      module:
+        type: string
+    type: object
+  model.AuditLogListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.AuditLogListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.AuditLogListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.AuditLogListResponse'
+      message:
+        example: activity logs retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.AuthServiceUnavailableErrorDetail:
     properties:
       code:
@@ -1641,6 +1739,10 @@ definitions:
       item:
         type: string
       qty:
+        type: integer
+      qty_received:
+        type: integer
+      qty_surat_jalan:
         type: integer
       unit:
         type: string
@@ -3305,6 +3407,8 @@ definitions:
     type: object
   model.UpdateWOShellPlanStatusRequest:
     properties:
+      in_line:
+        type: string
       status_embroo:
         type: string
       status_finishing_packing:
@@ -3807,6 +3911,91 @@ info:
   title: Permatatex IT Inventory API
   version: "1.0"
 paths:
+  /api/v1/activity-logs:
+    get:
+      description: Retrieves paginated audit log history for operator users.
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Limit fallback
+        in: query
+        name: limit
+        type: integer
+      - description: Search term
+        in: query
+        name: q
+        type: string
+      - description: Action filter
+        in: query
+        name: action
+        type: string
+      - description: Module filter
+        in: query
+        name: module
+        type: string
+      - description: Entity type filter
+        in: query
+        name: entityType
+        type: string
+      - description: Actor user ID filter
+        in: query
+        name: actorUserId
+        type: integer
+      - description: Date from (YYYY-MM-DD or RFC3339)
+        in: query
+        name: dateFrom
+        type: string
+      - description: Date to (YYYY-MM-DD or RFC3339)
+        in: query
+        name: dateTo
+        type: string
+      - description: Sort field
+        in: query
+        name: sortBy
+        type: string
+      - description: Sort descending
+        in: query
+        name: sortDesc
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.AuditLogListSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: List activity logs
+      tags:
+      - Audit Logs
+  /api/v1/activity-logs/{id}:
+    get:
+      description: Retrieves a single audit log detail for operator users.
+      parameters:
+      - description: Audit log ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.AuditLogDetailSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Get activity log detail
+      tags:
+      - Audit Logs
   /api/v1/approvals/action:
     post:
       consumes:
@@ -4226,6 +4415,28 @@ paths:
       security:
       - BearerAuth: []
       summary: Ambil KPI Operator
+      tags:
+      - Dashboard
+  /api/v1/dashboard/production:
+    get:
+      description: Mengambil metrics realtime untuk layar Production Dashboard
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Ambil KPI Production
+      tags:
+      - Dashboard
+  /api/v1/dashboard/warehouse:
+    get:
+      description: Mengambil metrics realtime untuk layar Warehouse Dashboard
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Ambil KPI Warehouse
       tags:
       - Dashboard
   /api/v1/exports/excel/render:

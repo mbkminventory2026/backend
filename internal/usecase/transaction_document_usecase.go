@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgconn"
@@ -32,11 +33,12 @@ var (
 )
 
 type TransactionDocumentUseCase struct {
-	repo   entity.Querier
-	dbPool *pgxpool.Pool
+	repo     entity.Querier
+	dbPool   *pgxpool.Pool
+	auditLog *AuditLogUseCase
 }
 
-func NewTransactionDocumentUseCase(repo entity.Querier, dbPool *pgxpool.Pool) (*TransactionDocumentUseCase, error) {
+func NewTransactionDocumentUseCase(repo entity.Querier, dbPool *pgxpool.Pool, auditLog *AuditLogUseCase) (*TransactionDocumentUseCase, error) {
 	if repo == nil {
 		return nil, errors.New("transaction repository is required")
 	}
@@ -45,8 +47,9 @@ func NewTransactionDocumentUseCase(repo entity.Querier, dbPool *pgxpool.Pool) (*
 	}
 
 	return &TransactionDocumentUseCase{
-		repo:   repo,
-		dbPool: dbPool,
+		repo:     repo,
+		dbPool:   dbPool,
+		auditLog: auditLog,
 	}, nil
 }
 
@@ -137,7 +140,7 @@ func (u *TransactionDocumentUseCase) CreatePOClient(ctx context.Context, req mod
 		return nil, fmt.Errorf("%w: failed to commit transaction", ErrTransactionServiceUnavailable)
 	}
 
-	return &model.POClientResponse{
+	result := &model.POClientResponse{
 		ID:              header.IDPoClient,
 		PONumber:        header.PoNumber,
 		Tanggal:         header.Tanggal.Time.Format("2006-01-02"),
@@ -149,7 +152,11 @@ func (u *TransactionDocumentUseCase) CreatePOClient(ctx context.Context, req mod
 		CreatedAt:       header.CreatedAt.Time.Format(time.RFC3339),
 		Items:           items,
 		PenanggungJawab: pics,
-	}, nil
+	}
+
+	u.recordPOClientCreateAudit(ctx, result)
+
+	return result, nil
 }
 
 func (u *TransactionDocumentUseCase) UpdatePOClient(ctx context.Context, id int32, req model.CreatePOClientRequest) (*model.POClientResponse, error) {
@@ -160,6 +167,11 @@ func (u *TransactionDocumentUseCase) UpdatePOClient(ctx context.Context, id int3
 		return nil, err
 	}
 	if err := validateDate(req.Delivery); err != nil {
+		return nil, err
+	}
+
+	beforeItem, err := u.GetPOClientDetail(ctx, id, nil)
+	if err != nil {
 		return nil, err
 	}
 
@@ -258,7 +270,7 @@ func (u *TransactionDocumentUseCase) UpdatePOClient(ctx context.Context, id int3
 		return nil, fmt.Errorf("%w: failed to commit transaction", ErrTransactionServiceUnavailable)
 	}
 
-	return &model.POClientResponse{
+	result := &model.POClientResponse{
 		ID:              header.IDPoClient,
 		PONumber:        header.PoNumber,
 		Tanggal:         header.Tanggal.Time.Format("2006-01-02"),
@@ -270,7 +282,11 @@ func (u *TransactionDocumentUseCase) UpdatePOClient(ctx context.Context, id int3
 		CreatedAt:       header.CreatedAt.Time.Format(time.RFC3339),
 		Items:           items,
 		PenanggungJawab: pics,
-	}, nil
+	}
+
+	u.recordPOClientUpdateAudit(ctx, result, buildPOClientAuditSnapshotFromDetail(beforeItem), buildPOClientAuditSnapshot(result))
+
+	return result, nil
 }
 
 func (u *TransactionDocumentUseCase) CreatePRInternal(ctx context.Context, actorUserID int32, req model.CreatePRInternalRequest) (*model.PRInternalResponse, error) {
@@ -381,7 +397,7 @@ func (u *TransactionDocumentUseCase) CreatePRInternal(ctx context.Context, actor
 		return nil, fmt.Errorf("%w: failed to commit transaction", ErrTransactionServiceUnavailable)
 	}
 
-	return &model.PRInternalResponse{
+	result := &model.PRInternalResponse{
 		ID:            header.IDPrInternal,
 		Tanggal:       header.Tanggal.Time.Format("2006-01-02"),
 		Nama:          header.Nama,
@@ -395,10 +411,19 @@ func (u *TransactionDocumentUseCase) CreatePRInternal(ctx context.Context, actor
 		Status:        "draft",
 		CreatedAt:     header.CreatedAt.Time.Format(time.RFC3339),
 		Items:         items,
-	}, nil
+	}
+
+	u.recordPRInternalCreateAudit(ctx, result)
+
+	return result, nil
 }
 
 func (u *TransactionDocumentUseCase) ApprovePRInternal(ctx context.Context, id int32, approverUserID int32) (*model.PRInternalStatusResponse, error) {
+	beforeItem, err := u.GetPRInternalDetail(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
 	current, err := u.repo.GetPRInternalDetail(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -418,12 +443,21 @@ func (u *TransactionDocumentUseCase) ApprovePRInternal(ctx context.Context, id i
 		return nil, mapTransactionDBError(err)
 	}
 
-	return &model.PRInternalStatusResponse{
+	result := &model.PRInternalStatusResponse{
 		ID:           updated.IDPrInternal,
 		Status:       updated.Status,
 		ApprovedByID: nullableInt32Ptr(updated.ApprovedByUserID),
 		ApprovedAt:   nullableTimestampString(updated.ApprovedAt),
-	}, nil
+	}
+
+	afterItem, err := u.GetPRInternalDetail(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	u.recordPRInternalApproveAudit(ctx, result, buildPRInternalAuditSnapshot(beforeItem), buildPRInternalAuditSnapshot(afterItem))
+
+	return result, nil
 }
 
 func (u *TransactionDocumentUseCase) CreatePOInternal(ctx context.Context, userID int32, req model.CreatePOInternalRequest) (*model.POInternalResponse, error) {
@@ -515,7 +549,7 @@ func (u *TransactionDocumentUseCase) CreatePOInternal(ctx context.Context, userI
 		return nil, fmt.Errorf("%w: failed to commit transaction", ErrTransactionServiceUnavailable)
 	}
 
-	return &model.POInternalResponse{
+	result := &model.POInternalResponse{
 		ID:              header.IDPoInternal,
 		Tanggal:         header.Tanggal.Time.Format("2006-01-02"),
 		NamaPO:          header.NamaPo,
@@ -532,7 +566,11 @@ func (u *TransactionDocumentUseCase) CreatePOInternal(ctx context.Context, userI
 		IDPRInternal:    header.IDPrInternal,
 		CreatedAt:       header.CreatedAt.Time.Format(time.RFC3339),
 		Items:           items,
-	}, nil
+	}
+
+	u.recordPOInternalCreateAudit(ctx, result)
+
+	return result, nil
 }
 
 func (u *TransactionDocumentUseCase) ListPOClients(ctx context.Context, filter model.TransactionListFilter) (*model.POClientListResponse, error) {
@@ -805,6 +843,310 @@ func (u *TransactionDocumentUseCase) GetPOInternalDetail(ctx context.Context, id
 		CreatedAt:       header.CreatedAt.Time.Format(time.RFC3339),
 		Items:           items,
 	}, nil
+}
+
+func (u *TransactionDocumentUseCase) recordPOClientCreateAudit(ctx context.Context, item *model.POClientResponse) {
+	if u.auditLog == nil || item == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	afterSnapshot := buildPOClientAuditSnapshot(item)
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        "CREATE",
+		Module:        "transaction-documents",
+		EntityType:    "po_clients",
+		EntityID:      fmt.Sprintf("%d", item.ID),
+		EntityLabel:   item.PONumber,
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(nil, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record po client create audit log", slog.String("error", err.Error()))
+	}
+}
+
+func (u *TransactionDocumentUseCase) recordPOClientUpdateAudit(ctx context.Context, item *model.POClientResponse, beforeSnapshot, afterSnapshot map[string]any) {
+	if u.auditLog == nil || item == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        "UPDATE",
+		Module:        "transaction-documents",
+		EntityType:    "po_clients",
+		EntityID:      fmt.Sprintf("%d", item.ID),
+		EntityLabel:   item.PONumber,
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		BeforeData:    beforeSnapshot,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(beforeSnapshot, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record po client update audit log", slog.String("error", err.Error()))
+	}
+}
+
+func (u *TransactionDocumentUseCase) recordPRInternalCreateAudit(ctx context.Context, item *model.PRInternalResponse) {
+	if u.auditLog == nil || item == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	afterSnapshot := buildPRInternalAuditSnapshot(item)
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        "CREATE",
+		Module:        "transaction-documents",
+		EntityType:    "pr_internals",
+		EntityID:      fmt.Sprintf("%d", item.ID),
+		EntityLabel:   item.Nama,
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(nil, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record pr internal create audit log", slog.String("error", err.Error()))
+	}
+}
+
+func (u *TransactionDocumentUseCase) recordPRInternalApproveAudit(ctx context.Context, item *model.PRInternalStatusResponse, beforeSnapshot, afterSnapshot map[string]any) {
+	if u.auditLog == nil || item == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        "UPDATE",
+		Module:        "transaction-documents",
+		EntityType:    "pr_internals",
+		EntityID:      fmt.Sprintf("%d", item.ID),
+		EntityLabel:   fmt.Sprintf("PR Internal #%d", item.ID),
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		BeforeData:    beforeSnapshot,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(beforeSnapshot, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record pr internal approve audit log", slog.String("error", err.Error()))
+	}
+}
+
+func (u *TransactionDocumentUseCase) recordPOInternalCreateAudit(ctx context.Context, item *model.POInternalResponse) {
+	if u.auditLog == nil || item == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	afterSnapshot := buildPOInternalAuditSnapshot(item)
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        "CREATE",
+		Module:        "transaction-documents",
+		EntityType:    "po_internals",
+		EntityID:      fmt.Sprintf("%d", item.ID),
+		EntityLabel:   item.NamaPO,
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(nil, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record po internal create audit log", slog.String("error", err.Error()))
+	}
+}
+
+func buildPOClientAuditSnapshot(item *model.POClientResponse) map[string]any {
+	if item == nil {
+		return nil
+	}
+
+	items := make([]map[string]any, 0, len(item.Items))
+	for _, row := range item.Items {
+		items = append(items, map[string]any{
+			"id_po_client_item": row.ID,
+			"style":             row.Style,
+			"colour":            row.Colour,
+			"description":       row.Description,
+			"qty":               row.Qty,
+			"price":             row.Price,
+			"id_wo":             row.IDWo,
+			"wo_status":         row.WoStatus,
+			"has_retur":         row.HasRetur,
+		})
+	}
+
+	pics := make([]map[string]any, 0, len(item.PenanggungJawab))
+	for _, row := range item.PenanggungJawab {
+		pics = append(pics, map[string]any{
+			"id_penanggung_jawab": row.ID,
+			"nama":                row.Nama,
+			"no_telp":             row.NoTelp,
+			"email":               row.Email,
+		})
+	}
+
+	return map[string]any{
+		"id_po_client":     item.ID,
+		"po_number":        item.PONumber,
+		"tanggal":          item.Tanggal,
+		"season":           item.Season,
+		"delivery":         item.Delivery,
+		"payment_term":     item.PaymentTerm,
+		"file":             item.File,
+		"id_mitra":         item.IDMitra,
+		"created_at":       item.CreatedAt,
+		"items":            items,
+		"penanggung_jawab": pics,
+	}
+}
+
+func buildPOClientAuditSnapshotFromDetail(item *model.POClientDetailResponse) map[string]any {
+	if item == nil {
+		return nil
+	}
+
+	items := make([]map[string]any, 0, len(item.Items))
+	for _, row := range item.Items {
+		items = append(items, map[string]any{
+			"id_po_client_item": row.ID,
+			"style":             row.Style,
+			"colour":            row.Colour,
+			"description":       row.Description,
+			"qty":               row.Qty,
+			"price":             row.Price,
+			"id_wo":             row.IDWo,
+			"wo_status":         row.WoStatus,
+			"has_retur":         row.HasRetur,
+		})
+	}
+
+	pics := make([]map[string]any, 0, len(item.PenanggungJawab))
+	for _, row := range item.PenanggungJawab {
+		pics = append(pics, map[string]any{
+			"id_penanggung_jawab": row.ID,
+			"nama":                row.Nama,
+			"no_telp":             row.NoTelp,
+			"email":               row.Email,
+		})
+	}
+
+	return map[string]any{
+		"id_po_client":     item.ID,
+		"po_number":        item.PONumber,
+		"tanggal":          item.Tanggal,
+		"season":           item.Season,
+		"delivery":         item.Delivery,
+		"payment_term":     item.PaymentTerm,
+		"file":             item.File,
+		"id_mitra":         item.IDMitra,
+		"mitra_name":       item.MitraName,
+		"created_at":       item.CreatedAt,
+		"items":            items,
+		"penanggung_jawab": pics,
+	}
+}
+
+func buildPRInternalAuditSnapshot(item *model.PRInternalResponse) map[string]any {
+	if item == nil {
+		return nil
+	}
+
+	items := make([]map[string]any, 0, len(item.Items))
+	for _, row := range item.Items {
+		items = append(items, map[string]any{
+			"id_pr_internal_item": row.ID,
+			"item":                row.Item,
+			"description":         row.Description,
+			"qty":                 row.Qty,
+			"unit":                row.Unit,
+			"est_price":           row.EstPrice,
+		})
+	}
+
+	return map[string]any{
+		"id_pr_internal":      item.ID,
+		"tanggal":             item.Tanggal,
+		"nama":                item.Nama,
+		"departemen":          item.Departemen,
+		"vendor_name":         item.VendorName,
+		"vendor_address":      item.VendorAddress,
+		"vendor_telp":         item.VendorTelp,
+		"projek":              item.Projek,
+		"id_wo":               item.IDWO,
+		"id_user":             item.IDUser,
+		"status":              item.Status,
+		"approved_by_user_id": item.ApprovedByID,
+		"approved_at":         item.ApprovedAt,
+		"created_at":          item.CreatedAt,
+		"items":               items,
+	}
+}
+
+func buildPOInternalAuditSnapshot(item *model.POInternalResponse) map[string]any {
+	if item == nil {
+		return nil
+	}
+
+	items := make([]map[string]any, 0, len(item.Items))
+	for _, row := range item.Items {
+		items = append(items, map[string]any{
+			"id_po_internal_item": row.ID,
+			"item":                row.Item,
+			"description":         row.Description,
+			"qty":                 row.Qty,
+			"unit":                row.Unit,
+			"unit_price":          row.UnitPrice,
+		})
+	}
+
+	return map[string]any{
+		"id_po_internal":   item.ID,
+		"tanggal":          item.Tanggal,
+		"nama_po":          item.NamaPO,
+		"supplier_name":    item.SupplierName,
+		"supplier_addr":    item.SupplierAddr,
+		"supplier_contact": item.SupplierContact,
+		"supplier_email":   item.SupplierEmail,
+		"supplier_telp":    item.SupplierTelp,
+		"supplier_fax":     item.SupplierFax,
+		"currency":         item.Currency,
+		"cpo":              item.CPO,
+		"term":             item.Term,
+		"ship_date":        item.ShipDate,
+		"id_pr_internal":   item.IDPRInternal,
+		"created_at":       item.CreatedAt,
+		"items":            items,
+	}
 }
 
 func validateDate(value string) error {

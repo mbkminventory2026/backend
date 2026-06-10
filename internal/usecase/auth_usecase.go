@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -35,14 +36,16 @@ type AuthUseCase struct {
 	userRepo         entity.Querier
 	dbPool           *pgxpool.Pool
 	turnstileUseCase *TurnstileUseCase
+	auditLog         *AuditLogUseCase
 	jwtSecret        string
 }
 
-func NewAuthUseCase(userRepo entity.Querier, dbPool *pgxpool.Pool, turnstileUseCase *TurnstileUseCase, jwtSecret string) *AuthUseCase {
+func NewAuthUseCase(userRepo entity.Querier, dbPool *pgxpool.Pool, turnstileUseCase *TurnstileUseCase, auditLog *AuditLogUseCase, jwtSecret string) *AuthUseCase {
 	return &AuthUseCase{
 		userRepo:         userRepo,
 		dbPool:           dbPool,
 		turnstileUseCase: turnstileUseCase,
+		auditLog:         auditLog,
 		jwtSecret:        jwtSecret,
 	}
 }
@@ -207,7 +210,7 @@ func (u *AuthUseCase) ChangePassword(ctx context.Context, userID int32, req mode
 		return nil, ErrPasswordConfirmationMismatch
 	}
 
-	userDetail, err := u.userRepo.GetUserByID(ctx, userID)
+	beforeUser, err := u.userRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrInvalidCredentials
@@ -215,7 +218,7 @@ func (u *AuthUseCase) ChangePassword(ctx context.Context, userID int32, req mode
 		return nil, fmt.Errorf("%w: get user detail", ErrAuthServiceUnavailable)
 	}
 
-	rawUser, err := u.userRepo.GetUserByUsername(ctx, userDetail.Username)
+	rawUser, err := u.userRepo.GetUserByUsername(ctx, beforeUser.Username)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrInvalidCredentials
@@ -245,13 +248,28 @@ func (u *AuthUseCase) ChangePassword(ctx context.Context, userID int32, req mode
 		return nil, ErrInvalidCredentials
 	}
 
+	afterUser, err := u.userRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrInvalidCredentials
+		}
+		return nil, fmt.Errorf("%w: get user detail after password change", ErrAuthServiceUnavailable)
+	}
+
 	var idMitra *int32
-	if userDetail.IDMitra.Valid {
-		val := userDetail.IDMitra.Int32
+	if afterUser.IDMitra.Valid {
+		val := afterUser.IDMitra.Int32
 		idMitra = &val
 	}
 
-	return u.issueLoginToken(ctx, userID, userDetail.IDRole, userDetail.NamaRole, idMitra, false)
+	res, err := u.issueLoginToken(ctx, userID, afterUser.IDRole, afterUser.NamaRole, idMitra, false)
+	if err != nil {
+		return nil, err
+	}
+
+	u.recordChangePasswordAudit(ctx, beforeUser, afterUser)
+
+	return res, nil
 }
 
 func (u *AuthUseCase) CreateForgotPasswordRequest(ctx context.Context, req model.ForgotPasswordRequestCreateRequest) (*model.PasswordResetRequestResponse, error) {
@@ -283,7 +301,7 @@ func (u *AuthUseCase) CreateForgotPasswordRequest(ctx context.Context, req model
 		return nil, fmt.Errorf("%w: create password reset request", ErrAuthServiceUnavailable)
 	}
 
-	return &model.PasswordResetRequestResponse{
+	response := &model.PasswordResetRequestResponse{
 		IDPasswordResetRequest: row.IDPasswordResetRequest,
 		IDUser:                 row.IDUser,
 		Username:               user.Username,
@@ -296,7 +314,11 @@ func (u *AuthUseCase) CreateForgotPasswordRequest(ctx context.Context, req model
 		RejectedAt:             nullableTimestampString(row.RejectedAt),
 		CompletedAt:            nullableTimestampString(row.CompletedAt),
 		RejectedReason:         row.RejectedReason,
-	}, nil
+	}
+
+	u.recordPasswordResetRequestCreateAudit(ctx, user, response)
+
+	return response, nil
 }
 
 func (u *AuthUseCase) ListForgotPasswordRequests(ctx context.Context) ([]model.PasswordResetRequestResponse, error) {
@@ -338,6 +360,11 @@ func (u *AuthUseCase) ListForgotPasswordRequests(ctx context.Context) ([]model.P
 }
 
 func (u *AuthUseCase) ApproveForgotPasswordRequest(ctx context.Context, requestID int32, operatorID int32) (*model.ApprovePasswordResetResponse, error) {
+	beforeRequest, err := u.getPasswordResetRequestForAudit(ctx, requestID)
+	if err != nil {
+		return nil, err
+	}
+
 	tx, err := u.dbPool.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%w: begin password reset approval transaction", ErrAuthServiceUnavailable)
@@ -411,10 +438,23 @@ func (u *AuthUseCase) ApproveForgotPasswordRequest(ctx context.Context, requestI
 		TemporaryPassword: temporaryPassword,
 	}
 
+	u.recordPasswordResetAudit(
+		ctx,
+		response.PasswordResetRequestResponse,
+		buildPasswordResetRequestAuditSnapshot(beforeRequest),
+		buildPasswordResetRequestAuditSnapshot(&response.PasswordResetRequestResponse),
+		"password reset approval",
+	)
+
 	return response, nil
 }
 
 func (u *AuthUseCase) RejectForgotPasswordRequest(ctx context.Context, requestID int32, operatorID int32, rejectedReason string) (*model.PasswordResetRequestResponse, error) {
+	beforeRequest, err := u.getPasswordResetRequestForAudit(ctx, requestID)
+	if err != nil {
+		return nil, err
+	}
+
 	row, err := u.userRepo.RejectPasswordResetRequest(ctx, entity.RejectPasswordResetRequestParams{
 		IDPasswordResetRequest: requestID,
 		RejectedBy:             nullableInt32Param(&operatorID),
@@ -448,7 +488,202 @@ func (u *AuthUseCase) RejectForgotPasswordRequest(ctx context.Context, requestID
 		RejectedBy:             &operatorID,
 	}
 
+	u.recordPasswordResetAudit(
+		ctx,
+		*response,
+		buildPasswordResetRequestAuditSnapshot(beforeRequest),
+		buildPasswordResetRequestAuditSnapshot(response),
+		"password reset rejection",
+	)
+
 	return response, nil
+}
+
+func (u *AuthUseCase) getPasswordResetRequestForAudit(ctx context.Context, requestID int32) (*model.PasswordResetRequestResponse, error) {
+	row, err := u.userRepo.GetPasswordResetRequestByID(ctx, requestID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrPasswordResetRequestNotFound
+		}
+		return nil, fmt.Errorf("%w: get password reset request detail", ErrAuthServiceUnavailable)
+	}
+
+	item := model.PasswordResetRequestResponse{
+		IDPasswordResetRequest: row.IDPasswordResetRequest,
+		IDUser:                 row.IDUser,
+		Username:               row.Username,
+		IDRole:                 row.IDRole,
+		NamaRole:               row.NamaRole,
+		Reason:                 row.Reason,
+		Status:                 row.Status,
+		RequestedAt:            nullableTimestampString(row.RequestedAt),
+		ApprovedAt:             nullableTimestampString(row.ApprovedAt),
+		RejectedAt:             nullableTimestampString(row.RejectedAt),
+		CompletedAt:            nullableTimestampString(row.CompletedAt),
+		RejectedReason:         row.RejectedReason,
+		ApprovedByUsername:     row.ApprovedByUsername.String,
+		RejectedByUsername:     row.RejectedByUsername.String,
+	}
+	if row.ApprovedBy.Valid {
+		val := row.ApprovedBy.Int32
+		item.ApprovedBy = &val
+	}
+	if row.RejectedBy.Valid {
+		val := row.RejectedBy.Int32
+		item.RejectedBy = &val
+	}
+
+	return &item, nil
+}
+
+func (u *AuthUseCase) recordPasswordResetAudit(ctx context.Context, request model.PasswordResetRequestResponse, beforeSnapshot, afterSnapshot map[string]any, flow string) {
+	if u.auditLog == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        "UPDATE",
+		Module:        "user-management",
+		EntityType:    "password_reset_requests",
+		EntityID:      fmt.Sprintf("%d", request.IDPasswordResetRequest),
+		EntityLabel:   request.Username,
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		BeforeData:    beforeSnapshot,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(beforeSnapshot, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record password reset audit log", slog.String("flow", flow), slog.String("error", err.Error()))
+	}
+}
+
+func (u *AuthUseCase) recordPasswordResetRequestCreateAudit(ctx context.Context, user entity.GetUserByUsernameRow, request *model.PasswordResetRequestResponse) {
+	if u.auditLog == nil || request == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	actorUserID := auditCtx.ActorUserID
+	if actorUserID == nil {
+		actorUserID = &user.IDUser
+	}
+
+	actorRole := auditCtx.ActorRole
+	if actorRole == "" {
+		actorRole = user.NamaRole
+	}
+
+	afterSnapshot := buildPasswordResetRequestAuditSnapshot(request)
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   actorUserID,
+		ActorRole:     actorRole,
+		Action:        "CREATE",
+		Module:        "user-management",
+		EntityType:    "password_reset_requests",
+		EntityID:      fmt.Sprintf("%d", request.IDPasswordResetRequest),
+		EntityLabel:   request.Username,
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(nil, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record password reset request create audit log", slog.String("error", err.Error()))
+	}
+}
+
+func (u *AuthUseCase) recordChangePasswordAudit(ctx context.Context, beforeUser, afterUser entity.GetUserByIDRow) {
+	if u.auditLog == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	beforeSnapshot := buildAuthUserAuditSnapshot(beforeUser)
+	afterSnapshot := buildAuthUserAuditSnapshot(afterUser)
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        "UPDATE",
+		Module:        "user-management",
+		EntityType:    "users",
+		EntityID:      fmt.Sprintf("%d", afterUser.IDUser),
+		EntityLabel:   afterUser.Username,
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		BeforeData:    beforeSnapshot,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(beforeSnapshot, afterSnapshot),
+	}); err != nil {
+		slog.Error("failed to record change password audit log", slog.String("error", err.Error()))
+	}
+}
+
+func buildAuthUserAuditSnapshot(user entity.GetUserByIDRow) map[string]any {
+	snapshot := map[string]any{
+		"id_user":              user.IDUser,
+		"username":             user.Username,
+		"status":               user.Status,
+		"id_role":              user.IDRole,
+		"nama_role":            user.NamaRole,
+		"must_change_password": user.MustChangePassword,
+		"password_changed_at":  nullableTimestampString(user.PasswordChangedAt),
+		"created_at":           nullableTimestampString(user.CreatedAt),
+		"nama_departemen":      nullableTextString(user.NamaDepartemen),
+		"nama_perusahaan":      nullableTextString(user.NamaPerusahaan),
+	}
+
+	if user.IDDepartemen.Valid {
+		snapshot["id_departemen"] = user.IDDepartemen.Int32
+	} else {
+		snapshot["id_departemen"] = nil
+	}
+
+	if user.IDMitra.Valid {
+		snapshot["id_mitra"] = user.IDMitra.Int32
+	} else {
+		snapshot["id_mitra"] = nil
+	}
+
+	return snapshot
+}
+
+func buildPasswordResetRequestAuditSnapshot(request *model.PasswordResetRequestResponse) map[string]any {
+	if request == nil {
+		return nil
+	}
+
+	return map[string]any{
+		"id_password_reset_request": request.IDPasswordResetRequest,
+		"id_user":                   request.IDUser,
+		"username":                  request.Username,
+		"id_role":                   request.IDRole,
+		"nama_role":                 request.NamaRole,
+		"reason":                    request.Reason,
+		"status":                    request.Status,
+		"requested_at":              request.RequestedAt,
+		"approved_at":               request.ApprovedAt,
+		"rejected_at":               request.RejectedAt,
+		"completed_at":              request.CompletedAt,
+		"rejected_reason":           request.RejectedReason,
+		"approved_by":               request.ApprovedBy,
+		"approved_by_username":      request.ApprovedByUsername,
+		"rejected_by":               request.RejectedBy,
+		"rejected_by_username":      request.RejectedByUsername,
+	}
 }
 
 func (u *AuthUseCase) issueLoginToken(ctx context.Context, userID, roleID int32, roleName string, idMitra *int32, mustChangePassword bool) (*model.LoginResponse, error) {

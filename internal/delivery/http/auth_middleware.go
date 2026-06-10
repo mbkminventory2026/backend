@@ -326,6 +326,24 @@ func RequireInternalUser() gin.HandlerFunc {
 	}
 }
 
+// RequireOperatorUser restricts access to operator role only.
+func RequireOperatorUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		roleName, ok := GetRoleNameFromContext(c)
+		if !ok {
+			AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid authentication context", nil))
+			return
+		}
+
+		if !strings.EqualFold(roleName, "OPERATOR") {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: operator role required", nil))
+			return
+		}
+
+		c.Next()
+	}
+}
+
 // HasPermission checks if the authenticated user has a specific permission.
 func HasPermission(c *gin.Context, requiredPermission string) bool {
 	payload, exists := c.Get(authorizationPayloadKey)
