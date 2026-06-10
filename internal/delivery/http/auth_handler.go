@@ -251,7 +251,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	res, err := h.authUseCase.ChangePassword(c.Request.Context(), userID, req)
+	res, err := h.authUseCase.ChangePassword(withAuditLogContext(c), userID, req)
 	if err != nil {
 		h.handlePasswordFlowError(c, err)
 		return
@@ -279,7 +279,7 @@ func (h *AuthHandler) CreateForgotPasswordRequest(c *gin.Context) {
 		return
 	}
 
-	res, err := h.authUseCase.CreateForgotPasswordRequest(c.Request.Context(), req)
+	res, err := h.authUseCase.CreateForgotPasswordRequest(withAuditLogContext(c), req)
 	if err != nil {
 		h.handlePasswordFlowError(c, err)
 		return
@@ -335,7 +335,7 @@ func (h *AuthHandler) ApproveForgotPasswordRequest(c *gin.Context) {
 		return
 	}
 
-	res, err := h.authUseCase.ApproveForgotPasswordRequest(c.Request.Context(), id, userID)
+	res, err := h.authUseCase.ApproveForgotPasswordRequest(withAuditLogContext(c), id, userID)
 	if err != nil {
 		h.handlePasswordFlowError(c, err)
 		return
@@ -379,7 +379,7 @@ func (h *AuthHandler) RejectForgotPasswordRequest(c *gin.Context) {
 		}
 	}
 
-	_, err = h.authUseCase.RejectForgotPasswordRequest(c.Request.Context(), id, userID, req.RejectedReason)
+	_, err = h.authUseCase.RejectForgotPasswordRequest(withAuditLogContext(c), id, userID, req.RejectedReason)
 	if err != nil {
 		h.handlePasswordFlowError(c, err)
 		return

@@ -18,6 +18,24 @@ type ArsipDokumenGabungan struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
+type AuditLog struct {
+	ID            int64              `json:"id"`
+	ActorUserID   pgtype.Int4        `json:"actor_user_id"`
+	ActorUsername string             `json:"actor_username"`
+	ActorRole     string             `json:"actor_role"`
+	Action        string             `json:"action"`
+	Module        string             `json:"module"`
+	EntityType    string             `json:"entity_type"`
+	EntityID      string             `json:"entity_id"`
+	EntityLabel   string             `json:"entity_label"`
+	Method        string             `json:"method"`
+	Route         string             `json:"route"`
+	BeforeData    []byte             `json:"before_data"`
+	AfterData     []byte             `json:"after_data"`
+	ChangedFields []byte             `json:"changed_fields"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+}
+
 type Barang struct {
 	IDBarang      int32              `json:"id_barang"`
 	NamaBarang    string             `json:"nama_barang"`

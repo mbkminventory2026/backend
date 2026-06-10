@@ -149,7 +149,7 @@ func (h *TransactionDocumentHandler) CreatePOClient(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.CreatePOClient(c.Request.Context(), req)
+	item, err := h.useCase.CreatePOClient(withAuditLogContext(c), req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -205,7 +205,7 @@ func (h *TransactionDocumentHandler) UpdatePOClient(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.UpdatePOClient(c.Request.Context(), id, req)
+	item, err := h.useCase.UpdatePOClient(withAuditLogContext(c), id, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -303,7 +303,7 @@ func (h *TransactionDocumentHandler) CreatePRInternal(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.CreatePRInternal(c.Request.Context(), userID, req)
+	item, err := h.useCase.CreatePRInternal(withAuditLogContext(c), userID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -338,7 +338,7 @@ func (h *TransactionDocumentHandler) ApprovePRInternal(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.ApprovePRInternal(c.Request.Context(), id, userID)
+	item, err := h.useCase.ApprovePRInternal(withAuditLogContext(c), id, userID)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -437,7 +437,7 @@ func (h *TransactionDocumentHandler) CreatePOInternal(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.CreatePOInternal(c.Request.Context(), userID, req)
+	item, err := h.useCase.CreatePOInternal(withAuditLogContext(c), userID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return

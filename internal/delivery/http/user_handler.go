@@ -64,7 +64,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 		actorUserID = &userID
 	}
 
-	result, err := h.useCase.Create(c.Request.Context(), actorUserID, req)
+	result, err := h.useCase.Create(withAuditLogContext(c), actorUserID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -160,7 +160,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 		actorUserID = &userID
 	}
 
-	result, err := h.useCase.Update(c.Request.Context(), id, actorUserID, req)
+	result, err := h.useCase.Update(withAuditLogContext(c), id, actorUserID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -196,7 +196,7 @@ func (h *UserHandler) AssignRole(c *gin.Context) {
 		return
 	}
 
-	result, err := h.useCase.AssignRole(c.Request.Context(), id, req.IDRole)
+	result, err := h.useCase.AssignRole(withAuditLogContext(c), id, req.IDRole)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -260,7 +260,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	err = h.useCase.Delete(c.Request.Context(), id)
+	err = h.useCase.Delete(withAuditLogContext(c), id)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -296,7 +296,7 @@ func (h *UserHandler) Approve(c *gin.Context) {
 		return
 	}
 
-	result, err := h.useCase.Approve(c.Request.Context(), id, req.Username)
+	result, err := h.useCase.Approve(withAuditLogContext(c), id, req.Username)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -321,7 +321,7 @@ func (h *UserHandler) Reject(c *gin.Context) {
 		return
 	}
 
-	err = h.useCase.Reject(c.Request.Context(), id)
+	err = h.useCase.Reject(withAuditLogContext(c), id)
 	if err != nil {
 		h.handleError(c, err)
 		return
