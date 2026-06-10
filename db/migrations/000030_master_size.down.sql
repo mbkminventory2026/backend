@@ -1,0 +1,12 @@
+ALTER TABLE WORK_ORDER_SHELL_SIZE
+DROP CONSTRAINT IF EXISTS fk_work_order_shell_size_master_size;
+
+DROP INDEX IF EXISTS idx_work_order_shell_size_id_size;
+
+ALTER TABLE WORK_ORDER_SHELL_SIZE
+DROP COLUMN IF EXISTS ID_SIZE;
+
+DROP INDEX IF EXISTS idx_master_size_created_at;
+DROP INDEX IF EXISTS uq_master_size_nama_size_lower;
+
+DROP TABLE IF EXISTS MASTER_SIZE;

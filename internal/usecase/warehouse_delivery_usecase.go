@@ -23,8 +23,8 @@ var (
 	ErrWarehouseNotFound           = errors.New("warehouse transaction not found")
 	ErrSuratJalanTypeUnsupported   = errors.New("unsupported surat jalan type")
 	ErrWarehouseInsufficientStock  = errors.New("insufficient stock balance")
-	ErrSuratJalanExceedsMLIQty    = errors.New("surat jalan qty would exceed material list item qty")
-	ErrReceivedExceedsSuratJalan  = errors.New("received qty would exceed total surat jalan qty")
+	ErrSuratJalanExceedsMLIQty     = errors.New("surat jalan qty would exceed material list item qty")
+	ErrReceivedExceedsSuratJalan   = errors.New("received qty would exceed total surat jalan qty")
 
 	packingListSortColumns        = buildSortWhitelist("created_at", "id_packing_list", "total_garment_per_box", "total_reject", "buyer", "model")
 	suratJalanClientSortColumns   = buildSortWhitelist("created_at", "id_surat_jalan_client", "tanggal", "qty", "keterangan", "material_description", "id_wo")
@@ -175,6 +175,8 @@ func (u *WarehouseDeliveryUseCase) CreatePackingList(ctx context.Context, userID
 			sizes = append(sizes, model.PackingListItemSizeResponse{
 				ID:            size.IDPackingListItemSize,
 				IDWOShellSize: size.IDWoShellSize,
+				IDSize:        nil,
+				Size:          "",
 				Qty:           size.Qty,
 				CreatedAt:     size.CreatedAt.Time.Format(time.RFC3339),
 			})
@@ -207,6 +209,8 @@ func (u *WarehouseDeliveryUseCase) CreatePackingList(ctx context.Context, userID
 		rejectSizes = append(rejectSizes, model.PackingListRejectSizeResponse{
 			ID:            rejectSize.IDPackingListRejectSize,
 			IDWOShellSize: rejectSize.IDWoShellSize,
+			IDSize:        nil,
+			Size:          "",
 			Qty:           rejectSize.Qty,
 			CreatedAt:     rejectSize.CreatedAt.Time.Format(time.RFC3339),
 		})
@@ -353,9 +357,12 @@ func (u *WarehouseDeliveryUseCase) GetPackingListDetail(ctx context.Context, id 
 
 	sizeMap := make(map[int32][]model.PackingListItemSizeResponse)
 	for _, row := range sizeRows {
+		idSize := row.IDSize
 		sizeMap[row.IDPackingListItem] = append(sizeMap[row.IDPackingListItem], model.PackingListItemSizeResponse{
 			ID:            row.IDPackingListItemSize,
 			IDWOShellSize: row.IDWoShellSize,
+			IDSize:        &idSize,
+			Size:          row.Size,
 			Qty:           row.Qty,
 			CreatedAt:     row.CreatedAt.Time.Format(time.RFC3339),
 		})
@@ -389,9 +396,12 @@ func (u *WarehouseDeliveryUseCase) GetPackingListDetail(ctx context.Context, id 
 
 	rejectSizes := make([]model.PackingListRejectSizeResponse, 0, len(rejectRows))
 	for _, row := range rejectRows {
+		idSize := row.IDSize
 		rejectSizes = append(rejectSizes, model.PackingListRejectSizeResponse{
 			ID:            row.IDPackingListRejectSize,
 			IDWOShellSize: row.IDWoShellSize,
+			IDSize:        &idSize,
+			Size:          row.Size,
 			Qty:           row.Qty,
 			CreatedAt:     row.CreatedAt.Time.Format(time.RFC3339),
 		})

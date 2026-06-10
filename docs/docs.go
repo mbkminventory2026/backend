@@ -2127,6 +2127,190 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/master/sizes": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "List Sizes",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset (default 0)",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ListSizeSuccessDoc"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Create Size",
+                "parameters": [
+                    {
+                        "description": "Size payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateSizeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.SizeSuccessDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/master/sizes/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Get Size Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Size ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SizeSuccessDoc"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Update Size",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Size ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Size payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateSizeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SizeSuccessDoc"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Master Data"
+                ],
+                "summary": "Delete Size",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Size ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/master/warna": {
             "get": {
                 "security": [
@@ -6844,6 +7028,17 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CreateSizeRequest": {
+            "type": "object",
+            "required": [
+                "nama_size"
+            ],
+            "properties": {
+                "nama_size": {
+                    "type": "string"
+                }
+            }
+        },
         "model.CreateSpreadingCuttingPlanRequest": {
             "type": "object",
             "required": [
@@ -6874,12 +7069,12 @@ const docTemplate = `{
         "model.CreateSuratJalanClientRequest": {
             "type": "object",
             "required": [
-                "id_material_list",
+                "id_material_list_item",
                 "qty",
                 "tanggal"
             ],
             "properties": {
-                "id_material_list": {
+                "id_material_list_item": {
                     "type": "integer"
                 },
                 "keterangan": {
@@ -7123,10 +7318,12 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "qty",
-                "ratio",
-                "size"
+                "ratio"
             ],
             "properties": {
+                "id_size": {
+                    "type": "integer"
+                },
                 "qty": {
                     "type": "integer"
                 },
@@ -7705,6 +7902,25 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "permissions retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.ListSizeSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SizeResponse"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "size retrieved"
                 },
                 "status": {
                     "type": "string",
@@ -8894,11 +9110,17 @@ const docTemplate = `{
                 "id_packing_list_item_size": {
                     "type": "integer"
                 },
+                "id_size": {
+                    "type": "integer"
+                },
                 "id_wo_shell_size": {
                     "type": "integer"
                 },
                 "qty": {
                     "type": "integer"
+                },
+                "size": {
+                    "type": "string"
                 }
             }
         },
@@ -8970,11 +9192,17 @@ const docTemplate = `{
                 "id_packing_list_reject_size": {
                     "type": "integer"
                 },
+                "id_size": {
+                    "type": "integer"
+                },
                 "id_wo_shell_size": {
                     "type": "integer"
                 },
                 "qty": {
                     "type": "integer"
+                },
+                "size": {
+                    "type": "string"
                 }
             }
         },
@@ -9141,6 +9369,9 @@ const docTemplate = `{
         "model.ProductionAggregateResponse": {
             "type": "object",
             "properties": {
+                "id_size": {
+                    "type": "integer"
+                },
                 "id_wo_shell_size": {
                     "type": "integer"
                 },
@@ -9423,13 +9654,13 @@ const docTemplate = `{
         "model.ReceiveInventoryRequest": {
             "type": "object",
             "required": [
-                "id_material_list",
+                "id_material_list_item",
                 "id_rekonsiliasi_material",
                 "qty",
                 "tanggal"
             ],
             "properties": {
-                "id_material_list": {
+                "id_material_list_item": {
                     "type": "integer"
                 },
                 "id_rekonsiliasi_material": {
@@ -9458,7 +9689,7 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "id_material_list": {
+                "id_material_list_item": {
                     "type": "integer"
                 },
                 "id_received": {
@@ -9741,6 +9972,36 @@ const docTemplate = `{
                 }
             }
         },
+        "model.SizeResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_size": {
+                    "type": "integer"
+                },
+                "nama_size": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SizeSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.SizeResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "size created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "model.SpreadingCuttingPlanErrorDetail": {
             "type": "object",
             "properties": {
@@ -9967,7 +10228,7 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "id_material_list": {
+                "id_material_list_item": {
                     "type": "integer"
                 },
                 "id_surat_jalan_client": {
@@ -10012,7 +10273,7 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "id_material_list": {
+                "id_material_list_item": {
                     "type": "integer"
                 },
                 "id_surat_jalan_client": {
@@ -10139,7 +10400,7 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "id_material_list": {
+                "id_material_list_item": {
                     "type": "integer"
                 },
                 "id_surat_jalan": {
@@ -10543,6 +10804,17 @@ const docTemplate = `{
                     }
                 },
                 "nama_role": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.UpdateSizeRequest": {
+            "type": "object",
+            "required": [
+                "nama_size"
+            ],
+            "properties": {
+                "nama_size": {
                     "type": "string"
                 }
             }
@@ -11119,6 +11391,9 @@ const docTemplate = `{
             "properties": {
                 "created_at": {
                     "type": "string"
+                },
+                "id_size": {
+                    "type": "integer"
                 },
                 "id_wo_shell_size": {
                     "type": "integer"

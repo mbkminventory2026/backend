@@ -41,9 +41,10 @@ shipping_agg AS (
 )
 SELECT
     woss.id_wo_shell_size,
+    woss.id_size,
     wo.id_wo,
     wo.model AS model_name,
-    woss.size,
+    ms.nama_size AS size,
     woss.qty AS target_qty,
     COALESCE(ca.cutting_qty, 0)::int AS cutting_qty,
     COALESCE(sa.sewing_qty, 0)::int AS sewing_qty,
@@ -64,6 +65,7 @@ JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = woss.id_wo_shell
 JOIN WORK_ORDER wo ON wo.id_wo = wos.id_wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
+JOIN MASTER_SIZE ms ON ms.id_size = woss.id_size
 LEFT JOIN cutting_agg ca ON ca.id_wo_shell_size = woss.id_wo_shell_size
 LEFT JOIN sewing_agg sa ON sa.id_wo_shell_size = woss.id_wo_shell_size
 LEFT JOIN qc_agg qa ON qa.id_wo_shell_size = woss.id_wo_shell_size
@@ -78,7 +80,7 @@ WHERE (
 ) AND (
     sqlc.arg(search_term)::text = '' OR
     wo.model ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
-    woss.size ILIKE '%' || sqlc.arg(search_term)::text || '%'
+    ms.nama_size ILIKE '%' || sqlc.arg(search_term)::text || '%'
  ) AND (
     sqlc.narg(id_mitra)::integer IS NULL OR
     pc.id_mitra = sqlc.narg(id_mitra)::integer
@@ -104,8 +106,8 @@ ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'id_wo_shell_size' AND sqlc.arg(sort_desc)::bool THEN woss.id_wo_shell_size END DESC,
     CASE WHEN sqlc.arg(sort_by)::text = 'model_name' AND NOT sqlc.arg(sort_desc)::bool THEN wo.model END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'model_name' AND sqlc.arg(sort_desc)::bool THEN wo.model END DESC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'size' AND NOT sqlc.arg(sort_desc)::bool THEN woss.size END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'size' AND sqlc.arg(sort_desc)::bool THEN woss.size END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'size' AND NOT sqlc.arg(sort_desc)::bool THEN ms.nama_size END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'size' AND sqlc.arg(sort_desc)::bool THEN ms.nama_size END DESC,
     CASE WHEN sqlc.arg(sort_by)::text = 'target_qty' AND NOT sqlc.arg(sort_desc)::bool THEN woss.qty END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'target_qty' AND sqlc.arg(sort_desc)::bool THEN woss.qty END DESC,
     CASE WHEN sqlc.arg(sort_by)::text = 'cutting_qty' AND NOT sqlc.arg(sort_desc)::bool THEN COALESCE(ca.cutting_qty, 0)::int END ASC,

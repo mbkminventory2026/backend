@@ -89,52 +89,59 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 9. Seed bootstrap users
+	// 9. Seed Master Size
+	err = seedMasterSizes(ctx, dbPool)
+	if err != nil {
+		slog.Error("failed to seed master sizes", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	// 10. Seed bootstrap users
 	err = seedSystemUsers(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed system users", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 10. Seed PO Client & Items
+	// 11. Seed PO Client & Items
 	err = seedPOClient(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed PO Client", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 11. Seed Work Order
+	// 12. Seed Work Order
 	err = seedWorkOrder(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed Work Order", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 12. Seed Production Reports
+	// 13. Seed Production Reports
 	err = seedProductionReports(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed Production Reports", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 13. Seed Marker Plan
+	// 14. Seed Marker Plan
 	if err := seedMarkerPlan(ctx, dbPool); err != nil {
 		logger.Error("Failed to seed marker plan", slog.String("error", err.Error()))
 	}
 
-	// 14. Seed Production Master
+	// 15. Seed Production Master
 	if err := seedProductionMaster(ctx, dbPool); err != nil {
 		logger.Error("Failed to seed production master", slog.String("error", err.Error()))
 	}
 
-	// 15. Seed Timeline Plan
+	// 16. Seed Timeline Plan
 	err = seedTimelinePlan(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed Timeline Plan", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 15. Sync Sequences
+	// 17. Sync Sequences
 	err = syncSequences(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to sync sequences", slog.String("error", err.Error()))
@@ -157,6 +164,7 @@ func syncSequences(ctx context.Context, db *pgxpool.Pool) error {
 		{"departemen_id_departemen_seq", "departemen", "id_departemen"},
 		{"jenis_barang_id_jenis_barang_seq", "jenis_barang", "id_jenis_barang"},
 		{"barang_id_barang_seq", "barang", "id_barang"},
+		{"master_size_id_size_seq", "master_size", "id_size"},
 		{"users_id_user_seq", "users", "id_user"},
 		{"po_client_id_po_client_seq", "po_client", "id_po_client"},
 		{"po_client_item_id_po_client_item_seq", "po_client_item", "id_po_client_item"},
@@ -314,6 +322,35 @@ func seedBarang(ctx context.Context, db *pgxpool.Pool) error {
 	return nil
 }
 
+func seedMasterSizes(ctx context.Context, db *pgxpool.Pool) error {
+	sizes := []string{"S", "M", "L", "XL", "XXL", "ALL SIZE", "FREE SIZE"}
+
+	for _, sizeName := range sizes {
+		var exists bool
+		err := db.QueryRow(ctx, `
+			SELECT EXISTS(
+				SELECT 1
+				FROM MASTER_SIZE
+				WHERE LOWER(BTRIM(NAMA_SIZE)) = LOWER(BTRIM($1))
+			)
+		`, sizeName).Scan(&exists)
+		if err != nil {
+			return err
+		}
+		if exists {
+			continue
+		}
+
+		_, err = db.Exec(ctx, `INSERT INTO MASTER_SIZE (NAMA_SIZE) VALUES ($1)`, sizeName)
+		if err != nil {
+			return err
+		}
+		slog.Info("master size seeded", slog.String("name", sizeName))
+	}
+
+	return nil
+}
+
 func seedHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 	permissionCodes := []string{
 		"AUTH_CHANGE_PASSWORD",
@@ -323,6 +360,7 @@ func seedHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 		"PERMISSION_READ", "PERMISSION_CREATE", "PERMISSION_UPDATE", "PERMISSION_DELETE",
 		"MASTER_BARANG_READ", "MASTER_BARANG_CREATE", "MASTER_BARANG_UPDATE", "MASTER_BARANG_DELETE",
 		"MASTER_WARNA_READ", "MASTER_WARNA_CREATE", "MASTER_WARNA_UPDATE", "MASTER_WARNA_DELETE",
+		"MASTER_SIZE_READ", "MASTER_SIZE_CREATE", "MASTER_SIZE_UPDATE", "MASTER_SIZE_DELETE",
 		"MASTER_MITRA_READ", "MASTER_MITRA_CREATE", "MASTER_MITRA_UPDATE", "MASTER_MITRA_DELETE",
 		"MASTER_JENIS_BARANG_READ", "MASTER_JENIS_BARANG_CREATE", "MASTER_JENIS_BARANG_UPDATE", "MASTER_JENIS_BARANG_DELETE",
 		"MASTER_PROFIL_PERUSAHAAN_READ", "MASTER_PROFIL_PERUSAHAAN_CREATE", "MASTER_PROFIL_PERUSAHAAN_UPDATE", "MASTER_PROFIL_PERUSAHAAN_DELETE",
@@ -469,7 +507,9 @@ func seedRoleHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 		},
 		"ADMIN_PRODUKSI": {
 			"AUTH_CHANGE_PASSWORD", "PASSWORD_RESET_REQUEST_CREATE",
-			"MASTER_BARANG_READ", "MASTER_WARNA_READ", "MASTER_MITRA_READ", "MASTER_JENIS_BARANG_READ", "MASTER_PROFIL_PERUSAHAAN_READ", "MASTER_DEPARTEMEN_READ",
+			"MASTER_BARANG_READ", "MASTER_WARNA_READ", "MASTER_WARNA_CREATE", "MASTER_WARNA_UPDATE", "MASTER_WARNA_DELETE",
+			"MASTER_SIZE_READ", "MASTER_SIZE_CREATE", "MASTER_SIZE_UPDATE", "MASTER_SIZE_DELETE",
+			"MASTER_MITRA_READ", "MASTER_JENIS_BARANG_READ", "MASTER_PROFIL_PERUSAHAAN_READ", "MASTER_DEPARTEMEN_READ",
 			"PO_CLIENT_READ", "PO_CLIENT_CREATE", "PO_CLIENT_UPDATE",
 			"WO_READ", "WO_CREATE", "WO_UPDATE", "WO_CLOSE",
 			"PRODUCTION_SUMMARY_READ",
@@ -492,7 +532,7 @@ func seedRoleHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 		"MANAGER": {
 			"AUTH_CHANGE_PASSWORD", "PASSWORD_RESET_REQUEST_CREATE",
 			"USER_READ", "USER_APPROVE",
-			"MASTER_BARANG_READ", "MASTER_WARNA_READ", "MASTER_MITRA_READ", "MASTER_JENIS_BARANG_READ", "MASTER_PROFIL_PERUSAHAAN_READ", "MASTER_DEPARTEMEN_READ",
+			"MASTER_BARANG_READ", "MASTER_WARNA_READ", "MASTER_SIZE_READ", "MASTER_MITRA_READ", "MASTER_JENIS_BARANG_READ", "MASTER_PROFIL_PERUSAHAAN_READ", "MASTER_DEPARTEMEN_READ",
 			"PO_CLIENT_READ", "PR_INTERNAL_READ", "PO_INTERNAL_READ",
 			"WO_READ", "PRODUCTION_SUMMARY_READ", "PRODUCTION_REPORT_READ",
 			"TIMELINE_READ", "MARKER_PLAN_READ", "CUTTING_PLAN_READ",
@@ -913,8 +953,17 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 
 		for _, sz := range sizes {
 			_, err = db.Exec(ctx, `
-				INSERT INTO WORK_ORDER_SHELL_SIZE (SIZE, QTY, RATIO, ID_WO_SHELL)
-				VALUES ($1, $2, $3, $4), ($1, $2, $3, $5), ($1, $2, $3, $6)
+				INSERT INTO WORK_ORDER_SHELL_SIZE (ID_SIZE, SIZE, QTY, RATIO, ID_WO_SHELL)
+				VALUES (
+					(SELECT ID_SIZE FROM MASTER_SIZE WHERE LOWER(BTRIM(NAMA_SIZE)) = LOWER(BTRIM($1)) LIMIT 1),
+					$1, $2, $3, $4
+				), (
+					(SELECT ID_SIZE FROM MASTER_SIZE WHERE LOWER(BTRIM(NAMA_SIZE)) = LOWER(BTRIM($1)) LIMIT 1),
+					$1, $2, $3, $5
+				), (
+					(SELECT ID_SIZE FROM MASTER_SIZE WHERE LOWER(BTRIM(NAMA_SIZE)) = LOWER(BTRIM($1)) LIMIT 1),
+					$1, $2, $3, $6
+				)
 			`, sz.size, sz.qty, sz.ratio, idShell1, idShell2, idShell3)
 			if err != nil {
 				return err
@@ -1058,8 +1107,11 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		// WO 2 Details: Sizes
 		for _, sz := range sizes {
 			_, err = db.Exec(ctx, `
-				INSERT INTO WORK_ORDER_SHELL_SIZE (SIZE, QTY, RATIO, ID_WO_SHELL)
-				VALUES ($1, $2, $3, $4)
+				INSERT INTO WORK_ORDER_SHELL_SIZE (ID_SIZE, SIZE, QTY, RATIO, ID_WO_SHELL)
+				VALUES (
+					(SELECT ID_SIZE FROM MASTER_SIZE WHERE LOWER(BTRIM(NAMA_SIZE)) = LOWER(BTRIM($1)) LIMIT 1),
+					$1, $2, $3, $4
+				)
 			`, sz.size, sz.qty, sz.ratio, idShellWO2)
 			if err != nil {
 				return err

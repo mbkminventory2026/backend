@@ -67,6 +67,8 @@ type CreatePackingListRequest struct {
 type PackingListItemSizeResponse struct {
 	ID            int32  `json:"id_packing_list_item_size"`
 	IDWOShellSize int32  `json:"id_wo_shell_size"`
+	IDSize        *int32 `json:"id_size,omitempty"`
+	Size          string `json:"size"`
 	Qty           int32  `json:"qty"`
 	CreatedAt     string `json:"created_at"`
 }
@@ -74,6 +76,8 @@ type PackingListItemSizeResponse struct {
 type PackingListRejectSizeResponse struct {
 	ID            int32  `json:"id_packing_list_reject_size"`
 	IDWOShellSize int32  `json:"id_wo_shell_size"`
+	IDSize        *int32 `json:"id_size,omitempty"`
+	Size          string `json:"size"`
 	Qty           int32  `json:"qty"`
 	CreatedAt     string `json:"created_at"`
 }
@@ -102,20 +106,20 @@ type PackingListResponse struct {
 }
 
 type CreateSuratJalanClientRequest struct {
-	Tanggal        string `json:"tanggal" binding:"required,datetime=2006-01-02"`
-	Qty            int32  `json:"qty" binding:"required,gt=0"`
-	Keterangan     string `json:"keterangan"`
+	Tanggal            string `json:"tanggal" binding:"required,datetime=2006-01-02"`
+	Qty                int32  `json:"qty" binding:"required,gt=0"`
+	Keterangan         string `json:"keterangan"`
 	IDMaterialListItem int32  `json:"id_material_list_item" binding:"required,gt=0"`
 }
 
 type SuratJalanResponse struct {
-	Type           string `json:"type"`
-	IDSuratJalan   int32  `json:"id_surat_jalan"`
-	Tanggal        string `json:"tanggal,omitempty"`
-	Qty            int32  `json:"qty,omitempty"`
-	Keterangan     string `json:"keterangan,omitempty"`
+	Type               string `json:"type"`
+	IDSuratJalan       int32  `json:"id_surat_jalan"`
+	Tanggal            string `json:"tanggal,omitempty"`
+	Qty                int32  `json:"qty,omitempty"`
+	Keterangan         string `json:"keterangan,omitempty"`
 	IDMaterialListItem int32  `json:"id_material_list_item,omitempty"`
-	CreatedAt      string `json:"created_at"`
+	CreatedAt          string `json:"created_at"`
 }
 
 type ReceiveInventorySuccessDoc struct {

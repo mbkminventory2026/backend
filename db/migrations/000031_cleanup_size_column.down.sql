@@ -1,0 +1,11 @@
+-- Add back the old raw string SIZE column as nullable
+ALTER TABLE WORK_ORDER_SHELL_SIZE ADD COLUMN SIZE VARCHAR(100) NULL;
+
+-- Restore the size string value from MASTER_SIZE
+UPDATE WORK_ORDER_SHELL_SIZE woss
+SET SIZE = ms.NAMA_SIZE
+FROM MASTER_SIZE ms
+WHERE woss.ID_SIZE = ms.ID_SIZE;
+
+-- Allow ID_SIZE to be nullable again
+ALTER TABLE WORK_ORDER_SHELL_SIZE ALTER COLUMN ID_SIZE DROP NOT NULL;

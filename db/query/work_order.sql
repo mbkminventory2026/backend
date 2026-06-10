@@ -40,17 +40,17 @@ RETURNING id_wo_shell, deskripsi, cons, color, allow, berat_1_yd, id_wo, created
 
 -- name: CreateWorkOrderShellSize :one
 INSERT INTO WORK_ORDER_SHELL_SIZE (
-    size,
+    id_size,
     qty,
     ratio,
     id_wo_shell
 ) VALUES (
-    sqlc.arg(size),
+    sqlc.arg(id_size),
     sqlc.arg(qty),
     sqlc.arg(ratio),
     sqlc.arg(id_wo_shell)
 )
-RETURNING id_wo_shell_size, size, qty, ratio, id_wo_shell, created_at;
+RETURNING id_wo_shell_size, id_size, qty, ratio, id_wo_shell, created_at;
 
 -- name: CreateWorkOrderTrim :one
 INSERT INTO WORK_ORDER_TRIM (

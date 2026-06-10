@@ -252,7 +252,7 @@ func (q *Queries) CreateWorkOrderShell(ctx context.Context, arg CreateWorkOrderS
 
 const createWorkOrderShellSize = `-- name: CreateWorkOrderShellSize :one
 INSERT INTO WORK_ORDER_SHELL_SIZE (
-    size,
+    id_size,
     qty,
     ratio,
     id_wo_shell
@@ -262,27 +262,36 @@ INSERT INTO WORK_ORDER_SHELL_SIZE (
     $3,
     $4
 )
-RETURNING id_wo_shell_size, size, qty, ratio, id_wo_shell, created_at
+RETURNING id_wo_shell_size, id_size, qty, ratio, id_wo_shell, created_at
 `
 
 type CreateWorkOrderShellSizeParams struct {
-	Size      string `json:"size"`
-	Qty       int32  `json:"qty"`
-	Ratio     int32  `json:"ratio"`
-	IDWoShell int32  `json:"id_wo_shell"`
+	IDSize    int32 `json:"id_size"`
+	Qty       int32 `json:"qty"`
+	Ratio     int32 `json:"ratio"`
+	IDWoShell int32 `json:"id_wo_shell"`
 }
 
-func (q *Queries) CreateWorkOrderShellSize(ctx context.Context, arg CreateWorkOrderShellSizeParams) (WorkOrderShellSize, error) {
+type CreateWorkOrderShellSizeRow struct {
+	IDWoShellSize int32              `json:"id_wo_shell_size"`
+	IDSize        int32              `json:"id_size"`
+	Qty           int32              `json:"qty"`
+	Ratio         int32              `json:"ratio"`
+	IDWoShell     int32              `json:"id_wo_shell"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) CreateWorkOrderShellSize(ctx context.Context, arg CreateWorkOrderShellSizeParams) (CreateWorkOrderShellSizeRow, error) {
 	row := q.db.QueryRow(ctx, createWorkOrderShellSize,
-		arg.Size,
+		arg.IDSize,
 		arg.Qty,
 		arg.Ratio,
 		arg.IDWoShell,
 	)
-	var i WorkOrderShellSize
+	var i CreateWorkOrderShellSizeRow
 	err := row.Scan(
 		&i.IDWoShellSize,
-		&i.Size,
+		&i.IDSize,
 		&i.Qty,
 		&i.Ratio,
 		&i.IDWoShell,

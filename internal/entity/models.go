@@ -109,6 +109,12 @@ type MarkerPlan struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
+type MasterSize struct {
+	IDSize    int32              `json:"id_size"`
+	NamaSize  string             `json:"nama_size"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
 type MaterialList struct {
 	IDMaterialList int32              `json:"id_material_list"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
@@ -601,11 +607,11 @@ type WorkOrderShell struct {
 
 type WorkOrderShellSize struct {
 	IDWoShellSize int32              `json:"id_wo_shell_size"`
-	Size          string             `json:"size"`
 	Qty           int32              `json:"qty"`
 	Ratio         int32              `json:"ratio"`
 	IDWoShell     int32              `json:"id_wo_shell"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	IDSize        int32              `json:"id_size"`
 }
 
 type WorkOrderTrim struct {

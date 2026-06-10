@@ -902,6 +902,13 @@ definitions:
     required:
     - nama_role
     type: object
+  model.CreateSizeRequest:
+    properties:
+      nama_size:
+        type: string
+    required:
+    - nama_size
+    type: object
   model.CreateSpreadingCuttingPlanRequest:
     properties:
       components:
@@ -923,7 +930,7 @@ definitions:
     type: object
   model.CreateSuratJalanClientRequest:
     properties:
-      id_material_list:
+      id_material_list_item:
         type: integer
       keterangan:
         type: string
@@ -932,7 +939,7 @@ definitions:
       tanggal:
         type: string
     required:
-    - id_material_list
+    - id_material_list_item
     - qty
     - tanggal
     type: object
@@ -1098,6 +1105,8 @@ definitions:
     type: object
   model.CreateWorkOrderShellSizeRequest:
     properties:
+      id_size:
+        type: integer
       qty:
         type: integer
       ratio:
@@ -1108,7 +1117,6 @@ definitions:
     required:
     - qty
     - ratio
-    - size
     type: object
   model.CreateWorkOrderTrimRequest:
     properties:
@@ -1493,6 +1501,19 @@ definitions:
         type: array
       message:
         example: permissions retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.ListSizeSuccessDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.SizeResponse'
+        type: array
+      message:
+        example: size retrieved
         type: string
       status:
         example: success
@@ -2287,10 +2308,14 @@ definitions:
         type: string
       id_packing_list_item_size:
         type: integer
+      id_size:
+        type: integer
       id_wo_shell_size:
         type: integer
       qty:
         type: integer
+      size:
+        type: string
     type: object
   model.PackingListListItem:
     properties:
@@ -2337,10 +2362,14 @@ definitions:
         type: string
       id_packing_list_reject_size:
         type: integer
+      id_size:
+        type: integer
       id_wo_shell_size:
         type: integer
       qty:
         type: integer
+      size:
+        type: string
     type: object
   model.PackingListResponse:
     properties:
@@ -2450,6 +2479,8 @@ definitions:
     type: object
   model.ProductionAggregateResponse:
     properties:
+      id_size:
+        type: integer
       id_wo_shell_size:
         type: integer
       last_updated:
@@ -2636,7 +2667,7 @@ definitions:
     type: object
   model.ReceiveInventoryRequest:
     properties:
-      id_material_list:
+      id_material_list_item:
         type: integer
       id_rekonsiliasi_material:
         type: integer
@@ -2647,7 +2678,7 @@ definitions:
       tanggal:
         type: string
     required:
-    - id_material_list
+    - id_material_list_item
     - id_rekonsiliasi_material
     - qty
     - tanggal
@@ -2660,7 +2691,7 @@ definitions:
         type: integer
       created_at:
         type: string
-      id_material_list:
+      id_material_list_item:
         type: integer
       id_received:
         type: integer
@@ -2850,6 +2881,26 @@ definitions:
         example: success
         type: string
     type: object
+  model.SizeResponse:
+    properties:
+      created_at:
+        type: string
+      id_size:
+        type: integer
+      nama_size:
+        type: string
+    type: object
+  model.SizeSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.SizeResponse'
+      message:
+        example: size created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
   model.SpreadingCuttingPlanErrorDetail:
     properties:
       code:
@@ -3001,7 +3052,7 @@ definitions:
     properties:
       created_at:
         type: string
-      id_material_list:
+      id_material_list_item:
         type: integer
       id_surat_jalan_client:
         type: integer
@@ -3031,7 +3082,7 @@ definitions:
     properties:
       created_at:
         type: string
-      id_material_list:
+      id_material_list_item:
         type: integer
       id_surat_jalan_client:
         type: integer
@@ -3115,7 +3166,7 @@ definitions:
     properties:
       created_at:
         type: string
-      id_material_list:
+      id_material_list_item:
         type: integer
       id_surat_jalan:
         type: integer
@@ -3388,6 +3439,13 @@ definitions:
         type: string
     required:
     - nama_role
+    type: object
+  model.UpdateSizeRequest:
+    properties:
+      nama_size:
+        type: string
+    required:
+    - nama_size
     type: object
   model.UpdateUserRequest:
     properties:
@@ -3771,6 +3829,8 @@ definitions:
     properties:
       created_at:
         type: string
+      id_size:
+        type: integer
       id_wo_shell_size:
         type: integer
       qty:
@@ -5235,6 +5295,119 @@ paths:
       security:
       - BearerAuth: []
       summary: Update Permission
+      tags:
+      - Master Data
+  /api/v1/master/sizes:
+    get:
+      parameters:
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset (default 0)
+        in: query
+        name: offset
+        type: integer
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ListSizeSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: List Sizes
+      tags:
+      - Master Data
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Size payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateSizeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.SizeSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Size
+      tags:
+      - Master Data
+  /api/v1/master/sizes/{id}:
+    delete:
+      parameters:
+      - description: Size ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete Size
+      tags:
+      - Master Data
+    get:
+      parameters:
+      - description: Size ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SizeSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Size Detail
+      tags:
+      - Master Data
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Size ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Size payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateSizeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SizeSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Update Size
       tags:
       - Master Data
   /api/v1/master/warna:

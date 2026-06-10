@@ -406,9 +406,10 @@ func (q *Queries) ListRatioByKomponenID(ctx context.Context, idKomponenMarker in
 }
 
 const listRatioSizeByRatioID = `-- name: ListRatioSizeByRatioID :many
-SELECT rsm.ID_RATIO_SIZE_MARKER, rsm.ID_RATIO_MARKER, rsm.ID_WO_SHELL_SIZE, rsm.RATIO_PLAN, wss.SIZE, wss.QTY AS size_qty
+SELECT rsm.ID_RATIO_SIZE_MARKER, rsm.ID_RATIO_MARKER, rsm.ID_WO_SHELL_SIZE, rsm.RATIO_PLAN, ms.NAMA_SIZE AS SIZE, wss.QTY AS size_qty
 FROM RATIO_SIZE_MARKER rsm
 JOIN WORK_ORDER_SHELL_SIZE wss ON rsm.ID_WO_SHELL_SIZE = wss.ID_WO_SHELL_SIZE
+JOIN MASTER_SIZE ms ON ms.ID_SIZE = wss.ID_SIZE
 WHERE rsm.ID_RATIO_MARKER = $1
 ORDER BY rsm.ID_RATIO_SIZE_MARKER ASC
 `

@@ -99,13 +99,15 @@ ORDER BY id_wo_shell ASC;
 -- name: ListWorkOrderShellSizesByWorkOrderID :many
 SELECT
     woss.id_wo_shell_size,
-    woss.size,
+    woss.id_size,
+    ms.nama_size AS size,
     woss.qty,
     woss.ratio,
     woss.id_wo_shell,
     woss.created_at
 FROM WORK_ORDER_SHELL_SIZE woss
 JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = woss.id_wo_shell
+JOIN MASTER_SIZE ms ON ms.id_size = woss.id_size
 WHERE wos.id_wo = sqlc.arg(id_wo)
 ORDER BY woss.id_wo_shell_size ASC;
 
@@ -489,9 +491,13 @@ SELECT
     plis.qty,
     plis.id_packing_list_item,
     plis.id_wo_shell_size,
+    woss.id_size,
+    ms.nama_size AS size,
     plis.created_at
 FROM PACKING_LIST_ITEM_SIZE plis
 JOIN PACKING_LIST_ITEM pli ON pli.id_packing_list_item = plis.id_packing_list_item
+JOIN WORK_ORDER_SHELL_SIZE woss ON woss.id_wo_shell_size = plis.id_wo_shell_size
+JOIN MASTER_SIZE ms ON ms.id_size = woss.id_size
 WHERE pli.id_packing_list = sqlc.arg(id_packing_list)
 ORDER BY plis.id_packing_list_item_size ASC;
 
@@ -501,8 +507,12 @@ SELECT
     plrs.qty,
     plrs.id_packing_list,
     plrs.id_wo_shell_size,
+    woss.id_size,
+    ms.nama_size AS size,
     plrs.created_at
 FROM PACKING_LIST_REJECT_SIZE plrs
+JOIN WORK_ORDER_SHELL_SIZE woss ON woss.id_wo_shell_size = plrs.id_wo_shell_size
+JOIN MASTER_SIZE ms ON ms.id_size = woss.id_size
 WHERE plrs.id_packing_list = sqlc.arg(id_packing_list)
 ORDER BY plrs.id_packing_list_reject_size ASC;
 

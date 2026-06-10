@@ -926,9 +926,13 @@ SELECT
     plis.qty,
     plis.id_packing_list_item,
     plis.id_wo_shell_size,
+    woss.id_size,
+    ms.nama_size AS size,
     plis.created_at
 FROM PACKING_LIST_ITEM_SIZE plis
 JOIN PACKING_LIST_ITEM pli ON pli.id_packing_list_item = plis.id_packing_list_item
+JOIN WORK_ORDER_SHELL_SIZE woss ON woss.id_wo_shell_size = plis.id_wo_shell_size
+JOIN MASTER_SIZE ms ON ms.id_size = woss.id_size
 WHERE pli.id_packing_list = $1
 ORDER BY plis.id_packing_list_item_size ASC
 `
@@ -938,6 +942,8 @@ type ListPackingListItemSizesByPackingListIDRow struct {
 	Qty                   int32              `json:"qty"`
 	IDPackingListItem     int32              `json:"id_packing_list_item"`
 	IDWoShellSize         int32              `json:"id_wo_shell_size"`
+	IDSize                int32              `json:"id_size"`
+	Size                  string             `json:"size"`
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
 }
 
@@ -955,6 +961,8 @@ func (q *Queries) ListPackingListItemSizesByPackingListID(ctx context.Context, i
 			&i.Qty,
 			&i.IDPackingListItem,
 			&i.IDWoShellSize,
+			&i.IDSize,
+			&i.Size,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -1019,8 +1027,12 @@ SELECT
     plrs.qty,
     plrs.id_packing_list,
     plrs.id_wo_shell_size,
+    woss.id_size,
+    ms.nama_size AS size,
     plrs.created_at
 FROM PACKING_LIST_REJECT_SIZE plrs
+JOIN WORK_ORDER_SHELL_SIZE woss ON woss.id_wo_shell_size = plrs.id_wo_shell_size
+JOIN MASTER_SIZE ms ON ms.id_size = woss.id_size
 WHERE plrs.id_packing_list = $1
 ORDER BY plrs.id_packing_list_reject_size ASC
 `
@@ -1030,6 +1042,8 @@ type ListPackingListRejectSizesByPackingListIDRow struct {
 	Qty                     int32              `json:"qty"`
 	IDPackingList           int32              `json:"id_packing_list"`
 	IDWoShellSize           int32              `json:"id_wo_shell_size"`
+	IDSize                  int32              `json:"id_size"`
+	Size                    string             `json:"size"`
 	CreatedAt               pgtype.Timestamptz `json:"created_at"`
 }
 
@@ -1047,6 +1061,8 @@ func (q *Queries) ListPackingListRejectSizesByPackingListID(ctx context.Context,
 			&i.Qty,
 			&i.IDPackingList,
 			&i.IDWoShellSize,
+			&i.IDSize,
+			&i.Size,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -1355,28 +1371,41 @@ func (q *Queries) ListSuratJalanInternals(ctx context.Context, arg ListSuratJala
 const listWorkOrderShellSizesByWorkOrderID = `-- name: ListWorkOrderShellSizesByWorkOrderID :many
 SELECT
     woss.id_wo_shell_size,
-    woss.size,
+    woss.id_size,
+    ms.nama_size AS size,
     woss.qty,
     woss.ratio,
     woss.id_wo_shell,
     woss.created_at
 FROM WORK_ORDER_SHELL_SIZE woss
 JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = woss.id_wo_shell
+JOIN MASTER_SIZE ms ON ms.id_size = woss.id_size
 WHERE wos.id_wo = $1
 ORDER BY woss.id_wo_shell_size ASC
 `
 
-func (q *Queries) ListWorkOrderShellSizesByWorkOrderID(ctx context.Context, idWo int32) ([]WorkOrderShellSize, error) {
+type ListWorkOrderShellSizesByWorkOrderIDRow struct {
+	IDWoShellSize int32              `json:"id_wo_shell_size"`
+	IDSize        int32              `json:"id_size"`
+	Size          string             `json:"size"`
+	Qty           int32              `json:"qty"`
+	Ratio         int32              `json:"ratio"`
+	IDWoShell     int32              `json:"id_wo_shell"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) ListWorkOrderShellSizesByWorkOrderID(ctx context.Context, idWo int32) ([]ListWorkOrderShellSizesByWorkOrderIDRow, error) {
 	rows, err := q.db.Query(ctx, listWorkOrderShellSizesByWorkOrderID, idWo)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []WorkOrderShellSize
+	var items []ListWorkOrderShellSizesByWorkOrderIDRow
 	for rows.Next() {
-		var i WorkOrderShellSize
+		var i ListWorkOrderShellSizesByWorkOrderIDRow
 		if err := rows.Scan(
 			&i.IDWoShellSize,
+			&i.IDSize,
 			&i.Size,
 			&i.Qty,
 			&i.Ratio,

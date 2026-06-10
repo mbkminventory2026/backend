@@ -66,6 +66,11 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 		if len(shell.Sizes) == 0 {
 			return nil, ErrWorkOrderValidation
 		}
+		for _, size := range shell.Sizes {
+			if size.IDSize <= 0 && strings.TrimSpace(size.Size) == "" {
+				return nil, ErrWorkOrderValidation
+			}
+		}
 	}
 
 	tx, err := u.dbPool.Begin(ctx)
@@ -131,8 +136,13 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 
 		sizes := make([]model.WorkOrderShellSizeResponse, 0, len(shellReq.Sizes))
 		for _, sizeReq := range shellReq.Sizes {
+			sizeMaster, sizeResolveErr := u.resolveMasterSize(ctx, sizeReq.IDSize, sizeReq.Size)
+			if sizeResolveErr != nil {
+				return nil, sizeResolveErr
+			}
+
 			size, sizeErr := qtx.CreateWorkOrderShellSize(ctx, entity.CreateWorkOrderShellSizeParams{
-				Size:      sizeReq.Size,
+				IDSize:    sizeMaster.IDSize,
 				Qty:       sizeReq.Qty,
 				Ratio:     sizeReq.Ratio,
 				IDWoShell: shell.IDWoShell,
@@ -141,9 +151,11 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 				return nil, mapWorkOrderDBError(sizeErr)
 			}
 
+			idSize := size.IDSize
 			sizes = append(sizes, model.WorkOrderShellSizeResponse{
 				ID:        size.IDWoShellSize,
-				Size:      size.Size,
+				IDSize:    &idSize,
+				Size:      sizeMaster.NamaSize,
 				Qty:       size.Qty,
 				Ratio:     size.Ratio,
 				CreatedAt: size.CreatedAt.Time.Format(time.RFC3339),
@@ -540,23 +552,25 @@ func (u *WorkOrderProductionUseCase) ListProductionSummary(ctx context.Context, 
 	items := make([]model.ProductionAggregateResponse, 0, len(rows))
 	total := int64(0)
 	for _, row := range rows {
-		total = row.TotalCount
-		items = append(items, model.ProductionAggregateResponse{
-			IDWOShellSize: row.IDWoShellSize,
-			ModelName:     row.ModelName,
-			Size:          row.Size,
-			TargetQty:     row.TargetQty,
-			Production: model.ProductionStats{
-				Cutting: row.CuttingQty,
-				Sewing:  row.SewingQty,
-				QCPass:  row.QcPassQty,
-				Packing: row.PackingQty,
-				Shipped: row.ShippedQty,
-			},
-			LastUpdated: nullableTimestampString(row.LastUpdated),
-			Status:      deriveProductionStatus(row.TargetQty, row.CuttingQty, row.SewingQty, row.QcPassQty, row.PackingQty, row.ShippedQty),
-		})
-	}
+			total = row.TotalCount
+			idSize := row.IDSize
+			items = append(items, model.ProductionAggregateResponse{
+				IDWOShellSize: row.IDWoShellSize,
+				IDSize:        &idSize,
+				ModelName:     row.ModelName,
+				Size:          row.Size,
+				TargetQty:     row.TargetQty,
+				Production: model.ProductionStats{
+					Cutting: row.CuttingQty,
+					Sewing:  row.SewingQty,
+					QCPass:  row.QcPassQty,
+					Packing: row.PackingQty,
+					Shipped: row.ShippedQty,
+				},
+				LastUpdated: nullableTimestampString(row.LastUpdated),
+				Status:      deriveProductionStatus(row.TargetQty, row.CuttingQty, row.SewingQty, row.QcPassQty, row.PackingQty, row.ShippedQty),
+			})
+		}
 
 	return &model.ProductionSummaryListResponse{
 		Items:      items,
@@ -600,8 +614,10 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id 
 
 	sizeMap := make(map[int32][]model.WorkOrderShellSizeResponse)
 	for _, row := range sizeRows {
+		idSize := row.IDSize
 		sizeMap[row.IDWoShell] = append(sizeMap[row.IDWoShell], model.WorkOrderShellSizeResponse{
 			ID:        row.IDWoShellSize,
+			IDSize:    &idSize,
 			Size:      row.Size,
 			Qty:       row.Qty,
 			Ratio:     row.Ratio,
@@ -714,6 +730,33 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id 
 		MaterialLists:     materials,
 		Retur:             returResponse,
 	}, nil
+}
+
+func (u *WorkOrderProductionUseCase) resolveMasterSize(ctx context.Context, idSize int32, name string) (entity.MasterSize, error) {
+	if idSize > 0 {
+		item, err := u.repo.GetSizeByID(ctx, idSize)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return entity.MasterSize{}, ErrWorkOrderReferenceNotFound
+			}
+			return entity.MasterSize{}, fmt.Errorf("%w: failed to resolve size by id", ErrWorkOrderServiceUnavailable)
+		}
+		return item, nil
+	}
+
+	trimmedName := strings.TrimSpace(name)
+	if trimmedName == "" {
+		return entity.MasterSize{}, ErrWorkOrderValidation
+	}
+
+	item, err := u.repo.GetSizeByName(ctx, trimmedName)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return entity.MasterSize{}, ErrWorkOrderReferenceNotFound
+		}
+		return entity.MasterSize{}, fmt.Errorf("%w: failed to resolve size by name", ErrWorkOrderServiceUnavailable)
+	}
+	return item, nil
 }
 
 func mapWorkOrderDBError(err error) error {

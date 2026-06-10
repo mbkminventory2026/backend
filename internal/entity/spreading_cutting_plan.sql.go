@@ -215,9 +215,10 @@ func (q *Queries) ListRatioByKomponenSpreadingID(ctx context.Context, idKomponen
 }
 
 const listRatioSizeByRatioSpreadingID = `-- name: ListRatioSizeByRatioSpreadingID :many
-SELECT rss.ID_RATIO_SIZE_SPREADING, rss.ID_RATIO_SPREADING, rss.ID_WO_SHELL_SIZE, rss.RATIO_PLAN, wss.SIZE, wss.QTY AS size_qty
+SELECT rss.ID_RATIO_SIZE_SPREADING, rss.ID_RATIO_SPREADING, rss.ID_WO_SHELL_SIZE, rss.RATIO_PLAN, ms.NAMA_SIZE AS SIZE, wss.QTY AS size_qty
 FROM RATIO_SIZE_SPREADING rss
 JOIN WORK_ORDER_SHELL_SIZE wss ON rss.ID_WO_SHELL_SIZE = wss.ID_WO_SHELL_SIZE
+JOIN MASTER_SIZE ms ON ms.ID_SIZE = wss.ID_SIZE
 WHERE rss.ID_RATIO_SPREADING = $1
 ORDER BY rss.ID_RATIO_SIZE_SPREADING ASC
 `
