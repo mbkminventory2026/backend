@@ -1,0 +1,31 @@
+CREATE TABLE IF NOT EXISTS DATA_APPROVE_CUTTING_PLAN (
+    id_dacp       SERIAL PRIMARY KEY,
+    no_dokumen    VARCHAR(100) NOT NULL UNIQUE,
+    tanggal       DATE NOT NULL,
+    id_wo         INTEGER NOT NULL REFERENCES WORK_ORDER(id_wo),
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_dacp_id_wo ON DATA_APPROVE_CUTTING_PLAN(id_wo);
+
+-- ── Seed permissions ke tabel HAK_AKSES ─────────────────────────────────────
+INSERT INTO HAK_AKSES (KODE_PERMISSION, NAMA_HALAMAN, DESKRIPSI, DOMAIN_PERMISSION, AKSI_PERMISSION)
+VALUES
+    ('DATA_APPROVE_CUTTING_PLAN_READ',   'Data Approve Cutting Plan Read',   'Melihat daftar dan detail Data Approve Cutting Plan', 'data_approve_cutting_plan', 'read'),
+    ('DATA_APPROVE_CUTTING_PLAN_CREATE', 'Data Approve Cutting Plan Create', 'Membuat dokumen Data Approve Cutting Plan baru',       'data_approve_cutting_plan', 'create')
+ON CONFLICT (KODE_PERMISSION) DO UPDATE
+SET NAMA_HALAMAN       = EXCLUDED.NAMA_HALAMAN,
+    DESKRIPSI          = EXCLUDED.DESKRIPSI,
+    DOMAIN_PERMISSION  = EXCLUDED.DOMAIN_PERMISSION,
+    AKSI_PERMISSION    = EXCLUDED.AKSI_PERMISSION;
+
+-- ── Berikan ke role ADMIN_PRODUKSI dan MANAGER ───────────────────────────────
+INSERT INTO ROLE_HAK_AKSES (ID_ROLE, ID_HAK_AKSES)
+SELECT r.ID_ROLE, h.ID_HAK_AKSES
+FROM ROLES r
+JOIN HAK_AKSES h ON h.KODE_PERMISSION IN (
+    'DATA_APPROVE_CUTTING_PLAN_READ',
+    'DATA_APPROVE_CUTTING_PLAN_CREATE'
+)
+WHERE r.NAMA_ROLE IN ('ADMIN_PRODUKSI', 'MANAGER', 'SUPER_ADMIN')
+ON CONFLICT (ID_ROLE, ID_HAK_AKSES) DO NOTHING;

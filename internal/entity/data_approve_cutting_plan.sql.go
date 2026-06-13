@@ -1,0 +1,247 @@
+package entity
+
+import (
+	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
+// DataApproveCuttingPlan represents the header record
+type DataApproveCuttingPlan struct {
+	IDDacp    int32              `json:"id_dacp"`
+	NoDokumen string             `json:"no_dokumen"`
+	Tanggal   pgtype.Date        `json:"tanggal"`
+	IDWo      int32              `json:"id_wo"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+// ─── Create ────────────────────────────────────────────────────────────────────
+
+const createDataApproveCuttingPlan = `-- name: CreateDataApproveCuttingPlan :one
+INSERT INTO DATA_APPROVE_CUTTING_PLAN (
+    NO_DOKUMEN, TANGGAL, ID_WO
+) VALUES (
+    $1, $2, $3
+) RETURNING id_dacp, no_dokumen, tanggal, id_wo, created_at
+`
+
+type CreateDataApproveCuttingPlanParams struct {
+	NoDokumen string      `json:"no_dokumen"`
+	Tanggal   pgtype.Date `json:"tanggal"`
+	IDWo      int32       `json:"id_wo"`
+}
+
+func (q *Queries) CreateDataApproveCuttingPlan(ctx context.Context, arg CreateDataApproveCuttingPlanParams) (DataApproveCuttingPlan, error) {
+	row := q.db.QueryRow(ctx, createDataApproveCuttingPlan, arg.NoDokumen, arg.Tanggal, arg.IDWo)
+	var i DataApproveCuttingPlan
+	err := row.Scan(&i.IDDacp, &i.NoDokumen, &i.Tanggal, &i.IDWo, &i.CreatedAt)
+	return i, err
+}
+
+// ─── Get by ID (header only) ────────────────────────────────────────────────
+
+const getDataApproveCuttingPlanByID = `-- name: GetDataApproveCuttingPlanByID :one
+SELECT
+    dacp.id_dacp,
+    dacp.no_dokumen,
+    dacp.tanggal,
+    dacp.id_wo,
+    dacp.created_at,
+    wo.buyer,
+    wo.model,
+    pci.style,
+    pci.colour
+FROM DATA_APPROVE_CUTTING_PLAN dacp
+JOIN WORK_ORDER wo ON dacp.id_wo = wo.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+WHERE dacp.id_dacp = $1 LIMIT 1
+`
+
+type GetDataApproveCuttingPlanByIDRow struct {
+	IDDacp    int32              `json:"id_dacp"`
+	NoDokumen string             `json:"no_dokumen"`
+	Tanggal   pgtype.Date        `json:"tanggal"`
+	IDWo      int32              `json:"id_wo"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	Buyer     string             `json:"buyer"`
+	Model     string             `json:"model"`
+	Style     string             `json:"style"`
+	Colour    string             `json:"colour"`
+}
+
+func (q *Queries) GetDataApproveCuttingPlanByID(ctx context.Context, idDacp int32) (GetDataApproveCuttingPlanByIDRow, error) {
+	row := q.db.QueryRow(ctx, getDataApproveCuttingPlanByID, idDacp)
+	var i GetDataApproveCuttingPlanByIDRow
+	err := row.Scan(
+		&i.IDDacp,
+		&i.NoDokumen,
+		&i.Tanggal,
+		&i.IDWo,
+		&i.CreatedAt,
+		&i.Buyer,
+		&i.Model,
+		&i.Style,
+		&i.Colour,
+	)
+	return i, err
+}
+
+// ─── Get report rows (size aggregation) ─────────────────────────────────────
+
+const getDataApproveCuttingPlanRows = `-- name: GetDataApproveCuttingPlanRows :many
+SELECT
+    wss.id_wo_shell_size,
+    wss.size,
+    wss.qty                                                         AS qty_order,
+    COALESCE(sp.qty_cutting_plan, 0)::bigint                       AS qty_cutting_plan,
+    COALESCE(mk.qty_cutting_actual, 0)::bigint                     AS qty_cutting_actual,
+    COALESCE(rc.cutting_report, 0)::bigint                         AS cutting_report,
+    (wss.qty - COALESCE(rc.cutting_report, 0))::bigint             AS balance_allowance
+FROM WORK_ORDER_SHELL wos
+JOIN WORK_ORDER_SHELL_SIZE wss ON wss.id_wo_shell = wos.id_wo_shell
+LEFT JOIN (
+    SELECT rss.id_wo_shell_size,
+           SUM(rss.ratio_plan) AS qty_cutting_plan
+    FROM RATIO_SIZE_SPREADING rss
+    JOIN RATIO_SPREADING rs     ON rs.id_ratio_spreading = rss.id_ratio_spreading
+    JOIN WORK_ORDER_SHELL wos2  ON wos2.id_wo_shell = rs.id_wo_shell
+    WHERE wos2.id_wo = $1
+    GROUP BY rss.id_wo_shell_size
+) sp ON sp.id_wo_shell_size = wss.id_wo_shell_size
+LEFT JOIN (
+    SELECT rsm.id_wo_shell_size,
+           SUM(rsm.ratio_plan) AS qty_cutting_actual
+    FROM RATIO_SIZE_MARKER rsm
+    JOIN RATIO_MARKER rm        ON rm.id_ratio_marker = rsm.id_ratio_marker
+    JOIN WORK_ORDER_SHELL wos3  ON wos3.id_wo_shell = rm.id_wo_shell
+    WHERE wos3.id_wo = $1
+    GROUP BY rsm.id_wo_shell_size
+) mk ON mk.id_wo_shell_size = wss.id_wo_shell_size
+LEFT JOIN (
+    SELECT rc2.id_wo_shell_size,
+           SUM(rc2.qty) AS cutting_report
+    FROM REPORT_CUTTING rc2
+    GROUP BY rc2.id_wo_shell_size
+) rc ON rc.id_wo_shell_size = wss.id_wo_shell_size
+WHERE wos.id_wo = $1
+ORDER BY wos.id_wo_shell ASC, wss.id_wo_shell_size ASC
+`
+
+type GetDataApproveCuttingPlanRowsRow struct {
+	IDWoShellSize      int32  `json:"id_wo_shell_size"`
+	Size               string `json:"size"`
+	QtyOrder           int32  `json:"qty_order"`
+	QtyCuttingPlan     int64  `json:"qty_cutting_plan"`
+	QtyCuttingActual   int64  `json:"qty_cutting_actual"`
+	CuttingReport      int64  `json:"cutting_report"`
+	BalanceAllowance   int64  `json:"balance_allowance"`
+}
+
+func (q *Queries) GetDataApproveCuttingPlanRows(ctx context.Context, idWo int32) ([]GetDataApproveCuttingPlanRowsRow, error) {
+	rows, err := q.db.Query(ctx, getDataApproveCuttingPlanRows, idWo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetDataApproveCuttingPlanRowsRow
+	for rows.Next() {
+		var i GetDataApproveCuttingPlanRowsRow
+		if err := rows.Scan(
+			&i.IDWoShellSize,
+			&i.Size,
+			&i.QtyOrder,
+			&i.QtyCuttingPlan,
+			&i.QtyCuttingActual,
+			&i.CuttingReport,
+			&i.BalanceAllowance,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+// ─── List (paginated) ────────────────────────────────────────────────────────
+
+const listDataApproveCuttingPlans = `-- name: ListDataApproveCuttingPlans :many
+SELECT
+    dacp.id_dacp,
+    dacp.no_dokumen,
+    dacp.tanggal,
+    dacp.id_wo,
+    dacp.created_at,
+    wo.buyer,
+    wo.model,
+    COUNT(*) OVER() AS total_count
+FROM DATA_APPROVE_CUTTING_PLAN dacp
+JOIN WORK_ORDER wo ON dacp.id_wo = wo.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
+WHERE (
+    $1 = '' OR
+    dacp.no_dokumen ILIKE '%' || $1 || '%' OR
+    wo.buyer ILIKE '%' || $1 || '%' OR
+    wo.model ILIKE '%' || $1 || '%'
+) AND (
+    $2::integer IS NULL OR
+    pc.id_mitra = $2::integer
+)
+ORDER BY dacp.id_dacp DESC
+LIMIT $4 OFFSET $3
+`
+
+type ListDataApproveCuttingPlansParams struct {
+	SearchTerm interface{} `json:"search_term"`
+	IDMitra    pgtype.Int4 `json:"id_mitra"`
+	PageOffset int32       `json:"page_offset"`
+	PageLimit  int32       `json:"page_limit"`
+}
+
+type ListDataApproveCuttingPlansRow struct {
+	IDDacp     int32              `json:"id_dacp"`
+	NoDokumen  string             `json:"no_dokumen"`
+	Tanggal    pgtype.Date        `json:"tanggal"`
+	IDWo       int32              `json:"id_wo"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	Buyer      string             `json:"buyer"`
+	Model      string             `json:"model"`
+	TotalCount int64              `json:"total_count"`
+}
+
+func (q *Queries) ListDataApproveCuttingPlans(ctx context.Context, arg ListDataApproveCuttingPlansParams) ([]ListDataApproveCuttingPlansRow, error) {
+	rows, err := q.db.Query(ctx, listDataApproveCuttingPlans,
+		arg.SearchTerm,
+		arg.IDMitra,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListDataApproveCuttingPlansRow
+	for rows.Next() {
+		var i ListDataApproveCuttingPlansRow
+		if err := rows.Scan(
+			&i.IDDacp,
+			&i.NoDokumen,
+			&i.Tanggal,
+			&i.IDWo,
+			&i.CreatedAt,
+			&i.Buyer,
+			&i.Model,
+			&i.TotalCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
