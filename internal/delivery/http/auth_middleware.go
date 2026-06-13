@@ -107,6 +107,9 @@ const (
 	PermissionCuttingPlanCreate = "CUTTING_PLAN_CREATE"
 	PermissionCuttingPlanUpdate = "CUTTING_PLAN_UPDATE"
 
+	PermissionDataApproveCuttingPlanRead   = "DATA_APPROVE_CUTTING_PLAN_READ"
+	PermissionDataApproveCuttingPlanCreate = "DATA_APPROVE_CUTTING_PLAN_CREATE"
+
 	PermissionInventoryReceive = "INVENTORY_RECEIVE"
 	PermissionInventoryIssue   = "INVENTORY_ISSUE"
 

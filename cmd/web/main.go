@@ -164,6 +164,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	dataApproveCuttingPlanUseCase, err := usecase.NewDataApproveCuttingPlanUseCase(queries, dbPool)
+	if err != nil {
+		logger.Error("failed to initialize data approve cutting plan usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	warehouseDeliveryUseCase, err := usecase.NewWarehouseDeliveryUseCase(queries, dbPool)
 	if err != nil {
 		logger.Error("failed to initialize warehouse delivery usecase", slog.String("error", err.Error()))
@@ -298,6 +305,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	dataApproveCuttingPlanHandler, err := httpdelivery.NewDataApproveCuttingPlanHandler(dataApproveCuttingPlanUseCase)
+	if err != nil {
+		logger.Error("failed to initialize data approve cutting plan handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	warehouseDeliveryHandler, err := httpdelivery.NewWarehouseDeliveryHandler(warehouseDeliveryUseCase)
 	if err != nil {
 		logger.Error("failed to initialize warehouse delivery handler", slog.String("error", err.Error()))
@@ -401,6 +415,7 @@ func main() {
 
 	markerPlanHandler.RegisterRoutes(router, authMiddleware)
 	spreadingCuttingPlanHandler.RegisterRoutes(router, authMiddleware)
+	dataApproveCuttingPlanHandler.RegisterRoutes(router, authMiddleware)
 	warehouseDeliveryHandler.RegisterRoutes(router, authMiddleware)
 	approvalHandler.RegisterRoutes(router, authMiddleware)
 
