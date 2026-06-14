@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,12 +21,12 @@ import (
 )
 
 var (
-	ErrRekonsiliasiValidation      = errors.New("invalid rekonsiliasi payload")
-	ErrRekonsiliasiNotFound        = errors.New("rekonsiliasi not found")
-	ErrRekonsiliasiAlreadyExists   = errors.New("rekonsiliasi already exists for this work order")
-	ErrRekonsiliasiSourceNotFound  = errors.New("rekonsiliasi source data not found")
-	ErrRekonsiliasiUnavailable     = errors.New("rekonsiliasi service unavailable")
-	rekonsiliasiSortColumns        = buildSortWhitelist("created_at", "updated_at", "id_rekonsiliasi", "id_wo", "buyer", "style")
+	ErrRekonsiliasiValidation     = errors.New("invalid rekonsiliasi payload")
+	ErrRekonsiliasiNotFound       = errors.New("rekonsiliasi not found")
+	ErrRekonsiliasiAlreadyExists  = errors.New("rekonsiliasi already exists for this work order")
+	ErrRekonsiliasiSourceNotFound = errors.New("rekonsiliasi source data not found")
+	ErrRekonsiliasiUnavailable    = errors.New("rekonsiliasi service unavailable")
+	rekonsiliasiSortColumns       = buildSortWhitelist("created_at", "updated_at", "id_rekonsiliasi", "id_wo", "buyer", "style")
 )
 
 type RekonsiliasiUseCase struct {
@@ -171,25 +173,25 @@ func (u *RekonsiliasiUseCase) CreateRekonsiliasi(ctx context.Context, userID int
 
 	for _, sourceRow := range snapshot.sourceRows {
 		if _, err := qtx.CreateRekonsiliasiMaterialRow(ctx, entity.CreateRekonsiliasiMaterialRowParams{
-			IDRekonsiliasi:        header.IDRekonsiliasi,
-			RowNo:                 sourceRow.RowNo,
-			Kategori:              sourceRow.Kategori,
-			Description:           sourceRow.Description,
-			SizeLabel:             sourceRow.SizeLabel,
-			RatioSource:           mustNumeric(sourceRow.RatioSource),
-			RatioInput:            mustNumeric(sourceRow.RatioSource),
-			QtyPerPcsInput:        mustNumeric(0),
-			QtyWo:                 sourceRow.QtyWO,
-			Toleransi:             sourceRow.Toleransi,
-			Satuan:                sourceRow.Satuan,
-			QtyActualKirimSource:  sourceRow.QtyActualKirimSource,
-			QtyActualKirimManual:  0,
-			RejectQty:             0,
-			ReturQty:              0,
-			Keterangan:            "",
-			IDMaterialListItem:    nullableInt32Param(sourceRow.IDMaterialListItem),
-			IDWoShell:             nullableInt32Param(sourceRow.IDWoShell),
-			IDWoTrim:              nullableInt32Param(sourceRow.IDWoTrim),
+			IDRekonsiliasi:       header.IDRekonsiliasi,
+			RowNo:                sourceRow.RowNo,
+			Kategori:             sourceRow.Kategori,
+			Description:          sourceRow.Description,
+			SizeLabel:            sourceRow.SizeLabel,
+			RatioSource:          mustNumeric(sourceRow.RatioSource),
+			RatioInput:           mustNumeric(sourceRow.RatioSource),
+			QtyPerPcsInput:       mustNumeric(0),
+			QtyWo:                sourceRow.QtyWO,
+			Toleransi:            sourceRow.Toleransi,
+			Satuan:               sourceRow.Satuan,
+			QtyActualKirimSource: sourceRow.QtyActualKirimSource,
+			QtyActualKirimManual: 0,
+			RejectQty:            0,
+			ReturQty:             0,
+			Keterangan:           "",
+			IDMaterialListItem:   nullableInt32Param(sourceRow.IDMaterialListItem),
+			IDWoShell:            nullableInt32Param(sourceRow.IDWoShell),
+			IDWoTrim:             nullableInt32Param(sourceRow.IDWoTrim),
 		}); err != nil {
 			return nil, fmt.Errorf("%w: failed to create rekonsiliasi material row", ErrRekonsiliasiUnavailable)
 		}
@@ -300,12 +302,12 @@ func (u *RekonsiliasiUseCase) UpdateRekonsiliasi(ctx context.Context, idRekonsil
 		}
 
 		if _, err := qtx.UpdateRekonsiliasiMaterialRowManualFields(ctx, entity.UpdateRekonsiliasiMaterialRowManualFieldsParams{
-			RatioInput:               mustNumeric(rowReq.RatioInput),
-			QtyPerPcsInput:           mustNumeric(rowReq.QtyPerPcsInput),
-			QtyActualKirimManual:     rowReq.QtyActualKirimManual,
-			RejectQty:                rowReq.RejectQty,
-			ReturQty:                 rowReq.ReturQty,
-			Keterangan:               rowReq.Keterangan,
+			RatioInput:                mustNumeric(rowReq.RatioInput),
+			QtyPerPcsInput:            mustNumeric(rowReq.QtyPerPcsInput),
+			QtyActualKirimManual:      rowReq.QtyActualKirimManual,
+			RejectQty:                 rowReq.RejectQty,
+			ReturQty:                  rowReq.ReturQty,
+			Keterangan:                rowReq.Keterangan,
 			IDRekonsiliasiMaterialRow: rowReq.IDRekonsiliasiMaterialRow,
 		}); err != nil {
 			return nil, fmt.Errorf("%w: failed to update rekonsiliasi material row", ErrRekonsiliasiUnavailable)
@@ -416,25 +418,25 @@ func (u *RekonsiliasiUseCase) RefreshRekonsiliasi(ctx context.Context, idRekonsi
 		}
 
 		createdRow, err := qtx.CreateRekonsiliasiMaterialRow(ctx, entity.CreateRekonsiliasiMaterialRowParams{
-			IDRekonsiliasi:        idRekonsiliasi,
-			RowNo:                 sourceRow.RowNo,
-			Kategori:              sourceRow.Kategori,
-			Description:           sourceRow.Description,
-			SizeLabel:             sourceRow.SizeLabel,
-			RatioSource:           mustNumeric(sourceRow.RatioSource),
-			RatioInput:            mustNumeric(state.RatioInput),
-			QtyPerPcsInput:        mustNumeric(state.QtyPerPcsInput),
-			QtyWo:                 sourceRow.QtyWO,
-			Toleransi:             sourceRow.Toleransi,
-			Satuan:                sourceRow.Satuan,
-			QtyActualKirimSource:  sourceRow.QtyActualKirimSource,
-			QtyActualKirimManual:  state.QtyActualKirimManual,
-			RejectQty:             state.RejectQty,
-			ReturQty:              state.ReturQty,
-			Keterangan:            state.Keterangan,
-			IDMaterialListItem:    nullableInt32Param(sourceRow.IDMaterialListItem),
-			IDWoShell:             nullableInt32Param(sourceRow.IDWoShell),
-			IDWoTrim:              nullableInt32Param(sourceRow.IDWoTrim),
+			IDRekonsiliasi:       idRekonsiliasi,
+			RowNo:                sourceRow.RowNo,
+			Kategori:             sourceRow.Kategori,
+			Description:          sourceRow.Description,
+			SizeLabel:            sourceRow.SizeLabel,
+			RatioSource:          mustNumeric(sourceRow.RatioSource),
+			RatioInput:           mustNumeric(state.RatioInput),
+			QtyPerPcsInput:       mustNumeric(state.QtyPerPcsInput),
+			QtyWo:                sourceRow.QtyWO,
+			Toleransi:            sourceRow.Toleransi,
+			Satuan:               sourceRow.Satuan,
+			QtyActualKirimSource: sourceRow.QtyActualKirimSource,
+			QtyActualKirimManual: state.QtyActualKirimManual,
+			RejectQty:            state.RejectQty,
+			ReturQty:             state.ReturQty,
+			Keterangan:           state.Keterangan,
+			IDMaterialListItem:   nullableInt32Param(sourceRow.IDMaterialListItem),
+			IDWoShell:            nullableInt32Param(sourceRow.IDWoShell),
+			IDWoTrim:             nullableInt32Param(sourceRow.IDWoTrim),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("%w: failed to recreate rekonsiliasi row", ErrRekonsiliasiUnavailable)
@@ -487,8 +489,9 @@ func (u *RekonsiliasiUseCase) buildSnapshot(ctx context.Context, idWo int32) (*r
 	warnaSummary := extractDistinctWarna(shellRows, colorRows)
 	sourceRows := make([]rekonsiliasiMaterialSeed, 0, len(materialRows))
 	for idx, row := range materialRows {
+		rowNo := safeIntToInt32(idx + 1)
 		sourceRows = append(sourceRows, rekonsiliasiMaterialSeed{
-			RowNo:                int32(idx + 1),
+			RowNo:                rowNo,
 			Kategori:             row.Kategori,
 			Description:          interfaceToString(row.Description),
 			SizeLabel:            row.SizeLabel,
@@ -763,17 +766,21 @@ func interfaceToInt32(value interface{}) int32 {
 	case int32:
 		return v
 	case int64:
-		return int32(v)
+		return safeInt64ToInt32(v)
 	case float64:
-		return int32(v)
+		return safeInt64ToInt32(int64(v))
 	case []byte:
-		var parsed int64
-		fmt.Sscan(string(v), &parsed)
-		return int32(parsed)
+		parsed, err := strconv.ParseInt(string(v), 10, 64)
+		if err != nil {
+			return 0
+		}
+		return safeInt64ToInt32(parsed)
 	case string:
-		var parsed int64
-		fmt.Sscan(v, &parsed)
-		return int32(parsed)
+		parsed, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return 0
+		}
+		return safeInt64ToInt32(parsed)
 	default:
 		return 0
 	}
@@ -781,6 +788,26 @@ func interfaceToInt32(value interface{}) int32 {
 
 func int32Ptr(value int32) *int32 {
 	return &value
+}
+
+func safeIntToInt32(value int) int32 {
+	if value > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	if value < math.MinInt32 {
+		return math.MinInt32
+	}
+	return int32(value)
+}
+
+func safeInt64ToInt32(value int64) int32 {
+	if value > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	if value < math.MinInt32 {
+		return math.MinInt32
+	}
+	return int32(value)
 }
 
 func formatCompactFloat(value float64) string {

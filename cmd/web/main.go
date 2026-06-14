@@ -220,6 +220,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	rekonsiliasiUseCase, err := usecase.NewRekonsiliasiUseCase(queries, dbPool)
+	if err != nil {
+		logger.Error("failed to initialize rekonsiliasi usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	// 4. Handlers
 	authHandler, err := httpdelivery.NewAuthHandler(authUseCase)
 	if err != nil {
@@ -349,6 +356,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	rekonsiliasiHandler, err := httpdelivery.NewRekonsiliasiHandler(rekonsiliasiUseCase)
+	if err != nil {
+		logger.Error("failed to initialize rekonsiliasi handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	auditLogHandler, err := httpdelivery.NewAuditLogHandler(auditLogUseCase)
 	if err != nil {
 		logger.Error("failed to initialize audit log handler", slog.String("error", err.Error()))
@@ -422,6 +436,7 @@ func main() {
 	dashboardHandler.RegisterRoutes(router, authMiddleware)
 	reportHandler.RegisterRoutes(router, authMiddleware)
 	excelExportHandler.RegisterRoutes(router, authMiddleware)
+	rekonsiliasiHandler.RegisterRoutes(router, authMiddleware)
 	auditLogHandler.RegisterRoutes(router, authMiddleware)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

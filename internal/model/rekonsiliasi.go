@@ -20,14 +20,14 @@ type UpdateRekonsiliasiTerimaEntryRequest struct {
 }
 
 type UpdateRekonsiliasiMaterialRowRequest struct {
-	IDRekonsiliasiMaterialRow int32                                 `json:"id_rekonsiliasi_material_row" binding:"required,gt=0"`
-	RatioInput               float64                               `json:"ratio_input" binding:"gte=0"`
-	QtyPerPcsInput           float64                               `json:"qty_per_pcs_input" binding:"gte=0"`
-	QtyActualKirimManual     int32                                 `json:"qty_actual_kirim_manual" binding:"gte=0"`
-	RejectQty                int32                                 `json:"reject_qty" binding:"gte=0"`
-	ReturQty                 int32                                 `json:"retur_qty" binding:"gte=0"`
-	Keterangan               string                                `json:"keterangan"`
-	TerimaEntries            []UpdateRekonsiliasiTerimaEntryRequest `json:"terima_entries" binding:"omitempty,dive"`
+	IDRekonsiliasiMaterialRow int32                                  `json:"id_rekonsiliasi_material_row" binding:"required,gt=0"`
+	RatioInput                float64                                `json:"ratio_input" binding:"gte=0"`
+	QtyPerPcsInput            float64                                `json:"qty_per_pcs_input" binding:"gte=0"`
+	QtyActualKirimManual      int32                                  `json:"qty_actual_kirim_manual" binding:"gte=0"`
+	RejectQty                 int32                                  `json:"reject_qty" binding:"gte=0"`
+	ReturQty                  int32                                  `json:"retur_qty" binding:"gte=0"`
+	Keterangan                string                                 `json:"keterangan"`
+	TerimaEntries             []UpdateRekonsiliasiTerimaEntryRequest `json:"terima_entries" binding:"omitempty,dive"`
 }
 
 type UpdateRekonsiliasiRequest struct {
@@ -82,21 +82,21 @@ type RekonsiliasiColorSizeSummaryResponse struct {
 }
 
 type RekonsiliasiColorSummaryResponse struct {
-	Color         string                               `json:"color"`
-	QtyOrder      int32                                `json:"qty_order"`
-	QtyKirim      int32                                `json:"qty_kirim"`
-	Balance       int32                                `json:"balance"`
+	Color         string                                 `json:"color"`
+	QtyOrder      int32                                  `json:"qty_order"`
+	QtyKirim      int32                                  `json:"qty_kirim"`
+	Balance       int32                                  `json:"balance"`
 	SizeBreakdown []RekonsiliasiColorSizeSummaryResponse `json:"size_breakdown"`
 }
 
 type RekonsiliasiTerimaEntryResponse struct {
 	IDRekonsiliasiTerimaEntry int32  `json:"id_rekonsiliasi_terima_entry"`
-	EntryType                string `json:"entry_type"`
-	EntryLabel               string `json:"entry_label"`
-	Qty                      int32  `json:"qty"`
-	Note                     string `json:"note"`
-	CreatedAt                string `json:"created_at"`
-	UpdatedAt                string `json:"updated_at"`
+	EntryType                 string `json:"entry_type"`
+	EntryLabel                string `json:"entry_label"`
+	Qty                       int32  `json:"qty"`
+	Note                      string `json:"note"`
+	CreatedAt                 string `json:"created_at"`
+	UpdatedAt                 string `json:"updated_at"`
 }
 
 type RekonsiliasiMaterialRowResponse struct {
@@ -128,9 +128,9 @@ type RekonsiliasiMaterialRowResponse struct {
 }
 
 type RekonsiliasiDetailResponse struct {
-	Header         RekonsiliasiHeaderResponse        `json:"header"`
+	Header         RekonsiliasiHeaderResponse         `json:"header"`
 	ColorSummaries []RekonsiliasiColorSummaryResponse `json:"color_summaries"`
-	MaterialRows   []RekonsiliasiMaterialRowResponse `json:"material_rows"`
+	MaterialRows   []RekonsiliasiMaterialRowResponse  `json:"material_rows"`
 }
 
 type RekonsiliasiSuccessDoc struct {

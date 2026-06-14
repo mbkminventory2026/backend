@@ -136,6 +136,10 @@ const (
 	PermissionPasswordResetRequestRead    = "PASSWORD_RESET_REQUEST_READ"
 	PermissionPasswordResetRequestApprove = "PASSWORD_RESET_REQUEST_APPROVE"
 	PermissionPasswordResetRequestReject  = "PASSWORD_RESET_REQUEST_REJECT"
+
+	PermissionRekonsiliasiRead   = "REKONSILIASI_READ"
+	PermissionRekonsiliasiCreate = "REKONSILIASI_CREATE"
+	PermissionRekonsiliasiUpdate = "REKONSILIASI_UPDATE"
 )
 
 // AuthMiddleware validates JWT token from Authorization header.
