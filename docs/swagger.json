@@ -843,6 +843,152 @@
                 "responses": {}
             }
         },
+        "/api/v1/data-approve-cutting-plans": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of Data Approve Cutting Plan documents.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Data Approve Cutting Plan"
+                ],
+                "summary": "List Data Approve Cutting Plans",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by document number, buyer, model",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.DataApproveCuttingPlanListSuccessDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.DataApproveCuttingPlanErrorDoc"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new Data Approve Cutting Plan document linked to a Work Order and initializes the approval workflow.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Data Approve Cutting Plan"
+                ],
+                "summary": "Create Data Approve Cutting Plan",
+                "parameters": [
+                    {
+                        "description": "Payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateDataApproveCuttingPlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.DataApproveCuttingPlanSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.DataApproveCuttingPlanValidationErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.DataApproveCuttingPlanErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/data-approve-cutting-plans/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a single Data Approve Cutting Plan with the aggregated size breakdown table.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Data Approve Cutting Plan"
+                ],
+                "summary": "Get Data Approve Cutting Plan Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Document ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.DataApproveCuttingPlanSuccessDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.DataApproveCuttingPlanErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.DataApproveCuttingPlanErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/exports/excel/render": {
             "post": {
                 "security": [
@@ -3502,6 +3648,314 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/rekonsiliasi": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves paginated material reconciliation documents.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Rekonsiliasi"
+                ],
+                "summary": "List rekonsiliasi",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit fallback",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by work order ID",
+                        "name": "idWo",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field",
+                        "name": "sortBy",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Sort descending",
+                        "name": "sortDesc",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiListSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiErrorDoc"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a material reconciliation document from work order source data.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Rekonsiliasi"
+                ],
+                "summary": "Create rekonsiliasi",
+                "parameters": [
+                    {
+                        "description": "Create rekonsiliasi payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateRekonsiliasiRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiValidationErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiErrorDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/rekonsiliasi/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a full material reconciliation document.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Rekonsiliasi"
+                ],
+                "summary": "Get rekonsiliasi detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Rekonsiliasi ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiErrorDoc"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates editable manual fields in a material reconciliation document.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Rekonsiliasi"
+                ],
+                "summary": "Update rekonsiliasi",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Rekonsiliasi ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update rekonsiliasi payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateRekonsiliasiRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiValidationErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/rekonsiliasi/{id}/refresh": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Refreshes source-driven snapshot data while preserving manual input.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Rekonsiliasi"
+                ],
+                "summary": "Refresh rekonsiliasi",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Rekonsiliasi ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.RekonsiliasiErrorDoc"
                         }
                     }
                 }
@@ -6222,6 +6676,25 @@
                 }
             }
         },
+        "model.CreateDataApproveCuttingPlanRequest": {
+            "type": "object",
+            "required": [
+                "id_wo",
+                "no_dokumen",
+                "tanggal"
+            ],
+            "properties": {
+                "id_wo": {
+                    "type": "integer"
+                },
+                "no_dokumen": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
         "model.CreateDepartemenRequest": {
             "type": "object",
             "required": [
@@ -7008,6 +7481,17 @@
                 }
             }
         },
+        "model.CreateRekonsiliasiRequest": {
+            "type": "object",
+            "required": [
+                "id_wo"
+            ],
+            "properties": {
+                "id_wo": {
+                    "type": "integer"
+                }
+            }
+        },
         "model.CreateRoleRequest": {
             "type": "object",
             "required": [
@@ -7429,6 +7913,183 @@
                 "status": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "invalid_payload"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/model.DataApproveCuttingPlanErrorDetail"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "bad request"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanListItem": {
+            "type": "object",
+            "properties": {
+                "buyer": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id_dacp": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "no_dokumen": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.DataApproveCuttingPlanListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/model.PaginationMeta"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.DataApproveCuttingPlanListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "data approve cutting plans retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanResponse": {
+            "type": "object",
+            "properties": {
+                "buyer": {
+                    "type": "string"
+                },
+                "colour": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id_dacp": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "no_dokumen": {
+                    "type": "string"
+                },
+                "rows": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.DataApproveCuttingPlanRow"
+                    }
+                },
+                "style": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanRow": {
+            "type": "object",
+            "properties": {
+                "balance_allowance": {
+                    "type": "integer"
+                },
+                "cutting_report": {
+                    "type": "integer"
+                },
+                "qty_cutting_actual": {
+                    "type": "integer"
+                },
+                "qty_cutting_plan": {
+                    "type": "integer"
+                },
+                "qty_order": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.DataApproveCuttingPlanResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "data approve cutting plan created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanValidationErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ValidationErrorItem"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "validation error"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
                 }
             }
         },
@@ -9771,6 +10432,365 @@
                 }
             }
         },
+        "model.RekonsiliasiColorSizeSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "integer"
+                },
+                "qty_kirim": {
+                    "type": "integer"
+                },
+                "qty_order": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.RekonsiliasiColorSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "integer"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "qty_kirim": {
+                    "type": "integer"
+                },
+                "qty_order": {
+                    "type": "integer"
+                },
+                "size_breakdown": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RekonsiliasiColorSizeSummaryResponse"
+                    }
+                }
+            }
+        },
+        "model.RekonsiliasiDetailResponse": {
+            "type": "object",
+            "properties": {
+                "color_summaries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RekonsiliasiColorSummaryResponse"
+                    }
+                },
+                "header": {
+                    "$ref": "#/definitions/model.RekonsiliasiHeaderResponse"
+                },
+                "material_rows": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RekonsiliasiMaterialRowResponse"
+                    }
+                }
+            }
+        },
+        "model.RekonsiliasiErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "rekonsiliasi_not_found"
+                }
+            }
+        },
+        "model.RekonsiliasiErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/model.RekonsiliasiErrorDetail"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "rekonsiliasi not found"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.RekonsiliasiHeaderResponse": {
+            "type": "object",
+            "properties": {
+                "brand": {
+                    "type": "string"
+                },
+                "buyer": {
+                    "type": "string"
+                },
+                "cons_baju_summary": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_username": {
+                    "type": "string"
+                },
+                "delivery": {
+                    "type": "string"
+                },
+                "id_rekonsiliasi": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "jasa": {
+                    "type": "string"
+                },
+                "nama_bahan": {
+                    "type": "string"
+                },
+                "no_po": {
+                    "type": "string"
+                },
+                "plan_cut_total": {
+                    "type": "integer"
+                },
+                "qty_po": {
+                    "type": "integer"
+                },
+                "style": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by_username": {
+                    "type": "string"
+                },
+                "warna_kain_summary": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "model.RekonsiliasiListItem": {
+            "type": "object",
+            "properties": {
+                "brand": {
+                    "type": "string"
+                },
+                "buyer": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_username": {
+                    "type": "string"
+                },
+                "id_rekonsiliasi": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "nama_wo": {
+                    "type": "string"
+                },
+                "plan_cut_total": {
+                    "type": "integer"
+                },
+                "qty_po": {
+                    "type": "integer"
+                },
+                "style": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by_username": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.RekonsiliasiListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RekonsiliasiListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/model.PaginationMeta"
+                }
+            }
+        },
+        "model.RekonsiliasiListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.RekonsiliasiListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "rekonsiliasi retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.RekonsiliasiMaterialRowResponse": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "number"
+                },
+                "cons_actual": {
+                    "type": "number"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id_material_list_item": {
+                    "type": "integer"
+                },
+                "id_rekonsiliasi_material_row": {
+                    "type": "integer"
+                },
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "id_wo_trim": {
+                    "type": "integer"
+                },
+                "kategori": {
+                    "type": "string"
+                },
+                "keterangan": {
+                    "type": "string"
+                },
+                "last_balance": {
+                    "type": "number"
+                },
+                "qty_actual_kirim": {
+                    "type": "integer"
+                },
+                "qty_actual_kirim_manual": {
+                    "type": "integer"
+                },
+                "qty_actual_kirim_source": {
+                    "type": "integer"
+                },
+                "qty_per_pcs_input": {
+                    "type": "number"
+                },
+                "qty_wo": {
+                    "type": "integer"
+                },
+                "ratio_input": {
+                    "type": "number"
+                },
+                "ratio_source": {
+                    "type": "number"
+                },
+                "reject_qty": {
+                    "type": "integer"
+                },
+                "retur_qty": {
+                    "type": "integer"
+                },
+                "row_no": {
+                    "type": "integer"
+                },
+                "satuan": {
+                    "type": "string"
+                },
+                "size_label": {
+                    "type": "string"
+                },
+                "terima_entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RekonsiliasiTerimaEntryResponse"
+                    }
+                },
+                "toleransi": {
+                    "type": "integer"
+                },
+                "total_terima": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.RekonsiliasiSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.RekonsiliasiDetailResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "rekonsiliasi created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.RekonsiliasiTerimaEntryResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "entry_label": {
+                    "type": "string"
+                },
+                "entry_type": {
+                    "type": "string"
+                },
+                "id_rekonsiliasi_terima_entry": {
+                    "type": "integer"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.RekonsiliasiValidationErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ValidationErrorItem"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "validation error"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
         "model.ReturClientListItem": {
             "type": "object",
             "properties": {
@@ -10083,6 +11103,9 @@
         "model.SpreadingCuttingPlanResponse": {
             "type": "object",
             "properties": {
+                "buyer": {
+                    "type": "string"
+                },
                 "components": {
                     "type": "array",
                     "items": {
@@ -10098,7 +11121,13 @@
                 "id_wo": {
                     "type": "integer"
                 },
+                "model": {
+                    "type": "string"
+                },
                 "no_dokumen": {
+                    "type": "string"
+                },
+                "style": {
                     "type": "string"
                 },
                 "tanggal_efektif": {
@@ -10785,6 +11814,91 @@
                 },
                 "text_footer": {
                     "type": "string"
+                }
+            }
+        },
+        "model.UpdateRekonsiliasiMaterialRowRequest": {
+            "type": "object",
+            "required": [
+                "id_rekonsiliasi_material_row"
+            ],
+            "properties": {
+                "id_rekonsiliasi_material_row": {
+                    "type": "integer"
+                },
+                "keterangan": {
+                    "type": "string"
+                },
+                "qty_actual_kirim_manual": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "qty_per_pcs_input": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "ratio_input": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "reject_qty": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "retur_qty": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "terima_entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.UpdateRekonsiliasiTerimaEntryRequest"
+                    }
+                }
+            }
+        },
+        "model.UpdateRekonsiliasiRequest": {
+            "type": "object",
+            "required": [
+                "material_rows"
+            ],
+            "properties": {
+                "material_rows": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.UpdateRekonsiliasiMaterialRowRequest"
+                    }
+                }
+            }
+        },
+        "model.UpdateRekonsiliasiTerimaEntryRequest": {
+            "type": "object",
+            "required": [
+                "entry_label",
+                "entry_type"
+            ],
+            "properties": {
+                "entry_label": {
+                    "type": "string"
+                },
+                "entry_type": {
+                    "type": "string",
+                    "enum": [
+                        "awal",
+                        "untuk",
+                        "ambil"
+                    ]
+                },
+                "id_rekonsiliasi_terima_entry": {
+                    "type": "integer"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
