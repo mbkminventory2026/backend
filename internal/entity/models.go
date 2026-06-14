@@ -48,14 +48,6 @@ type Barang struct {
 	StokMinimum   int32              `json:"stok_minimum"`
 }
 
-type DataApproveCuttingPlan struct {
-	IDDacp    int32              `json:"id_dacp"`
-	NoDokumen string             `json:"no_dokumen"`
-	Tanggal   pgtype.Date        `json:"tanggal"`
-	IDWo      int32              `json:"id_wo"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-}
-
 type Departeman struct {
 	IDDepartemen   int32              `json:"id_departemen"`
 	NamaDepartemen string             `json:"nama_departemen"`
