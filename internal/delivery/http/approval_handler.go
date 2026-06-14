@@ -122,6 +122,8 @@ func (h *ApprovalHandler) GetDocumentAuditTrail(c *gin.Context) {
 		requiredPermission = PermissionCuttingPlanRead
 	case "PACKING_LIST":
 		requiredPermission = PermissionPackingListRead
+	case "DATA_APPROVE_CUTTING_PLAN":
+		requiredPermission = PermissionDataApproveCuttingPlanRead
 	default:
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "unsupported document type", nil))
 		return

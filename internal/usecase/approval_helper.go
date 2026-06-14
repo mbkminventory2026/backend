@@ -87,7 +87,7 @@ func initializeApprovalWorkflow(ctx context.Context, qtx entity.Querier, tableNa
 			return err
 		}
 
-	case "WORK_ORDER", "PO_INTERNAL", "MARKER_PLAN", "TIMELINE_PRODUKSI", "PACKING_LIST", "SPREADING_CUTTING_PLAN":
+	case "WORK_ORDER", "PO_INTERNAL", "MARKER_PLAN", "TIMELINE_PRODUKSI", "PACKING_LIST", "SPREADING_CUTTING_PLAN", "DATA_APPROVE_CUTTING_PLAN":
 		// Alur standar 2-langkah: Pembuat -> Manager
 		now := pgtype.Timestamptz{Time: time.Now(), Valid: true}
 		_, err = qtx.CreateApprovalDetail(ctx, entity.CreateApprovalDetailParams{
