@@ -51,6 +51,11 @@ const (
 	PermissionMasterWarnaUpdate = "MASTER_WARNA_UPDATE"
 	PermissionMasterWarnaDelete = "MASTER_WARNA_DELETE"
 
+	PermissionMasterSizeRead   = "MASTER_SIZE_READ"
+	PermissionMasterSizeCreate = "MASTER_SIZE_CREATE"
+	PermissionMasterSizeUpdate = "MASTER_SIZE_UPDATE"
+	PermissionMasterSizeDelete = "MASTER_SIZE_DELETE"
+
 	PermissionMasterMitraRead   = "MASTER_MITRA_READ"
 	PermissionMasterMitraCreate = "MASTER_MITRA_CREATE"
 	PermissionMasterMitraUpdate = "MASTER_MITRA_UPDATE"

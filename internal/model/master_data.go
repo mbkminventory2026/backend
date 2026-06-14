@@ -119,6 +119,15 @@ type UpdateWarnaRequest struct {
 	KodeHex   *string `json:"kode_hex" binding:"omitempty,max=7"`
 }
 
+// Size
+type CreateSizeRequest struct {
+	NamaSize string `json:"nama_size" binding:"required"`
+}
+
+type UpdateSizeRequest struct {
+	NamaSize string `json:"nama_size" binding:"required"`
+}
+
 // --- RESPONSES ---
 
 type DepartemenResponse struct {
@@ -188,6 +197,12 @@ type WarnaResponse struct {
 	NamaWarna string  `json:"nama_warna"`
 	KodeHex   *string `json:"kode_hex"`
 	CreatedAt string  `json:"created_at"`
+}
+
+type SizeResponse struct {
+	ID        int32  `json:"id_size"`
+	NamaSize  string `json:"nama_size"`
+	CreatedAt string `json:"created_at"`
 }
 
 // --- SWAGGER SUCCESS DOCS ---
@@ -268,4 +283,16 @@ type WarnaSuccessDoc struct {
 	Status  string        `json:"status" example:"success"`
 	Message string        `json:"message" example:"warna created"`
 	Data    WarnaResponse `json:"data"`
+}
+
+type ListSizeSuccessDoc struct {
+	Status  string         `json:"status" example:"success"`
+	Message string         `json:"message" example:"size retrieved"`
+	Data    []SizeResponse `json:"data"`
+}
+
+type SizeSuccessDoc struct {
+	Status  string       `json:"status" example:"success"`
+	Message string       `json:"message" example:"size created"`
+	Data    SizeResponse `json:"data"`
 }

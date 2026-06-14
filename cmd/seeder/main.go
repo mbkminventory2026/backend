@@ -33,6 +33,13 @@ func main() {
 
 	ctx := context.Background()
 
+	// 0. Clean and Migrate existing seed data casing to uppercase
+	err = cleanAndMigrateSeedingCasing(ctx, dbPool)
+	if err != nil {
+		slog.Error("failed to migrate existing seed data casing", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
 	// 1. Seed Company (Satu saja)
 	err = seedCompany(ctx, dbPool)
 	if err != nil {
@@ -89,52 +96,66 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 9. Seed bootstrap users
+	// 9. Seed Master Size
+	err = seedMasterSizes(ctx, dbPool)
+	if err != nil {
+		slog.Error("failed to seed master sizes", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	// Seed Master Warna
+	err = seedMasterWarna(ctx, dbPool)
+	if err != nil {
+		slog.Error("failed to seed master warna", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	// 10. Seed bootstrap users
 	err = seedSystemUsers(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed system users", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 10. Seed PO Client & Items
+	// 11. Seed PO Client & Items
 	err = seedPOClient(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed PO Client", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 11. Seed Work Order
+	// 12. Seed Work Order
 	err = seedWorkOrder(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed Work Order", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 12. Seed Production Reports
+	// 13. Seed Production Reports
 	err = seedProductionReports(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed Production Reports", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 13. Seed Marker Plan
+	// 14. Seed Marker Plan
 	if err := seedMarkerPlan(ctx, dbPool); err != nil {
 		logger.Error("Failed to seed marker plan", slog.String("error", err.Error()))
 	}
 
-	// 14. Seed Production Master
+	// 15. Seed Production Master
 	if err := seedProductionMaster(ctx, dbPool); err != nil {
 		logger.Error("Failed to seed production master", slog.String("error", err.Error()))
 	}
 
-	// 15. Seed Timeline Plan
+	// 16. Seed Timeline Plan
 	err = seedTimelinePlan(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to seed Timeline Plan", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// 15. Sync Sequences
+	// 17. Sync Sequences
 	err = syncSequences(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to sync sequences", slog.String("error", err.Error()))
@@ -142,6 +163,31 @@ func main() {
 	}
 
 	slog.Info("seeding completed successfully")
+}
+
+func cleanAndMigrateSeedingCasing(ctx context.Context, db *pgxpool.Pool) error {
+	_, err := db.Exec(ctx, `UPDATE PO_CLIENT_ITEM SET COLOUR = UPPER(BTRIM(COLOUR))`)
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(ctx, `UPDATE WORK_ORDER_SHELL SET COLOR = UPPER(BTRIM(COLOR))`)
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(ctx, `UPDATE WORK_ORDER_TRIM SET COLOR = UPPER(BTRIM(COLOR))`)
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(ctx, `UPDATE PACKING_LIST_ITEM SET COLOR = UPPER(BTRIM(COLOR))`)
+	if err != nil {
+		return err
+	}
+	// Also migrate any legacy size records just in case
+	_, err = db.Exec(ctx, `UPDATE REKONSILIASI_MATERIAL SET SIZE = UPPER(BTRIM(SIZE))`)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func syncSequences(ctx context.Context, db *pgxpool.Pool) error {
@@ -157,6 +203,7 @@ func syncSequences(ctx context.Context, db *pgxpool.Pool) error {
 		{"departemen_id_departemen_seq", "departemen", "id_departemen"},
 		{"jenis_barang_id_jenis_barang_seq", "jenis_barang", "id_jenis_barang"},
 		{"barang_id_barang_seq", "barang", "id_barang"},
+		{"master_size_id_size_seq", "master_size", "id_size"},
 		{"users_id_user_seq", "users", "id_user"},
 		{"po_client_id_po_client_seq", "po_client", "id_po_client"},
 		{"po_client_item_id_po_client_item_seq", "po_client_item", "id_po_client_item"},
@@ -314,6 +361,77 @@ func seedBarang(ctx context.Context, db *pgxpool.Pool) error {
 	return nil
 }
 
+func seedMasterSizes(ctx context.Context, db *pgxpool.Pool) error {
+	sizes := []string{"XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL", "ALL SIZE", "FREE SIZE"}
+
+	for _, sizeName := range sizes {
+		var exists bool
+		err := db.QueryRow(ctx, `
+			SELECT EXISTS(
+				SELECT 1
+				FROM MASTER_SIZE
+				WHERE LOWER(BTRIM(NAMA_SIZE)) = LOWER(BTRIM($1))
+			)
+		`, sizeName).Scan(&exists)
+		if err != nil {
+			return err
+		}
+		if exists {
+			continue
+		}
+
+		_, err = db.Exec(ctx, `INSERT INTO MASTER_SIZE (NAMA_SIZE) VALUES ($1)`, sizeName)
+		if err != nil {
+			return err
+		}
+		slog.Info("master size seeded", slog.String("name", sizeName))
+	}
+
+	return nil
+}
+
+func seedMasterWarna(ctx context.Context, db *pgxpool.Pool) error {
+	colors := []struct {
+		Name string
+		Hex  string
+	}{
+		{"BLACK", "#000000"},
+		{"WHITE", "#FFFFFF"},
+		{"NAVY", "#000080"},
+		{"MAROON", "#800000"},
+		{"GREY", "#808080"},
+		{"RED", "#FF0000"},
+		{"BLUE", "#0000FF"},
+		{"GREEN", "#008000"},
+		{"YELLOW", "#FFFF00"},
+	}
+
+	for _, c := range colors {
+		var exists bool
+		err := db.QueryRow(ctx, `
+			SELECT EXISTS(
+				SELECT 1
+				FROM WARNA
+				WHERE LOWER(BTRIM(NAMA_WARNA)) = LOWER(BTRIM($1))
+			)
+		`, c.Name).Scan(&exists)
+		if err != nil {
+			return err
+		}
+		if exists {
+			continue
+		}
+
+		_, err = db.Exec(ctx, `INSERT INTO WARNA (NAMA_WARNA, KODE_HEX) VALUES ($1, $2)`, c.Name, c.Hex)
+		if err != nil {
+			return err
+		}
+		slog.Info("master warna seeded", slog.String("name", c.Name))
+	}
+
+	return nil
+}
+
 func seedHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 	permissionCodes := []string{
 		"AUTH_CHANGE_PASSWORD",
@@ -323,6 +441,7 @@ func seedHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 		"PERMISSION_READ", "PERMISSION_CREATE", "PERMISSION_UPDATE", "PERMISSION_DELETE",
 		"MASTER_BARANG_READ", "MASTER_BARANG_CREATE", "MASTER_BARANG_UPDATE", "MASTER_BARANG_DELETE",
 		"MASTER_WARNA_READ", "MASTER_WARNA_CREATE", "MASTER_WARNA_UPDATE", "MASTER_WARNA_DELETE",
+		"MASTER_SIZE_READ", "MASTER_SIZE_CREATE", "MASTER_SIZE_UPDATE", "MASTER_SIZE_DELETE",
 		"MASTER_MITRA_READ", "MASTER_MITRA_CREATE", "MASTER_MITRA_UPDATE", "MASTER_MITRA_DELETE",
 		"MASTER_JENIS_BARANG_READ", "MASTER_JENIS_BARANG_CREATE", "MASTER_JENIS_BARANG_UPDATE", "MASTER_JENIS_BARANG_DELETE",
 		"MASTER_PROFIL_PERUSAHAAN_READ", "MASTER_PROFIL_PERUSAHAAN_CREATE", "MASTER_PROFIL_PERUSAHAAN_UPDATE", "MASTER_PROFIL_PERUSAHAAN_DELETE",
@@ -469,7 +588,9 @@ func seedRoleHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 		},
 		"ADMIN_PRODUKSI": {
 			"AUTH_CHANGE_PASSWORD", "PASSWORD_RESET_REQUEST_CREATE",
-			"MASTER_BARANG_READ", "MASTER_WARNA_READ", "MASTER_MITRA_READ", "MASTER_JENIS_BARANG_READ", "MASTER_PROFIL_PERUSAHAAN_READ", "MASTER_DEPARTEMEN_READ",
+			"MASTER_BARANG_READ", "MASTER_WARNA_READ", "MASTER_WARNA_CREATE", "MASTER_WARNA_UPDATE", "MASTER_WARNA_DELETE",
+			"MASTER_SIZE_READ", "MASTER_SIZE_CREATE", "MASTER_SIZE_UPDATE", "MASTER_SIZE_DELETE",
+			"MASTER_MITRA_READ", "MASTER_JENIS_BARANG_READ", "MASTER_PROFIL_PERUSAHAAN_READ", "MASTER_DEPARTEMEN_READ",
 			"PO_CLIENT_READ", "PO_CLIENT_CREATE", "PO_CLIENT_UPDATE",
 			"WO_READ", "WO_CREATE", "WO_UPDATE", "WO_CLOSE",
 			"PRODUCTION_SUMMARY_READ",
@@ -492,7 +613,7 @@ func seedRoleHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 		"MANAGER": {
 			"AUTH_CHANGE_PASSWORD", "PASSWORD_RESET_REQUEST_CREATE",
 			"USER_READ", "USER_APPROVE",
-			"MASTER_BARANG_READ", "MASTER_WARNA_READ", "MASTER_MITRA_READ", "MASTER_JENIS_BARANG_READ", "MASTER_PROFIL_PERUSAHAAN_READ", "MASTER_DEPARTEMEN_READ",
+			"MASTER_BARANG_READ", "MASTER_WARNA_READ", "MASTER_SIZE_READ", "MASTER_MITRA_READ", "MASTER_JENIS_BARANG_READ", "MASTER_PROFIL_PERUSAHAAN_READ", "MASTER_DEPARTEMEN_READ",
 			"PO_CLIENT_READ", "PR_INTERNAL_READ", "PO_INTERNAL_READ",
 			"WO_READ", "PRODUCTION_SUMMARY_READ", "PRODUCTION_REPORT_READ",
 			"TIMELINE_READ", "MARKER_PLAN_READ", "CUTTING_PLAN_READ",
@@ -660,7 +781,7 @@ func seedTimelinePlan(ctx context.Context, db *pgxpool.Pool) error {
 			SELECT s.ID_WO_SHELL 
 			FROM WORK_ORDER_SHELL s 
 			JOIN WORK_ORDER w ON s.ID_WO = w.ID_WO 
-			WHERE w.MODEL = 'WO Test 1' AND s.COLOR = 'Navy' LIMIT 1
+			WHERE w.MODEL = 'WO Test 1' AND s.COLOR = 'NAVY' LIMIT 1
 		`).Scan(&idWoShell)
 		if err != nil {
 			return fmt.Errorf("failed to get WO Shell for timeline seeder: %w", err)
@@ -790,8 +911,8 @@ func seedPOClient(ctx context.Context, db *pgxpool.Pool) error {
 		_, err = db.Exec(ctx, `
 			INSERT INTO PO_CLIENT_ITEM (ID_PO_CLIENT, STYLE, COLOUR, DESCRIPTION, QTY, PRICE)
 			VALUES 
-			($1, 'PO Test 1', 'Navy', 'PO Test 1 Item Description', 1000, 10.00),
-			($1, 'PO Test 2', 'Maroon', 'PO Test 2 Item Description', 1000, 12.00)
+			($1, 'PO Test 1', 'NAVY', 'PO Test 1 Item Description', 1000, 10.00),
+			($1, 'PO Test 2', 'MAROON', 'PO Test 2 Item Description', 1000, 12.00)
 		`, idPoClient)
 		if err != nil {
 			return err
@@ -821,8 +942,8 @@ func seedPOClient(ctx context.Context, db *pgxpool.Pool) error {
 		_, err = db.Exec(ctx, `
 			INSERT INTO PO_CLIENT_ITEM (ID_PO_CLIENT, STYLE, COLOUR, DESCRIPTION, QTY, PRICE)
 			VALUES 
-			($1, 'PO Pending Item 1', 'Black', 'PO Pending 1 Item Description', 800, 15.00),
-			($1, 'PO Pending Item 2', 'White', 'PO Pending 2 Item Description', 1200, 14.50)
+			($1, 'PO Pending Item 1', 'BLACK', 'PO Pending 1 Item Description', 800, 15.00),
+			($1, 'PO Pending Item 2', 'WHITE', 'PO Pending 2 Item Description', 1200, 14.50)
 		`, idPoClientPending)
 		if err != nil {
 			return err
@@ -868,7 +989,7 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		var idShell1 int32
 		err = db.QueryRow(ctx, `
 			INSERT INTO WORK_ORDER_SHELL (DESKRIPSI, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO, PROVIDED_BY, MATERIAL_TYPE)
-			VALUES ('Cotton Fleece', 0.35, 'Navy', 3, 0.22, $1, 'permata', 'fabric')
+			VALUES ('Cotton Fleece', 0.35, 'NAVY', 3, 0.22, $1, 'permata', 'fabric')
 			RETURNING ID_WO_SHELL
 		`, idWo1).Scan(&idShell1)
 		if err != nil {
@@ -879,7 +1000,7 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		var idShell2 int32
 		err = db.QueryRow(ctx, `
 			INSERT INTO WORK_ORDER_SHELL (DESKRIPSI, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO, PROVIDED_BY, MATERIAL_TYPE)
-			VALUES ('Cotton Fleece', 0.35, 'Maroon', 3, 0.22, $1, 'permata', 'fabric')
+			VALUES ('Cotton Fleece', 0.35, 'MAROON', 3, 0.22, $1, 'permata', 'fabric')
 			RETURNING ID_WO_SHELL
 		`, idWo1).Scan(&idShell2)
 		if err != nil {
@@ -890,7 +1011,7 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		var idShell3 int32
 		err = db.QueryRow(ctx, `
 			INSERT INTO WORK_ORDER_SHELL (DESKRIPSI, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO, PROVIDED_BY, MATERIAL_TYPE)
-			VALUES ('2016F', 0.1, 'White', 3, 0.05, $1, 'permata', 'interlining')
+			VALUES ('2016F', 0.1, 'WHITE', 3, 0.05, $1, 'permata', 'interlining')
 			RETURNING ID_WO_SHELL
 		`, idWo1).Scan(&idShell3)
 		if err != nil {
@@ -913,8 +1034,17 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 
 		for _, sz := range sizes {
 			_, err = db.Exec(ctx, `
-				INSERT INTO WORK_ORDER_SHELL_SIZE (SIZE, QTY, RATIO, ID_WO_SHELL)
-				VALUES ($1, $2, $3, $4), ($1, $2, $3, $5), ($1, $2, $3, $6)
+				INSERT INTO WORK_ORDER_SHELL_SIZE (ID_SIZE, QTY, RATIO, ID_WO_SHELL)
+				VALUES (
+					(SELECT ID_SIZE FROM MASTER_SIZE WHERE LOWER(BTRIM(NAMA_SIZE)) = LOWER(BTRIM($1)) LIMIT 1),
+					$2, $3, $4
+				), (
+					(SELECT ID_SIZE FROM MASTER_SIZE WHERE LOWER(BTRIM(NAMA_SIZE)) = LOWER(BTRIM($1)) LIMIT 1),
+					$2, $3, $5
+				), (
+					(SELECT ID_SIZE FROM MASTER_SIZE WHERE LOWER(BTRIM(NAMA_SIZE)) = LOWER(BTRIM($1)) LIMIT 1),
+					$2, $3, $6
+				)
 			`, sz.size, sz.qty, sz.ratio, idShell1, idShell2, idShell3)
 			if err != nil {
 				return err
@@ -926,7 +1056,7 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		var idTrimThreadNavy int32
 		err = db.QueryRow(ctx, `
 			INSERT INTO WORK_ORDER_TRIM (ITEM, DESCRIPTION, COLOR, CODE, CONS, QTY, UOM, POSITION, CREATED_BY, ALLOW, ID_WO, PROVIDED_BY)
-			VALUES ('Thread', 'Sewing Thread Navy', 'Navy', 'TRM-THR-NAVY', 0.05, 50, 'cones', 'Seam', 'super-admin', 0, $1, 'permata')
+			VALUES ('Thread', 'Sewing Thread Navy', 'NAVY', 'TRM-THR-NAVY', 0.05, 50, 'cones', 'Seam', 'super-admin', 0, $1, 'permata')
 			RETURNING ID_WO_TRIM
 		`, idWo1).Scan(&idTrimThreadNavy)
 		if err != nil {
@@ -937,7 +1067,7 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		var idTrimThreadMaroon int32
 		err = db.QueryRow(ctx, `
 			INSERT INTO WORK_ORDER_TRIM (ITEM, DESCRIPTION, COLOR, CODE, CONS, QTY, UOM, POSITION, CREATED_BY, ALLOW, ID_WO, PROVIDED_BY)
-			VALUES ('Thread', 'Sewing Thread Maroon', 'Maroon', 'TRM-THR-MAROON', 0.05, 50, 'cones', 'Seam', 'super-admin', 0, $1, 'permata')
+			VALUES ('Thread', 'Sewing Thread Maroon', 'MAROON', 'TRM-THR-MAROON', 0.05, 50, 'cones', 'Seam', 'super-admin', 0, $1, 'permata')
 			RETURNING ID_WO_TRIM
 		`, idWo1).Scan(&idTrimThreadMaroon)
 		if err != nil {
@@ -950,7 +1080,7 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 			var idLabel int32
 			err = db.QueryRow(ctx, `
 				INSERT INTO WORK_ORDER_TRIM (ITEM, DESCRIPTION, COLOR, CODE, CONS, QTY, UOM, POSITION, CREATED_BY, ALLOW, ID_WO, PROVIDED_BY)
-				VALUES ('Main Size Label', 'Main Size Label ' || $1, 'White', 'TRM-LBL-' || $1, 1.0, $2 + 3, 'pcs', 'Neck', 'super-admin', 3, $3, 'permata')
+				VALUES ('Main Size Label', 'Main Size Label ' || $1, 'WHITE', 'TRM-LBL-' || $1, 1.0, $2 + 3, 'pcs', 'Neck', 'super-admin', 3, $3, 'permata')
 				RETURNING ID_WO_TRIM
 			`, sz.size, sz.qty, idWo1).Scan(&idLabel)
 			if err != nil {
@@ -963,7 +1093,7 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		var idTrimButtonNavy int32
 		err = db.QueryRow(ctx, `
 			INSERT INTO WORK_ORDER_TRIM (ITEM, DESCRIPTION, COLOR, CODE, CONS, QTY, UOM, POSITION, CREATED_BY, ALLOW, ID_WO, PROVIDED_BY)
-			VALUES ('Kancing', 'Button Navy 24L', 'Navy', 'TRM-BTN-NAVY', 10.0, 10300, 'pcs', 'Front', 'super-admin', 3, $1, 'permata')
+			VALUES ('Kancing', 'Button Navy 24L', 'NAVY', 'TRM-BTN-NAVY', 10.0, 10300, 'pcs', 'Front', 'super-admin', 3, $1, 'permata')
 			RETURNING ID_WO_TRIM
 		`, idWo1).Scan(&idTrimButtonNavy)
 		if err != nil {
@@ -974,7 +1104,7 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		var idTrimButtonMaroon int32
 		err = db.QueryRow(ctx, `
 			INSERT INTO WORK_ORDER_TRIM (ITEM, DESCRIPTION, COLOR, CODE, CONS, QTY, UOM, POSITION, CREATED_BY, ALLOW, ID_WO, PROVIDED_BY)
-			VALUES ('Kancing', 'Button Maroon 24L', 'Maroon', 'TRM-BTN-MAROON', 10.0, 10300, 'pcs', 'Front', 'super-admin', 3, $1, 'permata')
+			VALUES ('Kancing', 'Button Maroon 24L', 'MAROON', 'TRM-BTN-MAROON', 10.0, 10300, 'pcs', 'Front', 'super-admin', 3, $1, 'permata')
 			RETURNING ID_WO_TRIM
 		`, idWo1).Scan(&idTrimButtonMaroon)
 		if err != nil {
@@ -1048,7 +1178,7 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		var idShellWO2 int32
 		err = db.QueryRow(ctx, `
 			INSERT INTO WORK_ORDER_SHELL (DESKRIPSI, CONS, COLOR, ALLOW, BERAT_1_YD, ID_WO, PROVIDED_BY, MATERIAL_TYPE)
-			VALUES ('Cotton Combed 30s', 0.35, 'Maroon', 3, 0.22, $1, 'permata', 'fabric')
+			VALUES ('Cotton Combed 30s', 0.35, 'MAROON', 3, 0.22, $1, 'permata', 'fabric')
 			RETURNING ID_WO_SHELL
 		`, idWo2).Scan(&idShellWO2)
 		if err != nil {
@@ -1058,8 +1188,11 @@ func seedWorkOrder(ctx context.Context, db *pgxpool.Pool) error {
 		// WO 2 Details: Sizes
 		for _, sz := range sizes {
 			_, err = db.Exec(ctx, `
-				INSERT INTO WORK_ORDER_SHELL_SIZE (SIZE, QTY, RATIO, ID_WO_SHELL)
-				VALUES ($1, $2, $3, $4)
+				INSERT INTO WORK_ORDER_SHELL_SIZE (ID_SIZE, QTY, RATIO, ID_WO_SHELL)
+				VALUES (
+					(SELECT ID_SIZE FROM MASTER_SIZE WHERE LOWER(BTRIM(NAMA_SIZE)) = LOWER(BTRIM($1)) LIMIT 1),
+					$2, $3, $4
+				)
 			`, sz.size, sz.qty, sz.ratio, idShellWO2)
 			if err != nil {
 				return err
@@ -1103,11 +1236,12 @@ func seedProductionReports(ctx context.Context, db *pgxpool.Pool) error {
 			Qty  int32
 		}
 		rows, err := db.Query(ctx, `
-			SELECT woss.ID_WO_SHELL_SIZE, woss.SIZE, woss.QTY
+			SELECT woss.ID_WO_SHELL_SIZE, ms.NAMA_SIZE AS SIZE, woss.QTY
 			FROM WORK_ORDER_SHELL_SIZE woss
+			JOIN MASTER_SIZE ms ON ms.ID_SIZE = woss.ID_SIZE
 			JOIN WORK_ORDER_SHELL wos ON wos.ID_WO_SHELL = woss.ID_WO_SHELL
 			JOIN WORK_ORDER wo ON wo.ID_WO = wos.ID_WO
-			WHERE wo.MODEL = 'WO Test 1' AND wos.COLOR = 'Navy'
+			WHERE wo.MODEL = 'WO Test 1' AND wos.COLOR = 'NAVY'
 		`)
 		if err != nil {
 			return err
@@ -1227,7 +1361,7 @@ func seedMarkerPlan(ctx context.Context, db *pgxpool.Pool) error {
 			SELECT wos.ID_WO_SHELL 
 			FROM WORK_ORDER_SHELL wos
 			JOIN WORK_ORDER wo ON wo.ID_WO = wos.ID_WO
-			WHERE wo.MODEL = 'WO Test 1' AND wos.COLOR = 'Navy' LIMIT 1
+			WHERE wo.MODEL = 'WO Test 1' AND wos.COLOR = 'NAVY' LIMIT 1
 		`).Scan(&idShell)
 	if err != nil {
 		return fmt.Errorf("failed to find WO Shell for Navy Fabric WO Test 1: %w", err)
@@ -1259,9 +1393,10 @@ func seedMarkerPlan(ctx context.Context, db *pgxpool.Pool) error {
 
 	// 3. Get Shell size IDs of WO 1 (Navy Fabric: XS to XXL)
 	rows, err := db.Query(ctx, `
-			SELECT ID_WO_SHELL_SIZE, SIZE
-			FROM WORK_ORDER_SHELL_SIZE
-			WHERE ID_WO_SHELL = $1
+			SELECT woss.ID_WO_SHELL_SIZE, ms.NAMA_SIZE AS SIZE
+			FROM WORK_ORDER_SHELL_SIZE woss
+			JOIN MASTER_SIZE ms ON ms.ID_SIZE = woss.ID_SIZE
+			WHERE woss.ID_WO_SHELL = $1
 		`, idShell)
 	if err != nil {
 		return err
@@ -1284,9 +1419,10 @@ func seedMarkerPlan(ctx context.Context, db *pgxpool.Pool) error {
 
 	// Get Shell size IDs of WO 1 (White Interlining: XS to XXL)
 	rowsInterlining, err := db.Query(ctx, `
-			SELECT ID_WO_SHELL_SIZE, SIZE
-			FROM WORK_ORDER_SHELL_SIZE
-			WHERE ID_WO_SHELL = $1
+			SELECT woss.ID_WO_SHELL_SIZE, ms.NAMA_SIZE AS SIZE
+			FROM WORK_ORDER_SHELL_SIZE woss
+			JOIN MASTER_SIZE ms ON ms.ID_SIZE = woss.ID_SIZE
+			WHERE woss.ID_WO_SHELL = $1
 		`, idShellInterlining)
 	if err != nil {
 		return err

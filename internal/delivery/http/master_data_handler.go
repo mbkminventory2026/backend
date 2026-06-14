@@ -61,6 +61,13 @@ func (h *MasterDataHandler) RegisterRoutes(router gin.IRouter, authMiddleware gi
 	master.PUT("/warna/:id", RequirePermission(PermissionMasterWarnaUpdate), h.UpdateWarna)
 	master.DELETE("/warna/:id", RequirePermission(PermissionMasterWarnaDelete), h.DeleteWarna)
 
+	// Size
+	master.GET("/sizes", RequirePermission(PermissionMasterSizeRead), h.ListSizes)
+	master.GET("/sizes/:id", RequirePermission(PermissionMasterSizeRead), h.GetSizeByID)
+	master.POST("/sizes", RequirePermission(PermissionMasterSizeCreate), h.CreateSize)
+	master.PUT("/sizes/:id", RequirePermission(PermissionMasterSizeUpdate), h.UpdateSize)
+	master.DELETE("/sizes/:id", RequirePermission(PermissionMasterSizeDelete), h.DeleteSize)
+
 	// Permissions
 	master.GET("/permissions", RequirePermission(PermissionPermissionRead), h.ListHakAkses)
 	master.GET("/permissions/:id", RequirePermission(PermissionPermissionRead), h.GetHakAksesByID)
@@ -811,6 +818,130 @@ func (h *MasterDataHandler) DeleteWarna(c *gin.Context) {
 	response.Success(c, http.StatusOK, "warna deleted", nil)
 }
 
+// GetSizeByID godoc
+// @Summary      Get Size Detail
+// @Tags         Master Data
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Size ID"
+// @Success      200  {object}  model.SizeSuccessDoc
+// @Router       /api/v1/master/sizes/{id} [get]
+func (h *MasterDataHandler) GetSizeByID(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
+		return
+	}
+
+	item, err := h.useCase.GetSizeByID(c.Request.Context(), id)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "size retrieved", item)
+}
+
+// ListSizes godoc
+// @Summary      List Sizes
+// @Tags         Master Data
+// @Produce      json
+// @Security     BearerAuth
+// @Param        limit   query     int    false  "Limit (default 20)"
+// @Param        offset  query     int    false  "Offset (default 0)"
+// @Param        search  query     string false  "Search by name"
+// @Success      200     {object}  model.ListSizeSuccessDoc
+// @Router       /api/v1/master/sizes [get]
+func (h *MasterDataHandler) ListSizes(c *gin.Context) {
+	filter, err := parseListQuery(c, 20)
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid list query", nil))
+		return
+	}
+
+	items, total, err := h.useCase.ListSizes(c.Request.Context(), filter)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.Header("X-Total-Count", fmt.Sprintf("%d", total))
+	response.Success(c, http.StatusOK, "size retrieved", items)
+}
+
+// CreateSize godoc
+// @Summary      Create Size
+// @Tags         Master Data
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        payload  body      model.CreateSizeRequest  true  "Size payload"
+// @Success      201      {object}  model.SizeSuccessDoc
+// @Router       /api/v1/master/sizes [post]
+func (h *MasterDataHandler) CreateSize(c *gin.Context) {
+	var req model.CreateSizeRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+
+	item, err := h.useCase.CreateSize(withAuditLogContext(c), req)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusCreated, "size created", item)
+}
+
+// UpdateSize godoc
+// @Summary      Update Size
+// @Tags         Master Data
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id       path      int                      true  "Size ID"
+// @Param        payload  body      model.UpdateSizeRequest  true  "Size payload"
+// @Success      200      {object}  model.SizeSuccessDoc
+// @Router       /api/v1/master/sizes/{id} [put]
+func (h *MasterDataHandler) UpdateSize(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
+		return
+	}
+
+	var req model.UpdateSizeRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+
+	item, err := h.useCase.UpdateSize(withAuditLogContext(c), id, req)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "size updated", item)
+}
+
+// DeleteSize godoc
+// @Summary      Delete Size
+// @Tags         Master Data
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Size ID"
+// @Success      200  {object}  response.BaseResponse
+// @Router       /api/v1/master/sizes/{id} [delete]
+func (h *MasterDataHandler) DeleteSize(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid id", nil))
+		return
+	}
+
+	if err := h.useCase.DeleteSize(withAuditLogContext(c), id); err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "size deleted", nil)
+}
+
 func (h *MasterDataHandler) handleError(c *gin.Context, err error) {
 	if err == nil {
 		return
@@ -820,6 +951,10 @@ func (h *MasterDataHandler) handleError(c *gin.Context, err error) {
 		return
 	}
 	if errors.Is(err, usecase.ErrMasterDataDuplicateCode) {
+		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), nil))
+		return
+	}
+	if errors.Is(err, usecase.ErrMasterDataInUse) {
 		AbortWithError(c, NewHTTPError(http.StatusConflict, err.Error(), nil))
 		return
 	}

@@ -204,6 +204,9 @@ func (u *SpreadingCuttingPlanUseCase) GetSpreadingCuttingPlan(ctx context.Contex
 		NoDokumen:              header.NoDokumen,
 		TanggalEfektif:         formatDate(header.TanggalEfektif),
 		IDWo:                   header.IDWo,
+		Style:                  header.Style,
+		Model:                  header.Model,
+		Buyer:                  header.Buyer,
 		CreatedAt:              header.CreatedAt.Time.Format(time.RFC3339),
 		Components:             components,
 	}, nil

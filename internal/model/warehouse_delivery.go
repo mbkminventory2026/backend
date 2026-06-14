@@ -6,7 +6,7 @@ type ReceiveInventoryRequest struct {
 	Tanggal                string `json:"tanggal" binding:"required,datetime=2006-01-02"`
 	Qty                    int32  `json:"qty" binding:"required,gt=0"`
 	Keterangan             string `json:"keterangan"`
-	IDMaterialList         int32  `json:"id_material_list" binding:"required,gt=0"`
+	IDMaterialListItem     int32  `json:"id_material_list_item" binding:"required,gt=0"`
 	IDRekonsiliasiMaterial int32  `json:"id_rekonsiliasi_material" binding:"required,gt=0"`
 }
 
@@ -20,7 +20,7 @@ type ReceiveInventoryResponse struct {
 	Tanggal                      string `json:"tanggal"`
 	Qty                          int32  `json:"qty"`
 	Keterangan                   string `json:"keterangan"`
-	IDMaterialList               int32  `json:"id_material_list"`
+	IDMaterialListItem           int32  `json:"id_material_list_item"`
 	IDRekonsiliasiMaterialTerima int32  `json:"id_rekonsiliasi_material_terima"`
 	IDRekonsiliasiMaterial       int32  `json:"id_rekonsiliasi_material"`
 	ActualKirim                  int32  `json:"actual_kirim"`
@@ -67,6 +67,8 @@ type CreatePackingListRequest struct {
 type PackingListItemSizeResponse struct {
 	ID            int32  `json:"id_packing_list_item_size"`
 	IDWOShellSize int32  `json:"id_wo_shell_size"`
+	IDSize        *int32 `json:"id_size,omitempty"`
+	Size          string `json:"size"`
 	Qty           int32  `json:"qty"`
 	CreatedAt     string `json:"created_at"`
 }
@@ -74,6 +76,8 @@ type PackingListItemSizeResponse struct {
 type PackingListRejectSizeResponse struct {
 	ID            int32  `json:"id_packing_list_reject_size"`
 	IDWOShellSize int32  `json:"id_wo_shell_size"`
+	IDSize        *int32 `json:"id_size,omitempty"`
+	Size          string `json:"size"`
 	Qty           int32  `json:"qty"`
 	CreatedAt     string `json:"created_at"`
 }
@@ -102,20 +106,20 @@ type PackingListResponse struct {
 }
 
 type CreateSuratJalanClientRequest struct {
-	Tanggal        string `json:"tanggal" binding:"required,datetime=2006-01-02"`
-	Qty            int32  `json:"qty" binding:"required,gt=0"`
-	Keterangan     string `json:"keterangan"`
-	IDMaterialList int32  `json:"id_material_list" binding:"required,gt=0"`
+	Tanggal            string `json:"tanggal" binding:"required,datetime=2006-01-02"`
+	Qty                int32  `json:"qty" binding:"required,gt=0"`
+	Keterangan         string `json:"keterangan"`
+	IDMaterialListItem int32  `json:"id_material_list_item" binding:"required,gt=0"`
 }
 
 type SuratJalanResponse struct {
-	Type           string `json:"type"`
-	IDSuratJalan   int32  `json:"id_surat_jalan"`
-	Tanggal        string `json:"tanggal,omitempty"`
-	Qty            int32  `json:"qty,omitempty"`
-	Keterangan     string `json:"keterangan,omitempty"`
-	IDMaterialList int32  `json:"id_material_list,omitempty"`
-	CreatedAt      string `json:"created_at"`
+	Type               string `json:"type"`
+	IDSuratJalan       int32  `json:"id_surat_jalan"`
+	Tanggal            string `json:"tanggal,omitempty"`
+	Qty                int32  `json:"qty,omitempty"`
+	Keterangan         string `json:"keterangan,omitempty"`
+	IDMaterialListItem int32  `json:"id_material_list_item,omitempty"`
+	CreatedAt          string `json:"created_at"`
 }
 
 type ReceiveInventorySuccessDoc struct {
@@ -134,6 +138,70 @@ type PackingListSuccessDoc struct {
 	Status  string              `json:"status" example:"success"`
 	Message string              `json:"message" example:"packing list created"`
 	Data    PackingListResponse `json:"data"`
+}
+
+type CreateSimpleReceivedRequest struct {
+	Tanggal            string `json:"tanggal" binding:"required,datetime=2006-01-02"`
+	Qty                int32  `json:"qty" binding:"required,gt=0"`
+	Keterangan         string `json:"keterangan"`
+	IDMaterialListItem int32  `json:"id_material_list_item" binding:"required,gt=0"`
+}
+
+type UpdateSimpleReceivedRequest struct {
+	Tanggal    string `json:"tanggal" binding:"required,datetime=2006-01-02"`
+	Qty        int32  `json:"qty" binding:"required,gt=0"`
+	Keterangan string `json:"keterangan"`
+}
+
+type SimpleReceivedResponse struct {
+	IDReceived         int32  `json:"id_received"`
+	Tanggal            string `json:"tanggal"`
+	Qty                int32  `json:"qty"`
+	Keterangan         string `json:"keterangan"`
+	IDMaterialListItem int32  `json:"id_material_list_item"`
+	CreatedAt          string `json:"created_at"`
+}
+
+type SimpleReceivedDetailResponse struct {
+	IDReceived          int32  `json:"id_received"`
+	Tanggal             string `json:"tanggal"`
+	Qty                 int32  `json:"qty"`
+	Keterangan          string `json:"keterangan"`
+	IDMaterialListItem  int32  `json:"id_material_list_item"`
+	MaterialItem        string `json:"material_item"`
+	MaterialDescription string `json:"material_description"`
+	IDWO                int32  `json:"id_wo"`
+	CreatedAt           string `json:"created_at"`
+}
+
+type SimpleReceivedListItem struct {
+	IDReceived          int32  `json:"id_received"`
+	Tanggal             string `json:"tanggal"`
+	Qty                 int32  `json:"qty"`
+	Keterangan          string `json:"keterangan"`
+	IDMaterialListItem  int32  `json:"id_material_list_item"`
+	MaterialItem        string `json:"material_item"`
+	MaterialDescription string `json:"material_description"`
+	IDWO                int32  `json:"id_wo"`
+	CreatedAt           string `json:"created_at"`
+}
+
+type SimpleReceivedListResponse struct {
+	Items      []SimpleReceivedListItem `json:"items"`
+	Pagination PaginationMeta           `json:"pagination"`
+}
+
+type MLIHistoryEntry struct {
+	ID         int32  `json:"id"`
+	Tanggal    string `json:"tanggal"`
+	Qty        int32  `json:"qty"`
+	Keterangan string `json:"keterangan"`
+	CreatedAt  string `json:"created_at"`
+}
+
+type MLIHistoryResponse struct {
+	SuratJalan []MLIHistoryEntry `json:"surat_jalan"`
+	Received   []MLIHistoryEntry `json:"received"`
 }
 
 type SuratJalanSuccessDoc struct {

@@ -54,9 +54,10 @@ shipping_agg AS (
 )
 SELECT
     woss.id_wo_shell_size,
+    woss.id_size,
     wo.id_wo,
     wo.model AS model_name,
-    woss.size,
+    ms.nama_size AS size,
     woss.qty AS target_qty,
     COALESCE(ca.cutting_qty, 0)::int AS cutting_qty,
     COALESCE(sa.sewing_qty, 0)::int AS sewing_qty,
@@ -77,6 +78,7 @@ JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = woss.id_wo_shell
 JOIN WORK_ORDER wo ON wo.id_wo = wos.id_wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
 JOIN PO_CLIENT pc ON pc.id_po_client = pci.id_po_client
+JOIN MASTER_SIZE ms ON ms.id_size = woss.id_size
 LEFT JOIN cutting_agg ca ON ca.id_wo_shell_size = woss.id_wo_shell_size
 LEFT JOIN sewing_agg sa ON sa.id_wo_shell_size = woss.id_wo_shell_size
 LEFT JOIN qc_agg qa ON qa.id_wo_shell_size = woss.id_wo_shell_size
@@ -91,7 +93,7 @@ WHERE (
 ) AND (
     $3::text = '' OR
     wo.model ILIKE '%' || $3::text || '%' OR
-    woss.size ILIKE '%' || $3::text || '%'
+    ms.nama_size ILIKE '%' || $3::text || '%'
  ) AND (
     $4::integer IS NULL OR
     pc.id_mitra = $4::integer
@@ -117,8 +119,8 @@ ORDER BY
     CASE WHEN $5::text = 'id_wo_shell_size' AND $6::bool THEN woss.id_wo_shell_size END DESC,
     CASE WHEN $5::text = 'model_name' AND NOT $6::bool THEN wo.model END ASC,
     CASE WHEN $5::text = 'model_name' AND $6::bool THEN wo.model END DESC,
-    CASE WHEN $5::text = 'size' AND NOT $6::bool THEN woss.size END ASC,
-    CASE WHEN $5::text = 'size' AND $6::bool THEN woss.size END DESC,
+    CASE WHEN $5::text = 'size' AND NOT $6::bool THEN ms.nama_size END ASC,
+    CASE WHEN $5::text = 'size' AND $6::bool THEN ms.nama_size END DESC,
     CASE WHEN $5::text = 'target_qty' AND NOT $6::bool THEN woss.qty END ASC,
     CASE WHEN $5::text = 'target_qty' AND $6::bool THEN woss.qty END DESC,
     CASE WHEN $5::text = 'cutting_qty' AND NOT $6::bool THEN COALESCE(ca.cutting_qty, 0)::int END ASC,
@@ -149,6 +151,7 @@ type ListProductionSummaryParams struct {
 
 type ListProductionSummaryRow struct {
 	IDWoShellSize int32              `json:"id_wo_shell_size"`
+	IDSize        int32              `json:"id_size"`
 	IDWo          int32              `json:"id_wo"`
 	ModelName     string             `json:"model_name"`
 	Size          string             `json:"size"`
@@ -182,6 +185,7 @@ func (q *Queries) ListProductionSummary(ctx context.Context, arg ListProductionS
 		var i ListProductionSummaryRow
 		if err := rows.Scan(
 			&i.IDWoShellSize,
+			&i.IDSize,
 			&i.IDWo,
 			&i.ModelName,
 			&i.Size,

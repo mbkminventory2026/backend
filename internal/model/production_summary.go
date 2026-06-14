@@ -17,6 +17,7 @@ type ProductionStats struct {
 
 type ProductionAggregateResponse struct {
 	IDWOShellSize int32           `json:"id_wo_shell_size"`
+	IDSize        *int32          `json:"id_size,omitempty"`
 	ModelName     string          `json:"model_name"`
 	Size          string          `json:"size"`
 	TargetQty     int32           `json:"target_qty"`

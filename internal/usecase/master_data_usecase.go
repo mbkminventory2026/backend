@@ -19,6 +19,7 @@ var (
 	ErrMasterDataNotFound      = errors.New("master data not found")
 	ErrMasterDataConflict      = errors.New("master data already exists")
 	ErrMasterDataDuplicateCode = errors.New("master data code already exists")
+	ErrMasterDataInUse         = errors.New("master data is in use")
 
 	departemenSortColumns  = buildSortWhitelist("created_at", "id_departemen", "nama_departemen")
 	jenisBarangSortColumns = buildSortWhitelist("created_at", "id_jenis_barang", "kode", "nama_jenis_barang")
@@ -26,6 +27,7 @@ var (
 	barangSortColumns      = buildSortWhitelist("created_at", "id_barang", "kode", "nama_barang", "nama_jenis_barang", "nama_perusahaan")
 	hakAksesSortColumns    = buildSortWhitelist("created_at", "id_hak_akses", "nama_halaman", "kode_permission", "domain_permission", "aksi_permission")
 	warnaSortColumns       = buildSortWhitelist("created_at", "id_warna", "nama_warna")
+	sizeSortColumns        = buildSortWhitelist("created_at", "id_size", "nama_size")
 )
 
 type MasterDataUseCase struct {
@@ -688,6 +690,14 @@ func mapMasterDataConflict(err error) error {
 	return err
 }
 
+func mapMasterDataDeleteConflict(err error) error {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+		return ErrMasterDataInUse
+	}
+	return err
+}
+
 // WARNA
 func (u *MasterDataUseCase) GetWarnaByID(ctx context.Context, id int32) (model.WarnaResponse, error) {
 	item, err := u.repo.GetWarnaByID(ctx, id)
@@ -803,6 +813,117 @@ func (u *MasterDataUseCase) DeleteWarna(ctx context.Context, id int32) error {
 	}
 
 	u.recordWarnaDeleteAudit(ctx, existing)
+
+	return nil
+}
+
+// SIZE
+func (u *MasterDataUseCase) GetSizeByID(ctx context.Context, id int32) (model.SizeResponse, error) {
+	item, err := u.repo.GetSizeByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.SizeResponse{}, ErrMasterDataNotFound
+		}
+		return model.SizeResponse{}, err
+	}
+
+	return model.SizeResponse{
+		ID:        item.IDSize,
+		NamaSize:  item.NamaSize,
+		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+	}, nil
+}
+
+func (u *MasterDataUseCase) ListSizes(ctx context.Context, filter model.ListQueryFilter) ([]model.SizeResponse, int64, error) {
+	_, limit, offset, search, sortBy, sortDesc := normalizeListFilter(filter, "nama_size", false, sizeSortColumns)
+
+	items, err := u.repo.ListSizes(ctx, entity.ListSizesParams{
+		SearchTerm: search,
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	total, err := u.repo.CountSizes(ctx, search)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	res := make([]model.SizeResponse, 0, len(items))
+	for _, i := range items {
+		res = append(res, model.SizeResponse{
+			ID:        i.IDSize,
+			NamaSize:  i.NamaSize,
+			CreatedAt: i.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+	return res, total, nil
+}
+
+func (u *MasterDataUseCase) CreateSize(ctx context.Context, req model.CreateSizeRequest) (model.SizeResponse, error) {
+	item, err := u.repo.CreateSize(ctx, req.NamaSize)
+	if err != nil {
+		return model.SizeResponse{}, mapMasterDataConflict(err)
+	}
+
+	result := model.SizeResponse{
+		ID:        item.IDSize,
+		NamaSize:  item.NamaSize,
+		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+	}
+
+	u.recordSizeCreateAudit(ctx, result)
+
+	return result, nil
+}
+
+func (u *MasterDataUseCase) UpdateSize(ctx context.Context, id int32, req model.UpdateSizeRequest) (model.SizeResponse, error) {
+	beforeItem, err := u.GetSizeByID(ctx, id)
+	if err != nil {
+		return model.SizeResponse{}, err
+	}
+
+	item, err := u.repo.UpdateSize(ctx, entity.UpdateSizeParams{
+		IDSize:   id,
+		NamaSize: req.NamaSize,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.SizeResponse{}, ErrMasterDataNotFound
+		}
+		return model.SizeResponse{}, mapMasterDataConflict(err)
+	}
+
+	result := model.SizeResponse{
+		ID:        item.IDSize,
+		NamaSize:  item.NamaSize,
+		CreatedAt: item.CreatedAt.Time.Format(time.RFC3339),
+	}
+
+	u.recordSizeUpdateAudit(ctx, result, buildSizeAuditSnapshot(beforeItem), buildSizeAuditSnapshot(result))
+
+	return result, nil
+}
+
+func (u *MasterDataUseCase) DeleteSize(ctx context.Context, id int32) error {
+	existing, err := u.GetSizeByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	affected, err := u.repo.DeleteSize(ctx, id)
+	if err != nil {
+		return mapMasterDataDeleteConflict(err)
+	}
+	if affected == 0 {
+		return ErrMasterDataNotFound
+	}
+
+	u.recordSizeDeleteAudit(ctx, existing)
 
 	return nil
 }
@@ -1019,6 +1140,25 @@ func buildWarnaAuditSnapshot(item model.WarnaResponse) map[string]any {
 		"id_warna":   item.ID,
 		"nama_warna": item.NamaWarna,
 		"kode_hex":   item.KodeHex,
+	}
+}
+
+func (u *MasterDataUseCase) recordSizeCreateAudit(ctx context.Context, item model.SizeResponse) {
+	u.recordMasterDataAudit(ctx, "CREATE", "size", fmt.Sprintf("%d", item.ID), item.NamaSize, nil, buildSizeAuditSnapshot(item))
+}
+
+func (u *MasterDataUseCase) recordSizeUpdateAudit(ctx context.Context, item model.SizeResponse, beforeSnapshot, afterSnapshot map[string]any) {
+	u.recordMasterDataAudit(ctx, "UPDATE", "size", fmt.Sprintf("%d", item.ID), item.NamaSize, beforeSnapshot, afterSnapshot)
+}
+
+func (u *MasterDataUseCase) recordSizeDeleteAudit(ctx context.Context, item model.SizeResponse) {
+	u.recordMasterDataAudit(ctx, "DELETE", "size", fmt.Sprintf("%d", item.ID), item.NamaSize, buildSizeAuditSnapshot(item), nil)
+}
+
+func buildSizeAuditSnapshot(item model.SizeResponse) map[string]any {
+	return map[string]any{
+		"id_size":   item.ID,
+		"nama_size": item.NamaSize,
 	}
 }
 

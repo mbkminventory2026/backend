@@ -23,6 +23,8 @@ var (
 	ErrWarehouseNotFound           = errors.New("warehouse transaction not found")
 	ErrSuratJalanTypeUnsupported   = errors.New("unsupported surat jalan type")
 	ErrWarehouseInsufficientStock  = errors.New("insufficient stock balance")
+	ErrSuratJalanExceedsMLIQty     = errors.New("surat jalan qty would exceed material list item qty")
+	ErrReceivedExceedsSuratJalan   = errors.New("received qty would exceed total surat jalan qty")
 
 	packingListSortColumns        = buildSortWhitelist("created_at", "id_packing_list", "total_garment_per_box", "total_reject", "buyer", "model")
 	suratJalanClientSortColumns   = buildSortWhitelist("created_at", "id_surat_jalan_client", "tanggal", "qty", "keterangan", "material_description", "id_wo")
@@ -57,7 +59,7 @@ func (u *WarehouseDeliveryUseCase) ReceiveInventory(ctx context.Context, req mod
 		Tanggal:                mustDate(req.Tanggal),
 		Qty:                    req.Qty,
 		Keterangan:             req.Keterangan,
-		IDMaterialListItem:     req.IDMaterialList,
+		IDMaterialListItem:     req.IDMaterialListItem,
 		IDRekonsiliasiMaterial: req.IDRekonsiliasiMaterial,
 	})
 	if err != nil {
@@ -69,7 +71,7 @@ func (u *WarehouseDeliveryUseCase) ReceiveInventory(ctx context.Context, req mod
 		Tanggal:                      item.Tanggal.Time.Format("2006-01-02"),
 		Qty:                          item.Qty,
 		Keterangan:                   item.Keterangan,
-		IDMaterialList:               item.IDMaterialList,
+		IDMaterialListItem:           item.IDMaterialList,
 		IDRekonsiliasiMaterialTerima: item.IDRekonsiliasiMaterialTerima,
 		IDRekonsiliasiMaterial:       item.IDRekonsiliasiMaterial,
 		ActualKirim:                  item.ActualKirim,
@@ -173,6 +175,8 @@ func (u *WarehouseDeliveryUseCase) CreatePackingList(ctx context.Context, userID
 			sizes = append(sizes, model.PackingListItemSizeResponse{
 				ID:            size.IDPackingListItemSize,
 				IDWOShellSize: size.IDWoShellSize,
+				IDSize:        nil,
+				Size:          "",
 				Qty:           size.Qty,
 				CreatedAt:     size.CreatedAt.Time.Format(time.RFC3339),
 			})
@@ -205,6 +209,8 @@ func (u *WarehouseDeliveryUseCase) CreatePackingList(ctx context.Context, userID
 		rejectSizes = append(rejectSizes, model.PackingListRejectSizeResponse{
 			ID:            rejectSize.IDPackingListRejectSize,
 			IDWOShellSize: rejectSize.IDWoShellSize,
+			IDSize:        nil,
+			Size:          "",
 			Qty:           rejectSize.Qty,
 			CreatedAt:     rejectSize.CreatedAt.Time.Format(time.RFC3339),
 		})
@@ -253,23 +259,33 @@ func (u *WarehouseDeliveryUseCase) CreateSuratJalan(ctx context.Context, suratJa
 		if req == nil || validateDate(req.Tanggal) != nil {
 			return nil, ErrWarehouseValidation
 		}
+		mli, err := u.repo.GetMaterialListItem(ctx, req.IDMaterialListItem)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, ErrWarehouseReferenceNotFound
+			}
+			return nil, fmt.Errorf("%w: failed to get material list item", ErrWarehouseServiceUnavailable)
+		}
+		if mli.QtySuratJalan+req.Qty > mli.Qty {
+			return nil, ErrSuratJalanExceedsMLIQty
+		}
 		item, err := u.repo.CreateSuratJalanClient(ctx, entity.CreateSuratJalanClientParams{
 			Tanggal:            mustDate(req.Tanggal),
 			Qty:                req.Qty,
 			Keterangan:         req.Keterangan,
-			IDMaterialListItem: req.IDMaterialList,
+			IDMaterialListItem: req.IDMaterialListItem,
 		})
 		if err != nil {
 			return nil, mapWarehouseDBError(err)
 		}
 		return &model.SuratJalanResponse{
-			Type:           "client",
-			IDSuratJalan:   item.IDSuratJalanClient,
-			Tanggal:        item.Tanggal.Time.Format("2006-01-02"),
-			Qty:            item.Qty,
-			Keterangan:     item.Keterangan,
-			IDMaterialList: item.IDMaterialList,
-			CreatedAt:      item.CreatedAt.Time.Format(time.RFC3339),
+			Type:               "client",
+			IDSuratJalan:       item.IDSuratJalanClient,
+			Tanggal:            item.Tanggal.Time.Format("2006-01-02"),
+			Qty:                item.Qty,
+			Keterangan:         item.Keterangan,
+			IDMaterialListItem: item.IDMaterialList,
+			CreatedAt:          item.CreatedAt.Time.Format(time.RFC3339),
 		}, nil
 	default:
 		return nil, ErrSuratJalanTypeUnsupported
@@ -341,9 +357,12 @@ func (u *WarehouseDeliveryUseCase) GetPackingListDetail(ctx context.Context, id 
 
 	sizeMap := make(map[int32][]model.PackingListItemSizeResponse)
 	for _, row := range sizeRows {
+		idSize := row.IDSize
 		sizeMap[row.IDPackingListItem] = append(sizeMap[row.IDPackingListItem], model.PackingListItemSizeResponse{
 			ID:            row.IDPackingListItemSize,
 			IDWOShellSize: row.IDWoShellSize,
+			IDSize:        &idSize,
+			Size:          row.Size,
 			Qty:           row.Qty,
 			CreatedAt:     row.CreatedAt.Time.Format(time.RFC3339),
 		})
@@ -377,9 +396,12 @@ func (u *WarehouseDeliveryUseCase) GetPackingListDetail(ctx context.Context, id 
 
 	rejectSizes := make([]model.PackingListRejectSizeResponse, 0, len(rejectRows))
 	for _, row := range rejectRows {
+		idSize := row.IDSize
 		rejectSizes = append(rejectSizes, model.PackingListRejectSizeResponse{
 			ID:            row.IDPackingListRejectSize,
 			IDWOShellSize: row.IDWoShellSize,
+			IDSize:        &idSize,
+			Size:          row.Size,
 			Qty:           row.Qty,
 			CreatedAt:     row.CreatedAt.Time.Format(time.RFC3339),
 		})
@@ -422,7 +444,7 @@ func (u *WarehouseDeliveryUseCase) ListSuratJalanClients(ctx context.Context, fi
 			Tanggal:             row.Tanggal.Time.Format("2006-01-02"),
 			Qty:                 row.Qty,
 			Keterangan:          row.Keterangan,
-			IDMaterialList:      row.IDMaterialList,
+			IDMaterialListItem:  row.IDMaterialList,
 			MaterialDescription: row.MaterialDescription,
 			IDWO:                row.IDWo,
 			CreatedAt:           row.CreatedAt.Time.Format(time.RFC3339),
@@ -452,7 +474,7 @@ func (u *WarehouseDeliveryUseCase) GetSuratJalanClientDetail(ctx context.Context
 		Tanggal:             row.Tanggal.Time.Format("2006-01-02"),
 		Qty:                 row.Qty,
 		Keterangan:          row.Keterangan,
-		IDMaterialList:      row.IDMaterialList,
+		IDMaterialListItem:  row.IDMaterialList,
 		MaterialDescription: row.MaterialDescription,
 		IDWO:                row.IDWo,
 		CreatedAt:           row.CreatedAt.Time.Format(time.RFC3339),
@@ -502,6 +524,128 @@ func (u *WarehouseDeliveryUseCase) GetSuratJalanInternalDetail(ctx context.Conte
 	}, nil
 }
 
+func (u *WarehouseDeliveryUseCase) CreateSimpleReceived(ctx context.Context, req model.CreateSimpleReceivedRequest) (*model.SimpleReceivedResponse, error) {
+	if err := validateDate(req.Tanggal); err != nil {
+		return nil, ErrWarehouseValidation
+	}
+	mli, err := u.repo.GetMaterialListItem(ctx, req.IDMaterialListItem)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrWarehouseReferenceNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to get material list item", ErrWarehouseServiceUnavailable)
+	}
+	if mli.QtySuratJalan == 0 {
+		return nil, ErrReceivedExceedsSuratJalan
+	}
+	if mli.QtyReceived+req.Qty > mli.QtySuratJalan {
+		return nil, ErrReceivedExceedsSuratJalan
+	}
+	row, err := u.repo.CreateReceivedSimple(ctx, entity.CreateReceivedSimpleParams{
+		Tanggal:            mustDate(req.Tanggal),
+		Qty:                req.Qty,
+		Keterangan:         req.Keterangan,
+		IDMaterialListItem: req.IDMaterialListItem,
+	})
+	if err != nil {
+		return nil, mapWarehouseDBError(err)
+	}
+	return &model.SimpleReceivedResponse{
+		IDReceived:         row.IDReceived,
+		Tanggal:            row.Tanggal.Time.Format("2006-01-02"),
+		Qty:                row.Qty,
+		Keterangan:         row.Keterangan,
+		IDMaterialListItem: row.IDMaterialListItem,
+		CreatedAt:          row.CreatedAt.Time.Format(time.RFC3339),
+	}, nil
+}
+
+func (u *WarehouseDeliveryUseCase) ListReceived(ctx context.Context, search string, limit, offset int32) (*model.SimpleReceivedListResponse, error) {
+	rows, err := u.repo.ListReceived(ctx, entity.ListReceivedParams{
+		Search: search,
+		Lim:    limit,
+		Off:    offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to list received", ErrWarehouseServiceUnavailable)
+	}
+	items := make([]model.SimpleReceivedListItem, 0, len(rows))
+	total := int64(0)
+	for _, row := range rows {
+		total = row.TotalCount
+		items = append(items, model.SimpleReceivedListItem{
+			IDReceived:          row.IDReceived,
+			Tanggal:             row.Tanggal.Time.Format("2006-01-02"),
+			Qty:                 row.Qty,
+			Keterangan:          row.Keterangan,
+			IDMaterialListItem:  row.IDMaterialListItem,
+			MaterialItem:        row.MaterialItem,
+			MaterialDescription: row.MaterialDescription,
+			IDWO:                row.IDWo,
+			CreatedAt:           row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+	page := int32(1)
+	if limit > 0 {
+		page = offset/limit + 1
+	}
+	return &model.SimpleReceivedListResponse{
+		Items:      items,
+		Pagination: buildPagination(total, page, limit),
+	}, nil
+}
+
+func (u *WarehouseDeliveryUseCase) GetReceivedByID(ctx context.Context, id int32) (*model.SimpleReceivedDetailResponse, error) {
+	row, err := u.repo.GetReceivedByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrWarehouseNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to get received", ErrWarehouseServiceUnavailable)
+	}
+	return &model.SimpleReceivedDetailResponse{
+		IDReceived:          row.IDReceived,
+		Tanggal:             row.Tanggal.Time.Format("2006-01-02"),
+		Qty:                 row.Qty,
+		Keterangan:          row.Keterangan,
+		IDMaterialListItem:  row.IDMaterialListItem,
+		MaterialItem:        row.MaterialItem,
+		MaterialDescription: row.MaterialDescription,
+		IDWO:                row.IDWo,
+		CreatedAt:           row.CreatedAt.Time.Format(time.RFC3339),
+	}, nil
+}
+
+func (u *WarehouseDeliveryUseCase) UpdateSimpleReceived(ctx context.Context, id int32, req model.UpdateSimpleReceivedRequest) (*model.SimpleReceivedResponse, error) {
+	if err := validateDate(req.Tanggal); err != nil {
+		return nil, ErrWarehouseValidation
+	}
+	row, err := u.repo.UpdateReceivedSimple(ctx, entity.UpdateReceivedSimpleParams{
+		IDReceived: id,
+		Tanggal:    mustDate(req.Tanggal),
+		Qty:        req.Qty,
+		Keterangan: req.Keterangan,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrWarehouseNotFound
+		}
+		return nil, mapWarehouseDBError(err)
+	}
+	return &model.SimpleReceivedResponse{
+		IDReceived:         row.IDReceived,
+		Tanggal:            row.Tanggal.Time.Format("2006-01-02"),
+		Qty:                row.Qty,
+		Keterangan:         row.Keterangan,
+		IDMaterialListItem: row.IDMaterialListItem,
+		CreatedAt:          row.CreatedAt.Time.Format(time.RFC3339),
+	}, nil
+}
+
+func (u *WarehouseDeliveryUseCase) DeleteSimpleReceived(ctx context.Context, id int32) error {
+	return u.repo.DeleteReceivedSimple(ctx, id)
+}
+
 func mapWarehouseDBError(err error) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
@@ -517,4 +661,41 @@ func normalizeSuratJalanType(value string) string {
 	normalized := strings.TrimSpace(strings.ToLower(value))
 	normalized = strings.ReplaceAll(normalized, "_", "-")
 	return normalized
+}
+
+func (u *WarehouseDeliveryUseCase) GetMLIHistory(ctx context.Context, idMLI int32) (*model.MLIHistoryResponse, error) {
+	sjRows, err := u.repo.ListSuratJalanClientByMLI(ctx, idMLI)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to list surat jalan", ErrWarehouseServiceUnavailable)
+	}
+	recvRows, err := u.repo.ListReceivedByMLI(ctx, idMLI)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to list received", ErrWarehouseServiceUnavailable)
+	}
+
+	sj := make([]model.MLIHistoryEntry, 0, len(sjRows))
+	for _, r := range sjRows {
+		sj = append(sj, model.MLIHistoryEntry{
+			ID:         r.IDSuratJalanClient,
+			Tanggal:    r.Tanggal.Time.Format("2006-01-02"),
+			Qty:        r.Qty,
+			Keterangan: r.Keterangan,
+			CreatedAt:  r.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+	recv := make([]model.MLIHistoryEntry, 0, len(recvRows))
+	for _, r := range recvRows {
+		recv = append(recv, model.MLIHistoryEntry{
+			ID:         r.IDReceived,
+			Tanggal:    r.Tanggal.Time.Format("2006-01-02"),
+			Qty:        r.Qty,
+			Keterangan: r.Keterangan,
+			CreatedAt:  r.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+	return &model.MLIHistoryResponse{SuratJalan: sj, Received: recv}, nil
+}
+
+func (u *WarehouseDeliveryUseCase) DeleteSuratJalanClient(ctx context.Context, id int32) error {
+	return u.repo.DeleteSuratJalanClient(ctx, id)
 }

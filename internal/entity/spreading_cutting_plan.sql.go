@@ -123,20 +123,44 @@ func (q *Queries) CreateSpreadingCuttingPlan(ctx context.Context, arg CreateSpre
 }
 
 const getSpreadingCuttingPlanByID = `-- name: GetSpreadingCuttingPlanByID :one
-SELECT ID_SPREADING_CUTTING_PLAN, NO_DOKUMEN, TANGGAL_EFEKTIF, ID_WO, created_at
-FROM SPREADING_CUTTING_PLAN
-WHERE ID_SPREADING_CUTTING_PLAN = $1 LIMIT 1
+SELECT 
+    scp.id_spreading_cutting_plan, 
+    scp.no_dokumen, 
+    scp.tanggal_efektif, 
+    scp.id_wo, 
+    scp.created_at,
+    pci.style,
+    wo.model,
+    wo.buyer
+FROM SPREADING_CUTTING_PLAN scp
+JOIN WORK_ORDER wo ON scp.id_wo = wo.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+WHERE scp.id_spreading_cutting_plan = $1 LIMIT 1
 `
 
-func (q *Queries) GetSpreadingCuttingPlanByID(ctx context.Context, idSpreadingCuttingPlan int32) (SpreadingCuttingPlan, error) {
+type GetSpreadingCuttingPlanByIDRow struct {
+	IDSpreadingCuttingPlan int32              `json:"id_spreading_cutting_plan"`
+	NoDokumen              string             `json:"no_dokumen"`
+	TanggalEfektif         pgtype.Date        `json:"tanggal_efektif"`
+	IDWo                   int32              `json:"id_wo"`
+	CreatedAt              pgtype.Timestamptz `json:"created_at"`
+	Style                  string             `json:"style"`
+	Model                  string             `json:"model"`
+	Buyer                  string             `json:"buyer"`
+}
+
+func (q *Queries) GetSpreadingCuttingPlanByID(ctx context.Context, idSpreadingCuttingPlan int32) (GetSpreadingCuttingPlanByIDRow, error) {
 	row := q.db.QueryRow(ctx, getSpreadingCuttingPlanByID, idSpreadingCuttingPlan)
-	var i SpreadingCuttingPlan
+	var i GetSpreadingCuttingPlanByIDRow
 	err := row.Scan(
 		&i.IDSpreadingCuttingPlan,
 		&i.NoDokumen,
 		&i.TanggalEfektif,
 		&i.IDWo,
 		&i.CreatedAt,
+		&i.Style,
+		&i.Model,
+		&i.Buyer,
 	)
 	return i, err
 }
@@ -215,9 +239,10 @@ func (q *Queries) ListRatioByKomponenSpreadingID(ctx context.Context, idKomponen
 }
 
 const listRatioSizeByRatioSpreadingID = `-- name: ListRatioSizeByRatioSpreadingID :many
-SELECT rss.ID_RATIO_SIZE_SPREADING, rss.ID_RATIO_SPREADING, rss.ID_WO_SHELL_SIZE, rss.RATIO_PLAN, wss.SIZE, wss.QTY AS size_qty
+SELECT rss.ID_RATIO_SIZE_SPREADING, rss.ID_RATIO_SPREADING, rss.ID_WO_SHELL_SIZE, rss.RATIO_PLAN, ms.NAMA_SIZE AS SIZE, wss.QTY AS size_qty
 FROM RATIO_SIZE_SPREADING rss
 JOIN WORK_ORDER_SHELL_SIZE wss ON rss.ID_WO_SHELL_SIZE = wss.ID_WO_SHELL_SIZE
+JOIN MASTER_SIZE ms ON ms.ID_SIZE = wss.ID_SIZE
 WHERE rss.ID_RATIO_SPREADING = $1
 ORDER BY rss.ID_RATIO_SIZE_SPREADING ASC
 `

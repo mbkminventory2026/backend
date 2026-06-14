@@ -188,6 +188,47 @@ func (q *Queries) CreatePackingListRejectSize(ctx context.Context, arg CreatePac
 	return i, err
 }
 
+const createReceivedSimple = `-- name: CreateReceivedSimple :one
+INSERT INTO RECEIVED (tanggal, qty, keterangan, id_material_list_item)
+VALUES ($1::date, $2, $3, $4)
+RETURNING id_received, tanggal, qty, keterangan, id_material_list_item, created_at
+`
+
+type CreateReceivedSimpleParams struct {
+	Tanggal            pgtype.Date `json:"tanggal"`
+	Qty                int32       `json:"qty"`
+	Keterangan         string      `json:"keterangan"`
+	IDMaterialListItem int32       `json:"id_material_list_item"`
+}
+
+type CreateReceivedSimpleRow struct {
+	IDReceived         int32              `json:"id_received"`
+	Tanggal            pgtype.Date        `json:"tanggal"`
+	Qty                int32              `json:"qty"`
+	Keterangan         string             `json:"keterangan"`
+	IDMaterialListItem int32              `json:"id_material_list_item"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) CreateReceivedSimple(ctx context.Context, arg CreateReceivedSimpleParams) (CreateReceivedSimpleRow, error) {
+	row := q.db.QueryRow(ctx, createReceivedSimple,
+		arg.Tanggal,
+		arg.Qty,
+		arg.Keterangan,
+		arg.IDMaterialListItem,
+	)
+	var i CreateReceivedSimpleRow
+	err := row.Scan(
+		&i.IDReceived,
+		&i.Tanggal,
+		&i.Qty,
+		&i.Keterangan,
+		&i.IDMaterialListItem,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const createSuratJalanClient = `-- name: CreateSuratJalanClient :one
 INSERT INTO SURAT_JALAN_CLIENT (
     tanggal,
@@ -250,6 +291,70 @@ func (q *Queries) CreateSuratJalanInternal(ctx context.Context) (SuratJalanInter
 	return i, err
 }
 
+const deleteReceivedSimple = `-- name: DeleteReceivedSimple :exec
+DELETE FROM RECEIVED WHERE id_received = $1
+`
+
+func (q *Queries) DeleteReceivedSimple(ctx context.Context, idReceived int32) error {
+	_, err := q.db.Exec(ctx, deleteReceivedSimple, idReceived)
+	return err
+}
+
+const deleteSuratJalanClient = `-- name: DeleteSuratJalanClient :exec
+DELETE FROM SURAT_JALAN_CLIENT WHERE id_surat_jalan_client = $1
+`
+
+func (q *Queries) DeleteSuratJalanClient(ctx context.Context, idSuratJalanClient int32) error {
+	_, err := q.db.Exec(ctx, deleteSuratJalanClient, idSuratJalanClient)
+	return err
+}
+
+const getReceivedByID = `-- name: GetReceivedByID :one
+SELECT
+    r.id_received,
+    r.tanggal,
+    r.qty,
+    r.keterangan,
+    r.id_material_list_item,
+    r.created_at,
+    mli.item AS material_item,
+    mli.description AS material_description,
+    ml.id_wo
+FROM RECEIVED r
+JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list_item = r.id_material_list_item
+JOIN MATERIAL_LIST ml ON ml.id_material_list = mli.id_material_list
+WHERE r.id_received = $1
+`
+
+type GetReceivedByIDRow struct {
+	IDReceived          int32              `json:"id_received"`
+	Tanggal             pgtype.Date        `json:"tanggal"`
+	Qty                 int32              `json:"qty"`
+	Keterangan          string             `json:"keterangan"`
+	IDMaterialListItem  int32              `json:"id_material_list_item"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+	MaterialItem        string             `json:"material_item"`
+	MaterialDescription string             `json:"material_description"`
+	IDWo                int32              `json:"id_wo"`
+}
+
+func (q *Queries) GetReceivedByID(ctx context.Context, idReceived int32) (GetReceivedByIDRow, error) {
+	row := q.db.QueryRow(ctx, getReceivedByID, idReceived)
+	var i GetReceivedByIDRow
+	err := row.Scan(
+		&i.IDReceived,
+		&i.Tanggal,
+		&i.Qty,
+		&i.Keterangan,
+		&i.IDMaterialListItem,
+		&i.CreatedAt,
+		&i.MaterialItem,
+		&i.MaterialDescription,
+		&i.IDWo,
+	)
+	return i, err
+}
+
 const getRekonsiliasiMaterialStock = `-- name: GetRekonsiliasiMaterialStock :one
 SELECT
     id_rekonsiliasi_material,
@@ -298,6 +403,168 @@ func (q *Queries) IssueInventory(ctx context.Context, arg IssueInventoryParams) 
 	var i IssueInventoryRow
 	err := row.Scan(&i.IDRekonsiliasiMaterial, &i.LastBalance, &i.Balance)
 	return i, err
+}
+
+const listReceived = `-- name: ListReceived :many
+SELECT
+    r.id_received,
+    r.tanggal,
+    r.qty,
+    r.keterangan,
+    r.id_material_list_item,
+    r.created_at,
+    mli.item AS material_item,
+    mli.description AS material_description,
+    ml.id_wo,
+    COUNT(*) OVER () AS total_count
+FROM RECEIVED r
+JOIN MATERIAL_LIST_ITEM mli ON mli.id_material_list_item = r.id_material_list_item
+JOIN MATERIAL_LIST ml ON ml.id_material_list = mli.id_material_list
+WHERE (
+    $1::text = ''
+    OR LOWER(mli.item) LIKE '%' || LOWER($1::text) || '%'
+    OR LOWER(mli.description) LIKE '%' || LOWER($1::text) || '%'
+    OR LOWER(r.keterangan) LIKE '%' || LOWER($1::text) || '%'
+)
+ORDER BY r.created_at DESC
+LIMIT $3
+OFFSET $2
+`
+
+type ListReceivedParams struct {
+	Search string `json:"search"`
+	Off    int32  `json:"off"`
+	Lim    int32  `json:"lim"`
+}
+
+type ListReceivedRow struct {
+	IDReceived          int32              `json:"id_received"`
+	Tanggal             pgtype.Date        `json:"tanggal"`
+	Qty                 int32              `json:"qty"`
+	Keterangan          string             `json:"keterangan"`
+	IDMaterialListItem  int32              `json:"id_material_list_item"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+	MaterialItem        string             `json:"material_item"`
+	MaterialDescription string             `json:"material_description"`
+	IDWo                int32              `json:"id_wo"`
+	TotalCount          int64              `json:"total_count"`
+}
+
+func (q *Queries) ListReceived(ctx context.Context, arg ListReceivedParams) ([]ListReceivedRow, error) {
+	rows, err := q.db.Query(ctx, listReceived, arg.Search, arg.Off, arg.Lim)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListReceivedRow
+	for rows.Next() {
+		var i ListReceivedRow
+		if err := rows.Scan(
+			&i.IDReceived,
+			&i.Tanggal,
+			&i.Qty,
+			&i.Keterangan,
+			&i.IDMaterialListItem,
+			&i.CreatedAt,
+			&i.MaterialItem,
+			&i.MaterialDescription,
+			&i.IDWo,
+			&i.TotalCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listReceivedByMLI = `-- name: ListReceivedByMLI :many
+SELECT id_received, tanggal, qty, keterangan, id_material_list_item, created_at
+FROM RECEIVED
+WHERE id_material_list_item = $1
+ORDER BY created_at DESC
+`
+
+type ListReceivedByMLIRow struct {
+	IDReceived         int32              `json:"id_received"`
+	Tanggal            pgtype.Date        `json:"tanggal"`
+	Qty                int32              `json:"qty"`
+	Keterangan         string             `json:"keterangan"`
+	IDMaterialListItem int32              `json:"id_material_list_item"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) ListReceivedByMLI(ctx context.Context, idMaterialListItem int32) ([]ListReceivedByMLIRow, error) {
+	rows, err := q.db.Query(ctx, listReceivedByMLI, idMaterialListItem)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListReceivedByMLIRow
+	for rows.Next() {
+		var i ListReceivedByMLIRow
+		if err := rows.Scan(
+			&i.IDReceived,
+			&i.Tanggal,
+			&i.Qty,
+			&i.Keterangan,
+			&i.IDMaterialListItem,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSuratJalanClientByMLI = `-- name: ListSuratJalanClientByMLI :many
+SELECT id_surat_jalan_client, tanggal, qty, keterangan, id_material_list_item, created_at
+FROM SURAT_JALAN_CLIENT
+WHERE id_material_list_item = $1
+ORDER BY created_at DESC
+`
+
+type ListSuratJalanClientByMLIRow struct {
+	IDSuratJalanClient int32              `json:"id_surat_jalan_client"`
+	Tanggal            pgtype.Date        `json:"tanggal"`
+	Qty                int32              `json:"qty"`
+	Keterangan         string             `json:"keterangan"`
+	IDMaterialListItem int32              `json:"id_material_list_item"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) ListSuratJalanClientByMLI(ctx context.Context, idMaterialListItem int32) ([]ListSuratJalanClientByMLIRow, error) {
+	rows, err := q.db.Query(ctx, listSuratJalanClientByMLI, idMaterialListItem)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListSuratJalanClientByMLIRow
+	for rows.Next() {
+		var i ListSuratJalanClientByMLIRow
+		if err := rows.Scan(
+			&i.IDSuratJalanClient,
+			&i.Tanggal,
+			&i.Qty,
+			&i.Keterangan,
+			&i.IDMaterialListItem,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const receiveInventory = `-- name: ReceiveInventory :one
@@ -392,6 +659,48 @@ func (q *Queries) ReceiveInventory(ctx context.Context, arg ReceiveInventoryPara
 		&i.IDRekonsiliasiMaterial,
 		&i.ActualKirim,
 		&i.Balance,
+	)
+	return i, err
+}
+
+const updateReceivedSimple = `-- name: UpdateReceivedSimple :one
+UPDATE RECEIVED
+SET tanggal = $1::date, qty = $2, keterangan = $3
+WHERE id_received = $4
+RETURNING id_received, tanggal, qty, keterangan, id_material_list_item, created_at
+`
+
+type UpdateReceivedSimpleParams struct {
+	Tanggal    pgtype.Date `json:"tanggal"`
+	Qty        int32       `json:"qty"`
+	Keterangan string      `json:"keterangan"`
+	IDReceived int32       `json:"id_received"`
+}
+
+type UpdateReceivedSimpleRow struct {
+	IDReceived         int32              `json:"id_received"`
+	Tanggal            pgtype.Date        `json:"tanggal"`
+	Qty                int32              `json:"qty"`
+	Keterangan         string             `json:"keterangan"`
+	IDMaterialListItem int32              `json:"id_material_list_item"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) UpdateReceivedSimple(ctx context.Context, arg UpdateReceivedSimpleParams) (UpdateReceivedSimpleRow, error) {
+	row := q.db.QueryRow(ctx, updateReceivedSimple,
+		arg.Tanggal,
+		arg.Qty,
+		arg.Keterangan,
+		arg.IDReceived,
+	)
+	var i UpdateReceivedSimpleRow
+	err := row.Scan(
+		&i.IDReceived,
+		&i.Tanggal,
+		&i.Qty,
+		&i.Keterangan,
+		&i.IDMaterialListItem,
+		&i.CreatedAt,
 	)
 	return i, err
 }

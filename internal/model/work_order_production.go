@@ -3,9 +3,10 @@ package model
 import "permatatex-inventory/pkg/response"
 
 type CreateWorkOrderShellSizeRequest struct {
-	Size  string `json:"size" binding:"required"`
-	Qty   int32  `json:"qty" binding:"required,gt=0"`
-	Ratio int32  `json:"ratio" binding:"required,gte=0"`
+	IDSize int32  `json:"id_size"`
+	Size   string `json:"size"`
+	Qty    int32  `json:"qty" binding:"required,gt=0"`
+	Ratio  int32  `json:"ratio" binding:"required,gte=0"`
 }
 
 type CreateWorkOrderShellRequest struct {
@@ -57,6 +58,7 @@ type CreateWorkOrderRequest struct {
 
 type WorkOrderShellSizeResponse struct {
 	ID        int32  `json:"id_wo_shell_size"`
+	IDSize    *int32 `json:"id_size,omitempty"`
 	Size      string `json:"size"`
 	Qty       int32  `json:"qty"`
 	Ratio     int32  `json:"ratio"`

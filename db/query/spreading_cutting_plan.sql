@@ -28,9 +28,19 @@ INSERT INTO RATIO_SIZE_SPREADING (
 );
 
 -- name: GetSpreadingCuttingPlanByID :one
-SELECT ID_SPREADING_CUTTING_PLAN, NO_DOKUMEN, TANGGAL_EFEKTIF, ID_WO, created_at
-FROM SPREADING_CUTTING_PLAN
-WHERE ID_SPREADING_CUTTING_PLAN = $1 LIMIT 1;
+SELECT 
+    scp.id_spreading_cutting_plan, 
+    scp.no_dokumen, 
+    scp.tanggal_efektif, 
+    scp.id_wo, 
+    scp.created_at,
+    pci.style,
+    wo.model,
+    wo.buyer
+FROM SPREADING_CUTTING_PLAN scp
+JOIN WORK_ORDER wo ON scp.id_wo = wo.id_wo
+JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
+WHERE scp.id_spreading_cutting_plan = $1 LIMIT 1;
 
 -- name: ListKomponenBySpreadingPlanID :many
 SELECT ID_KOMPONEN_SPREADING, ID_SPREADING_CUTTING_PLAN, NAMA_KOMPONEN, created_at
@@ -46,9 +56,10 @@ WHERE ID_KOMPONEN_SPREADING = $1
 ORDER BY ID_RATIO_SPREADING ASC;
 
 -- name: ListRatioSizeByRatioSpreadingID :many
-SELECT rss.ID_RATIO_SIZE_SPREADING, rss.ID_RATIO_SPREADING, rss.ID_WO_SHELL_SIZE, rss.RATIO_PLAN, wss.SIZE, wss.QTY AS size_qty
+SELECT rss.ID_RATIO_SIZE_SPREADING, rss.ID_RATIO_SPREADING, rss.ID_WO_SHELL_SIZE, rss.RATIO_PLAN, ms.NAMA_SIZE AS SIZE, wss.QTY AS size_qty
 FROM RATIO_SIZE_SPREADING rss
 JOIN WORK_ORDER_SHELL_SIZE wss ON rss.ID_WO_SHELL_SIZE = wss.ID_WO_SHELL_SIZE
+JOIN MASTER_SIZE ms ON ms.ID_SIZE = wss.ID_SIZE
 WHERE rss.ID_RATIO_SPREADING = $1
 ORDER BY rss.ID_RATIO_SIZE_SPREADING ASC;
 
