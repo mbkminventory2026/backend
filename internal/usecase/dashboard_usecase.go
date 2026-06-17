@@ -125,24 +125,24 @@ func (u *DashboardUseCase) PredictNewOrder(ctx context.Context, req model.AIEsti
 	return u.aiGateway.PredictSchedule(ctx, aiReq)
 }
 
-// GetOperatorDashboardMetrics mengambil data real-time untuk dashboard operator
-func (u *DashboardUseCase) GetOperatorDashboardMetrics(ctx context.Context) (*model.OperatorDashboardMetrics, error) {
-	activeWO, err := u.queries.GetOperatorActiveWorkOrdersCount(ctx)
+// GetAdminSistemDashboardMetrics mengambil data real-time untuk dashboard admin sistem
+func (u *DashboardUseCase) GetAdminSistemDashboardMetrics(ctx context.Context) (*model.AdminSistemDashboardMetrics, error) {
+	activeWO, err := u.queries.GetAdminSistemActiveWorkOrdersCount(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active WO: %w", err)
 	}
 
-	targetPcs, err := u.queries.GetOperatorTargetProduksiHariIni(ctx)
+	targetPcs, err := u.queries.GetAdminSistemTargetProduksiHariIni(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get target produksi: %w", err)
 	}
 
-	outputToday, err := u.queries.GetOperatorOutputHariIni(ctx)
+	outputToday, err := u.queries.GetAdminSistemOutputHariIni(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get output hari ini: %w", err)
 	}
 
-	ongoingWOs, err := u.queries.GetOperatorOngoingWorkOrders(ctx)
+	ongoingWOs, err := u.queries.GetAdminSistemOngoingWorkOrders(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ongoing WOs: %w", err)
 	}
@@ -161,7 +161,7 @@ func (u *DashboardUseCase) GetOperatorDashboardMetrics(ctx context.Context) (*mo
 	// Hardcode rasio reject untuk saat ini karena tabel QC Finish belum melacak cacat
 	rasioReject := 0.0
 
-	return &model.OperatorDashboardMetrics{
+	return &model.AdminSistemDashboardMetrics{
 		ActiveWorkOrders:  activeWO,
 		TargetProduksiPcs: targetPcs,
 		OutputHariIni:     outputToday,
@@ -228,8 +228,8 @@ func (u *DashboardUseCase) GetFinanceDashboardMetrics(ctx context.Context) (*mod
 
 // GetProductionDashboardMetrics mengambil data untuk dashboard Admin Produksi
 func (u *DashboardUseCase) GetProductionDashboardMetrics(ctx context.Context) (*model.ProductionDashboardMetrics, error) {
-	// Reusing GetOperatorTargetProduksiHariIni for target produksi
-	targetPcs, err := u.queries.GetOperatorTargetProduksiHariIni(ctx)
+	// Reusing GetAdminSistemTargetProduksiHariIni for target produksi
+	targetPcs, err := u.queries.GetAdminSistemTargetProduksiHariIni(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get target produksi: %w", err)
 	}

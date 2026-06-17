@@ -290,7 +290,7 @@ func (h *AuthHandler) CreateForgotPasswordRequest(c *gin.Context) {
 
 // ListForgotPasswordRequests godoc
 // @Summary      List Forgot Password Requests
-// @Description  Returns all password reset requests for operator review.
+// @Description  Returns all password reset requests for admin sistem review.
 // @Tags         Auth
 // @Produce      json
 // @Security     BearerAuth

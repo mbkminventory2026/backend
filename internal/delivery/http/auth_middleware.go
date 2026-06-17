@@ -123,10 +123,15 @@ const (
 	PermissionPackingListUpdate  = "PACKING_LIST_UPDATE"
 	PermissionPackingListApprove = "PACKING_LIST_APPROVE"
 
-	PermissionSuratJalanClientRead   = "SURAT_JALAN_CLIENT_READ"
-	PermissionSuratJalanInternalRead = "SURAT_JALAN_INTERNAL_READ"
-	PermissionSuratJalanCreate       = "SURAT_JALAN_CREATE"
-	PermissionSuratJalanUpdate       = "SURAT_JALAN_UPDATE"
+	PermissionSuratJalanClientRead     = "SURAT_JALAN_CLIENT_READ"
+	PermissionSuratJalanClientCreate   = "SURAT_JALAN_CLIENT_CREATE"
+	PermissionSuratJalanClientUpdate   = "SURAT_JALAN_CLIENT_UPDATE"
+	PermissionSuratJalanClientDelete   = "SURAT_JALAN_CLIENT_DELETE"
+
+	PermissionSuratJalanInternalRead   = "SURAT_JALAN_INTERNAL_READ"
+	PermissionSuratJalanInternalCreate = "SURAT_JALAN_INTERNAL_CREATE"
+	PermissionSuratJalanInternalUpdate = "SURAT_JALAN_INTERNAL_UPDATE"
+	PermissionSuratJalanInternalDelete = "SURAT_JALAN_INTERNAL_DELETE"
 
 	PermissionReportRead       = "REPORT_READ"
 	PermissionLogRead          = "LOG_READ"
@@ -334,8 +339,8 @@ func RequireInternalUser() gin.HandlerFunc {
 	}
 }
 
-// RequireOperatorUser restricts access to operator role only.
-func RequireOperatorUser() gin.HandlerFunc {
+// RequireAdminSistemUser restricts access to admin sistem role only.
+func RequireAdminSistemUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		roleName, ok := GetRoleNameFromContext(c)
 		if !ok {
@@ -343,8 +348,8 @@ func RequireOperatorUser() gin.HandlerFunc {
 			return
 		}
 
-		if !strings.EqualFold(roleName, "OPERATOR") {
-			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: operator role required", nil))
+		if !strings.EqualFold(roleName, "ADMIN_SISTEM") {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: admin sistem role required", nil))
 			return
 		}
 

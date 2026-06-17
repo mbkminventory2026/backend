@@ -344,6 +344,19 @@ definitions:
         example: success
         type: string
     type: object
+  model.CreateDataApproveCuttingPlanRequest:
+    properties:
+      id_wo:
+        type: integer
+      no_dokumen:
+        type: string
+      tanggal:
+        type: string
+    required:
+    - id_wo
+    - no_dokumen
+    - tanggal
+    type: object
   model.CreateDepartemenRequest:
     properties:
       nama_departemen:
@@ -1185,6 +1198,124 @@ definitions:
         type: string
       status:
         example: success
+        type: string
+    type: object
+  model.DataApproveCuttingPlanErrorDetail:
+    properties:
+      code:
+        example: invalid_payload
+        type: string
+    type: object
+  model.DataApproveCuttingPlanErrorDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.DataApproveCuttingPlanErrorDetail'
+      message:
+        example: bad request
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.DataApproveCuttingPlanListItem:
+    properties:
+      buyer:
+        type: string
+      created_at:
+        type: string
+      id_dacp:
+        type: integer
+      id_wo:
+        type: integer
+      model:
+        type: string
+      no_dokumen:
+        type: string
+      tanggal:
+        type: string
+    type: object
+  model.DataApproveCuttingPlanListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.DataApproveCuttingPlanListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.DataApproveCuttingPlanListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.DataApproveCuttingPlanListResponse'
+      message:
+        example: data approve cutting plans retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.DataApproveCuttingPlanResponse:
+    properties:
+      buyer:
+        type: string
+      colour:
+        type: string
+      created_at:
+        type: string
+      id_dacp:
+        type: integer
+      id_wo:
+        type: integer
+      model:
+        type: string
+      no_dokumen:
+        type: string
+      rows:
+        items:
+          $ref: '#/definitions/model.DataApproveCuttingPlanRow'
+        type: array
+      style:
+        type: string
+      tanggal:
+        type: string
+    type: object
+  model.DataApproveCuttingPlanRow:
+    properties:
+      balance_allowance:
+        type: integer
+      cutting_report:
+        type: integer
+      qty_cutting_actual:
+        type: integer
+      qty_cutting_plan:
+        type: integer
+      qty_order:
+        type: integer
+      size:
+        type: string
+    type: object
+  model.DataApproveCuttingPlanSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.DataApproveCuttingPlanResponse'
+      message:
+        example: data approve cutting plan created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.DataApproveCuttingPlanValidationErrorDoc:
+    properties:
+      error:
+        items:
+          $ref: '#/definitions/response.ValidationErrorItem'
+        type: array
+      message:
+        example: validation error
+        type: string
+      status:
+        example: error
         type: string
     type: object
   model.DepartemenResponse:
@@ -2957,6 +3088,8 @@ definitions:
     type: object
   model.SpreadingCuttingPlanResponse:
     properties:
+      buyer:
+        type: string
       components:
         items:
           $ref: '#/definitions/model.KomponenSpreadingResponse'
@@ -2967,7 +3100,11 @@ definitions:
         type: integer
       id_wo:
         type: integer
+      model:
+        type: string
       no_dokumen:
+        type: string
+      style:
         type: string
       tanggal_efektif:
         type: string
@@ -3973,7 +4110,7 @@ info:
 paths:
   /api/v1/activity-logs:
     get:
-      description: Retrieves paginated audit log history for operator users.
+      description: Retrieves paginated audit log history for admin sistem users.
       parameters:
       - description: Page number
         in: query
@@ -4037,7 +4174,7 @@ paths:
       - Audit Logs
   /api/v1/activity-logs/{id}:
     get:
-      description: Retrieves a single audit log detail for operator users.
+      description: Retrieves a single audit log detail for admin sistem users.
       parameters:
       - description: Audit log ID
         in: path
@@ -4194,7 +4331,7 @@ paths:
       - Auth
   /api/v1/auth/forgot-password-requests:
     get:
-      description: Returns all password reset requests for operator review.
+      description: Returns all password reset requests for admin sistem review.
       produces:
       - application/json
       responses:
@@ -4431,6 +4568,17 @@ paths:
       summary: Self Register Mitra
       tags:
       - Auth
+  /api/v1/dashboard/admin-sistem:
+    get:
+      description: Mengambil metrics realtime untuk layar Admin Sistem Dashboard
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Ambil KPI Admin Sistem
+      tags:
+      - Dashboard
   /api/v1/dashboard/ai-estimation:
     post:
       consumes:
@@ -4466,17 +4614,6 @@ paths:
       summary: Ambil KPI Finance
       tags:
       - Dashboard
-  /api/v1/dashboard/operator:
-    get:
-      description: Mengambil metrics realtime untuk layar Operator Dashboard
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - BearerAuth: []
-      summary: Ambil KPI Operator
-      tags:
-      - Dashboard
   /api/v1/dashboard/production:
     get:
       description: Mengambil metrics realtime untuk layar Production Dashboard
@@ -4499,6 +4636,100 @@ paths:
       summary: Ambil KPI Warehouse
       tags:
       - Dashboard
+  /api/v1/data-approve-cutting-plans:
+    get:
+      description: Returns a paginated list of Data Approve Cutting Plan documents.
+      parameters:
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Search by document number, buyer, model
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.DataApproveCuttingPlanListSuccessDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.DataApproveCuttingPlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: List Data Approve Cutting Plans
+      tags:
+      - Data Approve Cutting Plan
+    post:
+      consumes:
+      - application/json
+      description: Creates a new Data Approve Cutting Plan document linked to a Work
+        Order and initializes the approval workflow.
+      parameters:
+      - description: Payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateDataApproveCuttingPlanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.DataApproveCuttingPlanSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.DataApproveCuttingPlanValidationErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.DataApproveCuttingPlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Data Approve Cutting Plan
+      tags:
+      - Data Approve Cutting Plan
+  /api/v1/data-approve-cutting-plans/{id}:
+    get:
+      description: Returns a single Data Approve Cutting Plan with the aggregated
+        size breakdown table.
+      parameters:
+      - description: Document ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.DataApproveCuttingPlanSuccessDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.DataApproveCuttingPlanErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.DataApproveCuttingPlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Data Approve Cutting Plan Detail
+      tags:
+      - Data Approve Cutting Plan
   /api/v1/exports/excel/render:
     post:
       consumes:

@@ -32,16 +32,16 @@ LEFT JOIN
 WHERE 
     rm.BALANCE < COALESCE(b.stok_minimum, 50); -- Asumsi threshold low stock adalah 50, bisa kita ubah nanti lewat argumen sqlc jika dinamis
 
--- name: GetOperatorActiveWorkOrdersCount :one
+-- name: GetAdminSistemActiveWorkOrdersCount :one
 SELECT COUNT(*) FROM WORK_ORDER;
 
--- name: GetOperatorTargetProduksiHariIni :one
+-- name: GetAdminSistemTargetProduksiHariIni :one
 SELECT COALESCE(SUM(qty), 0)::int FROM WORK_ORDER;
 
--- name: GetOperatorOutputHariIni :one
+-- name: GetAdminSistemOutputHariIni :one
 SELECT COALESCE(SUM(qty), 0)::int FROM REPORT_PACKING WHERE tanggal = CURRENT_DATE;
 
--- name: GetOperatorOngoingWorkOrders :many
+-- name: GetAdminSistemOngoingWorkOrders :many
 SELECT 
     wo.ID_WO,
     wo.BUYER,

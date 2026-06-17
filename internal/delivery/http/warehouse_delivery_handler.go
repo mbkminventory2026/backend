@@ -35,7 +35,7 @@ func (h *WarehouseDeliveryHandler) RegisterRoutes(router gin.IRouter, authMiddle
 	v1.GET("/surat-jalan-clients/:id", RequirePermission(PermissionSuratJalanClientRead), h.GetSuratJalanClientDetail)
 	v1.GET("/surat-jalan-internals", internalOnly, RequirePermission(PermissionSuratJalanInternalRead), h.ListSuratJalanInternals)
 	v1.GET("/surat-jalan-internals/:id", internalOnly, RequirePermission(PermissionSuratJalanInternalRead), h.GetSuratJalanInternalDetail)
-	v1.POST("/surat-jalan/:type", internalOnly, RequirePermission(PermissionSuratJalanCreate), h.CreateSuratJalan)
+	v1.POST("/surat-jalan/:type", internalOnly, h.CreateSuratJalan)
 
 	v1.GET("/received", RequirePermission(PermissionInventoryReceive), h.ListReceived)
 	v1.POST("/received", internalOnly, RequirePermission(PermissionInventoryReceive), h.CreateSimpleReceived)
@@ -44,7 +44,7 @@ func (h *WarehouseDeliveryHandler) RegisterRoutes(router gin.IRouter, authMiddle
 	v1.DELETE("/received/:id", internalOnly, RequirePermission(PermissionInventoryReceive), h.DeleteSimpleReceived)
 
 	v1.GET("/material-list-items/:id/history", RequirePermission(PermissionWORead), h.GetMLIHistory)
-	v1.DELETE("/surat-jalan-clients/:id", internalOnly, RequirePermission(PermissionSuratJalanCreate), h.DeleteSuratJalanClient)
+	v1.DELETE("/surat-jalan-clients/:id", internalOnly, RequirePermission(PermissionSuratJalanClientDelete), h.DeleteSuratJalanClient)
 }
 
 // ReceiveInventory godoc
@@ -216,6 +216,22 @@ func (h *WarehouseDeliveryHandler) GetPackingListDetail(c *gin.Context) {
 // @Router       /api/v1/surat-jalan/{type} [post]
 func (h *WarehouseDeliveryHandler) CreateSuratJalan(c *gin.Context) {
 	suratJalanType := strings.TrimSpace(strings.ToLower(c.Param("type")))
+
+	// Enforce permissions dynamically based on the requested type
+	if suratJalanType == "client" {
+		if !HasPermission(c, PermissionSuratJalanClientCreate) {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: client delivery note creation not allowed", nil))
+			return
+		}
+	} else if suratJalanType == "internal" {
+		if !HasPermission(c, PermissionSuratJalanInternalCreate) {
+			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: internal delivery note creation not allowed", nil))
+			return
+		}
+	} else {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "unsupported surat jalan type", nil))
+		return
+	}
 
 	var req *model.CreateSuratJalanClientRequest
 	if suratJalanType == "client" {

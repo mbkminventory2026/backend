@@ -45,7 +45,7 @@ func (h *DashboardHandler) RegisterRoutes(router *gin.Engine, authMiddleware gin
 	{
 		api.GET("/logs", RequirePermission(PermissionLogRead), h.GetLogs)
 		api.POST("/dashboard/ai-estimation", RequirePermission(PermissionAIEstimationRead), h.PredictAIEstimation)
-		api.GET("/dashboard/operator", RequirePermission(PermissionDashboardRead), h.GetOperatorMetrics)
+		api.GET("/dashboard/admin-sistem", RequirePermission(PermissionDashboardRead), h.GetAdminSistemMetrics)
 		api.GET("/dashboard/finance", RequirePermission(PermissionDashboardRead), h.GetFinanceMetrics)
 		api.GET("/dashboard/production", RequirePermission(PermissionDashboardRead), h.GetProductionMetrics)
 		api.GET("/dashboard/warehouse", RequirePermission(PermissionDashboardRead), h.GetWarehouseMetrics)
@@ -110,21 +110,21 @@ func (h *DashboardHandler) PredictAIEstimation(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Estimasi AI berhasil dihitung", result)
 }
 
-// GetOperatorMetrics mengambil metrik KPI dashboard operator
-// @Summary Ambil KPI Operator
-// @Description Mengambil metrics realtime untuk layar Operator Dashboard
+// GetAdminSistemMetrics mengambil metrik KPI dashboard admin sistem
+// @Summary Ambil KPI Admin Sistem
+// @Description Mengambil metrics realtime untuk layar Admin Sistem Dashboard
 // @Tags Dashboard
 // @Produce json
 // @Security BearerAuth
-// @Router /api/v1/dashboard/operator [get]
-func (h *DashboardHandler) GetOperatorMetrics(c *gin.Context) {
-	result, err := h.useCase.GetOperatorDashboardMetrics(c.Request.Context())
+// @Router /api/v1/dashboard/admin-sistem [get]
+func (h *DashboardHandler) GetAdminSistemMetrics(c *gin.Context) {
+	result, err := h.useCase.GetAdminSistemDashboardMetrics(c.Request.Context())
 	if err != nil {
-		response.Fail(c, http.StatusInternalServerError, "Gagal memuat metrics operator", err.Error())
+		response.Fail(c, http.StatusInternalServerError, "Gagal memuat metrics admin sistem", err.Error())
 		return
 	}
 
-	response.Success(c, http.StatusOK, "Metrics operator berhasil diambil", result)
+	response.Success(c, http.StatusOK, "Metrics admin sistem berhasil diambil", result)
 }
 
 // GetFinanceMetrics mengambil metrik KPI dashboard Admin Keuangan

@@ -29,7 +29,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieves paginated audit log history for operator users.",
+                "description": "Retrieves paginated audit log history for admin sistem users.",
                 "produces": [
                     "application/json"
                 ],
@@ -128,7 +128,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieves a single audit log detail for operator users.",
+                "description": "Retrieves a single audit log detail for admin sistem users.",
                 "produces": [
                     "application/json"
                 ],
@@ -375,7 +375,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns all password reset requests for operator review.",
+                "description": "Returns all password reset requests for admin sistem review.",
                 "produces": [
                     "application/json"
                 ],
@@ -735,6 +735,24 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/dashboard/admin-sistem": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil metrics realtime untuk layar Admin Sistem Dashboard",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Ambil KPI Admin Sistem",
+                "responses": {}
+            }
+        },
         "/api/v1/dashboard/ai-estimation": {
             "post": {
                 "security": [
@@ -792,24 +810,6 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/v1/dashboard/operator": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Mengambil metrics realtime untuk layar Operator Dashboard",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Dashboard"
-                ],
-                "summary": "Ambil KPI Operator",
-                "responses": {}
-            }
-        },
         "/api/v1/dashboard/production": {
             "get": {
                 "security": [
@@ -844,6 +844,152 @@ const docTemplate = `{
                 ],
                 "summary": "Ambil KPI Warehouse",
                 "responses": {}
+            }
+        },
+        "/api/v1/data-approve-cutting-plans": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of Data Approve Cutting Plan documents.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Data Approve Cutting Plan"
+                ],
+                "summary": "List Data Approve Cutting Plans",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by document number, buyer, model",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.DataApproveCuttingPlanListSuccessDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.DataApproveCuttingPlanErrorDoc"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new Data Approve Cutting Plan document linked to a Work Order and initializes the approval workflow.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Data Approve Cutting Plan"
+                ],
+                "summary": "Create Data Approve Cutting Plan",
+                "parameters": [
+                    {
+                        "description": "Payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateDataApproveCuttingPlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.DataApproveCuttingPlanSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.DataApproveCuttingPlanValidationErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.DataApproveCuttingPlanErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/data-approve-cutting-plans/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a single Data Approve Cutting Plan with the aggregated size breakdown table.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Data Approve Cutting Plan"
+                ],
+                "summary": "Get Data Approve Cutting Plan Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Document ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.DataApproveCuttingPlanSuccessDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.DataApproveCuttingPlanErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.DataApproveCuttingPlanErrorDoc"
+                        }
+                    }
+                }
             }
         },
         "/api/v1/exports/excel/render": {
@@ -6225,6 +6371,25 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CreateDataApproveCuttingPlanRequest": {
+            "type": "object",
+            "required": [
+                "id_wo",
+                "no_dokumen",
+                "tanggal"
+            ],
+            "properties": {
+                "id_wo": {
+                    "type": "integer"
+                },
+                "no_dokumen": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
         "model.CreateDepartemenRequest": {
             "type": "object",
             "required": [
@@ -7432,6 +7597,183 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "invalid_payload"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/model.DataApproveCuttingPlanErrorDetail"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "bad request"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanListItem": {
+            "type": "object",
+            "properties": {
+                "buyer": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id_dacp": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "no_dokumen": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.DataApproveCuttingPlanListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/model.PaginationMeta"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.DataApproveCuttingPlanListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "data approve cutting plans retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanResponse": {
+            "type": "object",
+            "properties": {
+                "buyer": {
+                    "type": "string"
+                },
+                "colour": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id_dacp": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "no_dokumen": {
+                    "type": "string"
+                },
+                "rows": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.DataApproveCuttingPlanRow"
+                    }
+                },
+                "style": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanRow": {
+            "type": "object",
+            "properties": {
+                "balance_allowance": {
+                    "type": "integer"
+                },
+                "cutting_report": {
+                    "type": "integer"
+                },
+                "qty_cutting_actual": {
+                    "type": "integer"
+                },
+                "qty_cutting_plan": {
+                    "type": "integer"
+                },
+                "qty_order": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.DataApproveCuttingPlanResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "data approve cutting plan created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.DataApproveCuttingPlanValidationErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ValidationErrorItem"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "validation error"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
                 }
             }
         },
@@ -10086,6 +10428,9 @@ const docTemplate = `{
         "model.SpreadingCuttingPlanResponse": {
             "type": "object",
             "properties": {
+                "buyer": {
+                    "type": "string"
+                },
                 "components": {
                     "type": "array",
                     "items": {
@@ -10101,7 +10446,13 @@ const docTemplate = `{
                 "id_wo": {
                     "type": "integer"
                 },
+                "model": {
+                    "type": "string"
+                },
                 "no_dokumen": {
+                    "type": "string"
+                },
+                "style": {
                     "type": "string"
                 },
                 "tanggal_efektif": {

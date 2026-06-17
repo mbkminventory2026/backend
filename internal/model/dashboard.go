@@ -96,8 +96,8 @@ type OngoingWorkOrder struct {
 	TotalOutput int32  `json:"total_output"`
 }
 
-// OperatorDashboardMetrics representasi seluruh metrik
-type OperatorDashboardMetrics struct {
+// AdminSistemDashboardMetrics representasi seluruh metrik untuk Admin Sistem
+type AdminSistemDashboardMetrics struct {
 	ActiveWorkOrders  int64              `json:"active_work_orders"`
 	TargetProduksiPcs int32              `json:"target_produksi_pcs"`
 	OutputHariIni     int32              `json:"output_hari_ini"`
