@@ -17,12 +17,14 @@ import (
 type masterPlanItemRaw struct {
 	idMasterPlanItem int32
 	idMasterPlan     int32
+	idWoShell        int32
 	idWo             int32
 	noUrut           int32
 	buyer            string
 	style            string
 	qty              int32
-	color            interface{}
+	color            string
+	deskripsi        string
 	createdAt        pgtype.Timestamptz
 }
 
@@ -63,7 +65,7 @@ func (u *MasterPlanUseCase) CreateMasterPlan(ctx context.Context, userID int32, 
 		}
 		if _, addErr := u.repo.AddMasterPlanItem(ctx, entity.AddMasterPlanItemParams{
 			IDMasterPlan: plan.IDMasterPlan,
-			IDWo:         itemReq.IDWo,
+			IDWoShell:    itemReq.IDWoShell,
 			NoUrut:       noUrut,
 		}); addErr != nil {
 			return nil, mapMasterPlanDBError(addErr)
@@ -92,12 +94,14 @@ func (u *MasterPlanUseCase) GetMasterPlan(ctx context.Context, id int32) (*model
 		detail, buildErr := u.buildItemResponse(ctx, masterPlanItemRaw{
 			idMasterPlanItem: ir.IDMasterPlanItem,
 			idMasterPlan:     ir.IDMasterPlan,
+			idWoShell:        ir.IDWoShell,
 			idWo:             ir.IDWo,
 			noUrut:           ir.NoUrut,
 			buyer:            ir.Buyer,
 			style:            ir.Style,
 			qty:              ir.Qty,
 			color:            ir.Color,
+			deskripsi:        ir.Deskripsi,
 			createdAt:        ir.CreatedAt,
 		})
 		if buildErr != nil {
@@ -190,7 +194,7 @@ func (u *MasterPlanUseCase) AddItem(ctx context.Context, planID int32, req model
 
 	item, err := u.repo.AddMasterPlanItem(ctx, entity.AddMasterPlanItemParams{
 		IDMasterPlan: planID,
-		IDWo:         req.IDWo,
+		IDWoShell:    req.IDWoShell,
 		NoUrut:       noUrut,
 	})
 	if err != nil {
@@ -205,12 +209,14 @@ func (u *MasterPlanUseCase) AddItem(ctx context.Context, planID int32, req model
 	return u.buildItemResponse(ctx, masterPlanItemRaw{
 		idMasterPlanItem: detail.IDMasterPlanItem,
 		idMasterPlan:     detail.IDMasterPlan,
+		idWoShell:        detail.IDWoShell,
 		idWo:             detail.IDWo,
 		noUrut:           detail.NoUrut,
 		buyer:            detail.Buyer,
 		style:            detail.Style,
 		qty:              detail.Qty,
 		color:            detail.Color,
+		deskripsi:        detail.Deskripsi,
 		createdAt:        detail.CreatedAt,
 	})
 }
@@ -318,12 +324,6 @@ func (u *MasterPlanUseCase) verifyItemBelongsToPlan(ctx context.Context, planID,
 
 func (u *MasterPlanUseCase) buildItemResponse(ctx context.Context, raw masterPlanItemRaw) (*model.MasterPlanItemResponse, error) {
 	itemID := raw.idMasterPlanItem
-	color := ""
-	if raw.color != nil {
-		if s, ok := raw.color.(string); ok {
-			color = s
-		}
-	}
 
 	targetRows, err := u.repo.ListTargetHarianByItem(ctx, itemID)
 	if err != nil {
@@ -364,12 +364,14 @@ func (u *MasterPlanUseCase) buildItemResponse(ctx context.Context, raw masterPla
 	return &model.MasterPlanItemResponse{
 		IDMasterPlanItem: raw.idMasterPlanItem,
 		IDMasterPlan:     raw.idMasterPlan,
+		IDWoShell:        raw.idWoShell,
 		IDWo:             raw.idWo,
 		NoUrut:           raw.noUrut,
 		Buyer:            raw.buyer,
 		Style:            raw.style,
 		Qty:              raw.qty,
-		Color:            color,
+		Color:            raw.color,
+		Deskripsi:        raw.deskripsi,
 		CreatedAt:        raw.createdAt.Time.Format(time.RFC3339),
 		TargetHarian:     targets,
 		OutputHarian:     outputs,

@@ -12,24 +12,24 @@ import (
 )
 
 const addMasterPlanItem = `-- name: AddMasterPlanItem :one
-INSERT INTO MASTER_PLAN_ITEM (id_master_plan, id_wo, no_urut)
+INSERT INTO MASTER_PLAN_ITEM (id_master_plan, id_wo_shell, no_urut)
 VALUES ($1, $2, $3)
-RETURNING id_master_plan_item, id_master_plan, id_wo, no_urut, created_at
+RETURNING id_master_plan_item, id_master_plan, id_wo_shell, no_urut, created_at
 `
 
 type AddMasterPlanItemParams struct {
 	IDMasterPlan int32 `json:"id_master_plan"`
-	IDWo         int32 `json:"id_wo"`
+	IDWoShell    int32 `json:"id_wo_shell"`
 	NoUrut       int32 `json:"no_urut"`
 }
 
 func (q *Queries) AddMasterPlanItem(ctx context.Context, arg AddMasterPlanItemParams) (MasterPlanItem, error) {
-	row := q.db.QueryRow(ctx, addMasterPlanItem, arg.IDMasterPlan, arg.IDWo, arg.NoUrut)
+	row := q.db.QueryRow(ctx, addMasterPlanItem, arg.IDMasterPlan, arg.IDWoShell, arg.NoUrut)
 	var i MasterPlanItem
 	err := row.Scan(
 		&i.IDMasterPlanItem,
 		&i.IDMasterPlan,
-		&i.IDWo,
+		&i.IDWoShell,
 		&i.NoUrut,
 		&i.CreatedAt,
 	)
@@ -148,32 +148,33 @@ const getMasterPlanItemByID = `-- name: GetMasterPlanItemByID :one
 SELECT
     mpi.id_master_plan_item,
     mpi.id_master_plan,
-    mpi.id_wo,
+    mpi.id_wo_shell,
     mpi.no_urut,
     mpi.created_at,
+    wos.id_wo,
+    wos.color,
+    wos.deskripsi,
     wo.buyer,
     wo.model AS style,
-    wo.qty,
-    COALESCE((
-        SELECT wos.color FROM WORK_ORDER_SHELL wos
-        WHERE wos.id_wo = mpi.id_wo
-        ORDER BY wos.created_at ASC LIMIT 1
-    ), '') AS color
+    wo.qty
 FROM MASTER_PLAN_ITEM mpi
-JOIN WORK_ORDER wo ON wo.id_wo = mpi.id_wo
+JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = mpi.id_wo_shell
+JOIN WORK_ORDER wo ON wo.id_wo = wos.id_wo
 WHERE mpi.id_master_plan_item = $1
 `
 
 type GetMasterPlanItemByIDRow struct {
 	IDMasterPlanItem int32              `json:"id_master_plan_item"`
 	IDMasterPlan     int32              `json:"id_master_plan"`
-	IDWo             int32              `json:"id_wo"`
+	IDWoShell        int32              `json:"id_wo_shell"`
 	NoUrut           int32              `json:"no_urut"`
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	IDWo             int32              `json:"id_wo"`
+	Color            string             `json:"color"`
+	Deskripsi        string             `json:"deskripsi"`
 	Buyer            string             `json:"buyer"`
 	Style            string             `json:"style"`
 	Qty              int32              `json:"qty"`
-	Color            interface{}        `json:"color"`
 }
 
 func (q *Queries) GetMasterPlanItemByID(ctx context.Context, idMasterPlanItem int32) (GetMasterPlanItemByIDRow, error) {
@@ -182,13 +183,15 @@ func (q *Queries) GetMasterPlanItemByID(ctx context.Context, idMasterPlanItem in
 	err := row.Scan(
 		&i.IDMasterPlanItem,
 		&i.IDMasterPlan,
-		&i.IDWo,
+		&i.IDWoShell,
 		&i.NoUrut,
 		&i.CreatedAt,
+		&i.IDWo,
+		&i.Color,
+		&i.Deskripsi,
 		&i.Buyer,
 		&i.Style,
 		&i.Qty,
-		&i.Color,
 	)
 	return i, err
 }
@@ -197,19 +200,18 @@ const listMasterPlanItems = `-- name: ListMasterPlanItems :many
 SELECT
     mpi.id_master_plan_item,
     mpi.id_master_plan,
-    mpi.id_wo,
+    mpi.id_wo_shell,
     mpi.no_urut,
     mpi.created_at,
+    wos.id_wo,
+    wos.color,
+    wos.deskripsi,
     wo.buyer,
     wo.model AS style,
-    wo.qty,
-    COALESCE((
-        SELECT wos.color FROM WORK_ORDER_SHELL wos
-        WHERE wos.id_wo = mpi.id_wo
-        ORDER BY wos.created_at ASC LIMIT 1
-    ), '') AS color
+    wo.qty
 FROM MASTER_PLAN_ITEM mpi
-JOIN WORK_ORDER wo ON wo.id_wo = mpi.id_wo
+JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = mpi.id_wo_shell
+JOIN WORK_ORDER wo ON wo.id_wo = wos.id_wo
 WHERE mpi.id_master_plan = $1
 ORDER BY mpi.no_urut ASC, mpi.created_at ASC
 `
@@ -217,13 +219,15 @@ ORDER BY mpi.no_urut ASC, mpi.created_at ASC
 type ListMasterPlanItemsRow struct {
 	IDMasterPlanItem int32              `json:"id_master_plan_item"`
 	IDMasterPlan     int32              `json:"id_master_plan"`
-	IDWo             int32              `json:"id_wo"`
+	IDWoShell        int32              `json:"id_wo_shell"`
 	NoUrut           int32              `json:"no_urut"`
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	IDWo             int32              `json:"id_wo"`
+	Color            string             `json:"color"`
+	Deskripsi        string             `json:"deskripsi"`
 	Buyer            string             `json:"buyer"`
 	Style            string             `json:"style"`
 	Qty              int32              `json:"qty"`
-	Color            interface{}        `json:"color"`
 }
 
 func (q *Queries) ListMasterPlanItems(ctx context.Context, idMasterPlan int32) ([]ListMasterPlanItemsRow, error) {
@@ -238,13 +242,15 @@ func (q *Queries) ListMasterPlanItems(ctx context.Context, idMasterPlan int32) (
 		if err := rows.Scan(
 			&i.IDMasterPlanItem,
 			&i.IDMasterPlan,
-			&i.IDWo,
+			&i.IDWoShell,
 			&i.NoUrut,
 			&i.CreatedAt,
+			&i.IDWo,
+			&i.Color,
+			&i.Deskripsi,
 			&i.Buyer,
 			&i.Style,
 			&i.Qty,
-			&i.Color,
 		); err != nil {
 			return nil, err
 		}

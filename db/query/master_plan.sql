@@ -56,7 +56,7 @@ RETURNING *;
 DELETE FROM MASTER_PLAN WHERE id_master_plan = $1;
 
 -- name: AddMasterPlanItem :one
-INSERT INTO MASTER_PLAN_ITEM (id_master_plan, id_wo, no_urut)
+INSERT INTO MASTER_PLAN_ITEM (id_master_plan, id_wo_shell, no_urut)
 VALUES ($1, $2, $3)
 RETURNING *;
 
@@ -68,38 +68,36 @@ WHERE id_master_plan_item = $1 AND id_master_plan = $2;
 SELECT
     mpi.id_master_plan_item,
     mpi.id_master_plan,
-    mpi.id_wo,
+    mpi.id_wo_shell,
     mpi.no_urut,
     mpi.created_at,
+    wos.id_wo,
+    wos.color,
+    wos.deskripsi,
     wo.buyer,
     wo.model AS style,
-    wo.qty,
-    COALESCE((
-        SELECT wos.color FROM WORK_ORDER_SHELL wos
-        WHERE wos.id_wo = mpi.id_wo
-        ORDER BY wos.created_at ASC LIMIT 1
-    ), '') AS color
+    wo.qty
 FROM MASTER_PLAN_ITEM mpi
-JOIN WORK_ORDER wo ON wo.id_wo = mpi.id_wo
+JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = mpi.id_wo_shell
+JOIN WORK_ORDER wo ON wo.id_wo = wos.id_wo
 WHERE mpi.id_master_plan_item = $1;
 
 -- name: ListMasterPlanItems :many
 SELECT
     mpi.id_master_plan_item,
     mpi.id_master_plan,
-    mpi.id_wo,
+    mpi.id_wo_shell,
     mpi.no_urut,
     mpi.created_at,
+    wos.id_wo,
+    wos.color,
+    wos.deskripsi,
     wo.buyer,
     wo.model AS style,
-    wo.qty,
-    COALESCE((
-        SELECT wos.color FROM WORK_ORDER_SHELL wos
-        WHERE wos.id_wo = mpi.id_wo
-        ORDER BY wos.created_at ASC LIMIT 1
-    ), '') AS color
+    wo.qty
 FROM MASTER_PLAN_ITEM mpi
-JOIN WORK_ORDER wo ON wo.id_wo = mpi.id_wo
+JOIN WORK_ORDER_SHELL wos ON wos.id_wo_shell = mpi.id_wo_shell
+JOIN WORK_ORDER wo ON wo.id_wo = wos.id_wo
 WHERE mpi.id_master_plan = $1
 ORDER BY mpi.no_urut ASC, mpi.created_at ASC;
 

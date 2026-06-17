@@ -138,7 +138,7 @@ type MasterPlan struct {
 type MasterPlanItem struct {
 	IDMasterPlanItem int32              `json:"id_master_plan_item"`
 	IDMasterPlan     int32              `json:"id_master_plan"`
-	IDWo             int32              `json:"id_wo"`
+	IDWoShell        int32              `json:"id_wo_shell"`
 	NoUrut           int32              `json:"no_urut"`
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 }

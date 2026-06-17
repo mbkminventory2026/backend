@@ -12,13 +12,13 @@ type CreateMasterPlanRequest struct {
 }
 
 type AddMasterPlanItemEntry struct {
-	IDWo   int32 `json:"id_wo" binding:"required,gt=0"`
-	NoUrut int32 `json:"no_urut" binding:"gte=0"`
+	IDWoShell int32 `json:"id_wo_shell" binding:"required,gt=0"`
+	NoUrut    int32 `json:"no_urut" binding:"gte=0"`
 }
 
 type AddMasterPlanItemRequest struct {
-	IDWo   int32 `json:"id_wo" binding:"required,gt=0"`
-	NoUrut int32 `json:"no_urut" binding:"gte=0"`
+	IDWoShell int32 `json:"id_wo_shell" binding:"required,gt=0"`
+	NoUrut    int32 `json:"no_urut" binding:"gte=0"`
 }
 
 type UpdateMasterPlanRequest struct {
@@ -68,12 +68,14 @@ type TargetProsesResponse struct {
 type MasterPlanItemResponse struct {
 	IDMasterPlanItem int32                  `json:"id_master_plan_item"`
 	IDMasterPlan     int32                  `json:"id_master_plan"`
+	IDWoShell        int32                  `json:"id_wo_shell"`
 	IDWo             int32                  `json:"id_wo"`
 	NoUrut           int32                  `json:"no_urut"`
 	Buyer            string                 `json:"buyer"`
 	Style            string                 `json:"style"`
 	Qty              int32                  `json:"qty"`
 	Color            string                 `json:"color"`
+	Deskripsi        string                 `json:"deskripsi"`
 	CreatedAt        string                 `json:"created_at"`
 	TargetHarian     []TargetHarianResponse `json:"target_harian"`
 	OutputHarian     []OutputHarianResponse `json:"output_harian"`

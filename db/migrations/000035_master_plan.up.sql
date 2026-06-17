@@ -14,12 +14,12 @@ CREATE TABLE IF NOT EXISTS MASTER_PLAN (
 CREATE TABLE IF NOT EXISTS MASTER_PLAN_ITEM (
     id_master_plan_item SERIAL PRIMARY KEY,
     id_master_plan      INT NOT NULL,
-    id_wo               INT NOT NULL,
+    id_wo_shell         INT NOT NULL,
     no_urut             INT NOT NULL DEFAULT 0,
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (id_master_plan, id_wo),
+    UNIQUE (id_master_plan, id_wo_shell),
     FOREIGN KEY (id_master_plan) REFERENCES MASTER_PLAN(id_master_plan) ON DELETE CASCADE,
-    FOREIGN KEY (id_wo)          REFERENCES WORK_ORDER(ID_WO)
+    FOREIGN KEY (id_wo_shell)    REFERENCES WORK_ORDER_SHELL(ID_WO_SHELL)
 );
 
 CREATE TABLE IF NOT EXISTS MASTER_PLAN_TARGET_HARIAN (
