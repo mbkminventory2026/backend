@@ -104,6 +104,11 @@ const (
 	PermissionTimelineCreate = "TIMELINE_CREATE"
 	PermissionTimelineUpdate = "TIMELINE_UPDATE"
 
+	PermissionMasterPlanRead   = "MASTER_PLAN_READ"
+	PermissionMasterPlanCreate = "MASTER_PLAN_CREATE"
+	PermissionMasterPlanUpdate = "MASTER_PLAN_UPDATE"
+	PermissionMasterPlanDelete = "MASTER_PLAN_DELETE"
+
 	PermissionMarkerPlanRead   = "MARKER_PLAN_READ"
 	PermissionMarkerPlanCreate = "MARKER_PLAN_CREATE"
 	PermissionMarkerPlanUpdate = "MARKER_PLAN_UPDATE"

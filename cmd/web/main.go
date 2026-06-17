@@ -150,6 +150,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	masterPlanUseCase, err := usecase.NewMasterPlanUseCase(queries)
+	if err != nil {
+		logger.Error("failed to initialize master plan usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	markerPlanUseCase, err := usecase.NewMarkerPlanUseCase(queries, dbPool)
 	if err != nil {
 		logger.Error("failed to initialize marker plan usecase", slog.String("error", err.Error()))
@@ -291,6 +298,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	masterPlanHandler, err := httpdelivery.NewMasterPlanHandler(masterPlanUseCase)
+	if err != nil {
+		logger.Error("failed to initialize master plan handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	markerPlanHandler, err := httpdelivery.NewMarkerPlanHandler(markerPlanUseCase)
 	if err != nil {
 		logger.Error("failed to initialize marker plan handler", slog.String("error", err.Error()))
@@ -413,6 +427,7 @@ func main() {
 		productionMasterGroup.DELETE("/production-status-plans/:id", productionMasterHandler.DeleteProductionStatusPlan)
 	}
 
+	masterPlanHandler.RegisterRoutes(router, authMiddleware)
 	markerPlanHandler.RegisterRoutes(router, authMiddleware)
 	spreadingCuttingPlanHandler.RegisterRoutes(router, authMiddleware)
 	dataApproveCuttingPlanHandler.RegisterRoutes(router, authMiddleware)

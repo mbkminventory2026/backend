@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	AddMasterPlanItem(ctx context.Context, arg AddMasterPlanItemParams) (MasterPlanItem, error)
 	ApprovePRInternal(ctx context.Context, arg ApprovePRInternalParams) (ApprovePRInternalRow, error)
 	ApprovePasswordResetRequest(ctx context.Context, arg ApprovePasswordResetRequestParams) (ApprovePasswordResetRequestRow, error)
 	AutoCloseWorkOrders(ctx context.Context) error
@@ -44,6 +45,7 @@ type Querier interface {
 	CreateKomponenMarkerPlan(ctx context.Context, arg CreateKomponenMarkerPlanParams) (KomponenMarkerPlan, error)
 	CreateKomponenSpreadingCuttingPlan(ctx context.Context, arg CreateKomponenSpreadingCuttingPlanParams) (KomponenSpreadingCuttingPlan, error)
 	CreateMarkerPlan(ctx context.Context, arg CreateMarkerPlanParams) (MarkerPlan, error)
+	CreateMasterPlan(ctx context.Context, arg CreateMasterPlanParams) (MasterPlan, error)
 	CreateMaterialList(ctx context.Context, arg CreateMaterialListParams) (CreateMaterialListRow, error)
 	CreateMaterialListItem(ctx context.Context, arg CreateMaterialListItemParams) (CreateMaterialListItemRow, error)
 	CreateMitra(ctx context.Context, arg CreateMitraParams) (Mitra, error)
@@ -92,6 +94,7 @@ type Querier interface {
 	DeleteDepartemen(ctx context.Context, idDepartemen int32) (int64, error)
 	DeleteHakAkses(ctx context.Context, idHakAkses int32) (int64, error)
 	DeleteJenisBarang(ctx context.Context, idJenisBarang int32) (int64, error)
+	DeleteMasterPlan(ctx context.Context, idMasterPlan int32) error
 	DeleteMaterialList(ctx context.Context, idMaterialList int32) error
 	DeleteMaterialListItem(ctx context.Context, idMaterialListItem int32) error
 	DeleteMitra(ctx context.Context, idMitra int32) (int64, error)
@@ -105,6 +108,7 @@ type Querier interface {
 	DeleteRoleHakAksesByRoleID(ctx context.Context, idRole int32) (int64, error)
 	DeleteSize(ctx context.Context, idSize int32) (int64, error)
 	DeleteSuratJalanClient(ctx context.Context, idSuratJalanClient int32) error
+	DeleteTargetProses(ctx context.Context, arg DeleteTargetProsesParams) error
 	DeleteUser(ctx context.Context, idUser int32) (int64, error)
 	DeleteUserAksesByUserID(ctx context.Context, idUser int32) (int64, error)
 	DeleteWarna(ctx context.Context, idWarna int32) (int64, error)
@@ -134,6 +138,8 @@ type Querier interface {
 	// Mengecek material yang BALANCE-nya di bawah standar untuk trigger WebSocket layar berkedip
 	GetLowStockAlerts(ctx context.Context) ([]GetLowStockAlertsRow, error)
 	GetMarkerPlanByID(ctx context.Context, idMarkerPlan int32) (GetMarkerPlanByIDRow, error)
+	GetMasterPlanByID(ctx context.Context, idMasterPlan int32) (GetMasterPlanByIDRow, error)
+	GetMasterPlanItemByID(ctx context.Context, idMasterPlanItem int32) (GetMasterPlanItemByIDRow, error)
 	GetMaterialList(ctx context.Context, idMaterialList int32) (GetMaterialListRow, error)
 	GetMaterialListItem(ctx context.Context, idMaterialListItem int32) (GetMaterialListItemRow, error)
 	GetMaterialListItemDetail(ctx context.Context, idMaterialListItem int32) (GetMaterialListItemDetailRow, error)
@@ -205,11 +211,13 @@ type Querier interface {
 	ListKomponenByMarkerPlanID(ctx context.Context, idMarkerPlan int32) ([]KomponenMarkerPlan, error)
 	ListKomponenBySpreadingPlanID(ctx context.Context, idSpreadingCuttingPlan int32) ([]KomponenSpreadingCuttingPlan, error)
 	ListMarkerPlans(ctx context.Context, arg ListMarkerPlansParams) ([]ListMarkerPlansRow, error)
+	ListMasterPlanItems(ctx context.Context, idMasterPlan int32) ([]ListMasterPlanItemsRow, error)
+	ListMasterPlans(ctx context.Context, arg ListMasterPlansParams) ([]ListMasterPlansRow, error)
 	ListMaterialListItemsByML(ctx context.Context, idMaterialList int32) ([]ListMaterialListItemsByMLRow, error)
 	ListMaterialListsByWorkOrderID(ctx context.Context, idWo int32) ([]ListMaterialListsByWorkOrderIDRow, error)
 	ListMaterialListsPaginated(ctx context.Context, arg ListMaterialListsPaginatedParams) ([]ListMaterialListsPaginatedRow, error)
-	ListDataApproveCuttingPlans(ctx context.Context, arg ListDataApproveCuttingPlansParams) ([]ListDataApproveCuttingPlansRow, error)
 	ListMitra(ctx context.Context, arg ListMitraParams) ([]Mitra, error)
+	ListOutputHarianByItem(ctx context.Context, idMasterPlanItem int32) ([]MasterPlanOutputHarian, error)
 	ListPOClientItemsByPOClientID(ctx context.Context, idPoClient int32) ([]ListPOClientItemsByPOClientIDRow, error)
 	ListPOClients(ctx context.Context, arg ListPOClientsParams) ([]ListPOClientsRow, error)
 	ListPOInternalItemsByPOInternalID(ctx context.Context, idPoInternal int32) ([]PoInternalItem, error)
@@ -240,6 +248,8 @@ type Querier interface {
 	ListSuratJalanClientByMLI(ctx context.Context, idMaterialListItem int32) ([]ListSuratJalanClientByMLIRow, error)
 	ListSuratJalanClients(ctx context.Context, arg ListSuratJalanClientsParams) ([]ListSuratJalanClientsRow, error)
 	ListSuratJalanInternals(ctx context.Context, arg ListSuratJalanInternalsParams) ([]ListSuratJalanInternalsRow, error)
+	ListTargetHarianByItem(ctx context.Context, idMasterPlanItem int32) ([]MasterPlanTargetHarian, error)
+	ListTargetProsesByItem(ctx context.Context, idMasterPlanItem int32) ([]MasterPlanTargetProse, error)
 	ListTimelinePlans(ctx context.Context, arg ListTimelinePlansParams) ([]ListTimelinePlansRow, error)
 	ListUnlockedMaterialListsByWO(ctx context.Context, idWo int32) ([]ListUnlockedMaterialListsByWORow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
@@ -251,6 +261,7 @@ type Querier interface {
 	LockMaterialList(ctx context.Context, idMaterialList int32) (LockMaterialListRow, error)
 	ReceiveInventory(ctx context.Context, arg ReceiveInventoryParams) (ReceiveInventoryRow, error)
 	RejectPasswordResetRequest(ctx context.Context, arg RejectPasswordResetRequestParams) (RejectPasswordResetRequestRow, error)
+	RemoveMasterPlanItem(ctx context.Context, arg RemoveMasterPlanItemParams) (int64, error)
 	ResetUserPasswordTemporary(ctx context.Context, arg ResetUserPasswordTemporaryParams) (int64, error)
 	SoftDeleteMasterData(ctx context.Context, arg SoftDeleteMasterDataParams) error
 	UpdateApprovalStep(ctx context.Context, arg UpdateApprovalStepParams) (UpdateApprovalStepRow, error)
@@ -259,6 +270,7 @@ type Querier interface {
 	UpdateGlobalStatus(ctx context.Context, arg UpdateGlobalStatusParams) (UpdateGlobalStatusRow, error)
 	UpdateHakAkses(ctx context.Context, arg UpdateHakAksesParams) (HakAkse, error)
 	UpdateJenisBarang(ctx context.Context, arg UpdateJenisBarangParams) (JenisBarang, error)
+	UpdateMasterPlan(ctx context.Context, arg UpdateMasterPlanParams) (MasterPlan, error)
 	UpdateMaterialList(ctx context.Context, arg UpdateMaterialListParams) (UpdateMaterialListRow, error)
 	UpdateMaterialListItem(ctx context.Context, arg UpdateMaterialListItemParams) (UpdateMaterialListItemRow, error)
 	UpdateMitra(ctx context.Context, arg UpdateMitraParams) (Mitra, error)
@@ -275,6 +287,9 @@ type Querier interface {
 	UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) (UpdateUserStatusRow, error)
 	UpdateWOShellPlanStatus(ctx context.Context, arg UpdateWOShellPlanStatusParams) error
 	UpdateWarna(ctx context.Context, arg UpdateWarnaParams) (Warna, error)
+	UpsertOutputHarian(ctx context.Context, arg UpsertOutputHarianParams) (MasterPlanOutputHarian, error)
+	UpsertTargetHarian(ctx context.Context, arg UpsertTargetHarianParams) (MasterPlanTargetHarian, error)
+	UpsertTargetProses(ctx context.Context, arg UpsertTargetProsesParams) (MasterPlanTargetProse, error)
 	WorkOrderShellTotalQty(ctx context.Context, idWoShell int32) (int64, error)
 }
 
