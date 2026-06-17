@@ -16,6 +16,10 @@ WHERE (
     $1::text = '' OR
     nama_departemen ILIKE '%' || $1::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'DEPARTEMEN' AND mdd.id_record = DEPARTEMEN.id_departemen
+  )
 `
 
 func (q *Queries) CountDepartemen(ctx context.Context, searchTerm string) (int64, error) {
@@ -53,7 +57,12 @@ func (q *Queries) DeleteDepartemen(ctx context.Context, idDepartemen int32) (int
 
 const getDepartemenByID = `-- name: GetDepartemenByID :one
 SELECT id_departemen, nama_departemen, created_at FROM DEPARTEMEN
-WHERE id_departemen = $1 LIMIT 1
+WHERE id_departemen = $1
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'DEPARTEMEN' AND mdd.id_record = DEPARTEMEN.id_departemen
+  )
+LIMIT 1
 `
 
 func (q *Queries) GetDepartemenByID(ctx context.Context, idDepartemen int32) (Departeman, error) {
@@ -70,6 +79,10 @@ WHERE (
     $1::text = '' OR
     nama_departemen ILIKE '%' || $1::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'DEPARTEMEN' AND mdd.id_record = DEPARTEMEN.id_departemen
+  )
 ORDER BY
     CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN created_at END ASC,
     CASE WHEN $2::text = 'created_at' AND $3::bool THEN created_at END DESC,

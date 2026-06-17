@@ -1,6 +1,11 @@
 -- name: GetJenisBarangByID :one
 SELECT * FROM JENIS_BARANG
-WHERE id_jenis_barang = $1 LIMIT 1;
+WHERE id_jenis_barang = $1
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'JENIS_BARANG' AND mdd.id_record = JENIS_BARANG.id_jenis_barang
+  )
+LIMIT 1;
 
 -- name: ListJenisBarang :many
 SELECT *
@@ -10,6 +15,10 @@ WHERE (
     nama_jenis_barang ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
     kode ILIKE '%' || sqlc.arg(search_term)::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'JENIS_BARANG' AND mdd.id_record = JENIS_BARANG.id_jenis_barang
+  )
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN created_at END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN created_at END DESC,
@@ -30,7 +39,11 @@ WHERE (
     sqlc.arg(search_term)::text = '' OR
     nama_jenis_barang ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
     kode ILIKE '%' || sqlc.arg(search_term)::text || '%'
-);
+)
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'JENIS_BARANG' AND mdd.id_record = JENIS_BARANG.id_jenis_barang
+  );
 
 -- name: CreateJenisBarang :one
 INSERT INTO JENIS_BARANG (nama_jenis_barang, kode)

@@ -25,6 +25,10 @@ WHERE (
     b.satuan ILIKE '%' || $1::text || '%' OR
     b.lokasi_rak ILIKE '%' || $1::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'BARANG' AND mdd.id_record = b.id_barang
+  )
 `
 
 func (q *Queries) CountBarang(ctx context.Context, searchTerm string) (int64, error) {
@@ -95,7 +99,12 @@ SELECT b.id_barang, b.nama_barang, b.kode, b.id_jenis_barang, b.id_mitra, b.crea
 FROM BARANG b
 JOIN MITRA m ON b.id_mitra = m.id_mitra
 JOIN JENIS_BARANG j ON b.id_jenis_barang = j.id_jenis_barang
-WHERE b.id_barang = $1 LIMIT 1
+WHERE b.id_barang = $1
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'BARANG' AND mdd.id_record = b.id_barang
+  )
+LIMIT 1
 `
 
 type GetBarangByIDRow struct {
@@ -145,6 +154,10 @@ WHERE (
     b.satuan ILIKE '%' || $1::text || '%' OR
     b.lokasi_rak ILIKE '%' || $1::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'BARANG' AND mdd.id_record = b.id_barang
+  )
 ORDER BY
     CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN b.created_at END ASC,
     CASE WHEN $2::text = 'created_at' AND $3::bool THEN b.created_at END DESC,

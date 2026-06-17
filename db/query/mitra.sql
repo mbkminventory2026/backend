@@ -1,6 +1,11 @@
 -- name: GetMitraByID :one
 SELECT * FROM MITRA
-WHERE id_mitra = $1 LIMIT 1;
+WHERE id_mitra = $1
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'MITRA' AND mdd.id_record = MITRA.id_mitra
+  )
+LIMIT 1;
 
 -- name: ListMitra :many
 SELECT *
@@ -12,6 +17,10 @@ WHERE (
     email ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
     no_telp ILIKE '%' || sqlc.arg(search_term)::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'MITRA' AND mdd.id_record = MITRA.id_mitra
+  )
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN created_at END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN created_at END DESC,
@@ -38,7 +47,11 @@ WHERE (
     tipe_perusahaan ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
     email ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
     no_telp ILIKE '%' || sqlc.arg(search_term)::text || '%'
-);
+)
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'MITRA' AND mdd.id_record = MITRA.id_mitra
+  );
 
 -- name: CreateMitra :one
 INSERT INTO MITRA (

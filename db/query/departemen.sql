@@ -1,6 +1,11 @@
 -- name: GetDepartemenByID :one
 SELECT * FROM DEPARTEMEN
-WHERE id_departemen = $1 LIMIT 1;
+WHERE id_departemen = $1
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'DEPARTEMEN' AND mdd.id_record = DEPARTEMEN.id_departemen
+  )
+LIMIT 1;
 
 -- name: ListDepartemen :many
 SELECT *
@@ -9,6 +14,10 @@ WHERE (
     sqlc.arg(search_term)::text = '' OR
     nama_departemen ILIKE '%' || sqlc.arg(search_term)::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'DEPARTEMEN' AND mdd.id_record = DEPARTEMEN.id_departemen
+  )
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN created_at END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN created_at END DESC,
@@ -26,7 +35,11 @@ FROM DEPARTEMEN
 WHERE (
     sqlc.arg(search_term)::text = '' OR
     nama_departemen ILIKE '%' || sqlc.arg(search_term)::text || '%'
-);
+)
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'DEPARTEMEN' AND mdd.id_record = DEPARTEMEN.id_departemen
+  );
 
 -- name: CreateDepartemen :one
 INSERT INTO DEPARTEMEN (nama_departemen)
