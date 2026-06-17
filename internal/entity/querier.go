@@ -191,6 +191,7 @@ type Querier interface {
 	HasPendingPasswordResetRequest(ctx context.Context, idUser int32) (bool, error)
 	HasPendingSteps(ctx context.Context, idOtoritas int32) (bool, error)
 	HasPreviousPendingSteps(ctx context.Context, arg HasPreviousPendingStepsParams) (bool, error)
+	IsMasterDataDeleted(ctx context.Context, arg IsMasterDataDeletedParams) (bool, error)
 	IssueInventory(ctx context.Context, arg IssueInventoryParams) (IssueInventoryRow, error)
 	ListApprovalDetailsByHeaderID(ctx context.Context, idOtoritas int32) ([]OtoritasDokumenDetail, error)
 	ListApprovalHistory(ctx context.Context, arg ListApprovalHistoryParams) ([]ListApprovalHistoryRow, error)
@@ -207,6 +208,7 @@ type Querier interface {
 	ListMaterialListItemsByML(ctx context.Context, idMaterialList int32) ([]ListMaterialListItemsByMLRow, error)
 	ListMaterialListsByWorkOrderID(ctx context.Context, idWo int32) ([]ListMaterialListsByWorkOrderIDRow, error)
 	ListMaterialListsPaginated(ctx context.Context, arg ListMaterialListsPaginatedParams) ([]ListMaterialListsPaginatedRow, error)
+	ListDataApproveCuttingPlans(ctx context.Context, arg ListDataApproveCuttingPlansParams) ([]ListDataApproveCuttingPlansRow, error)
 	ListMitra(ctx context.Context, arg ListMitraParams) ([]Mitra, error)
 	ListPOClientItemsByPOClientID(ctx context.Context, idPoClient int32) ([]ListPOClientItemsByPOClientIDRow, error)
 	ListPOClients(ctx context.Context, arg ListPOClientsParams) ([]ListPOClientsRow, error)
@@ -250,6 +252,7 @@ type Querier interface {
 	ReceiveInventory(ctx context.Context, arg ReceiveInventoryParams) (ReceiveInventoryRow, error)
 	RejectPasswordResetRequest(ctx context.Context, arg RejectPasswordResetRequestParams) (RejectPasswordResetRequestRow, error)
 	ResetUserPasswordTemporary(ctx context.Context, arg ResetUserPasswordTemporaryParams) (int64, error)
+	SoftDeleteMasterData(ctx context.Context, arg SoftDeleteMasterDataParams) error
 	UpdateApprovalStep(ctx context.Context, arg UpdateApprovalStepParams) (UpdateApprovalStepRow, error)
 	UpdateBarang(ctx context.Context, arg UpdateBarangParams) (Barang, error)
 	UpdateDepartemen(ctx context.Context, arg UpdateDepartemenParams) (Departeman, error)

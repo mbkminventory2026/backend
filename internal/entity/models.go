@@ -117,6 +117,14 @@ type MarkerPlan struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
+type MasterDataDeleted struct {
+	IDDeleted int32              `json:"id_deleted"`
+	NamaTabel string             `json:"nama_tabel"`
+	IDRecord  int32              `json:"id_record"`
+	DeletedBy pgtype.Int4        `json:"deleted_by"`
+	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+}
+
 type MasterSize struct {
 	IDSize    int32              `json:"id_size"`
 	NamaSize  string             `json:"nama_size"`

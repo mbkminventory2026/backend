@@ -2,12 +2,20 @@
 SELECT *
 FROM MASTER_SIZE
 WHERE id_size = $1
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'MASTER_SIZE' AND mdd.id_record = MASTER_SIZE.id_size
+  )
 LIMIT 1;
 
 -- name: GetSizeByName :one
 SELECT *
 FROM MASTER_SIZE
 WHERE LOWER(BTRIM(nama_size)) = LOWER(BTRIM($1))
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'MASTER_SIZE' AND mdd.id_record = MASTER_SIZE.id_size
+  )
 LIMIT 1;
 
 -- name: ListSizes :many
@@ -17,6 +25,10 @@ WHERE (
     sqlc.arg(search_term)::text = '' OR
     nama_size ILIKE '%' || sqlc.arg(search_term)::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'MASTER_SIZE' AND mdd.id_record = MASTER_SIZE.id_size
+  )
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN created_at END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN created_at END DESC,
@@ -34,7 +46,11 @@ FROM MASTER_SIZE
 WHERE (
     sqlc.arg(search_term)::text = '' OR
     nama_size ILIKE '%' || sqlc.arg(search_term)::text || '%'
-);
+)
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'MASTER_SIZE' AND mdd.id_record = MASTER_SIZE.id_size
+  );
 
 -- name: CreateSize :one
 INSERT INTO MASTER_SIZE (nama_size)
