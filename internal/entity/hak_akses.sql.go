@@ -19,6 +19,10 @@ WHERE (
     domain_permission ILIKE '%' || $1::text || '%' OR
     aksi_permission ILIKE '%' || $1::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'HAK_AKSES' AND mdd.id_record = HAK_AKSES.id_hak_akses
+  )
 `
 
 func (q *Queries) CountHakAkses(ctx context.Context, searchTerm string) (int64, error) {
@@ -78,7 +82,12 @@ func (q *Queries) DeleteHakAkses(ctx context.Context, idHakAkses int32) (int64, 
 
 const getHakAksesByID = `-- name: GetHakAksesByID :one
 SELECT id_hak_akses, nama_halaman, created_at, kode_permission, deskripsi, domain_permission, aksi_permission FROM HAK_AKSES
-WHERE id_hak_akses = $1 LIMIT 1
+WHERE id_hak_akses = $1
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'HAK_AKSES' AND mdd.id_record = HAK_AKSES.id_hak_akses
+  )
+LIMIT 1
 `
 
 func (q *Queries) GetHakAksesByID(ctx context.Context, idHakAkses int32) (HakAkse, error) {
@@ -106,6 +115,10 @@ WHERE (
     domain_permission ILIKE '%' || $1::text || '%' OR
     aksi_permission ILIKE '%' || $1::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'HAK_AKSES' AND mdd.id_record = HAK_AKSES.id_hak_akses
+  )
 ORDER BY
     CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN created_at END ASC,
     CASE WHEN $2::text = 'created_at' AND $3::bool THEN created_at END DESC,

@@ -17,6 +17,10 @@ WHERE (
     nama_jenis_barang ILIKE '%' || $1::text || '%' OR
     kode ILIKE '%' || $1::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'JENIS_BARANG' AND mdd.id_record = JENIS_BARANG.id_jenis_barang
+  )
 `
 
 func (q *Queries) CountJenisBarang(ctx context.Context, searchTerm string) (int64, error) {
@@ -64,7 +68,12 @@ func (q *Queries) DeleteJenisBarang(ctx context.Context, idJenisBarang int32) (i
 
 const getJenisBarangByID = `-- name: GetJenisBarangByID :one
 SELECT id_jenis_barang, nama_jenis_barang, kode, created_at FROM JENIS_BARANG
-WHERE id_jenis_barang = $1 LIMIT 1
+WHERE id_jenis_barang = $1
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'JENIS_BARANG' AND mdd.id_record = JENIS_BARANG.id_jenis_barang
+  )
+LIMIT 1
 `
 
 func (q *Queries) GetJenisBarangByID(ctx context.Context, idJenisBarang int32) (JenisBarang, error) {
@@ -87,6 +96,10 @@ WHERE (
     nama_jenis_barang ILIKE '%' || $1::text || '%' OR
     kode ILIKE '%' || $1::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'JENIS_BARANG' AND mdd.id_record = JENIS_BARANG.id_jenis_barang
+  )
 ORDER BY
     CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN created_at END ASC,
     CASE WHEN $2::text = 'created_at' AND $3::bool THEN created_at END DESC,

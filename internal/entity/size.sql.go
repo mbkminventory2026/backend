@@ -16,6 +16,10 @@ WHERE (
     $1::text = '' OR
     nama_size ILIKE '%' || $1::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'MASTER_SIZE' AND mdd.id_record = MASTER_SIZE.id_size
+  )
 `
 
 func (q *Queries) CountSizes(ctx context.Context, searchTerm string) (int64, error) {
@@ -55,6 +59,10 @@ const getSizeByID = `-- name: GetSizeByID :one
 SELECT id_size, nama_size, created_at
 FROM MASTER_SIZE
 WHERE id_size = $1
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'MASTER_SIZE' AND mdd.id_record = MASTER_SIZE.id_size
+  )
 LIMIT 1
 `
 
@@ -69,6 +77,10 @@ const getSizeByName = `-- name: GetSizeByName :one
 SELECT id_size, nama_size, created_at
 FROM MASTER_SIZE
 WHERE LOWER(BTRIM(nama_size)) = LOWER(BTRIM($1))
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'MASTER_SIZE' AND mdd.id_record = MASTER_SIZE.id_size
+  )
 LIMIT 1
 `
 
@@ -86,6 +98,10 @@ WHERE (
     $1::text = '' OR
     nama_size ILIKE '%' || $1::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'MASTER_SIZE' AND mdd.id_record = MASTER_SIZE.id_size
+  )
 ORDER BY
     CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN created_at END ASC,
     CASE WHEN $2::text = 'created_at' AND $3::bool THEN created_at END DESC,

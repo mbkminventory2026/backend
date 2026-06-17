@@ -3,7 +3,12 @@ SELECT b.*, m.nama_perusahaan, j.nama_jenis_barang
 FROM BARANG b
 JOIN MITRA m ON b.id_mitra = m.id_mitra
 JOIN JENIS_BARANG j ON b.id_jenis_barang = j.id_jenis_barang
-WHERE b.id_barang = $1 LIMIT 1;
+WHERE b.id_barang = $1
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'BARANG' AND mdd.id_record = b.id_barang
+  )
+LIMIT 1;
 
 -- name: ListBarang :many
 SELECT b.*, m.nama_perusahaan, j.nama_jenis_barang
@@ -19,6 +24,10 @@ WHERE (
     b.satuan ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
     b.lokasi_rak ILIKE '%' || sqlc.arg(search_term)::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'BARANG' AND mdd.id_record = b.id_barang
+  )
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN b.created_at END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN b.created_at END DESC,
@@ -49,7 +58,11 @@ WHERE (
     m.nama_perusahaan ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
     b.satuan ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
     b.lokasi_rak ILIKE '%' || sqlc.arg(search_term)::text || '%'
-);
+)
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'BARANG' AND mdd.id_record = b.id_barang
+  );
 
 -- name: CreateBarang :one
 INSERT INTO BARANG (
@@ -67,4 +80,3 @@ RETURNING *;
 -- name: DeleteBarang :execrows
 DELETE FROM BARANG
 WHERE id_barang = $1;
-
