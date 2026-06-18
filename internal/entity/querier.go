@@ -208,7 +208,6 @@ type Querier interface {
 	ListMaterialListItemsByML(ctx context.Context, idMaterialList int32) ([]ListMaterialListItemsByMLRow, error)
 	ListMaterialListsByWorkOrderID(ctx context.Context, idWo int32) ([]ListMaterialListsByWorkOrderIDRow, error)
 	ListMaterialListsPaginated(ctx context.Context, arg ListMaterialListsPaginatedParams) ([]ListMaterialListsPaginatedRow, error)
-	ListDataApproveCuttingPlans(ctx context.Context, arg ListDataApproveCuttingPlansParams) ([]ListDataApproveCuttingPlansRow, error)
 	ListMitra(ctx context.Context, arg ListMitraParams) ([]Mitra, error)
 	ListPOClientItemsByPOClientID(ctx context.Context, idPoClient int32) ([]ListPOClientItemsByPOClientIDRow, error)
 	ListPOClients(ctx context.Context, arg ListPOClientsParams) ([]ListPOClientsRow, error)
