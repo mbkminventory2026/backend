@@ -7946,7 +7946,7 @@ const docTemplate = `{
                 },
                 "role_name": {
                     "type": "string",
-                    "example": "OPERATOR"
+                    "example": "ADMIN_SISTEM"
                 },
                 "user_id": {
                     "type": "integer",
