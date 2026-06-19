@@ -18,6 +18,10 @@ WHERE (
     $1::text = '' OR
     nama_warna ILIKE '%' || $1::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'WARNA' AND mdd.id_record = WARNA.id_warna
+  )
 `
 
 func (q *Queries) CountWarna(ctx context.Context, searchTerm string) (int64, error) {
@@ -65,7 +69,12 @@ func (q *Queries) DeleteWarna(ctx context.Context, idWarna int32) (int64, error)
 
 const getWarnaByID = `-- name: GetWarnaByID :one
 SELECT id_warna, nama_warna, kode_hex, created_at FROM WARNA
-WHERE id_warna = $1 LIMIT 1
+WHERE id_warna = $1
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'WARNA' AND mdd.id_record = WARNA.id_warna
+  )
+LIMIT 1
 `
 
 func (q *Queries) GetWarnaByID(ctx context.Context, idWarna int32) (Warna, error) {
@@ -87,6 +96,10 @@ WHERE (
     $1::text = '' OR
     nama_warna ILIKE '%' || $1::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'WARNA' AND mdd.id_record = WARNA.id_warna
+  )
 ORDER BY
     CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN created_at END ASC,
     CASE WHEN $2::text = 'created_at' AND $3::bool THEN created_at END DESC,

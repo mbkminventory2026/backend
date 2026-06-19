@@ -48,6 +48,14 @@ type Barang struct {
 	StokMinimum   int32              `json:"stok_minimum"`
 }
 
+type DataApproveCuttingPlan struct {
+	IDDacp    int32              `json:"id_dacp"`
+	NoDokumen string             `json:"no_dokumen"`
+	Tanggal   pgtype.Date        `json:"tanggal"`
+	IDWo      int32              `json:"id_wo"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
 type Departeman struct {
 	IDDepartemen   int32              `json:"id_departemen"`
 	NamaDepartemen string             `json:"nama_departemen"`
@@ -107,6 +115,58 @@ type MarkerPlan struct {
 	TanggalEfektif pgtype.Date        `json:"tanggal_efektif"`
 	IDWoShell      int32              `json:"id_wo_shell"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+type MasterDataDeleted struct {
+	IDDeleted int32              `json:"id_deleted"`
+	NamaTabel string             `json:"nama_tabel"`
+	IDRecord  int32              `json:"id_record"`
+	DeletedBy pgtype.Int4        `json:"deleted_by"`
+	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type MasterPlan struct {
+	IDMasterPlan     int32              `json:"id_master_plan"`
+	IDDepartemen     int32              `json:"id_departemen"`
+	IDProductionLine int32              `json:"id_production_line"`
+	Nama             string             `json:"nama"`
+	CreatedBy        pgtype.Int4        `json:"created_by"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
+type MasterPlanItem struct {
+	IDMasterPlanItem int32              `json:"id_master_plan_item"`
+	IDMasterPlan     int32              `json:"id_master_plan"`
+	IDWoShell        int32              `json:"id_wo_shell"`
+	NoUrut           int32              `json:"no_urut"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
+type MasterPlanOutputHarian struct {
+	IDOutputHarian   int32              `json:"id_output_harian"`
+	IDMasterPlanItem int32              `json:"id_master_plan_item"`
+	Tanggal          pgtype.Date        `json:"tanggal"`
+	Output           int32              `json:"output"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
+type MasterPlanTargetHarian struct {
+	IDTargetHarian   int32              `json:"id_target_harian"`
+	IDMasterPlanItem int32              `json:"id_master_plan_item"`
+	Tanggal          pgtype.Date        `json:"tanggal"`
+	Target           int32              `json:"target"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
+type MasterPlanTargetProse struct {
+	IDTargetProses   int32              `json:"id_target_proses"`
+	IDMasterPlanItem int32              `json:"id_master_plan_item"`
+	Tanggal          pgtype.Date        `json:"tanggal"`
+	NamaProses       string             `json:"nama_proses"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 }
 
 type MasterSize struct {
@@ -389,6 +449,26 @@ type Received struct {
 	IDMaterialListItem int32              `json:"id_material_list_item"`
 }
 
+type Rekonsiliasi struct {
+	IDRekonsiliasi   int32              `json:"id_rekonsiliasi"`
+	IDWo             int32              `json:"id_wo"`
+	Jasa             string             `json:"jasa"`
+	NoPo             string             `json:"no_po"`
+	Delivery         pgtype.Date        `json:"delivery"`
+	Buyer            string             `json:"buyer"`
+	Brand            string             `json:"brand"`
+	Style            string             `json:"style"`
+	QtyPo            int32              `json:"qty_po"`
+	PlanCutTotal     int64              `json:"plan_cut_total"`
+	ConsBajuSummary  string             `json:"cons_baju_summary"`
+	NamaBahan        string             `json:"nama_bahan"`
+	WarnaKainSummary []byte             `json:"warna_kain_summary"`
+	CreatedBy        pgtype.Int4        `json:"created_by"`
+	UpdatedBy        pgtype.Int4        `json:"updated_by"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
 type RekonsiliasiMaterial struct {
 	IDRekonsiliasiMaterial int32              `json:"id_rekonsiliasi_material"`
 	Description            string             `json:"description"`
@@ -409,12 +489,48 @@ type RekonsiliasiMaterial struct {
 	CreatedAt              pgtype.Timestamptz `json:"created_at"`
 }
 
+type RekonsiliasiMaterialRow struct {
+	IDRekonsiliasiMaterialRow int32              `json:"id_rekonsiliasi_material_row"`
+	IDRekonsiliasi            int32              `json:"id_rekonsiliasi"`
+	RowNo                     int32              `json:"row_no"`
+	Kategori                  string             `json:"kategori"`
+	Description               string             `json:"description"`
+	SizeLabel                 string             `json:"size_label"`
+	RatioSource               pgtype.Numeric     `json:"ratio_source"`
+	RatioInput                pgtype.Numeric     `json:"ratio_input"`
+	QtyPerPcsInput            pgtype.Numeric     `json:"qty_per_pcs_input"`
+	QtyWo                     int32              `json:"qty_wo"`
+	Toleransi                 int32              `json:"toleransi"`
+	Satuan                    string             `json:"satuan"`
+	QtyActualKirimSource      int32              `json:"qty_actual_kirim_source"`
+	QtyActualKirimManual      int32              `json:"qty_actual_kirim_manual"`
+	RejectQty                 int32              `json:"reject_qty"`
+	ReturQty                  int32              `json:"retur_qty"`
+	Keterangan                string             `json:"keterangan"`
+	IDMaterialListItem        pgtype.Int4        `json:"id_material_list_item"`
+	IDWoShell                 pgtype.Int4        `json:"id_wo_shell"`
+	IDWoTrim                  pgtype.Int4        `json:"id_wo_trim"`
+	CreatedAt                 pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt                 pgtype.Timestamptz `json:"updated_at"`
+}
+
 type RekonsiliasiMaterialTerima struct {
 	IDRekonsiliasiMaterialTerima int32              `json:"id_rekonsiliasi_material_terima"`
 	Keterangan                   string             `json:"keterangan"`
 	Qty                          int32              `json:"qty"`
 	IDRekonsiliasiMaterial       int32              `json:"id_rekonsiliasi_material"`
 	CreatedAt                    pgtype.Timestamptz `json:"created_at"`
+}
+
+type RekonsiliasiTerimaEntry struct {
+	IDRekonsiliasiTerimaEntry int32              `json:"id_rekonsiliasi_terima_entry"`
+	IDRekonsiliasiMaterialRow int32              `json:"id_rekonsiliasi_material_row"`
+	EntryType                 string             `json:"entry_type"`
+	EntryLabel                string             `json:"entry_label"`
+	Qty                       int32              `json:"qty"`
+	Note                      string             `json:"note"`
+	CreatedAt                 pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt                 pgtype.Timestamptz `json:"updated_at"`
 }
 
 type ReportCutting struct {

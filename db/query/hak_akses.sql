@@ -1,6 +1,11 @@
 -- name: GetHakAksesByID :one
 SELECT * FROM HAK_AKSES
-WHERE id_hak_akses = $1 LIMIT 1;
+WHERE id_hak_akses = $1
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'HAK_AKSES' AND mdd.id_record = HAK_AKSES.id_hak_akses
+  )
+LIMIT 1;
 
 -- name: ListHakAkses :many
 SELECT *
@@ -12,6 +17,10 @@ WHERE (
     domain_permission ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
     aksi_permission ILIKE '%' || sqlc.arg(search_term)::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'HAK_AKSES' AND mdd.id_record = HAK_AKSES.id_hak_akses
+  )
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN created_at END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN created_at END DESC,
@@ -38,7 +47,11 @@ WHERE (
     kode_permission ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
     domain_permission ILIKE '%' || sqlc.arg(search_term)::text || '%' OR
     aksi_permission ILIKE '%' || sqlc.arg(search_term)::text || '%'
-);
+)
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'HAK_AKSES' AND mdd.id_record = HAK_AKSES.id_hak_akses
+  );
 
 -- name: CreateHakAkses :one
 INSERT INTO HAK_AKSES (kode_permission, nama_halaman, deskripsi, domain_permission, aksi_permission)

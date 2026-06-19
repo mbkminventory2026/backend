@@ -150,6 +150,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	masterPlanUseCase, err := usecase.NewMasterPlanUseCase(queries)
+	if err != nil {
+		logger.Error("failed to initialize master plan usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	markerPlanUseCase, err := usecase.NewMarkerPlanUseCase(queries, dbPool)
 	if err != nil {
 		logger.Error("failed to initialize marker plan usecase", slog.String("error", err.Error()))
@@ -216,6 +223,13 @@ func main() {
 	excelExportUseCase, err := usecase.NewExcelExportUseCase(excelRenderer)
 	if err != nil {
 		logger.Error("failed to initialize excel export usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	rekonsiliasiUseCase, err := usecase.NewRekonsiliasiUseCase(queries, dbPool)
+	if err != nil {
+		logger.Error("failed to initialize rekonsiliasi usecase", slog.String("error", err.Error()))
 		dbPool.Close()
 		os.Exit(1)
 	}
@@ -291,6 +305,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	masterPlanHandler, err := httpdelivery.NewMasterPlanHandler(masterPlanUseCase)
+	if err != nil {
+		logger.Error("failed to initialize master plan handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	markerPlanHandler, err := httpdelivery.NewMarkerPlanHandler(markerPlanUseCase)
 	if err != nil {
 		logger.Error("failed to initialize marker plan handler", slog.String("error", err.Error()))
@@ -345,6 +366,13 @@ func main() {
 	excelExportHandler, err := httpdelivery.NewExcelExportHandler(excelExportUseCase)
 	if err != nil {
 		logger.Error("failed to initialize excel export handler", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	rekonsiliasiHandler, err := httpdelivery.NewRekonsiliasiHandler(rekonsiliasiUseCase)
+	if err != nil {
+		logger.Error("failed to initialize rekonsiliasi handler", slog.String("error", err.Error()))
 		dbPool.Close()
 		os.Exit(1)
 	}
@@ -413,6 +441,7 @@ func main() {
 		productionMasterGroup.DELETE("/production-status-plans/:id", productionMasterHandler.DeleteProductionStatusPlan)
 	}
 
+	masterPlanHandler.RegisterRoutes(router, authMiddleware)
 	markerPlanHandler.RegisterRoutes(router, authMiddleware)
 	spreadingCuttingPlanHandler.RegisterRoutes(router, authMiddleware)
 	dataApproveCuttingPlanHandler.RegisterRoutes(router, authMiddleware)
@@ -422,6 +451,7 @@ func main() {
 	dashboardHandler.RegisterRoutes(router, authMiddleware)
 	reportHandler.RegisterRoutes(router, authMiddleware)
 	excelExportHandler.RegisterRoutes(router, authMiddleware)
+	rekonsiliasiHandler.RegisterRoutes(router, authMiddleware)
 	auditLogHandler.RegisterRoutes(router, authMiddleware)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

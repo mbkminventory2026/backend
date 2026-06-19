@@ -359,7 +359,7 @@ func (u *AuthUseCase) ListForgotPasswordRequests(ctx context.Context) ([]model.P
 	return items, nil
 }
 
-func (u *AuthUseCase) ApproveForgotPasswordRequest(ctx context.Context, requestID int32, operatorID int32) (*model.ApprovePasswordResetResponse, error) {
+func (u *AuthUseCase) ApproveForgotPasswordRequest(ctx context.Context, requestID int32, adminSistemID int32) (*model.ApprovePasswordResetResponse, error) {
 	beforeRequest, err := u.getPasswordResetRequestForAudit(ctx, requestID)
 	if err != nil {
 		return nil, err
@@ -386,7 +386,7 @@ func (u *AuthUseCase) ApproveForgotPasswordRequest(ctx context.Context, requestI
 		return nil, fmt.Errorf("%w: hash temporary password", ErrAuthServiceUnavailable)
 	}
 
-	processedBy := nullableInt32Param(&operatorID)
+	processedBy := nullableInt32Param(&adminSistemID)
 	requestRow, err := qtx.ApprovePasswordResetRequest(ctx, entity.ApprovePasswordResetRequestParams{
 		IDPasswordResetRequest: requestID,
 		ApprovedBy:             processedBy,
@@ -433,7 +433,7 @@ func (u *AuthUseCase) ApproveForgotPasswordRequest(ctx context.Context, requestI
 			RejectedAt:             nullableTimestampString(requestRow.RejectedAt),
 			CompletedAt:            nullableTimestampString(requestRow.CompletedAt),
 			RejectedReason:         requestRow.RejectedReason,
-			ApprovedBy:             &operatorID,
+			ApprovedBy:             &adminSistemID,
 		},
 		TemporaryPassword: temporaryPassword,
 	}
@@ -449,7 +449,7 @@ func (u *AuthUseCase) ApproveForgotPasswordRequest(ctx context.Context, requestI
 	return response, nil
 }
 
-func (u *AuthUseCase) RejectForgotPasswordRequest(ctx context.Context, requestID int32, operatorID int32, rejectedReason string) (*model.PasswordResetRequestResponse, error) {
+func (u *AuthUseCase) RejectForgotPasswordRequest(ctx context.Context, requestID int32, adminSistemID int32, rejectedReason string) (*model.PasswordResetRequestResponse, error) {
 	beforeRequest, err := u.getPasswordResetRequestForAudit(ctx, requestID)
 	if err != nil {
 		return nil, err
@@ -457,7 +457,7 @@ func (u *AuthUseCase) RejectForgotPasswordRequest(ctx context.Context, requestID
 
 	row, err := u.userRepo.RejectPasswordResetRequest(ctx, entity.RejectPasswordResetRequestParams{
 		IDPasswordResetRequest: requestID,
-		RejectedBy:             nullableInt32Param(&operatorID),
+		RejectedBy:             nullableInt32Param(&adminSistemID),
 		RejectedReason:         rejectedReason,
 	})
 	if err != nil {
@@ -485,7 +485,7 @@ func (u *AuthUseCase) RejectForgotPasswordRequest(ctx context.Context, requestID
 		RejectedAt:             nullableTimestampString(row.RejectedAt),
 		CompletedAt:            nullableTimestampString(row.CompletedAt),
 		RejectedReason:         row.RejectedReason,
-		RejectedBy:             &operatorID,
+		RejectedBy:             &adminSistemID,
 	}
 
 	u.recordPasswordResetAudit(

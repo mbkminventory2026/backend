@@ -137,12 +137,12 @@ func (u *MasterDataUseCase) DeleteDepartemen(ctx context.Context, id int32) erro
 		return err
 	}
 
-	affected, err := u.repo.DeleteDepartemen(ctx, id)
-	if err != nil {
+	if err := u.repo.SoftDeleteMasterData(ctx, entity.SoftDeleteMasterDataParams{
+		NamaTabel: "DEPARTEMEN",
+		IDRecord:  id,
+		DeletedBy: actorIDFromCtx(ctx),
+	}); err != nil {
 		return err
-	}
-	if affected == 0 {
-		return ErrMasterDataNotFound
 	}
 
 	u.recordDepartemenDeleteAudit(ctx, existing)
@@ -253,12 +253,12 @@ func (u *MasterDataUseCase) DeleteJenisBarang(ctx context.Context, id int32) err
 		return err
 	}
 
-	affected, err := u.repo.DeleteJenisBarang(ctx, id)
-	if err != nil {
+	if err := u.repo.SoftDeleteMasterData(ctx, entity.SoftDeleteMasterDataParams{
+		NamaTabel: "JENIS_BARANG",
+		IDRecord:  id,
+		DeletedBy: actorIDFromCtx(ctx),
+	}); err != nil {
 		return err
-	}
-	if affected == 0 {
-		return ErrMasterDataNotFound
 	}
 
 	u.recordJenisBarangDeleteAudit(ctx, existing)
@@ -399,12 +399,12 @@ func (u *MasterDataUseCase) DeleteMitra(ctx context.Context, id int32) error {
 		return err
 	}
 
-	affected, err := u.repo.DeleteMitra(ctx, id)
-	if err != nil {
+	if err := u.repo.SoftDeleteMasterData(ctx, entity.SoftDeleteMasterDataParams{
+		NamaTabel: "MITRA",
+		IDRecord:  id,
+		DeletedBy: actorIDFromCtx(ctx),
+	}); err != nil {
 		return err
-	}
-	if affected == 0 {
-		return ErrMasterDataNotFound
 	}
 
 	u.recordMitraDeleteAudit(ctx, existing)
@@ -531,12 +531,12 @@ func (u *MasterDataUseCase) DeleteBarang(ctx context.Context, id int32) error {
 		return err
 	}
 
-	affected, err := u.repo.DeleteBarang(ctx, id)
-	if err != nil {
+	if err := u.repo.SoftDeleteMasterData(ctx, entity.SoftDeleteMasterDataParams{
+		NamaTabel: "BARANG",
+		IDRecord:  id,
+		DeletedBy: actorIDFromCtx(ctx),
+	}); err != nil {
 		return err
-	}
-	if affected == 0 {
-		return ErrMasterDataNotFound
 	}
 
 	u.recordBarangDeleteAudit(ctx, existing)
@@ -669,12 +669,12 @@ func (u *MasterDataUseCase) DeleteHakAkses(ctx context.Context, id int32) error 
 		return err
 	}
 
-	affected, err := u.repo.DeleteHakAkses(ctx, id)
-	if err != nil {
+	if err := u.repo.SoftDeleteMasterData(ctx, entity.SoftDeleteMasterDataParams{
+		NamaTabel: "HAK_AKSES",
+		IDRecord:  id,
+		DeletedBy: actorIDFromCtx(ctx),
+	}); err != nil {
 		return err
-	}
-	if affected == 0 {
-		return ErrMasterDataNotFound
 	}
 
 	u.recordHakAksesDeleteAudit(ctx, existing)
@@ -686,14 +686,6 @@ func mapMasterDataConflict(err error) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 		return ErrMasterDataDuplicateCode
-	}
-	return err
-}
-
-func mapMasterDataDeleteConflict(err error) error {
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-		return ErrMasterDataInUse
 	}
 	return err
 }
@@ -804,12 +796,12 @@ func (u *MasterDataUseCase) DeleteWarna(ctx context.Context, id int32) error {
 		return err
 	}
 
-	affected, err := u.repo.DeleteWarna(ctx, id)
-	if err != nil {
+	if err := u.repo.SoftDeleteMasterData(ctx, entity.SoftDeleteMasterDataParams{
+		NamaTabel: "WARNA",
+		IDRecord:  id,
+		DeletedBy: actorIDFromCtx(ctx),
+	}); err != nil {
 		return err
-	}
-	if affected == 0 {
-		return ErrMasterDataNotFound
 	}
 
 	u.recordWarnaDeleteAudit(ctx, existing)
@@ -915,17 +907,24 @@ func (u *MasterDataUseCase) DeleteSize(ctx context.Context, id int32) error {
 		return err
 	}
 
-	affected, err := u.repo.DeleteSize(ctx, id)
-	if err != nil {
-		return mapMasterDataDeleteConflict(err)
-	}
-	if affected == 0 {
-		return ErrMasterDataNotFound
+	if err := u.repo.SoftDeleteMasterData(ctx, entity.SoftDeleteMasterDataParams{
+		NamaTabel: "MASTER_SIZE",
+		IDRecord:  id,
+		DeletedBy: actorIDFromCtx(ctx),
+	}); err != nil {
+		return err
 	}
 
 	u.recordSizeDeleteAudit(ctx, existing)
 
 	return nil
+}
+
+func actorIDFromCtx(ctx context.Context) pgtype.Int4 {
+	if alCtx, ok := GetAuditLogContext(ctx); ok && alCtx.ActorUserID != nil {
+		return pgtype.Int4{Int32: *alCtx.ActorUserID, Valid: true}
+	}
+	return pgtype.Int4{Valid: false}
 }
 
 func ptrStringToPgText(s *string) pgtype.Text {

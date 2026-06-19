@@ -552,25 +552,25 @@ func (u *WorkOrderProductionUseCase) ListProductionSummary(ctx context.Context, 
 	items := make([]model.ProductionAggregateResponse, 0, len(rows))
 	total := int64(0)
 	for _, row := range rows {
-			total = row.TotalCount
-			idSize := row.IDSize
-			items = append(items, model.ProductionAggregateResponse{
-				IDWOShellSize: row.IDWoShellSize,
-				IDSize:        &idSize,
-				ModelName:     row.ModelName,
-				Size:          row.Size,
-				TargetQty:     row.TargetQty,
-				Production: model.ProductionStats{
-					Cutting: row.CuttingQty,
-					Sewing:  row.SewingQty,
-					QCPass:  row.QcPassQty,
-					Packing: row.PackingQty,
-					Shipped: row.ShippedQty,
-				},
-				LastUpdated: nullableTimestampString(row.LastUpdated),
-				Status:      deriveProductionStatus(row.TargetQty, row.CuttingQty, row.SewingQty, row.QcPassQty, row.PackingQty, row.ShippedQty),
-			})
-		}
+		total = row.TotalCount
+		idSize := row.IDSize
+		items = append(items, model.ProductionAggregateResponse{
+			IDWOShellSize: row.IDWoShellSize,
+			IDSize:        &idSize,
+			ModelName:     row.ModelName,
+			Size:          row.Size,
+			TargetQty:     row.TargetQty,
+			Production: model.ProductionStats{
+				Cutting: row.CuttingQty,
+				Sewing:  row.SewingQty,
+				QCPass:  row.QcPassQty,
+				Packing: row.PackingQty,
+				Shipped: row.ShippedQty,
+			},
+			LastUpdated: nullableTimestampString(row.LastUpdated),
+			Status:      deriveProductionStatus(row.TargetQty, row.CuttingQty, row.SewingQty, row.QcPassQty, row.PackingQty, row.ShippedQty),
+		})
+	}
 
 	return &model.ProductionSummaryListResponse{
 		Items:      items,

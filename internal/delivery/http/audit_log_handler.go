@@ -27,7 +27,7 @@ func NewAuditLogHandler(useCase *usecase.AuditLogUseCase) (*AuditLogHandler, err
 
 func (h *AuditLogHandler) RegisterRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc) {
 	api := router.Group("/api/v1")
-	api.Use(authMiddleware, RequireInternalUser(), RequireOperatorUser(), RequirePermission(PermissionLogRead))
+	api.Use(authMiddleware, RequireInternalUser(), RequireAdminSistemUser(), RequirePermission(PermissionLogRead))
 	{
 		api.GET("/activity-logs", h.List)
 		api.GET("/activity-logs/:id", h.GetByID)
@@ -36,7 +36,7 @@ func (h *AuditLogHandler) RegisterRoutes(router *gin.Engine, authMiddleware gin.
 
 // List godoc
 // @Summary      List activity logs
-// @Description  Retrieves paginated audit log history for operator users.
+// @Description  Retrieves paginated audit log history for admin sistem users.
 // @Tags         Audit Logs
 // @Produce      json
 // @Security     BearerAuth
@@ -98,7 +98,7 @@ func (h *AuditLogHandler) List(c *gin.Context) {
 
 // GetByID godoc
 // @Summary      Get activity log detail
-// @Description  Retrieves a single audit log detail for operator users.
+// @Description  Retrieves a single audit log detail for admin sistem users.
 // @Tags         Audit Logs
 // @Produce      json
 // @Security     BearerAuth

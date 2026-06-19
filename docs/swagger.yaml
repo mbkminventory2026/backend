@@ -66,6 +66,26 @@ definitions:
       estimasi_waktu_total_hari:
         type: number
     type: object
+  model.AddMasterPlanItemEntry:
+    properties:
+      id_wo_shell:
+        type: integer
+      no_urut:
+        minimum: 0
+        type: integer
+    required:
+    - id_wo_shell
+    type: object
+  model.AddMasterPlanItemRequest:
+    properties:
+      id_wo_shell:
+        type: integer
+      no_urut:
+        minimum: 0
+        type: integer
+    required:
+    - id_wo_shell
+    type: object
   model.AktivitasLogResponse:
     properties:
       aksi:
@@ -344,6 +364,19 @@ definitions:
         example: success
         type: string
     type: object
+  model.CreateDataApproveCuttingPlanRequest:
+    properties:
+      id_wo:
+        type: integer
+      no_dokumen:
+        type: string
+      tanggal:
+        type: string
+    required:
+    - id_wo
+    - no_dokumen
+    - tanggal
+    type: object
   model.CreateDepartemenRequest:
     properties:
       nama_departemen:
@@ -458,6 +491,22 @@ definitions:
     - id_wo_shell
     - no_dokumen
     - tanggal_efektif
+    type: object
+  model.CreateMasterPlanRequest:
+    properties:
+      id_departemen:
+        type: integer
+      id_production_line:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.AddMasterPlanItemEntry'
+        type: array
+      nama:
+        type: string
+    required:
+    - id_departemen
+    - id_production_line
     type: object
   model.CreateMaterialListItemRequest:
     properties:
@@ -891,6 +940,13 @@ definitions:
     - id_wo_shell
     - sizes
     type: object
+  model.CreateRekonsiliasiRequest:
+    properties:
+      id_wo:
+        type: integer
+    required:
+    - id_wo
+    type: object
   model.CreateRoleRequest:
     properties:
       hak_akses_ids:
@@ -1185,6 +1241,124 @@ definitions:
         type: string
       status:
         example: success
+        type: string
+    type: object
+  model.DataApproveCuttingPlanErrorDetail:
+    properties:
+      code:
+        example: invalid_payload
+        type: string
+    type: object
+  model.DataApproveCuttingPlanErrorDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.DataApproveCuttingPlanErrorDetail'
+      message:
+        example: bad request
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.DataApproveCuttingPlanListItem:
+    properties:
+      buyer:
+        type: string
+      created_at:
+        type: string
+      id_dacp:
+        type: integer
+      id_wo:
+        type: integer
+      model:
+        type: string
+      no_dokumen:
+        type: string
+      tanggal:
+        type: string
+    type: object
+  model.DataApproveCuttingPlanListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.DataApproveCuttingPlanListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.DataApproveCuttingPlanListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.DataApproveCuttingPlanListResponse'
+      message:
+        example: data approve cutting plans retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.DataApproveCuttingPlanResponse:
+    properties:
+      buyer:
+        type: string
+      colour:
+        type: string
+      created_at:
+        type: string
+      id_dacp:
+        type: integer
+      id_wo:
+        type: integer
+      model:
+        type: string
+      no_dokumen:
+        type: string
+      rows:
+        items:
+          $ref: '#/definitions/model.DataApproveCuttingPlanRow'
+        type: array
+      style:
+        type: string
+      tanggal:
+        type: string
+    type: object
+  model.DataApproveCuttingPlanRow:
+    properties:
+      balance_allowance:
+        type: integer
+      cutting_report:
+        type: integer
+      qty_cutting_actual:
+        type: integer
+      qty_cutting_plan:
+        type: integer
+      qty_order:
+        type: integer
+      size:
+        type: string
+    type: object
+  model.DataApproveCuttingPlanSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.DataApproveCuttingPlanResponse'
+      message:
+        example: data approve cutting plan created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.DataApproveCuttingPlanValidationErrorDoc:
+    properties:
+      error:
+        items:
+          $ref: '#/definitions/response.ValidationErrorItem'
+        type: array
+      message:
+        example: validation error
+        type: string
+      status:
+        example: error
         type: string
     type: object
   model.DepartemenResponse:
@@ -1743,6 +1917,142 @@ definitions:
         example: error
         type: string
     type: object
+  model.MasterPlanErrorDetail:
+    properties:
+      code:
+        example: master_plan_not_found
+        type: string
+    type: object
+  model.MasterPlanErrorDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.MasterPlanErrorDetail'
+      message:
+        example: master plan not found
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.MasterPlanItemResponse:
+    properties:
+      buyer:
+        type: string
+      color:
+        type: string
+      created_at:
+        type: string
+      deskripsi:
+        type: string
+      id_master_plan:
+        type: integer
+      id_master_plan_item:
+        type: integer
+      id_wo:
+        type: integer
+      id_wo_shell:
+        type: integer
+      no_urut:
+        type: integer
+      output_harian:
+        items:
+          $ref: '#/definitions/model.OutputHarianResponse'
+        type: array
+      qty:
+        type: integer
+      style:
+        type: string
+      target_harian:
+        items:
+          $ref: '#/definitions/model.TargetHarianResponse'
+        type: array
+      target_proses:
+        items:
+          $ref: '#/definitions/model.TargetProsesResponse'
+        type: array
+    type: object
+  model.MasterPlanListItem:
+    properties:
+      created_at:
+        type: string
+      id_departemen:
+        type: integer
+      id_master_plan:
+        type: integer
+      id_production_line:
+        type: integer
+      nama:
+        type: string
+      nama_departemen:
+        type: string
+      nama_line:
+        type: string
+    type: object
+  model.MasterPlanListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.MasterPlanListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.MasterPlanListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.MasterPlanListResponse'
+      message:
+        example: master plans retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.MasterPlanResponse:
+    properties:
+      created_at:
+        type: string
+      id_departemen:
+        type: integer
+      id_master_plan:
+        type: integer
+      id_production_line:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.MasterPlanItemResponse'
+        type: array
+      nama:
+        type: string
+      nama_departemen:
+        type: string
+      nama_line:
+        type: string
+    type: object
+  model.MasterPlanSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.MasterPlanResponse'
+      message:
+        example: master plan created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.MasterPlanValidationErrorDoc:
+    properties:
+      error:
+        items:
+          $ref: '#/definitions/response.ValidationErrorItem'
+        type: array
+      message:
+        example: bad request
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
   model.MaterialListItemResponse:
     properties:
       created_at:
@@ -1835,6 +2145,23 @@ definitions:
         type: string
       status:
         example: success
+        type: string
+    type: object
+  model.OutputHarianEntry:
+    properties:
+      output:
+        minimum: 0
+        type: integer
+      tanggal:
+        type: string
+    required:
+    - tanggal
+    type: object
+  model.OutputHarianResponse:
+    properties:
+      output:
+        type: integer
+      tanggal:
         type: string
     type: object
   model.POClientDetailResponse:
@@ -2748,6 +3075,244 @@ definitions:
       rejected_reason:
         type: string
     type: object
+  model.RekonsiliasiColorSizeSummaryResponse:
+    properties:
+      balance:
+        type: integer
+      qty_kirim:
+        type: integer
+      qty_order:
+        type: integer
+      size:
+        type: string
+    type: object
+  model.RekonsiliasiColorSummaryResponse:
+    properties:
+      balance:
+        type: integer
+      color:
+        type: string
+      qty_kirim:
+        type: integer
+      qty_order:
+        type: integer
+      size_breakdown:
+        items:
+          $ref: '#/definitions/model.RekonsiliasiColorSizeSummaryResponse'
+        type: array
+    type: object
+  model.RekonsiliasiDetailResponse:
+    properties:
+      color_summaries:
+        items:
+          $ref: '#/definitions/model.RekonsiliasiColorSummaryResponse'
+        type: array
+      header:
+        $ref: '#/definitions/model.RekonsiliasiHeaderResponse'
+      material_rows:
+        items:
+          $ref: '#/definitions/model.RekonsiliasiMaterialRowResponse'
+        type: array
+    type: object
+  model.RekonsiliasiErrorDetail:
+    properties:
+      code:
+        example: rekonsiliasi_not_found
+        type: string
+    type: object
+  model.RekonsiliasiErrorDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.RekonsiliasiErrorDetail'
+      message:
+        example: rekonsiliasi not found
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.RekonsiliasiHeaderResponse:
+    properties:
+      brand:
+        type: string
+      buyer:
+        type: string
+      cons_baju_summary:
+        type: string
+      created_at:
+        type: string
+      created_by_username:
+        type: string
+      delivery:
+        type: string
+      id_rekonsiliasi:
+        type: integer
+      id_wo:
+        type: integer
+      jasa:
+        type: string
+      nama_bahan:
+        type: string
+      no_po:
+        type: string
+      plan_cut_total:
+        type: integer
+      qty_po:
+        type: integer
+      style:
+        type: string
+      updated_at:
+        type: string
+      updated_by_username:
+        type: string
+      warna_kain_summary:
+        items:
+          type: string
+        type: array
+    type: object
+  model.RekonsiliasiListItem:
+    properties:
+      brand:
+        type: string
+      buyer:
+        type: string
+      created_at:
+        type: string
+      created_by_username:
+        type: string
+      id_rekonsiliasi:
+        type: integer
+      id_wo:
+        type: integer
+      nama_wo:
+        type: string
+      plan_cut_total:
+        type: integer
+      qty_po:
+        type: integer
+      style:
+        type: string
+      updated_at:
+        type: string
+      updated_by_username:
+        type: string
+    type: object
+  model.RekonsiliasiListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.RekonsiliasiListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.RekonsiliasiListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.RekonsiliasiListResponse'
+      message:
+        example: rekonsiliasi retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.RekonsiliasiMaterialRowResponse:
+    properties:
+      balance:
+        type: number
+      cons_actual:
+        type: number
+      description:
+        type: string
+      id_material_list_item:
+        type: integer
+      id_rekonsiliasi_material_row:
+        type: integer
+      id_wo_shell:
+        type: integer
+      id_wo_trim:
+        type: integer
+      kategori:
+        type: string
+      keterangan:
+        type: string
+      last_balance:
+        type: number
+      qty_actual_kirim:
+        type: integer
+      qty_actual_kirim_manual:
+        type: integer
+      qty_actual_kirim_source:
+        type: integer
+      qty_per_pcs_input:
+        type: number
+      qty_wo:
+        type: integer
+      ratio_input:
+        type: number
+      ratio_source:
+        type: number
+      reject_qty:
+        type: integer
+      retur_qty:
+        type: integer
+      row_no:
+        type: integer
+      satuan:
+        type: string
+      size_label:
+        type: string
+      terima_entries:
+        items:
+          $ref: '#/definitions/model.RekonsiliasiTerimaEntryResponse'
+        type: array
+      toleransi:
+        type: integer
+      total_terima:
+        type: integer
+    type: object
+  model.RekonsiliasiSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.RekonsiliasiDetailResponse'
+      message:
+        example: rekonsiliasi created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.RekonsiliasiTerimaEntryResponse:
+    properties:
+      created_at:
+        type: string
+      entry_label:
+        type: string
+      entry_type:
+        type: string
+      id_rekonsiliasi_terima_entry:
+        type: integer
+      note:
+        type: string
+      qty:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  model.RekonsiliasiValidationErrorDoc:
+    properties:
+      error:
+        items:
+          $ref: '#/definitions/response.ValidationErrorItem'
+        type: array
+      message:
+        example: validation error
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
   model.ReturClientListItem:
     properties:
       buyer:
@@ -2957,6 +3522,8 @@ definitions:
     type: object
   model.SpreadingCuttingPlanResponse:
     properties:
+      buyer:
+        type: string
       components:
         items:
           $ref: '#/definitions/model.KomponenSpreadingResponse'
@@ -2967,7 +3534,11 @@ definitions:
         type: integer
       id_wo:
         type: integer
+      model:
+        type: string
       no_dokumen:
+        type: string
+      style:
         type: string
       tanggal_efektif:
         type: string
@@ -3190,6 +3761,30 @@ definitions:
         example: success
         type: string
     type: object
+  model.TargetHarianEntry:
+    properties:
+      tanggal:
+        type: string
+      target:
+        minimum: 0
+        type: integer
+    required:
+    - tanggal
+    type: object
+  model.TargetHarianResponse:
+    properties:
+      tanggal:
+        type: string
+      target:
+        type: integer
+    type: object
+  model.TargetProsesResponse:
+    properties:
+      nama_proses:
+        type: string
+      tanggal:
+        type: string
+    type: object
   model.TimelinePlanErrorDetail:
     properties:
       code:
@@ -3383,6 +3978,11 @@ definitions:
     - kode
     - nama_jenis_barang
     type: object
+  model.UpdateMasterPlanRequest:
+    properties:
+      nama:
+        type: string
+    type: object
   model.UpdateMitraRequest:
     properties:
       alamat:
@@ -3428,6 +4028,65 @@ definitions:
         type: string
     required:
     - nama
+    type: object
+  model.UpdateRekonsiliasiMaterialRowRequest:
+    properties:
+      id_rekonsiliasi_material_row:
+        type: integer
+      keterangan:
+        type: string
+      qty_actual_kirim_manual:
+        minimum: 0
+        type: integer
+      qty_per_pcs_input:
+        minimum: 0
+        type: number
+      ratio_input:
+        minimum: 0
+        type: number
+      reject_qty:
+        minimum: 0
+        type: integer
+      retur_qty:
+        minimum: 0
+        type: integer
+      terima_entries:
+        items:
+          $ref: '#/definitions/model.UpdateRekonsiliasiTerimaEntryRequest'
+        type: array
+    required:
+    - id_rekonsiliasi_material_row
+    type: object
+  model.UpdateRekonsiliasiRequest:
+    properties:
+      material_rows:
+        items:
+          $ref: '#/definitions/model.UpdateRekonsiliasiMaterialRowRequest'
+        minItems: 1
+        type: array
+    required:
+    - material_rows
+    type: object
+  model.UpdateRekonsiliasiTerimaEntryRequest:
+    properties:
+      entry_label:
+        type: string
+      entry_type:
+        enum:
+        - awal
+        - untuk
+        - ambil
+        type: string
+      id_rekonsiliasi_terima_entry:
+        type: integer
+      note:
+        type: string
+      qty:
+        minimum: 0
+        type: integer
+    required:
+    - entry_label
+    - entry_type
     type: object
   model.UpdateRoleRequest:
     properties:
@@ -3494,6 +4153,36 @@ definitions:
         type: string
     required:
     - nama_warna
+    type: object
+  model.UpsertOutputHarianRequest:
+    properties:
+      entries:
+        items:
+          $ref: '#/definitions/model.OutputHarianEntry'
+        minItems: 1
+        type: array
+    required:
+    - entries
+    type: object
+  model.UpsertTargetHarianRequest:
+    properties:
+      entries:
+        items:
+          $ref: '#/definitions/model.TargetHarianEntry'
+        minItems: 1
+        type: array
+    required:
+    - entries
+    type: object
+  model.UpsertTargetProsesRequest:
+    properties:
+      nama_proses:
+        type: string
+      tanggal:
+        type: string
+    required:
+    - nama_proses
+    - tanggal
     type: object
   model.UserListSuccessDoc:
     properties:
@@ -3973,7 +4662,7 @@ info:
 paths:
   /api/v1/activity-logs:
     get:
-      description: Retrieves paginated audit log history for operator users.
+      description: Retrieves paginated audit log history for admin sistem users.
       parameters:
       - description: Page number
         in: query
@@ -4037,7 +4726,7 @@ paths:
       - Audit Logs
   /api/v1/activity-logs/{id}:
     get:
-      description: Retrieves a single audit log detail for operator users.
+      description: Retrieves a single audit log detail for admin sistem users.
       parameters:
       - description: Audit log ID
         in: path
@@ -4194,7 +4883,7 @@ paths:
       - Auth
   /api/v1/auth/forgot-password-requests:
     get:
-      description: Returns all password reset requests for operator review.
+      description: Returns all password reset requests for admin sistem review.
       produces:
       - application/json
       responses:
@@ -4431,6 +5120,17 @@ paths:
       summary: Self Register Mitra
       tags:
       - Auth
+  /api/v1/dashboard/admin-sistem:
+    get:
+      description: Mengambil metrics realtime untuk layar Admin Sistem Dashboard
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Ambil KPI Admin Sistem
+      tags:
+      - Dashboard
   /api/v1/dashboard/ai-estimation:
     post:
       consumes:
@@ -4466,17 +5166,6 @@ paths:
       summary: Ambil KPI Finance
       tags:
       - Dashboard
-  /api/v1/dashboard/operator:
-    get:
-      description: Mengambil metrics realtime untuk layar Operator Dashboard
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - BearerAuth: []
-      summary: Ambil KPI Operator
-      tags:
-      - Dashboard
   /api/v1/dashboard/production:
     get:
       description: Mengambil metrics realtime untuk layar Production Dashboard
@@ -4499,6 +5188,100 @@ paths:
       summary: Ambil KPI Warehouse
       tags:
       - Dashboard
+  /api/v1/data-approve-cutting-plans:
+    get:
+      description: Returns a paginated list of Data Approve Cutting Plan documents.
+      parameters:
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Search by document number, buyer, model
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.DataApproveCuttingPlanListSuccessDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.DataApproveCuttingPlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: List Data Approve Cutting Plans
+      tags:
+      - Data Approve Cutting Plan
+    post:
+      consumes:
+      - application/json
+      description: Creates a new Data Approve Cutting Plan document linked to a Work
+        Order and initializes the approval workflow.
+      parameters:
+      - description: Payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateDataApproveCuttingPlanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.DataApproveCuttingPlanSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.DataApproveCuttingPlanValidationErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.DataApproveCuttingPlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Data Approve Cutting Plan
+      tags:
+      - Data Approve Cutting Plan
+  /api/v1/data-approve-cutting-plans/{id}:
+    get:
+      description: Returns a single Data Approve Cutting Plan with the aggregated
+        size breakdown table.
+      parameters:
+      - description: Document ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.DataApproveCuttingPlanSuccessDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.DataApproveCuttingPlanErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.DataApproveCuttingPlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Data Approve Cutting Plan Detail
+      tags:
+      - Data Approve Cutting Plan
   /api/v1/exports/excel/render:
     post:
       consumes:
@@ -4768,6 +5551,315 @@ paths:
       summary: Get Marker Plan Detail
       tags:
       - Marker Plan
+  /api/v1/master-plans:
+    get:
+      parameters:
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Search by nama, departemen, or line
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanListSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: List Master Plans
+      tags:
+      - Master Plan
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Master plan payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateMasterPlanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.MasterPlanValidationErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.MasterPlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Master Plan
+      tags:
+      - Master Plan
+  /api/v1/master-plans/{id}:
+    delete:
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Delete Master Plan
+      tags:
+      - Master Plan
+    get:
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.MasterPlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Master Plan
+      tags:
+      - Master Plan
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateMasterPlanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Update Master Plan
+      tags:
+      - Master Plan
+  /api/v1/master-plans/{id}/items:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.AddMasterPlanItemRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Add WO item to Master Plan
+      tags:
+      - Master Plan
+  /api/v1/master-plans/{id}/items/{itemId}:
+    delete:
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Remove WO item from Master Plan
+      tags:
+      - Master Plan
+  /api/v1/master-plans/{id}/items/{itemId}/output-harian:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: integer
+      - description: Output harian payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpsertOutputHarianRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Set daily output for a Master Plan item
+      tags:
+      - Master Plan
+  /api/v1/master-plans/{id}/items/{itemId}/target-harian:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: integer
+      - description: Target harian payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpsertTargetHarianRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Set daily targets for a Master Plan item
+      tags:
+      - Master Plan
+  /api/v1/master-plans/{id}/items/{itemId}/target-proses:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: integer
+      - description: Target proses payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpsertTargetProsesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Set a process milestone for a Master Plan item on a specific date
+      tags:
+      - Master Plan
+  /api/v1/master-plans/{id}/items/{itemId}/target-proses/{tanggal}:
+    delete:
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: integer
+      - description: Date (YYYY-MM-DD)
+        in: path
+        name: tanggal
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Remove a process milestone from a Master Plan item
+      tags:
+      - Master Plan
   /api/v1/master/barang:
     get:
       parameters:
@@ -6168,6 +7260,204 @@ paths:
       summary: Update Profil Perusahaan Data
       tags:
       - Profil Perusahaan
+  /api/v1/rekonsiliasi:
+    get:
+      description: Retrieves paginated material reconciliation documents.
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Limit fallback
+        in: query
+        name: limit
+        type: integer
+      - description: Search term
+        in: query
+        name: q
+        type: string
+      - description: Filter by work order ID
+        in: query
+        name: idWo
+        type: integer
+      - description: Sort field
+        in: query
+        name: sortBy
+        type: string
+      - description: Sort descending
+        in: query
+        name: sortDesc
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: List rekonsiliasi
+      tags:
+      - Rekonsiliasi
+    post:
+      consumes:
+      - application/json
+      description: Creates a material reconciliation document from work order source
+        data.
+      parameters:
+      - description: Create rekonsiliasi payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateRekonsiliasiRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiValidationErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Create rekonsiliasi
+      tags:
+      - Rekonsiliasi
+  /api/v1/rekonsiliasi/{id}:
+    get:
+      description: Retrieves a full material reconciliation document.
+      parameters:
+      - description: Rekonsiliasi ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get rekonsiliasi detail
+      tags:
+      - Rekonsiliasi
+    put:
+      consumes:
+      - application/json
+      description: Updates editable manual fields in a material reconciliation document.
+      parameters:
+      - description: Rekonsiliasi ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update rekonsiliasi payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateRekonsiliasiRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiValidationErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Update rekonsiliasi
+      tags:
+      - Rekonsiliasi
+  /api/v1/rekonsiliasi/{id}/refresh:
+    post:
+      description: Refreshes source-driven snapshot data while preserving manual input.
+      parameters:
+      - description: Rekonsiliasi ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.RekonsiliasiErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Refresh rekonsiliasi
+      tags:
+      - Rekonsiliasi
   /api/v1/reports/{divisi}:
     post:
       consumes:
