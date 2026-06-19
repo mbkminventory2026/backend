@@ -29,7 +29,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieves paginated audit log history for operator users.",
+                "description": "Retrieves paginated audit log history for admin sistem users.",
                 "produces": [
                     "application/json"
                 ],
@@ -128,7 +128,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieves a single audit log detail for operator users.",
+                "description": "Retrieves a single audit log detail for admin sistem users.",
                 "produces": [
                     "application/json"
                 ],
@@ -375,7 +375,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns all password reset requests for operator review.",
+                "description": "Returns all password reset requests for admin sistem review.",
                 "produces": [
                     "application/json"
                 ],
@@ -735,6 +735,24 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/dashboard/admin-sistem": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil metrics realtime untuk layar Admin Sistem Dashboard",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Ambil KPI Admin Sistem",
+                "responses": {}
+            }
+        },
         "/api/v1/dashboard/ai-estimation": {
             "post": {
                 "security": [
@@ -789,24 +807,6 @@ const docTemplate = `{
                     "Dashboard"
                 ],
                 "summary": "Ambil KPI Finance",
-                "responses": {}
-            }
-        },
-        "/api/v1/dashboard/operator": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Mengambil metrics realtime untuk layar Operator Dashboard",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Dashboard"
-                ],
-                "summary": "Ambil KPI Operator",
                 "responses": {}
             }
         },
@@ -1404,6 +1404,499 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/model.MarkerPlanErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/master-plans": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Plan"
+                ],
+                "summary": "List Master Plans",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by nama, departemen, or line",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MasterPlanListSuccessDoc"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Plan"
+                ],
+                "summary": "Create Master Plan",
+                "parameters": [
+                    {
+                        "description": "Master plan payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateMasterPlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.MasterPlanSuccessDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.MasterPlanValidationErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.MasterPlanErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/master-plans/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Plan"
+                ],
+                "summary": "Get Master Plan",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Master Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MasterPlanSuccessDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.MasterPlanErrorDoc"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Plan"
+                ],
+                "summary": "Update Master Plan",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Master Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateMasterPlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MasterPlanSuccessDoc"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Plan"
+                ],
+                "summary": "Delete Master Plan",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Master Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MasterPlanSuccessDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/master-plans/{id}/items": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Plan"
+                ],
+                "summary": "Add WO item to Master Plan",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Master Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Item payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.AddMasterPlanItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.MasterPlanSuccessDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/master-plans/{id}/items/{itemId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Plan"
+                ],
+                "summary": "Remove WO item from Master Plan",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Master Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MasterPlanSuccessDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/master-plans/{id}/items/{itemId}/output-harian": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Plan"
+                ],
+                "summary": "Set daily output for a Master Plan item",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Master Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Output harian payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpsertOutputHarianRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MasterPlanSuccessDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/master-plans/{id}/items/{itemId}/target-harian": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Plan"
+                ],
+                "summary": "Set daily targets for a Master Plan item",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Master Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Target harian payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpsertTargetHarianRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MasterPlanSuccessDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/master-plans/{id}/items/{itemId}/target-proses": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Plan"
+                ],
+                "summary": "Set a process milestone for a Master Plan item on a specific date",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Master Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Target proses payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpsertTargetProsesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MasterPlanSuccessDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/master-plans/{id}/items/{itemId}/target-proses/{tanggal}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Master Plan"
+                ],
+                "summary": "Remove a process milestone from a Master Plan item",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Master Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Date (YYYY-MM-DD)",
+                        "name": "tanggal",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MasterPlanSuccessDoc"
                         }
                     }
                 }
@@ -6266,6 +6759,36 @@ const docTemplate = `{
                 }
             }
         },
+        "model.AddMasterPlanItemEntry": {
+            "type": "object",
+            "required": [
+                "id_wo_shell"
+            ],
+            "properties": {
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "no_urut": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "model.AddMasterPlanItemRequest": {
+            "type": "object",
+            "required": [
+                "id_wo_shell"
+            ],
+            "properties": {
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "no_urut": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
         "model.AktivitasLogResponse": {
             "type": "object",
             "properties": {
@@ -6862,6 +7385,30 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tanggal_efektif": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.CreateMasterPlanRequest": {
+            "type": "object",
+            "required": [
+                "id_departemen",
+                "id_production_line"
+            ],
+            "properties": {
+                "id_departemen": {
+                    "type": "integer"
+                },
+                "id_production_line": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.AddMasterPlanItemEntry"
+                    }
+                },
+                "nama": {
                     "type": "string"
                 }
             }
@@ -8920,6 +9467,210 @@ const docTemplate = `{
                 }
             }
         },
+        "model.MasterPlanErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "master_plan_not_found"
+                }
+            }
+        },
+        "model.MasterPlanErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/model.MasterPlanErrorDetail"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "master plan not found"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "model.MasterPlanItemResponse": {
+            "type": "object",
+            "properties": {
+                "buyer": {
+                    "type": "string"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "deskripsi": {
+                    "type": "string"
+                },
+                "id_master_plan": {
+                    "type": "integer"
+                },
+                "id_master_plan_item": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "id_wo_shell": {
+                    "type": "integer"
+                },
+                "no_urut": {
+                    "type": "integer"
+                },
+                "output_harian": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.OutputHarianResponse"
+                    }
+                },
+                "qty": {
+                    "type": "integer"
+                },
+                "style": {
+                    "type": "string"
+                },
+                "target_harian": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TargetHarianResponse"
+                    }
+                },
+                "target_proses": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TargetProsesResponse"
+                    }
+                }
+            }
+        },
+        "model.MasterPlanListItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_departemen": {
+                    "type": "integer"
+                },
+                "id_master_plan": {
+                    "type": "integer"
+                },
+                "id_production_line": {
+                    "type": "integer"
+                },
+                "nama": {
+                    "type": "string"
+                },
+                "nama_departemen": {
+                    "type": "string"
+                },
+                "nama_line": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.MasterPlanListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.MasterPlanListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/model.PaginationMeta"
+                }
+            }
+        },
+        "model.MasterPlanListSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.MasterPlanListResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "master plans retrieved"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.MasterPlanResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_departemen": {
+                    "type": "integer"
+                },
+                "id_master_plan": {
+                    "type": "integer"
+                },
+                "id_production_line": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.MasterPlanItemResponse"
+                    }
+                },
+                "nama": {
+                    "type": "string"
+                },
+                "nama_departemen": {
+                    "type": "string"
+                },
+                "nama_line": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.MasterPlanSuccessDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/model.MasterPlanResponse"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "master plan created"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "model.MasterPlanValidationErrorDoc": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ValidationErrorItem"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "bad request"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
         "model.MaterialListItemResponse": {
             "type": "object",
             "properties": {
@@ -9059,6 +9810,32 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "model.OutputHarianEntry": {
+            "type": "object",
+            "required": [
+                "tanggal"
+            ],
+            "properties": {
+                "output": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.OutputHarianResponse": {
+            "type": "object",
+            "properties": {
+                "output": {
+                    "type": "integer"
+                },
+                "tanggal": {
+                    "type": "string"
                 }
             }
         },
@@ -11465,6 +12242,43 @@ const docTemplate = `{
                 }
             }
         },
+        "model.TargetHarianEntry": {
+            "type": "object",
+            "required": [
+                "tanggal"
+            ],
+            "properties": {
+                "tanggal": {
+                    "type": "string"
+                },
+                "target": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "model.TargetHarianResponse": {
+            "type": "object",
+            "properties": {
+                "tanggal": {
+                    "type": "string"
+                },
+                "target": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.TargetProsesResponse": {
+            "type": "object",
+            "properties": {
+                "nama_proses": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
         "model.TimelinePlanErrorDetail": {
             "type": "object",
             "properties": {
@@ -11751,6 +12565,14 @@ const docTemplate = `{
                 }
             }
         },
+        "model.UpdateMasterPlanRequest": {
+            "type": "object",
+            "properties": {
+                "nama": {
+                    "type": "string"
+                }
+            }
+        },
         "model.UpdateMitraRequest": {
             "type": "object",
             "required": [
@@ -12001,6 +12823,51 @@ const docTemplate = `{
                     "maxLength": 7
                 },
                 "nama_warna": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.UpsertOutputHarianRequest": {
+            "type": "object",
+            "required": [
+                "entries"
+            ],
+            "properties": {
+                "entries": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.OutputHarianEntry"
+                    }
+                }
+            }
+        },
+        "model.UpsertTargetHarianRequest": {
+            "type": "object",
+            "required": [
+                "entries"
+            ],
+            "properties": {
+                "entries": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.TargetHarianEntry"
+                    }
+                }
+            }
+        },
+        "model.UpsertTargetProsesRequest": {
+            "type": "object",
+            "required": [
+                "nama_proses",
+                "tanggal"
+            ],
+            "properties": {
+                "nama_proses": {
+                    "type": "string"
+                },
+                "tanggal": {
                     "type": "string"
                 }
             }

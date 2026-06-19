@@ -280,7 +280,7 @@ func isRoleForeignKeyViolation(err error) bool {
 func isReservedRole(name string) bool {
 	upperName := strings.ToUpper(strings.TrimSpace(name))
 	switch upperName {
-	case "SUPER_ADMIN", "OPERATOR", "ADMIN_KEUANGAN", "ADMIN_PRODUKSI", "ADMIN_GUDANG", "MANAGER", "CLIENT":
+	case "SUPER_ADMIN", "ADMIN_SISTEM", "ADMIN_KEUANGAN", "ADMIN_PRODUKSI", "ADMIN_GUDANG", "MANAGER", "CLIENT":
 		return true
 	}
 	return false

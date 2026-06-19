@@ -19,6 +19,10 @@ WHERE (
     email ILIKE '%' || $1::text || '%' OR
     no_telp ILIKE '%' || $1::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'MITRA' AND mdd.id_record = MITRA.id_mitra
+  )
 `
 
 func (q *Queries) CountMitra(ctx context.Context, searchTerm string) (int64, error) {
@@ -86,7 +90,12 @@ func (q *Queries) DeleteMitra(ctx context.Context, idMitra int32) (int64, error)
 
 const getMitraByID = `-- name: GetMitraByID :one
 SELECT id_mitra, nama_perusahaan, tipe_perusahaan, email, no_telp, alamat, kota, kode_pos, created_at FROM MITRA
-WHERE id_mitra = $1 LIMIT 1
+WHERE id_mitra = $1
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'MITRA' AND mdd.id_record = MITRA.id_mitra
+  )
+LIMIT 1
 `
 
 func (q *Queries) GetMitraByID(ctx context.Context, idMitra int32) (Mitra, error) {
@@ -116,6 +125,10 @@ WHERE (
     email ILIKE '%' || $1::text || '%' OR
     no_telp ILIKE '%' || $1::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'MITRA' AND mdd.id_record = MITRA.id_mitra
+  )
 ORDER BY
     CASE WHEN $2::text = 'created_at' AND NOT $3::bool THEN created_at END ASC,
     CASE WHEN $2::text = 'created_at' AND $3::bool THEN created_at END DESC,

@@ -117,6 +117,58 @@ type MarkerPlan struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
+type MasterDataDeleted struct {
+	IDDeleted int32              `json:"id_deleted"`
+	NamaTabel string             `json:"nama_tabel"`
+	IDRecord  int32              `json:"id_record"`
+	DeletedBy pgtype.Int4        `json:"deleted_by"`
+	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type MasterPlan struct {
+	IDMasterPlan     int32              `json:"id_master_plan"`
+	IDDepartemen     int32              `json:"id_departemen"`
+	IDProductionLine int32              `json:"id_production_line"`
+	Nama             string             `json:"nama"`
+	CreatedBy        pgtype.Int4        `json:"created_by"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
+type MasterPlanItem struct {
+	IDMasterPlanItem int32              `json:"id_master_plan_item"`
+	IDMasterPlan     int32              `json:"id_master_plan"`
+	IDWoShell        int32              `json:"id_wo_shell"`
+	NoUrut           int32              `json:"no_urut"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
+type MasterPlanOutputHarian struct {
+	IDOutputHarian   int32              `json:"id_output_harian"`
+	IDMasterPlanItem int32              `json:"id_master_plan_item"`
+	Tanggal          pgtype.Date        `json:"tanggal"`
+	Output           int32              `json:"output"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
+type MasterPlanTargetHarian struct {
+	IDTargetHarian   int32              `json:"id_target_harian"`
+	IDMasterPlanItem int32              `json:"id_master_plan_item"`
+	Tanggal          pgtype.Date        `json:"tanggal"`
+	Target           int32              `json:"target"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
+type MasterPlanTargetProse struct {
+	IDTargetProses   int32              `json:"id_target_proses"`
+	IDMasterPlanItem int32              `json:"id_master_plan_item"`
+	Tanggal          pgtype.Date        `json:"tanggal"`
+	NamaProses       string             `json:"nama_proses"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
 type MasterSize struct {
 	IDSize    int32              `json:"id_size"`
 	NamaSize  string             `json:"nama_size"`

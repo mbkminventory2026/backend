@@ -66,6 +66,26 @@ definitions:
       estimasi_waktu_total_hari:
         type: number
     type: object
+  model.AddMasterPlanItemEntry:
+    properties:
+      id_wo_shell:
+        type: integer
+      no_urut:
+        minimum: 0
+        type: integer
+    required:
+    - id_wo_shell
+    type: object
+  model.AddMasterPlanItemRequest:
+    properties:
+      id_wo_shell:
+        type: integer
+      no_urut:
+        minimum: 0
+        type: integer
+    required:
+    - id_wo_shell
+    type: object
   model.AktivitasLogResponse:
     properties:
       aksi:
@@ -471,6 +491,22 @@ definitions:
     - id_wo_shell
     - no_dokumen
     - tanggal_efektif
+    type: object
+  model.CreateMasterPlanRequest:
+    properties:
+      id_departemen:
+        type: integer
+      id_production_line:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.AddMasterPlanItemEntry'
+        type: array
+      nama:
+        type: string
+    required:
+    - id_departemen
+    - id_production_line
     type: object
   model.CreateMaterialListItemRequest:
     properties:
@@ -1881,6 +1917,142 @@ definitions:
         example: error
         type: string
     type: object
+  model.MasterPlanErrorDetail:
+    properties:
+      code:
+        example: master_plan_not_found
+        type: string
+    type: object
+  model.MasterPlanErrorDoc:
+    properties:
+      error:
+        $ref: '#/definitions/model.MasterPlanErrorDetail'
+      message:
+        example: master plan not found
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  model.MasterPlanItemResponse:
+    properties:
+      buyer:
+        type: string
+      color:
+        type: string
+      created_at:
+        type: string
+      deskripsi:
+        type: string
+      id_master_plan:
+        type: integer
+      id_master_plan_item:
+        type: integer
+      id_wo:
+        type: integer
+      id_wo_shell:
+        type: integer
+      no_urut:
+        type: integer
+      output_harian:
+        items:
+          $ref: '#/definitions/model.OutputHarianResponse'
+        type: array
+      qty:
+        type: integer
+      style:
+        type: string
+      target_harian:
+        items:
+          $ref: '#/definitions/model.TargetHarianResponse'
+        type: array
+      target_proses:
+        items:
+          $ref: '#/definitions/model.TargetProsesResponse'
+        type: array
+    type: object
+  model.MasterPlanListItem:
+    properties:
+      created_at:
+        type: string
+      id_departemen:
+        type: integer
+      id_master_plan:
+        type: integer
+      id_production_line:
+        type: integer
+      nama:
+        type: string
+      nama_departemen:
+        type: string
+      nama_line:
+        type: string
+    type: object
+  model.MasterPlanListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.MasterPlanListItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.MasterPlanListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.MasterPlanListResponse'
+      message:
+        example: master plans retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.MasterPlanResponse:
+    properties:
+      created_at:
+        type: string
+      id_departemen:
+        type: integer
+      id_master_plan:
+        type: integer
+      id_production_line:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.MasterPlanItemResponse'
+        type: array
+      nama:
+        type: string
+      nama_departemen:
+        type: string
+      nama_line:
+        type: string
+    type: object
+  model.MasterPlanSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.MasterPlanResponse'
+      message:
+        example: master plan created
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.MasterPlanValidationErrorDoc:
+    properties:
+      error:
+        items:
+          $ref: '#/definitions/response.ValidationErrorItem'
+        type: array
+      message:
+        example: bad request
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
   model.MaterialListItemResponse:
     properties:
       created_at:
@@ -1973,6 +2145,23 @@ definitions:
         type: string
       status:
         example: success
+        type: string
+    type: object
+  model.OutputHarianEntry:
+    properties:
+      output:
+        minimum: 0
+        type: integer
+      tanggal:
+        type: string
+    required:
+    - tanggal
+    type: object
+  model.OutputHarianResponse:
+    properties:
+      output:
+        type: integer
+      tanggal:
         type: string
     type: object
   model.POClientDetailResponse:
@@ -3572,6 +3761,30 @@ definitions:
         example: success
         type: string
     type: object
+  model.TargetHarianEntry:
+    properties:
+      tanggal:
+        type: string
+      target:
+        minimum: 0
+        type: integer
+    required:
+    - tanggal
+    type: object
+  model.TargetHarianResponse:
+    properties:
+      tanggal:
+        type: string
+      target:
+        type: integer
+    type: object
+  model.TargetProsesResponse:
+    properties:
+      nama_proses:
+        type: string
+      tanggal:
+        type: string
+    type: object
   model.TimelinePlanErrorDetail:
     properties:
       code:
@@ -3765,6 +3978,11 @@ definitions:
     - kode
     - nama_jenis_barang
     type: object
+  model.UpdateMasterPlanRequest:
+    properties:
+      nama:
+        type: string
+    type: object
   model.UpdateMitraRequest:
     properties:
       alamat:
@@ -3935,6 +4153,36 @@ definitions:
         type: string
     required:
     - nama_warna
+    type: object
+  model.UpsertOutputHarianRequest:
+    properties:
+      entries:
+        items:
+          $ref: '#/definitions/model.OutputHarianEntry'
+        minItems: 1
+        type: array
+    required:
+    - entries
+    type: object
+  model.UpsertTargetHarianRequest:
+    properties:
+      entries:
+        items:
+          $ref: '#/definitions/model.TargetHarianEntry'
+        minItems: 1
+        type: array
+    required:
+    - entries
+    type: object
+  model.UpsertTargetProsesRequest:
+    properties:
+      nama_proses:
+        type: string
+      tanggal:
+        type: string
+    required:
+    - nama_proses
+    - tanggal
     type: object
   model.UserListSuccessDoc:
     properties:
@@ -4414,7 +4662,7 @@ info:
 paths:
   /api/v1/activity-logs:
     get:
-      description: Retrieves paginated audit log history for operator users.
+      description: Retrieves paginated audit log history for admin sistem users.
       parameters:
       - description: Page number
         in: query
@@ -4478,7 +4726,7 @@ paths:
       - Audit Logs
   /api/v1/activity-logs/{id}:
     get:
-      description: Retrieves a single audit log detail for operator users.
+      description: Retrieves a single audit log detail for admin sistem users.
       parameters:
       - description: Audit log ID
         in: path
@@ -4635,7 +4883,7 @@ paths:
       - Auth
   /api/v1/auth/forgot-password-requests:
     get:
-      description: Returns all password reset requests for operator review.
+      description: Returns all password reset requests for admin sistem review.
       produces:
       - application/json
       responses:
@@ -4872,6 +5120,17 @@ paths:
       summary: Self Register Mitra
       tags:
       - Auth
+  /api/v1/dashboard/admin-sistem:
+    get:
+      description: Mengambil metrics realtime untuk layar Admin Sistem Dashboard
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Ambil KPI Admin Sistem
+      tags:
+      - Dashboard
   /api/v1/dashboard/ai-estimation:
     post:
       consumes:
@@ -4905,17 +5164,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Ambil KPI Finance
-      tags:
-      - Dashboard
-  /api/v1/dashboard/operator:
-    get:
-      description: Mengambil metrics realtime untuk layar Operator Dashboard
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - BearerAuth: []
-      summary: Ambil KPI Operator
       tags:
       - Dashboard
   /api/v1/dashboard/production:
@@ -5303,6 +5551,315 @@ paths:
       summary: Get Marker Plan Detail
       tags:
       - Marker Plan
+  /api/v1/master-plans:
+    get:
+      parameters:
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Search by nama, departemen, or line
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanListSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: List Master Plans
+      tags:
+      - Master Plan
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Master plan payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateMasterPlanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.MasterPlanValidationErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.MasterPlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Create Master Plan
+      tags:
+      - Master Plan
+  /api/v1/master-plans/{id}:
+    delete:
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Delete Master Plan
+      tags:
+      - Master Plan
+    get:
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.MasterPlanErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Get Master Plan
+      tags:
+      - Master Plan
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateMasterPlanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Update Master Plan
+      tags:
+      - Master Plan
+  /api/v1/master-plans/{id}/items:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.AddMasterPlanItemRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Add WO item to Master Plan
+      tags:
+      - Master Plan
+  /api/v1/master-plans/{id}/items/{itemId}:
+    delete:
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Remove WO item from Master Plan
+      tags:
+      - Master Plan
+  /api/v1/master-plans/{id}/items/{itemId}/output-harian:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: integer
+      - description: Output harian payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpsertOutputHarianRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Set daily output for a Master Plan item
+      tags:
+      - Master Plan
+  /api/v1/master-plans/{id}/items/{itemId}/target-harian:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: integer
+      - description: Target harian payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpsertTargetHarianRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Set daily targets for a Master Plan item
+      tags:
+      - Master Plan
+  /api/v1/master-plans/{id}/items/{itemId}/target-proses:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: integer
+      - description: Target proses payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpsertTargetProsesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Set a process milestone for a Master Plan item on a specific date
+      tags:
+      - Master Plan
+  /api/v1/master-plans/{id}/items/{itemId}/target-proses/{tanggal}:
+    delete:
+      parameters:
+      - description: Master Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: integer
+      - description: Date (YYYY-MM-DD)
+        in: path
+        name: tanggal
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MasterPlanSuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: Remove a process milestone from a Master Plan item
+      tags:
+      - Master Plan
   /api/v1/master/barang:
     get:
       parameters:

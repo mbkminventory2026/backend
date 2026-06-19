@@ -11,6 +11,97 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getAdminSistemActiveWorkOrdersCount = `-- name: GetAdminSistemActiveWorkOrdersCount :one
+
+SELECT COUNT(*) FROM WORK_ORDER
+`
+
+// Asumsi threshold low stock adalah 50, bisa kita ubah nanti lewat argumen sqlc jika dinamis
+func (q *Queries) GetAdminSistemActiveWorkOrdersCount(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, getAdminSistemActiveWorkOrdersCount)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const getAdminSistemOngoingWorkOrders = `-- name: GetAdminSistemOngoingWorkOrders :many
+SELECT 
+    wo.ID_WO,
+    wo.BUYER,
+    wo.MODEL,
+    wo.QTY,
+    COALESCE(SUM(rp.qty), 0)::int as total_output
+FROM 
+    WORK_ORDER wo
+LEFT JOIN 
+    WORK_ORDER_SHELL wos ON wo.ID_WO = wos.ID_WO
+LEFT JOIN
+    WORK_ORDER_SHELL_SIZE woss ON wos.ID_WO_SHELL = woss.ID_WO_SHELL
+LEFT JOIN
+    REPORT_PACKING rp ON woss.ID_WO_SHELL_SIZE = rp.ID_WO_SHELL_SIZE
+GROUP BY 
+    wo.ID_WO
+ORDER BY 
+    wo.DELIVERY ASC
+LIMIT 5
+`
+
+type GetAdminSistemOngoingWorkOrdersRow struct {
+	IDWo        int32  `json:"id_wo"`
+	Buyer       string `json:"buyer"`
+	Model       string `json:"model"`
+	Qty         int32  `json:"qty"`
+	TotalOutput int32  `json:"total_output"`
+}
+
+func (q *Queries) GetAdminSistemOngoingWorkOrders(ctx context.Context) ([]GetAdminSistemOngoingWorkOrdersRow, error) {
+	rows, err := q.db.Query(ctx, getAdminSistemOngoingWorkOrders)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAdminSistemOngoingWorkOrdersRow
+	for rows.Next() {
+		var i GetAdminSistemOngoingWorkOrdersRow
+		if err := rows.Scan(
+			&i.IDWo,
+			&i.Buyer,
+			&i.Model,
+			&i.Qty,
+			&i.TotalOutput,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAdminSistemOutputHariIni = `-- name: GetAdminSistemOutputHariIni :one
+SELECT COALESCE(SUM(qty), 0)::int FROM REPORT_PACKING WHERE tanggal = CURRENT_DATE
+`
+
+func (q *Queries) GetAdminSistemOutputHariIni(ctx context.Context) (int32, error) {
+	row := q.db.QueryRow(ctx, getAdminSistemOutputHariIni)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const getAdminSistemTargetProduksiHariIni = `-- name: GetAdminSistemTargetProduksiHariIni :one
+SELECT COALESCE(SUM(qty), 0)::int FROM WORK_ORDER
+`
+
+func (q *Queries) GetAdminSistemTargetProduksiHariIni(ctx context.Context) (int32, error) {
+	row := q.db.QueryRow(ctx, getAdminSistemTargetProduksiHariIni)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const getFinanceRecentPOClients = `-- name: GetFinanceRecentPOClients :many
 SELECT 
     pc.id_po_client,
@@ -191,97 +282,6 @@ func (q *Queries) GetLowStockAlerts(ctx context.Context) ([]GetLowStockAlertsRow
 		return nil, err
 	}
 	return items, nil
-}
-
-const getOperatorActiveWorkOrdersCount = `-- name: GetOperatorActiveWorkOrdersCount :one
-
-SELECT COUNT(*) FROM WORK_ORDER
-`
-
-// Asumsi threshold low stock adalah 50, bisa kita ubah nanti lewat argumen sqlc jika dinamis
-func (q *Queries) GetOperatorActiveWorkOrdersCount(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, getOperatorActiveWorkOrdersCount)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
-const getOperatorOngoingWorkOrders = `-- name: GetOperatorOngoingWorkOrders :many
-SELECT 
-    wo.ID_WO,
-    wo.BUYER,
-    wo.MODEL,
-    wo.QTY,
-    COALESCE(SUM(rp.qty), 0)::int as total_output
-FROM 
-    WORK_ORDER wo
-LEFT JOIN 
-    WORK_ORDER_SHELL wos ON wo.ID_WO = wos.ID_WO
-LEFT JOIN
-    WORK_ORDER_SHELL_SIZE woss ON wos.ID_WO_SHELL = woss.ID_WO_SHELL
-LEFT JOIN
-    REPORT_PACKING rp ON woss.ID_WO_SHELL_SIZE = rp.ID_WO_SHELL_SIZE
-GROUP BY 
-    wo.ID_WO
-ORDER BY 
-    wo.DELIVERY ASC
-LIMIT 5
-`
-
-type GetOperatorOngoingWorkOrdersRow struct {
-	IDWo        int32  `json:"id_wo"`
-	Buyer       string `json:"buyer"`
-	Model       string `json:"model"`
-	Qty         int32  `json:"qty"`
-	TotalOutput int32  `json:"total_output"`
-}
-
-func (q *Queries) GetOperatorOngoingWorkOrders(ctx context.Context) ([]GetOperatorOngoingWorkOrdersRow, error) {
-	rows, err := q.db.Query(ctx, getOperatorOngoingWorkOrders)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetOperatorOngoingWorkOrdersRow
-	for rows.Next() {
-		var i GetOperatorOngoingWorkOrdersRow
-		if err := rows.Scan(
-			&i.IDWo,
-			&i.Buyer,
-			&i.Model,
-			&i.Qty,
-			&i.TotalOutput,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getOperatorOutputHariIni = `-- name: GetOperatorOutputHariIni :one
-SELECT COALESCE(SUM(qty), 0)::int FROM REPORT_PACKING WHERE tanggal = CURRENT_DATE
-`
-
-func (q *Queries) GetOperatorOutputHariIni(ctx context.Context) (int32, error) {
-	row := q.db.QueryRow(ctx, getOperatorOutputHariIni)
-	var column_1 int32
-	err := row.Scan(&column_1)
-	return column_1, err
-}
-
-const getOperatorTargetProduksiHariIni = `-- name: GetOperatorTargetProduksiHariIni :one
-SELECT COALESCE(SUM(qty), 0)::int FROM WORK_ORDER
-`
-
-func (q *Queries) GetOperatorTargetProduksiHariIni(ctx context.Context) (int32, error) {
-	row := q.db.QueryRow(ctx, getOperatorTargetProduksiHariIni)
-	var column_1 int32
-	err := row.Scan(&column_1)
-	return column_1, err
 }
 
 const getWorkOrderForAIEstimation = `-- name: GetWorkOrderForAIEstimation :many

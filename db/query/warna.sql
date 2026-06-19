@@ -1,6 +1,11 @@
 -- name: GetWarnaByID :one
 SELECT * FROM WARNA
-WHERE id_warna = $1 LIMIT 1;
+WHERE id_warna = $1
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'WARNA' AND mdd.id_record = WARNA.id_warna
+  )
+LIMIT 1;
 
 -- name: ListWarna :many
 SELECT *
@@ -9,6 +14,10 @@ WHERE (
     sqlc.arg(search_term)::text = '' OR
     nama_warna ILIKE '%' || sqlc.arg(search_term)::text || '%'
 )
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'WARNA' AND mdd.id_record = WARNA.id_warna
+  )
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN created_at END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN created_at END DESC,
@@ -26,7 +35,11 @@ FROM WARNA
 WHERE (
     sqlc.arg(search_term)::text = '' OR
     nama_warna ILIKE '%' || sqlc.arg(search_term)::text || '%'
-);
+)
+  AND NOT EXISTS (
+      SELECT 1 FROM MASTER_DATA_DELETED mdd
+      WHERE mdd.nama_tabel = 'WARNA' AND mdd.id_record = WARNA.id_warna
+  );
 
 -- name: CreateWarna :one
 INSERT INTO WARNA (nama_warna, kode_hex)
