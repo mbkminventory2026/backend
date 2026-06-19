@@ -1474,7 +1474,7 @@ definitions:
         example: false
         type: boolean
       role_name:
-        example: OPERATOR
+        example: ADMIN_SISTEM
         type: string
       user_id:
         example: 1

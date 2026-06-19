@@ -155,7 +155,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 17. Sync Sequences
+	// 17. Seed PR Internal (pending approval, for testing approve flow)
+	err = seedPRInternal(ctx, dbPool)
+	if err != nil {
+		slog.Error("failed to seed PR Internal", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	// 18. Sync Sequences
 	err = syncSequences(ctx, dbPool)
 	if err != nil {
 		slog.Error("failed to sync sequences", slog.String("error", err.Error()))
@@ -455,6 +462,7 @@ func seedHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 		"TIMELINE_READ", "TIMELINE_CREATE", "TIMELINE_UPDATE",
 		"MARKER_PLAN_READ", "MARKER_PLAN_CREATE", "MARKER_PLAN_UPDATE",
 		"CUTTING_PLAN_READ", "CUTTING_PLAN_CREATE", "CUTTING_PLAN_UPDATE",
+		"DATA_APPROVE_CUTTING_PLAN_READ", "DATA_APPROVE_CUTTING_PLAN_CREATE",
 		"INVENTORY_RECEIVE", "INVENTORY_ISSUE",
 		"PACKING_LIST_READ", "PACKING_LIST_CREATE", "PACKING_LIST_UPDATE", "PACKING_LIST_APPROVE",
 		"SURAT_JALAN_CLIENT_READ", "SURAT_JALAN_CLIENT_CREATE", "SURAT_JALAN_CLIENT_UPDATE", "SURAT_JALAN_CLIENT_DELETE",
@@ -588,8 +596,8 @@ func seedRoleHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 			"MASTER_BARANG_READ", "MASTER_JENIS_BARANG_READ", "MASTER_WARNA_READ", "MASTER_SIZE_READ", "MASTER_DEPARTEMEN_READ",
 			"PO_CLIENT_READ",
 			"PR_INTERNAL_READ", "PR_INTERNAL_APPROVE",
-			"PO_INTERNAL_READ", "PO_INTERNAL_CREATE", "PO_INTERNAL_UPDATE", "PO_INTERNAL_APPROVE",
-			"WO_CLOSE", "REKONSILIASI_READ",
+			"PO_INTERNAL_READ", "PO_INTERNAL_CREATE", "PO_INTERNAL_UPDATE",
+			"WO_READ", "WO_CLOSE", "REKONSILIASI_READ",
 			"REPORT_READ", "DASHBOARD_READ",
 		},
 		"ADMIN_PRODUKSI": {
@@ -599,6 +607,7 @@ func seedRoleHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 			"MASTER_WARNA_READ", "MASTER_WARNA_CREATE", "MASTER_WARNA_UPDATE", "MASTER_WARNA_DELETE",
 			"MASTER_SIZE_READ", "MASTER_SIZE_CREATE", "MASTER_SIZE_UPDATE", "MASTER_SIZE_DELETE",
 			"MASTER_MITRA_READ", "MASTER_PROFIL_PERUSAHAAN_READ", "MASTER_DEPARTEMEN_READ",
+			"PR_INTERNAL_READ", "PR_INTERNAL_APPROVE",
 			"PO_CLIENT_READ", "PO_CLIENT_CREATE", "PO_CLIENT_UPDATE",
 			"WO_READ", "WO_CREATE", "WO_UPDATE",
 			"PRODUCTION_SUMMARY_READ",
@@ -606,6 +615,7 @@ func seedRoleHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 			"TIMELINE_READ", "TIMELINE_CREATE", "TIMELINE_UPDATE",
 			"MARKER_PLAN_READ", "MARKER_PLAN_CREATE", "MARKER_PLAN_UPDATE",
 			"CUTTING_PLAN_READ", "CUTTING_PLAN_CREATE", "CUTTING_PLAN_UPDATE",
+			"DATA_APPROVE_CUTTING_PLAN_READ", "DATA_APPROVE_CUTTING_PLAN_CREATE",
 			"PACKING_LIST_READ", "PACKING_LIST_CREATE", "PACKING_LIST_UPDATE",
 			"SURAT_JALAN_INTERNAL_READ", "SURAT_JALAN_INTERNAL_CREATE", "SURAT_JALAN_INTERNAL_UPDATE", "SURAT_JALAN_INTERNAL_DELETE",
 			"REKONSILIASI_READ", "REKONSILIASI_CREATE", "REKONSILIASI_UPDATE",
@@ -617,6 +627,7 @@ func seedRoleHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 			"PR_INTERNAL_READ", "PR_INTERNAL_CREATE", "PR_INTERNAL_UPDATE",
 			"INVENTORY_RECEIVE", "INVENTORY_ISSUE",
 			"SURAT_JALAN_CLIENT_READ", "SURAT_JALAN_CLIENT_CREATE", "SURAT_JALAN_CLIENT_UPDATE", "SURAT_JALAN_CLIENT_DELETE",
+			"SURAT_JALAN_INTERNAL_READ",
 			"REKONSILIASI_READ",
 			"REPORT_READ", "DASHBOARD_READ",
 		},
@@ -628,6 +639,7 @@ func seedRoleHakAkses(ctx context.Context, db *pgxpool.Pool) error {
 			"PO_CLIENT_READ", "PR_INTERNAL_READ", "PO_INTERNAL_READ",
 			"WO_READ", "PRODUCTION_SUMMARY_READ", "PRODUCTION_REPORT_READ",
 			"TIMELINE_READ", "MARKER_PLAN_READ", "CUTTING_PLAN_READ",
+			"DATA_APPROVE_CUTTING_PLAN_READ", "DATA_APPROVE_CUTTING_PLAN_CREATE",
 			"PACKING_LIST_READ", "SURAT_JALAN_CLIENT_READ", "SURAT_JALAN_INTERNAL_READ", "REKONSILIASI_READ",
 			"REPORT_READ", "LOG_READ", "DASHBOARD_READ", "AI_ESTIMATION_READ",
 			"PR_INTERNAL_APPROVE", "PO_INTERNAL_APPROVE", "PACKING_LIST_APPROVE",
@@ -1631,5 +1643,178 @@ func seedProductionMaster(ctx context.Context, db *pgxpool.Pool) error {
 			slog.Info("production status plan seeded", slog.String("name", s))
 		}
 	}
+	return nil
+}
+
+// seedPRInternal seeds PR_INTERNAL documents that are NOT yet approved, so the
+// sequential approval flow can be exercised end-to-end from the frontend.
+//
+// Approval flow mirrors initializeApprovalWorkflow() for PR_INTERNAL:
+//   Step 1 PEMBUAT   (creator)        -> done
+//   Step 2 PENGECEK  (ADMIN_PRODUKSI) -> pending
+//   Step 3 PENYETUJU (MANAGER)        -> pending
+//   Step 4 RELEASE   (ADMIN_KEUANGAN) -> pending
+//
+// Header STATUS_GLOBAL stays 'pending' until all three roles approve in order.
+func seedPRInternal(ctx context.Context, db *pgxpool.Pool) error {
+	// Resolve FK dependencies.
+	var creatorID int32
+	err := db.QueryRow(ctx, `SELECT ID_USER FROM USERS WHERE username = 'super-admin' LIMIT 1`).Scan(&creatorID)
+	if err != nil {
+		return fmt.Errorf("failed to find creator user super-admin: %w", err)
+	}
+
+	var idWo int32
+	err = db.QueryRow(ctx, `SELECT ID_WO FROM WORK_ORDER WHERE MODEL = 'WO Test 1' LIMIT 1`).Scan(&idWo)
+	if err != nil {
+		return fmt.Errorf("failed to find WO Test 1 for PR seeding: %w", err)
+	}
+
+	// Resolve the three approver user ids by role.
+	roleUserID := func(roleName string) (int32, error) {
+		var id int32
+		qErr := db.QueryRow(ctx, `
+			SELECT u.ID_USER
+			FROM USERS u
+			JOIN ROLES r ON u.ID_ROLE = r.ID_ROLE
+			WHERE r.NAMA_ROLE = $1 AND u.status = 'active'
+			ORDER BY u.ID_USER ASC
+			LIMIT 1
+		`, roleName).Scan(&id)
+		return id, qErr
+	}
+
+	produksiID, err := roleUserID("ADMIN_PRODUKSI")
+	if err != nil {
+		return fmt.Errorf("failed to find ADMIN_PRODUKSI user: %w", err)
+	}
+	managerID, err := roleUserID("MANAGER")
+	if err != nil {
+		return fmt.Errorf("failed to find MANAGER user: %w", err)
+	}
+	keuanganID, err := roleUserID("ADMIN_KEUANGAN")
+	if err != nil {
+		return fmt.Errorf("failed to find ADMIN_KEUANGAN user: %w", err)
+	}
+
+	type prItem struct {
+		item, description, unit string
+		qty                     int32
+		estPrice                float64
+	}
+	prs := []struct {
+		nama, departemen, vendorName, vendorAddr, vendorTelp, projek string
+		items                                                        []prItem
+	}{
+		{
+			nama: "PR Test 1", departemen: "PRODUKSI",
+			vendorName: "PT Sumber Kain Jaya", vendorAddr: "Jl. Industri No. 1, Bandung", vendorTelp: "022-1112233",
+			projek: "PR Approval Test",
+			items: []prItem{
+				{item: "Cotton Fleece", description: "Fabric Navy 280gsm", unit: "yard", qty: 500, estPrice: 25000},
+				{item: "Sewing Thread", description: "Thread Navy cones", unit: "cones", qty: 50, estPrice: 15000},
+			},
+		},
+		{
+			nama: "PR Test 2", departemen: "PRODUKSI",
+			vendorName: "CV Benang Mas", vendorAddr: "Jl. Tekstil No. 9, Solo", vendorTelp: "0271-445566",
+			projek: "PR Approval Test",
+			items: []prItem{
+				{item: "Zipper", description: "Metal Zipper 20cm", unit: "pcs", qty: 1000, estPrice: 3500},
+			},
+		},
+		{
+			nama: "PR Test 3", departemen: "GUDANG",
+			vendorName: "PT Aksesoris Garmen", vendorAddr: "Jl. Pelabuhan No. 4, Semarang", vendorTelp: "024-778899",
+			projek: "PR Approval Test",
+			items: []prItem{
+				{item: "Button", description: "Plastic Button 4-hole", unit: "gross", qty: 200, estPrice: 12000},
+				{item: "Care Label", description: "Woven Care Label", unit: "pcs", qty: 2000, estPrice: 500},
+			},
+		},
+	}
+
+	for _, pr := range prs {
+		var exists bool
+		err = db.QueryRow(ctx,
+			`SELECT EXISTS(SELECT 1 FROM PR_INTERNAL WHERE NAMA = $1 AND PROJEK = $2)`,
+			pr.nama, pr.projek,
+		).Scan(&exists)
+		if err != nil {
+			return err
+		}
+		if exists {
+			continue
+		}
+
+		// Insert PR header.
+		var idPR int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO PR_INTERNAL (TANGGAL, NAMA, DEPARTEMEN, VENDOR_NAME, VENDOR_ADDRESS, VENDOR_TELP, PROJEK, ID_WO, ID_USER)
+			VALUES (CURRENT_DATE, $1, $2, $3, $4, $5, $6, $7, $8)
+			RETURNING ID_PR_INTERNAL
+		`, pr.nama, pr.departemen, pr.vendorName, pr.vendorAddr, pr.vendorTelp, pr.projek, idWo, creatorID).Scan(&idPR)
+		if err != nil {
+			return err
+		}
+
+		// Insert PR items.
+		for _, it := range pr.items {
+			_, err = db.Exec(ctx, `
+				INSERT INTO PR_INTERNAL_ITEM (ID_PR_INTERNAL, ITEM, DESCRIPTION, QTY, UNIT, EST_PRICE)
+				VALUES ($1, $2, $3, $4, $5, $6)
+			`, idPR, it.item, it.description, it.qty, it.unit, it.estPrice)
+			if err != nil {
+				return err
+			}
+		}
+
+		// Approval header (pending).
+		var idOtoritas int32
+		err = db.QueryRow(ctx, `
+			INSERT INTO OTORITAS_DOKUMEN (NAMA_TABEL_DOKUMEN, ID_DOKUMEN, STATUS_GLOBAL)
+			VALUES ('PR_INTERNAL', $1, 'pending')
+			RETURNING ID_OTORITAS
+		`, idPR).Scan(&idOtoritas)
+		if err != nil {
+			return err
+		}
+
+		// Approval steps. Order of insertion defines the sequence.
+		_, err = db.Exec(ctx, `
+			INSERT INTO OTORITAS_DOKUMEN_DETAIL (ID_OTORITAS, ID_USER, TIPE_PERAN, IS_ACTION_DONE, WAKTU_AKSI, CATATAN)
+			VALUES ($1, $2, 'PEMBUAT', TRUE, NOW(), 'Dokumen PR dibuat')
+		`, idOtoritas, creatorID)
+		if err != nil {
+			return err
+		}
+		_, err = db.Exec(ctx, `
+			INSERT INTO OTORITAS_DOKUMEN_DETAIL (ID_OTORITAS, ID_USER, TIPE_PERAN, IS_ACTION_DONE)
+			VALUES ($1, $2, 'PENGECEK', FALSE)
+		`, idOtoritas, produksiID)
+		if err != nil {
+			return err
+		}
+		_, err = db.Exec(ctx, `
+			INSERT INTO OTORITAS_DOKUMEN_DETAIL (ID_OTORITAS, ID_USER, TIPE_PERAN, IS_ACTION_DONE)
+			VALUES ($1, $2, 'PENYETUJU', FALSE)
+		`, idOtoritas, managerID)
+		if err != nil {
+			return err
+		}
+		_, err = db.Exec(ctx, `
+			INSERT INTO OTORITAS_DOKUMEN_DETAIL (ID_OTORITAS, ID_USER, TIPE_PERAN, IS_ACTION_DONE)
+			VALUES ($1, $2, 'RELEASE', FALSE)
+		`, idOtoritas, keuanganID)
+		if err != nil {
+			return err
+		}
+
+		slog.Info("PR internal seeded (pending approval)",
+			slog.String("nama", pr.nama),
+			slog.Int("id_pr", int(idPR)),
+			slog.Int("id_otoritas", int(idOtoritas)))
+	}
+
 	return nil
 }

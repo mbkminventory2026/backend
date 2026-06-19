@@ -426,7 +426,7 @@ func main() {
 	materialListHandler.RegisterRoutes(router, authMiddleware)
 	timelineProduksiHandler.RegisterRoutes(router, authMiddleware)
 	// Note: Register production master alongside other master data routes
-	productionMasterGroup := router.Group("/api/v1/master").Use(authMiddleware)
+	productionMasterGroup := router.Group("/api/v1/master").Use(authMiddleware, httpdelivery.RequireInternalUser())
 	{
 		productionMasterGroup.GET("/production-lines", productionMasterHandler.ListProductionLines)
 		productionMasterGroup.GET("/production-lines/:id", productionMasterHandler.GetProductionLineByID)

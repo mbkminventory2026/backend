@@ -73,7 +73,7 @@ type LoginServiceUnavailableDoc struct {
 type GetMeResponse struct {
 	UserID             int32  `json:"user_id" example:"1"`
 	IDRole             int32  `json:"id_role" example:"1"`
-	RoleName           string `json:"role_name" example:"OPERATOR"`
+	RoleName           string `json:"role_name" example:"ADMIN_SISTEM"`
 	MustChangePassword bool   `json:"must_change_password" example:"false"`
 }
 
