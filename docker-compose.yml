@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
+      network: host
     env_file:
       - .env
     environment:
