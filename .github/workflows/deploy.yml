@@ -1,0 +1,77 @@
+name: Deploy Backend to VPS
+
+
+
+on:
+
+  push:
+
+    branches:
+
+      - main
+
+
+
+jobs:
+
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Repository
+
+        uses: actions/checkout@v4
+
+
+
+      - name: Executing remote ssh commands to deploy
+
+        uses: appleboy/ssh-action@v1.0.3
+
+        with:
+
+          host: ${{ secrets.VPS_HOST }}
+
+          username: ${{ secrets.VPS_USER }}
+
+          key: ${{ secrets.VPS_SSH_KEY }}
+
+          port: 22
+
+          script: |
+
+            # Masuk ke direktori projek di VPS
+
+            cd backend/
+
+            
+
+            # Ambil code terbaru dari Github
+
+            git checkout main
+
+            git pull origin main
+
+            
+
+            # Jalankan perintah Docker yang diminta
+
+            # Tambahkan flag -d agar container berjalan di background (tidak memblokir terminal)
+
+            docker compose down -v
+
+            docker compose up -d --build
+
+            
+
+            # Menjalankan perintah Makefile
+
+            # Catatan: Jika make dijalankan di dalam container, modifikasi menjadi: docker compose exec -T <nama_service> make migrate-down
+
+            make migrate-down
+
+            make migrate-up
+
+            make seed
