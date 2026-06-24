@@ -48,8 +48,7 @@ SELECT
     dacp.created_at,
     wo.buyer,
     wo.model,
-    pci.style,
-    pci.colour
+    pci.style
 FROM DATA_APPROVE_CUTTING_PLAN dacp
 JOIN WORK_ORDER wo ON dacp.id_wo = wo.id_wo
 JOIN PO_CLIENT_ITEM pci ON pci.id_po_client_item = wo.id_po_client_item
@@ -66,7 +65,6 @@ type GetDataApproveCuttingPlanByIDRow struct {
 	Buyer     string             `json:"buyer"`
 	Model     string             `json:"model"`
 	Style     string             `json:"style"`
-	Colour    string             `json:"colour"`
 }
 
 func (q *Queries) GetDataApproveCuttingPlanByID(ctx context.Context, idDacp int32) (GetDataApproveCuttingPlanByIDRow, error) {
@@ -81,7 +79,6 @@ func (q *Queries) GetDataApproveCuttingPlanByID(ctx context.Context, idDacp int3
 		&i.Buyer,
 		&i.Model,
 		&i.Style,
-		&i.Colour,
 	)
 	return i, err
 }
@@ -101,7 +98,7 @@ JOIN MASTER_SIZE ms ON ms.id_size = wss.id_size
 LEFT JOIN (
     SELECT
         rss.id_wo_shell_size,
-        SUM(rss.ratio_plan) AS qty_cutting_plan
+        SUM(ROUND(rss.ratio_plan::numeric * rs.plan_spreading_gelaran, 0))::bigint AS qty_cutting_plan
     FROM RATIO_SIZE_SPREADING rss
     JOIN RATIO_SPREADING rs ON rs.id_ratio_spreading = rss.id_ratio_spreading
     JOIN WORK_ORDER_SHELL wos2 ON wos2.id_wo_shell = rs.id_wo_shell
@@ -111,7 +108,7 @@ LEFT JOIN (
 LEFT JOIN (
     SELECT
         rsm.id_wo_shell_size,
-        SUM(rsm.ratio_plan) AS qty_cutting_actual
+        SUM(ROUND(rsm.ratio_plan::numeric * rm.plan_spreading_gelaran, 0))::bigint AS qty_cutting_actual
     FROM RATIO_SIZE_MARKER rsm
     JOIN RATIO_MARKER rm ON rm.id_ratio_marker = rsm.id_ratio_marker
     JOIN WORK_ORDER_SHELL wos3 ON wos3.id_wo_shell = rm.id_wo_shell

@@ -7491,15 +7491,11 @@
         "model.CreatePOClientItemRequest": {
             "type": "object",
             "required": [
-                "colour",
                 "price",
                 "qty",
                 "style"
             ],
             "properties": {
-                "colour": {
-                    "type": "string"
-                },
                 "description": {
                     "type": "string"
                 },
@@ -8548,9 +8544,6 @@
             "type": "object",
             "properties": {
                 "buyer": {
-                    "type": "string"
-                },
-                "colour": {
                     "type": "string"
                 },
                 "created_at": {
@@ -9902,9 +9895,6 @@
         "model.POClientItemResponse": {
             "type": "object",
             "properties": {
-                "colour": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },

@@ -85,7 +85,6 @@ const createPOClientItem = `-- name: CreatePOClientItem :one
 INSERT INTO PO_CLIENT_ITEM (
     id_po_client,
     style,
-    colour,
     description,
     qty,
     price
@@ -94,16 +93,14 @@ INSERT INTO PO_CLIENT_ITEM (
     $2,
     $3,
     $4,
-    $5,
-    $6::numeric
+    $5::numeric
 )
-RETURNING id_po_client_item, id_po_client, style, colour, description, qty, price, created_at
+RETURNING id_po_client_item, id_po_client, style, description, qty, price, created_at
 `
 
 type CreatePOClientItemParams struct {
 	IDPoClient  int32          `json:"id_po_client"`
 	Style       string         `json:"style"`
-	Colour      string         `json:"colour"`
 	Description string         `json:"description"`
 	Qty         int32          `json:"qty"`
 	Price       pgtype.Numeric `json:"price"`
@@ -113,7 +110,6 @@ func (q *Queries) CreatePOClientItem(ctx context.Context, arg CreatePOClientItem
 	row := q.db.QueryRow(ctx, createPOClientItem,
 		arg.IDPoClient,
 		arg.Style,
-		arg.Colour,
 		arg.Description,
 		arg.Qty,
 		arg.Price,
@@ -123,7 +119,6 @@ func (q *Queries) CreatePOClientItem(ctx context.Context, arg CreatePOClientItem
 		&i.IDPoClientItem,
 		&i.IDPoClient,
 		&i.Style,
-		&i.Colour,
 		&i.Description,
 		&i.Qty,
 		&i.Price,
@@ -197,7 +192,6 @@ const listAvailablePOClientItems = `-- name: ListAvailablePOClientItems :many
 SELECT 
     pci.id_po_client_item,
     pci.style,
-    pci.colour,
     pci.qty,
     pci.id_po_client
 FROM PO_CLIENT_ITEM pci
@@ -212,7 +206,6 @@ ORDER BY pci.created_at DESC
 type ListAvailablePOClientItemsRow struct {
 	IDPoClientItem int32  `json:"id_po_client_item"`
 	Style          string `json:"style"`
-	Colour         string `json:"colour"`
 	Qty            int32  `json:"qty"`
 	IDPoClient     int32  `json:"id_po_client"`
 }
@@ -229,7 +222,6 @@ func (q *Queries) ListAvailablePOClientItems(ctx context.Context) ([]ListAvailab
 		if err := rows.Scan(
 			&i.IDPoClientItem,
 			&i.Style,
-			&i.Colour,
 			&i.Qty,
 			&i.IDPoClient,
 		); err != nil {

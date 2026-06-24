@@ -1661,10 +1661,11 @@ func seedProductionMaster(ctx context.Context, db *pgxpool.Pool) error {
 // sequential approval flow can be exercised end-to-end from the frontend.
 //
 // Approval flow mirrors initializeApprovalWorkflow() for PR_INTERNAL:
-//   Step 1 PEMBUAT   (creator)        -> done
-//   Step 2 PENGECEK  (ADMIN_PRODUKSI) -> pending
-//   Step 3 PENYETUJU (MANAGER)        -> pending
-//   Step 4 RELEASE   (ADMIN_KEUANGAN) -> pending
+//
+//	Step 1 PEMBUAT   (creator)        -> done
+//	Step 2 PENGECEK  (ADMIN_PRODUKSI) -> pending
+//	Step 3 PENYETUJU (MANAGER)        -> pending
+//	Step 4 RELEASE   (ADMIN_KEUANGAN) -> pending
 //
 // Header STATUS_GLOBAL stays 'pending' until all three roles approve in order.
 func seedPRInternal(ctx context.Context, db *pgxpool.Pool) error {

@@ -424,7 +424,6 @@ SELECT
     pci.id_po_client_item,
     pci.id_po_client,
     pci.style,
-    pci.colour,
     pci.description,
     pci.qty,
     pci.price,
@@ -444,7 +443,6 @@ type ListPOClientItemsByPOClientIDRow struct {
 	IDPoClientItem int32              `json:"id_po_client_item"`
 	IDPoClient     int32              `json:"id_po_client"`
 	Style          string             `json:"style"`
-	Colour         string             `json:"colour"`
 	Description    string             `json:"description"`
 	Qty            int32              `json:"qty"`
 	Price          pgtype.Numeric     `json:"price"`
@@ -467,7 +465,6 @@ func (q *Queries) ListPOClientItemsByPOClientID(ctx context.Context, idPoClient 
 			&i.IDPoClientItem,
 			&i.IDPoClient,
 			&i.Style,
-			&i.Colour,
 			&i.Description,
 			&i.Qty,
 			&i.Price,

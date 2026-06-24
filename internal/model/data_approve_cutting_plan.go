@@ -29,7 +29,6 @@ type DataApproveCuttingPlanResponse struct {
 	Buyer     string                      `json:"buyer"`
 	Model     string                      `json:"model"`
 	Style     string                      `json:"style"`
-	Colour    string                      `json:"colour"`
 	CreatedAt string                      `json:"created_at"`
 	Rows      []DataApproveCuttingPlanRow `json:"rows"`
 }

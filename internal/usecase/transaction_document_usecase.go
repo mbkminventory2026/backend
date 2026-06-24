@@ -95,7 +95,6 @@ func (u *TransactionDocumentUseCase) CreatePOClient(ctx context.Context, req mod
 		item, itemErr := qtx.CreatePOClientItem(ctx, entity.CreatePOClientItemParams{
 			IDPoClient:  header.IDPoClient,
 			Style:       itemReq.Style,
-			Colour:      itemReq.Colour,
 			Description: itemReq.Description,
 			Qty:         itemReq.Qty,
 			Price:       mustNumeric(itemReq.Price),
@@ -107,7 +106,6 @@ func (u *TransactionDocumentUseCase) CreatePOClient(ctx context.Context, req mod
 		items = append(items, model.POClientItemResponse{
 			ID:          item.IDPoClientItem,
 			Style:       item.Style,
-			Colour:      item.Colour,
 			Description: item.Description,
 			Qty:         item.Qty,
 			Price:       numericToFloat64(item.Price),
@@ -225,7 +223,6 @@ func (u *TransactionDocumentUseCase) UpdatePOClient(ctx context.Context, id int3
 		item, itemErr := qtx.CreatePOClientItem(ctx, entity.CreatePOClientItemParams{
 			IDPoClient:  id,
 			Style:       itemReq.Style,
-			Colour:      itemReq.Colour,
 			Description: itemReq.Description,
 			Qty:         itemReq.Qty,
 			Price:       mustNumeric(itemReq.Price),
@@ -237,7 +234,6 @@ func (u *TransactionDocumentUseCase) UpdatePOClient(ctx context.Context, id int3
 		items = append(items, model.POClientItemResponse{
 			ID:          item.IDPoClientItem,
 			Style:       item.Style,
-			Colour:      item.Colour,
 			Description: item.Description,
 			Qty:         item.Qty,
 			Price:       numericToFloat64(item.Price),
@@ -642,7 +638,6 @@ func (u *TransactionDocumentUseCase) GetPOClientDetail(ctx context.Context, id i
 		items = append(items, model.POClientItemResponse{
 			ID:          row.IDPoClientItem,
 			Style:       row.Style,
-			Colour:      row.Colour,
 			Description: row.Description,
 			Qty:         row.Qty,
 			Price:       numericToFloat64(row.Price),
@@ -995,7 +990,6 @@ func buildPOClientAuditSnapshot(item *model.POClientResponse) map[string]any {
 		items = append(items, map[string]any{
 			"id_po_client_item": row.ID,
 			"style":             row.Style,
-			"colour":            row.Colour,
 			"description":       row.Description,
 			"qty":               row.Qty,
 			"price":             row.Price,
@@ -1040,7 +1034,6 @@ func buildPOClientAuditSnapshotFromDetail(item *model.POClientDetailResponse) ma
 		items = append(items, map[string]any{
 			"id_po_client_item": row.ID,
 			"style":             row.Style,
-			"colour":            row.Colour,
 			"description":       row.Description,
 			"qty":               row.Qty,
 			"price":             row.Price,

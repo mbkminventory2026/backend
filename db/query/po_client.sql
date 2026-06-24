@@ -35,19 +35,17 @@ RETURNING id_po_client, po_number, tanggal, season, delivery, payment_term, file
 INSERT INTO PO_CLIENT_ITEM (
     id_po_client,
     style,
-    colour,
     description,
     qty,
     price
 ) VALUES (
     sqlc.arg(id_po_client),
     sqlc.arg(style),
-    sqlc.arg(colour),
     sqlc.arg(description),
     sqlc.arg(qty),
     sqlc.arg(price)::numeric
 )
-RETURNING id_po_client_item, id_po_client, style, colour, description, qty, price, created_at;
+RETURNING id_po_client_item, id_po_client, style, description, qty, price, created_at;
 
 -- name: DeletePOClientItemsByPOClientID :exec
 DELETE FROM PO_CLIENT_ITEM
@@ -81,7 +79,6 @@ WHERE pci.id_po_client = sqlc.arg(id_po_client);
 SELECT 
     pci.id_po_client_item,
     pci.style,
-    pci.colour,
     pci.qty,
     pci.id_po_client
 FROM PO_CLIENT_ITEM pci

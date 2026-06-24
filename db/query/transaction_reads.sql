@@ -220,7 +220,6 @@ SELECT
     pci.id_po_client_item,
     pci.id_po_client,
     pci.style,
-    pci.colour,
     pci.description,
     pci.qty,
     pci.price,

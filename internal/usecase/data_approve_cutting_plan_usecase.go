@@ -111,7 +111,6 @@ func (u *DataApproveCuttingPlanUseCase) GetDataApproveCuttingPlan(ctx context.Co
 		Buyer:     header.Buyer,
 		Model:     header.Model,
 		Style:     header.Style,
-		Colour:    header.Colour,
 		CreatedAt: header.CreatedAt.Time.Format(time.RFC3339),
 		Rows:      rows,
 	}, nil

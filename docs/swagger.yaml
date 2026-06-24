@@ -563,8 +563,6 @@ definitions:
     type: object
   model.CreatePOClientItemRequest:
     properties:
-      colour:
-        type: string
       description:
         type: string
       price:
@@ -575,7 +573,6 @@ definitions:
       style:
         type: string
     required:
-    - colour
     - price
     - qty
     - style
@@ -1300,8 +1297,6 @@ definitions:
   model.DataApproveCuttingPlanResponse:
     properties:
       buyer:
-        type: string
-      colour:
         type: string
       created_at:
         type: string
@@ -2208,8 +2203,6 @@ definitions:
     type: object
   model.POClientItemResponse:
     properties:
-      colour:
-        type: string
       created_at:
         type: string
       description:

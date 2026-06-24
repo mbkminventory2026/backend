@@ -304,7 +304,6 @@ type PoClientItem struct {
 	IDPoClientItem int32              `json:"id_po_client_item"`
 	IDPoClient     int32              `json:"id_po_client"`
 	Style          string             `json:"style"`
-	Colour         string             `json:"colour"`
 	Description    string             `json:"description"`
 	Qty            int32              `json:"qty"`
 	Price          pgtype.Numeric     `json:"price"`

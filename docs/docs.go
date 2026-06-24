@@ -7494,15 +7494,11 @@ const docTemplate = `{
         "model.CreatePOClientItemRequest": {
             "type": "object",
             "required": [
-                "colour",
                 "price",
                 "qty",
                 "style"
             ],
             "properties": {
-                "colour": {
-                    "type": "string"
-                },
                 "description": {
                     "type": "string"
                 },
@@ -8551,9 +8547,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "buyer": {
-                    "type": "string"
-                },
-                "colour": {
                     "type": "string"
                 },
                 "created_at": {
@@ -9905,9 +9898,6 @@ const docTemplate = `{
         "model.POClientItemResponse": {
             "type": "object",
             "properties": {
-                "colour": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },

@@ -4,7 +4,6 @@ import "permatatex-inventory/pkg/response"
 
 type CreatePOClientItemRequest struct {
 	Style       string  `json:"style" binding:"required"`
-	Colour      string  `json:"colour" binding:"required"`
 	Description string  `json:"description"`
 	Qty         int32   `json:"qty" binding:"required,gt=0"`
 	Price       float64 `json:"price" binding:"required,gte=0"`
@@ -77,7 +76,6 @@ type CreatePOInternalRequest struct {
 type POClientItemResponse struct {
 	ID          int32   `json:"id_po_client_item"`
 	Style       string  `json:"style"`
-	Colour      string  `json:"colour"`
 	Description string  `json:"description"`
 	Qty         int32   `json:"qty"`
 	Price       float64 `json:"price"`
