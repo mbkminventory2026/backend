@@ -297,7 +297,7 @@ func buildWorkOrderExportTrimRows(detail *model.WorkOrderDetailResponse) []workO
 		rows = append(rows, workOrderExcelTrimRow{
 			number:    number,
 			item:      strings.TrimSpace(trim.Item),
-			desc:      strings.TrimSpace(trim.Description),
+			desc:      buildWorkOrderTrimDescription(trim.Item, trim.Description),
 			color:     strings.TrimSpace(trim.Color),
 			code:      strings.TrimSpace(trim.Code),
 			cons:      trim.Cons,
@@ -788,6 +788,20 @@ func buildWorkOrderTrimByLabel(providedBy string, buyer string) string {
 		return strings.TrimSpace(buyer)
 	}
 	return "PERMATATEX"
+}
+
+func buildWorkOrderTrimDescription(item string, description string) string {
+	trimmedDescription := strings.TrimSpace(description)
+	if !strings.EqualFold(strings.TrimSpace(item), "Main Size Label") {
+		return trimmedDescription
+	}
+
+	parts := strings.Fields(trimmedDescription)
+	if len(parts) == 0 {
+		return ""
+	}
+
+	return strings.TrimSpace(parts[len(parts)-1])
 }
 
 func buildWorkOrderFOBCMTLabel(isFOB bool) string {
