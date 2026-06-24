@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,14 +17,24 @@ import (
 )
 
 type WorkOrderProductionHandler struct {
-	useCase *usecase.WorkOrderProductionUseCase
+	useCase            *usecase.WorkOrderProductionUseCase
+	excelExportUseCase *usecase.WorkOrderExcelExportUseCase
 }
 
-func NewWorkOrderProductionHandler(useCase *usecase.WorkOrderProductionUseCase) (*WorkOrderProductionHandler, error) {
+func NewWorkOrderProductionHandler(
+	useCase *usecase.WorkOrderProductionUseCase,
+	excelExportUseCase *usecase.WorkOrderExcelExportUseCase,
+) (*WorkOrderProductionHandler, error) {
 	if useCase == nil {
 		return nil, errors.New("work order production usecase is required")
 	}
-	return &WorkOrderProductionHandler{useCase: useCase}, nil
+	if excelExportUseCase == nil {
+		return nil, errors.New("work order excel export usecase is required")
+	}
+	return &WorkOrderProductionHandler{
+		useCase:            useCase,
+		excelExportUseCase: excelExportUseCase,
+	}, nil
 }
 
 func (h *WorkOrderProductionHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
@@ -32,6 +43,7 @@ func (h *WorkOrderProductionHandler) RegisterRoutes(router gin.IRouter, authMidd
 	v1.GET("/work-orders", RequirePermission(PermissionWORead), h.ListWorkOrders)
 	v1.GET("/work-orders/returns", RequirePermission(PermissionWORead), h.ListReturClients)
 	v1.GET("/work-orders/:id", RequirePermission(PermissionWORead), h.GetWorkOrderDetail)
+	v1.GET("/work-orders/:id/export/excel", internalOnly, RequirePermission(PermissionWORead), h.ExportWorkOrderExcel)
 	v1.GET("/work-orders/shells/:id/total-qty", internalOnly, RequirePermission(PermissionWORead), h.GetWorkOrderShellTotalQty)
 	v1.GET("/production/summary", RequirePermission(PermissionProductionSummaryRead), h.ListProductionSummary)
 	v1.POST("/work-orders", internalOnly, RequirePermission(PermissionWOCreate), h.CreateWorkOrder)
@@ -108,6 +120,37 @@ func (h *WorkOrderProductionHandler) GetWorkOrderDetail(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusOK, "work order retrieved", item)
+}
+
+// ExportWorkOrderExcel godoc
+// @Summary      Export Work Order Excel
+// @Description  Generates a downloadable Excel workbook for one work order using the registered export template.
+// @Tags         Work Order & Production
+// @Produce      application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Work Order ID"
+// @Success      200  {file}    binary
+// @Failure      400  {object}  model.WorkOrderErrorDoc
+// @Failure      401  {object}  model.WorkOrderErrorDoc
+// @Failure      403  {object}  model.WorkOrderErrorDoc
+// @Failure      404  {object}  model.WorkOrderErrorDoc
+// @Failure      500  {object}  model.WorkOrderErrorDoc
+// @Router       /api/v1/work-orders/{id}/export/excel [get]
+func (h *WorkOrderProductionHandler) ExportWorkOrderExcel(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid work order id", nil))
+		return
+	}
+
+	exportedFile, err := h.excelExportUseCase.ExportByID(c.Request.Context(), id)
+	if err != nil {
+		h.handleExportError(c, err)
+		return
+	}
+
+	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, sanitizeWorkOrderAttachmentFileName(exportedFile.FileName)))
+	c.Data(http.StatusOK, exportedFile.ContentType, exportedFile.Content)
 }
 
 // ListProductionSummary godoc
@@ -317,6 +360,29 @@ func (h *WorkOrderProductionHandler) handleError(c *gin.Context, err error) {
 	default:
 		AbortWithError(c, err)
 	}
+}
+
+func (h *WorkOrderProductionHandler) handleExportError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, usecase.ErrWorkOrderValidation):
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, err.Error(), model.WorkOrderErrorDetail{Code: "invalid_work_order_payload"}))
+	case errors.Is(err, usecase.ErrWorkOrderNotFound):
+		AbortWithError(c, NewHTTPError(http.StatusNotFound, err.Error(), model.WorkOrderErrorDetail{Code: "work_order_not_found"}))
+	case errors.Is(err, usecase.ErrWorkOrderServiceUnavailable):
+		AbortWithError(c, NewHTTPError(http.StatusInternalServerError, err.Error(), model.WorkOrderErrorDetail{Code: "work_order_service_unavailable"}))
+	default:
+		AbortWithError(c, NewHTTPError(http.StatusInternalServerError, "failed to export work order", model.WorkOrderErrorDetail{Code: "work_order_export_failed"}))
+	}
+}
+
+func sanitizeWorkOrderAttachmentFileName(fileName string) string {
+	name := strings.TrimSpace(fileName)
+	if name == "" {
+		return "work_order_export.xlsx"
+	}
+
+	replacer := strings.NewReplacer(`"`, "", "\r", "", "\n", "")
+	return replacer.Replace(name)
 }
 
 // CreateReturClient godoc

@@ -227,6 +227,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	workOrderExcelExportUseCase, err := usecase.NewWorkOrderExcelExportUseCase(excelRenderer, workOrderProductionUseCase)
+	if err != nil {
+		logger.Error("failed to initialize work order excel export usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	rekonsiliasiUseCase, err := usecase.NewRekonsiliasiUseCase(queries, dbPool)
 	if err != nil {
 		logger.Error("failed to initialize rekonsiliasi usecase", slog.String("error", err.Error()))
@@ -277,7 +284,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	workOrderProductionHandler, err := httpdelivery.NewWorkOrderProductionHandler(workOrderProductionUseCase)
+	workOrderProductionHandler, err := httpdelivery.NewWorkOrderProductionHandler(workOrderProductionUseCase, workOrderExcelExportUseCase)
 	if err != nil {
 		logger.Error("failed to initialize work order production handler", slog.String("error", err.Error()))
 		dbPool.Close()
@@ -531,7 +538,7 @@ func corsMiddleware(allowOrigin string) gin.HandlerFunc {
 		headers.Set("Access-Control-Allow-Origin", allowOrigin)
 		headers.Set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
 		headers.Set("Access-Control-Allow-Headers", "Origin,Content-Type,Accept,Authorization")
-		headers.Set("Access-Control-Expose-Headers", "X-Total-Count")
+		headers.Set("Access-Control-Expose-Headers", "X-Total-Count, Content-Disposition")
 		headers.Set("Access-Control-Allow-Credentials", "true")
 
 		if c.Request.Method == stdhttp.MethodOptions {

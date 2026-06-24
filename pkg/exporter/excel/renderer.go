@@ -82,8 +82,8 @@ func (r *Renderer) ListTemplates() ([]string, error) {
 	return templates, nil
 }
 
-func (r *Renderer) Render(request WorkbookRequest) ([]byte, error) {
-	templatePath, err := r.resolveTemplatePath(request.TemplateName)
+func (r *Renderer) OpenTemplate(templateName string) (*excelize.File, error) {
+	templatePath, err := r.resolveTemplatePath(templateName)
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +91,15 @@ func (r *Renderer) Render(request WorkbookRequest) ([]byte, error) {
 	workbook, err := excelize.OpenFile(templatePath)
 	if err != nil {
 		return nil, fmt.Errorf("open excel template: %w", err)
+	}
+
+	return workbook, nil
+}
+
+func (r *Renderer) Render(request WorkbookRequest) ([]byte, error) {
+	workbook, err := r.OpenTemplate(request.TemplateName)
+	if err != nil {
+		return nil, err
 	}
 	defer func() {
 		_ = workbook.Close()
