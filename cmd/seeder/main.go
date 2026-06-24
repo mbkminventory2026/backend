@@ -690,17 +690,6 @@ func seedDepartemen(ctx context.Context, db *pgxpool.Pool) error {
 
 func seedSystemUsers(ctx context.Context, db *pgxpool.Pool) error {
 	if err := seedSystemUser(ctx, db, seedSystemUserParams{
-		Username:                 "operator",
-		Password:                 "admin123",
-		RoleName:                 "ADMIN_SISTEM",
-		DepartmentName:           "IT",
-		MustChangePassword:       false,
-		PreservePasswordOnUpdate: false,
-	}); err != nil {
-		return err
-	}
-
-	if err := seedSystemUser(ctx, db, seedSystemUserParams{
 		Username:                 "super-admin",
 		Password:                 "admin123",
 		RoleName:                 "SUPER_ADMIN",
