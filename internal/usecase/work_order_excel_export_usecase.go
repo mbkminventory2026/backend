@@ -19,6 +19,8 @@ import (
 const (
 	workOrderExportTemplateName = "xlsx/template_wo.xlsx"
 	workOrderTemplateMaxSizes   = 6
+	workOrderBorderColor        = "000000"
+	workOrderBorderStyle        = 1
 
 	workOrderShellStartRow     = 14
 	workOrderShellMiddleRow    = 16
@@ -51,6 +53,10 @@ type workOrderExcelLayout struct {
 	trimInsertBefore  int
 	footerApproveRow  int
 	footerPreparedRow int
+}
+
+type workOrderStyleCache struct {
+	fullBorder map[int]int
 }
 
 type workOrderExcelShellRow struct {
@@ -145,6 +151,9 @@ func (u *WorkOrderExcelExportUseCase) ExportByID(ctx context.Context, id int32) 
 	}
 	if err := writeWorkOrderExportTrimSection(workbook, sheetName, layout, trimRows); err != nil {
 		return nil, fmt.Errorf("write work order export trim section: %w", err)
+	}
+	if err := applyWorkOrderExportBorders(workbook, sheetName, layout, len(trimRows)); err != nil {
+		return nil, fmt.Errorf("apply work order export borders: %w", err)
 	}
 	if err := writeWorkOrderExportFooter(workbook, sheetName, layout, detail.CreatedAt); err != nil {
 		return nil, fmt.Errorf("write work order export footer: %w", err)
@@ -523,7 +532,222 @@ func writeWorkOrderExportTrimSection(
 		}
 	}
 
+	if err := mergeWorkOrderTrimGroups(workbook, sheetName, layout.trimStartRow, rows); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func mergeWorkOrderTrimGroups(
+	workbook *excelize.File,
+	sheetName string,
+	startRow int,
+	rows []workOrderExcelTrimRow,
+) error {
+	if len(rows) == 0 {
+		return nil
+	}
+
+	if err := mergeWorkOrderTrimColumnByGroup(workbook, sheetName, startRow, rows, "A", func(row workOrderExcelTrimRow) string {
+		return strconv.Itoa(row.number)
+	}); err != nil {
+		return err
+	}
+	if err := mergeWorkOrderTrimColumnByGroup(workbook, sheetName, startRow, rows, "B", func(row workOrderExcelTrimRow) string {
+		return row.item
+	}); err != nil {
+		return err
+	}
+	if err := mergeWorkOrderTrimColumnByGroup(workbook, sheetName, startRow, rows, "C", func(row workOrderExcelTrimRow) string {
+		return row.desc
+	}); err != nil {
+		return err
+	}
+	if err := mergeWorkOrderTrimWideColumnByGroup(workbook, sheetName, startRow, rows, "L", "M", func(row workOrderExcelTrimRow) string {
+		return row.position
+	}); err != nil {
+		return err
+	}
+	if err := mergeWorkOrderTrimColumnByGroup(workbook, sheetName, startRow, rows, "N", func(row workOrderExcelTrimRow) string {
+		return row.by
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func mergeWorkOrderTrimColumnByGroup(
+	workbook *excelize.File,
+	sheetName string,
+	startRow int,
+	rows []workOrderExcelTrimRow,
+	column string,
+	valueFn func(workOrderExcelTrimRow) string,
+) error {
+	groupStart := 0
+	currentValue := valueFn(rows[0])
+
+	for index := 1; index <= len(rows); index++ {
+		isBoundary := index == len(rows) || valueFn(rows[index]) != currentValue
+		if !isBoundary {
+			continue
+		}
+
+		if currentValue != "" && index-groupStart > 1 {
+			top := column + strconv.Itoa(startRow+groupStart)
+			bottom := column + strconv.Itoa(startRow+index-1)
+			if err := workbook.MergeCell(sheetName, top, bottom); err != nil {
+				return err
+			}
+		}
+
+		if index < len(rows) {
+			groupStart = index
+			currentValue = valueFn(rows[index])
+		}
+	}
+
+	return nil
+}
+
+func mergeWorkOrderTrimWideColumnByGroup(
+	workbook *excelize.File,
+	sheetName string,
+	startRow int,
+	rows []workOrderExcelTrimRow,
+	startColumn string,
+	endColumn string,
+	valueFn func(workOrderExcelTrimRow) string,
+) error {
+	groupStart := 0
+	currentValue := valueFn(rows[0])
+
+	for index := 1; index <= len(rows); index++ {
+		isBoundary := index == len(rows) || valueFn(rows[index]) != currentValue
+		if !isBoundary {
+			continue
+		}
+
+		top := startColumn + strconv.Itoa(startRow+groupStart)
+		bottom := endColumn + strconv.Itoa(startRow+index-1)
+		if currentValue != "" || index-groupStart == 1 {
+			if err := workbook.MergeCell(sheetName, top, bottom); err != nil {
+				return err
+			}
+		}
+
+		if index < len(rows) {
+			groupStart = index
+			currentValue = valueFn(rows[index])
+		}
+	}
+
+	return nil
+}
+
+func applyWorkOrderExportBorders(
+	workbook *excelize.File,
+	sheetName string,
+	layout workOrderExcelLayout,
+	trimRowCount int,
+) error {
+	cache := workOrderStyleCache{
+		fullBorder: make(map[int]int),
+	}
+
+	if err := applyWorkOrderBorderRange(workbook, sheetName, "A11", "M"+strconv.Itoa(layout.shellTotalRow), &cache); err != nil {
+		return err
+	}
+
+	trimEndRow := max(layout.trimStartRow, layout.trimStartRow+trimRowCount-1)
+	if trimRowCount > 0 {
+		if err := applyWorkOrderBorderRange(workbook, sheetName, "A"+strconv.Itoa(layout.trimHeaderRow), "N"+strconv.Itoa(trimEndRow), &cache); err != nil {
+			return err
+		}
+	} else {
+		if err := applyWorkOrderBorderRange(workbook, sheetName, "A"+strconv.Itoa(layout.trimHeaderRow), "N"+strconv.Itoa(layout.trimHeaderRow), &cache); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func applyWorkOrderBorderRange(
+	workbook *excelize.File,
+	sheetName string,
+	startCell string,
+	endCell string,
+	cache *workOrderStyleCache,
+) error {
+	startCol, startRow, err := excelize.CellNameToCoordinates(startCell)
+	if err != nil {
+		return err
+	}
+	endCol, endRow, err := excelize.CellNameToCoordinates(endCell)
+	if err != nil {
+		return err
+	}
+
+	for row := startRow; row <= endRow; row++ {
+		for col := startCol; col <= endCol; col++ {
+			cellName, err := excelize.CoordinatesToCellName(col, row)
+			if err != nil {
+				return err
+			}
+			styleID, err := borderedWorkOrderStyleID(workbook, sheetName, cellName, cache)
+			if err != nil {
+				return err
+			}
+			if err := workbook.SetCellStyle(sheetName, cellName, cellName, styleID); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func borderedWorkOrderStyleID(
+	workbook *excelize.File,
+	sheetName string,
+	cellName string,
+	cache *workOrderStyleCache,
+) (int, error) {
+	baseStyleID, err := workbook.GetCellStyle(sheetName, cellName)
+	if err != nil {
+		return 0, err
+	}
+
+	if cachedStyleID, ok := cache.fullBorder[baseStyleID]; ok {
+		return cachedStyleID, nil
+	}
+
+	style, err := workbook.GetStyle(baseStyleID)
+	if err != nil {
+		return 0, err
+	}
+	if style == nil {
+		style = &excelize.Style{}
+	}
+
+	clonedStyle := *style
+	clonedStyle.Border = []excelize.Border{
+		{Type: "left", Color: workOrderBorderColor, Style: workOrderBorderStyle},
+		{Type: "right", Color: workOrderBorderColor, Style: workOrderBorderStyle},
+		{Type: "top", Color: workOrderBorderColor, Style: workOrderBorderStyle},
+		{Type: "bottom", Color: workOrderBorderColor, Style: workOrderBorderStyle},
+	}
+
+	newStyleID, err := workbook.NewStyle(&clonedStyle)
+	if err != nil {
+		return 0, err
+	}
+
+	cache.fullBorder[baseStyleID] = newStyleID
+	return newStyleID, nil
 }
 
 func writeWorkOrderExportFooter(
