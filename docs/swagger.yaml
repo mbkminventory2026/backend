@@ -8734,6 +8734,48 @@ paths:
       summary: Get Daily Production Reports for Work Order
       tags:
       - Work Order & Production
+  /api/v1/work-orders/{id}/export/excel:
+    get:
+      description: Generates a downloadable Excel workbook for one work order using
+        the registered export template.
+      parameters:
+      - description: Work Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Export Work Order Excel
+      tags:
+      - Work Order & Production
   /api/v1/work-orders/{id}/retur:
     post:
       consumes:
