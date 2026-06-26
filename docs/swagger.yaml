@@ -6959,6 +6959,44 @@ paths:
       summary: Get PO Internal Detail
       tags:
       - Transaction Documents
+  /api/v1/po-internals/{id}/export/excel:
+    get:
+      description: Generates a downloadable Excel workbook for one PO internal using
+        the registered export template.
+      parameters:
+      - description: PO Internal ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.TransactionErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Export PO Internal Excel
+      tags:
+      - Transaction Documents
   /api/v1/pr-internals:
     get:
       description: Returns a paginated list of PR internal headers.

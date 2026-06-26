@@ -234,6 +234,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	poInternalExcelExportUseCase, err := usecase.NewPOInternalExcelExportUseCase(excelRenderer, transactionDocumentUseCase, profilPerusahaanUseCase)
+	if err != nil {
+		logger.Error("failed to initialize po internal excel export usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	rekonsiliasiUseCase, err := usecase.NewRekonsiliasiUseCase(queries, dbPool)
 	if err != nil {
 		logger.Error("failed to initialize rekonsiliasi usecase", slog.String("error", err.Error()))
@@ -277,7 +284,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	transactionDocumentHandler, err := httpdelivery.NewTransactionDocumentHandler(transactionDocumentUseCase)
+	transactionDocumentHandler, err := httpdelivery.NewTransactionDocumentHandler(transactionDocumentUseCase, poInternalExcelExportUseCase)
 	if err != nil {
 		logger.Error("failed to initialize transaction document handler", slog.String("error", err.Error()))
 		dbPool.Close()

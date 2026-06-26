@@ -2,7 +2,9 @@ package httpdelivery
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -13,14 +15,21 @@ import (
 )
 
 type TransactionDocumentHandler struct {
-	useCase *usecase.TransactionDocumentUseCase
+	useCase           *usecase.TransactionDocumentUseCase
+	excelExportUseCase *usecase.POInternalExcelExportUseCase
 }
 
-func NewTransactionDocumentHandler(useCase *usecase.TransactionDocumentUseCase) (*TransactionDocumentHandler, error) {
+func NewTransactionDocumentHandler(
+	useCase *usecase.TransactionDocumentUseCase,
+	excelExportUseCase *usecase.POInternalExcelExportUseCase,
+) (*TransactionDocumentHandler, error) {
 	if useCase == nil {
 		return nil, errors.New("transaction document usecase is required")
 	}
-	return &TransactionDocumentHandler{useCase: useCase}, nil
+	if excelExportUseCase == nil {
+		return nil, errors.New("po internal excel export usecase is required")
+	}
+	return &TransactionDocumentHandler{useCase: useCase, excelExportUseCase: excelExportUseCase}, nil
 }
 
 func (h *TransactionDocumentHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
@@ -36,6 +45,7 @@ func (h *TransactionDocumentHandler) RegisterRoutes(router gin.IRouter, authMidd
 	v1.PATCH("/pr-internals/:id/approve", internalOnly, RequirePermission(PermissionPRInternalApprove), h.ApprovePRInternal)
 	v1.GET("/po-internals", internalOnly, RequirePermission(PermissionPOInternalRead), h.ListPOInternals)
 	v1.GET("/po-internals/:id", internalOnly, RequirePermission(PermissionPOInternalRead), h.GetPOInternalDetail)
+	v1.GET("/po-internals/:id/export/excel", internalOnly, RequirePermission(PermissionPOInternalRead), h.ExportPOInternalExcel)
 	v1.POST("/po-internals", internalOnly, RequirePermission(PermissionPOInternalCreate), h.CreatePOInternal)
 }
 
@@ -413,6 +423,36 @@ func (h *TransactionDocumentHandler) GetPOInternalDetail(c *gin.Context) {
 	response.Success(c, http.StatusOK, "po internal retrieved", item)
 }
 
+// ExportPOInternalExcel godoc
+// @Summary      Export PO Internal Excel
+// @Description  Generates a downloadable Excel workbook for one PO internal using the registered export template.
+// @Tags         Transaction Documents
+// @Produce      application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+// @Security     BearerAuth
+// @Param        id   path      int  true  "PO Internal ID"
+// @Success      200  {file}    binary
+// @Failure      400  {object}  model.TransactionErrorDoc
+// @Failure      403  {object}  model.TransactionErrorDoc
+// @Failure      404  {object}  model.TransactionErrorDoc
+// @Failure      500  {object}  model.TransactionErrorDoc
+// @Router       /api/v1/po-internals/{id}/export/excel [get]
+func (h *TransactionDocumentHandler) ExportPOInternalExcel(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid po internal id", nil))
+		return
+	}
+
+	exportedFile, err := h.excelExportUseCase.ExportByID(c.Request.Context(), id)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, sanitizePOInternalAttachmentFileName(exportedFile.FileName)))
+	c.Data(http.StatusOK, exportedFile.ContentType, exportedFile.Content)
+}
+
 // CreatePOInternal godoc
 // @Summary      Create PO Internal
 // @Description  Create a PO internal document with nested items in a single transaction.
@@ -486,6 +526,16 @@ func hasPricingVisibility(claims jwt.MapClaims) bool {
 		return false
 	}
 	return roleName == "SUPER_ADMIN" || roleName == "MANAGER" || roleName == "ADMIN_KEUANGAN"
+}
+
+func sanitizePOInternalAttachmentFileName(fileName string) string {
+	name := strings.TrimSpace(fileName)
+	if name == "" {
+		return "po_internal_export.xlsx"
+	}
+
+	replacer := strings.NewReplacer(`"`, "", "\r", "", "\n", "")
+	return replacer.Replace(name)
 }
 
 func sanitizePOClientDetail(res *model.POClientDetailResponse) {
