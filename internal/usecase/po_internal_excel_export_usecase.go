@@ -172,22 +172,19 @@ func writePOInternalExportHeader(
 	detail *model.POInternalResponse,
 	profile model.ProfilPerusahaanResponse,
 ) error {
-	supplierBlock := strings.TrimSpace(strings.Join(filterNonEmpty(
-		"Supplier :",
-		detail.SupplierName,
-		detail.SupplierAddr,
-	), "\n"))
-	if supplierBlock == "" {
-		supplierBlock = "Supplier :"
-	}
-
 	companyContact := profile.Nama
 	if strings.TrimSpace(companyContact) == "" {
 		companyContact = "Contact"
 	}
 
 	values := map[string]any{
-		"A5": supplierBlock,
+		"A5": "Supplier :",
+		"A6": strings.TrimSpace(detail.SupplierName),
+		"A7": strings.TrimSpace(detail.SupplierAddr),
+		"C10": strings.TrimSpace(detail.SupplierContact),
+		"E10": strings.TrimSpace(detail.SupplierTelp),
+		"C11": strings.TrimSpace(detail.SupplierEmail),
+		"E11": strings.TrimSpace(detail.SupplierFax),
 		"F6": strings.TrimSpace(profile.Nama),
 		"F7": strings.TrimSpace(profile.Alamat),
 		"G10": buildPOInternalPrefixedValue(companyContact),
