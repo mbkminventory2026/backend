@@ -173,10 +173,7 @@ func main() {
 }
 
 func cleanAndMigrateSeedingCasing(ctx context.Context, db *pgxpool.Pool) error {
-	_, err := db.Exec(ctx, `UPDATE PO_CLIENT_ITEM SET COLOUR = UPPER(BTRIM(COLOUR))`)
-	if err != nil {
-		return err
-	}
+	var err error
 	_, err = db.Exec(ctx, `UPDATE WORK_ORDER_SHELL SET COLOR = UPPER(BTRIM(COLOR))`)
 	if err != nil {
 		return err
@@ -932,10 +929,10 @@ func seedPOClient(ctx context.Context, db *pgxpool.Pool) error {
 
 		// Insert PO Client Items
 		_, err = db.Exec(ctx, `
-			INSERT INTO PO_CLIENT_ITEM (ID_PO_CLIENT, STYLE, COLOUR, DESCRIPTION, QTY, PRICE)
+			INSERT INTO PO_CLIENT_ITEM (ID_PO_CLIENT, STYLE, DESCRIPTION, QTY, PRICE)
 			VALUES 
-			($1, 'PO Test 1', 'NAVY', 'PO Test 1 Item Description', 1000, 10.00),
-			($1, 'PO Test 2', 'MAROON', 'PO Test 2 Item Description', 1000, 12.00)
+			($1, 'PO Test 1', 'PO Test 1 Item Description', 1000, 10.00),
+			($1, 'PO Test 2', 'PO Test 2 Item Description', 1000, 12.00)
 		`, idPoClient)
 		if err != nil {
 			return err
@@ -963,10 +960,10 @@ func seedPOClient(ctx context.Context, db *pgxpool.Pool) error {
 		slog.Info("po client seeded: PO Test Pending", slog.Int("id", int(idPoClientPending)))
 
 		_, err = db.Exec(ctx, `
-			INSERT INTO PO_CLIENT_ITEM (ID_PO_CLIENT, STYLE, COLOUR, DESCRIPTION, QTY, PRICE)
+			INSERT INTO PO_CLIENT_ITEM (ID_PO_CLIENT, STYLE, DESCRIPTION, QTY, PRICE)
 			VALUES 
-			($1, 'PO Pending Item 1', 'BLACK', 'PO Pending 1 Item Description', 800, 15.00),
-			($1, 'PO Pending Item 2', 'WHITE', 'PO Pending 2 Item Description', 1200, 14.50)
+			($1, 'PO Pending Item 1', 'PO Pending 1 Item Description', 800, 15.00),
+			($1, 'PO Pending Item 2', 'PO Pending 2 Item Description', 1200, 14.50)
 		`, idPoClientPending)
 		if err != nil {
 			return err
