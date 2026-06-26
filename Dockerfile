@@ -21,6 +21,7 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates tzdata
 
 COPY --from=builder /out/web /usr/local/bin/web
+COPY --from=builder /app/templates /app/templates
 
 EXPOSE 8080
 

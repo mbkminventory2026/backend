@@ -15,6 +15,7 @@ import (
 
 var (
 	ErrTemplateRootRequired = errors.New("excel template root is required")
+	ErrTemplateRootNotFound = errors.New("excel template root not found")
 	ErrTemplateNameRequired = errors.New("excel template name is required")
 	ErrTemplateNotFound     = errors.New("excel template not found")
 )
@@ -45,6 +46,18 @@ func NewRenderer(templateRoot string) (*Renderer, error) {
 	root := strings.TrimSpace(templateRoot)
 	if root == "" {
 		return nil, ErrTemplateRootRequired
+	}
+
+	info, err := os.Stat(root)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, fmt.Errorf("%w: %s", ErrTemplateRootNotFound, root)
+		}
+		return nil, fmt.Errorf("stat excel template root: %w", err)
+	}
+
+	if !info.IsDir() {
+		return nil, fmt.Errorf("%w: %s", ErrTemplateRootNotFound, root)
 	}
 
 	return &Renderer{templateRoot: root}, nil
