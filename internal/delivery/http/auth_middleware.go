@@ -348,7 +348,7 @@ func RequireInternalUser() gin.HandlerFunc {
 	}
 }
 
-// RequireAdminSistemUser restricts access to admin sistem role only.
+// RequireAdminSistemUser restricts access to admin sistem role, while preserving super admin emergency access.
 func RequireAdminSistemUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		roleName, ok := GetRoleNameFromContext(c)
@@ -357,7 +357,7 @@ func RequireAdminSistemUser() gin.HandlerFunc {
 			return
 		}
 
-		if !strings.EqualFold(roleName, "ADMIN_SISTEM") {
+		if !strings.EqualFold(roleName, "ADMIN_SISTEM") && !HasPermission(c, PermissionAllAccess) {
 			AbortWithError(c, NewHTTPError(http.StatusForbidden, "access denied: admin sistem role required", nil))
 			return
 		}
