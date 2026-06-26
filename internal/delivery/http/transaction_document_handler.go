@@ -15,21 +15,30 @@ import (
 )
 
 type TransactionDocumentHandler struct {
-	useCase           *usecase.TransactionDocumentUseCase
-	excelExportUseCase *usecase.POInternalExcelExportUseCase
+	useCase                *usecase.TransactionDocumentUseCase
+	poInternalExcelUseCase *usecase.POInternalExcelExportUseCase
+	prInternalExcelUseCase *usecase.PRInternalExcelExportUseCase
 }
 
 func NewTransactionDocumentHandler(
 	useCase *usecase.TransactionDocumentUseCase,
-	excelExportUseCase *usecase.POInternalExcelExportUseCase,
+	poInternalExcelUseCase *usecase.POInternalExcelExportUseCase,
+	prInternalExcelUseCase *usecase.PRInternalExcelExportUseCase,
 ) (*TransactionDocumentHandler, error) {
 	if useCase == nil {
 		return nil, errors.New("transaction document usecase is required")
 	}
-	if excelExportUseCase == nil {
+	if poInternalExcelUseCase == nil {
 		return nil, errors.New("po internal excel export usecase is required")
 	}
-	return &TransactionDocumentHandler{useCase: useCase, excelExportUseCase: excelExportUseCase}, nil
+	if prInternalExcelUseCase == nil {
+		return nil, errors.New("pr internal excel export usecase is required")
+	}
+	return &TransactionDocumentHandler{
+		useCase:                useCase,
+		poInternalExcelUseCase: poInternalExcelUseCase,
+		prInternalExcelUseCase: prInternalExcelUseCase,
+	}, nil
 }
 
 func (h *TransactionDocumentHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
@@ -41,6 +50,7 @@ func (h *TransactionDocumentHandler) RegisterRoutes(router gin.IRouter, authMidd
 	v1.PUT("/po-clients/:id", internalOnly, RequirePermission(PermissionPOClientUpdate), h.UpdatePOClient)
 	v1.GET("/pr-internals", internalOnly, RequirePermission(PermissionPRInternalRead), h.ListPRInternals)
 	v1.GET("/pr-internals/:id", internalOnly, RequirePermission(PermissionPRInternalRead), h.GetPRInternalDetail)
+	v1.GET("/pr-internals/:id/export/excel", internalOnly, RequirePermission(PermissionPRInternalRead), h.ExportPRInternalExcel)
 	v1.POST("/pr-internals", internalOnly, RequirePermission(PermissionPRInternalCreate), h.CreatePRInternal)
 	v1.PATCH("/pr-internals/:id/approve", internalOnly, RequirePermission(PermissionPRInternalApprove), h.ApprovePRInternal)
 	v1.GET("/po-internals", internalOnly, RequirePermission(PermissionPOInternalRead), h.ListPOInternals)
@@ -443,13 +453,43 @@ func (h *TransactionDocumentHandler) ExportPOInternalExcel(c *gin.Context) {
 		return
 	}
 
-	exportedFile, err := h.excelExportUseCase.ExportByID(c.Request.Context(), id)
+	exportedFile, err := h.poInternalExcelUseCase.ExportByID(c.Request.Context(), id)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
 	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, sanitizePOInternalAttachmentFileName(exportedFile.FileName)))
+	c.Data(http.StatusOK, exportedFile.ContentType, exportedFile.Content)
+}
+
+// ExportPRInternalExcel godoc
+// @Summary      Export PR Internal Excel
+// @Description  Generates a downloadable Excel workbook for one PR internal using the registered export template.
+// @Tags         Transaction Documents
+// @Produce      application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+// @Security     BearerAuth
+// @Param        id   path      int  true  "PR Internal ID"
+// @Success      200  {file}    binary
+// @Failure      400  {object}  model.TransactionErrorDoc
+// @Failure      403  {object}  model.TransactionErrorDoc
+// @Failure      404  {object}  model.TransactionErrorDoc
+// @Failure      500  {object}  model.TransactionErrorDoc
+// @Router       /api/v1/pr-internals/{id}/export/excel [get]
+func (h *TransactionDocumentHandler) ExportPRInternalExcel(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid pr internal id", nil))
+		return
+	}
+
+	exportedFile, err := h.prInternalExcelUseCase.ExportByID(c.Request.Context(), id)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, sanitizePRInternalAttachmentFileName(exportedFile.FileName)))
 	c.Data(http.StatusOK, exportedFile.ContentType, exportedFile.Content)
 }
 
@@ -532,6 +572,16 @@ func sanitizePOInternalAttachmentFileName(fileName string) string {
 	name := strings.TrimSpace(fileName)
 	if name == "" {
 		return "po_internal_export.xlsx"
+	}
+
+	replacer := strings.NewReplacer(`"`, "", "\r", "", "\n", "")
+	return replacer.Replace(name)
+}
+
+func sanitizePRInternalAttachmentFileName(fileName string) string {
+	name := strings.TrimSpace(fileName)
+	if name == "" {
+		return "pr_internal_export.xlsx"
 	}
 
 	replacer := strings.NewReplacer(`"`, "", "\r", "", "\n", "")

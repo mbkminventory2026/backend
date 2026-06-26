@@ -3965,6 +3965,64 @@
                 }
             }
         },
+        "/api/v1/pr-internals/{id}/export/excel": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Generates a downloadable Excel workbook for one PR internal using the registered export template.",
+                "produces": [
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ],
+                "tags": [
+                    "Transaction Documents"
+                ],
+                "summary": "Export PR Internal Excel",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "PR Internal ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.TransactionErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/production/summary": {
             "get": {
                 "security": [

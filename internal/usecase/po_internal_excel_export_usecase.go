@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/xuri/excelize/v2"
 	"permatatex-inventory/internal/model"
 	"permatatex-inventory/pkg/exporter/excel"
-	"github.com/xuri/excelize/v2"
 )
 
 const (
@@ -178,15 +178,15 @@ func writePOInternalExportHeader(
 	}
 
 	values := map[string]any{
-		"A5": "Supplier :",
-		"A6": strings.TrimSpace(detail.SupplierName),
-		"A7": strings.TrimSpace(detail.SupplierAddr),
+		"A5":  "Supplier :",
+		"A6":  strings.TrimSpace(detail.SupplierName),
+		"A7":  strings.TrimSpace(detail.SupplierAddr),
 		"C10": strings.TrimSpace(detail.SupplierContact),
 		"E10": strings.TrimSpace(detail.SupplierTelp),
 		"C11": strings.TrimSpace(detail.SupplierEmail),
 		"E11": strings.TrimSpace(detail.SupplierFax),
-		"F6": strings.TrimSpace(profile.Nama),
-		"F7": strings.TrimSpace(profile.Alamat),
+		"F6":  strings.TrimSpace(profile.Nama),
+		"F7":  strings.TrimSpace(profile.Alamat),
 		"G10": buildPOInternalPrefixedValue(companyContact),
 		"J10": strings.TrimSpace(profile.NoTelp),
 		"G11": buildPOInternalPrefixedValue(profile.Email),
@@ -292,9 +292,9 @@ func writePOInternalExportSummary(
 
 func writePOInternalExportFooter(workbook *excelize.File, sheetName string, layout poInternalExcelLayout) error {
 	values := map[string]any{
-		"A" + fmt.Sprintf("%d", layout.transferRow):    "Transfer:",
-		"B" + fmt.Sprintf("%d", layout.regardsRow):     "Regards",
-		"B" + fmt.Sprintf("%d", layout.companyNameRow): "PT PERMATA ANUGRAH KUSUMA",
+		"A" + fmt.Sprintf("%d", layout.transferRow):     "Transfer:",
+		"B" + fmt.Sprintf("%d", layout.regardsRow):      "Regards",
+		"B" + fmt.Sprintf("%d", layout.companyNameRow):  "PT PERMATA ANUGRAH KUSUMA",
 		"B" + fmt.Sprintf("%d", layout.leftSignNameRow): "Ari Putra Andita",
 		"B" + fmt.Sprintf("%d", layout.leftSignRoleRow): "Tim Purchasing",
 		"E" + fmt.Sprintf("%d", layout.centerNoteRow):   "Mengetahui,",
@@ -445,16 +445,4 @@ func sanitizePOInternalExportFilePart(value string) string {
 	}
 
 	return strings.Trim(builder.String(), "_")
-}
-
-func filterNonEmpty(values ...string) []string {
-	result := make([]string, 0, len(values))
-	for _, value := range values {
-		trimmed := strings.TrimSpace(value)
-		if trimmed == "" {
-			continue
-		}
-		result = append(result, trimmed)
-	}
-	return result
 }
