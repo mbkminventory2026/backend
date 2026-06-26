@@ -13,14 +13,21 @@ import (
 )
 
 type WarehouseDeliveryHandler struct {
-	useCase *usecase.WarehouseDeliveryUseCase
+	useCase            *usecase.WarehouseDeliveryUseCase
+	excelExportUseCase *usecase.PackingListExcelExportUseCase
 }
 
-func NewWarehouseDeliveryHandler(useCase *usecase.WarehouseDeliveryUseCase) (*WarehouseDeliveryHandler, error) {
+func NewWarehouseDeliveryHandler(
+	useCase *usecase.WarehouseDeliveryUseCase,
+	excelExportUseCase *usecase.PackingListExcelExportUseCase,
+) (*WarehouseDeliveryHandler, error) {
 	if useCase == nil {
 		return nil, errors.New("warehouse delivery usecase is required")
 	}
-	return &WarehouseDeliveryHandler{useCase: useCase}, nil
+	if excelExportUseCase == nil {
+		return nil, errors.New("packing list excel export usecase is required")
+	}
+	return &WarehouseDeliveryHandler{useCase: useCase, excelExportUseCase: excelExportUseCase}, nil
 }
 
 func (h *WarehouseDeliveryHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
@@ -30,6 +37,7 @@ func (h *WarehouseDeliveryHandler) RegisterRoutes(router gin.IRouter, authMiddle
 	v1.POST("/inventory/issue", internalOnly, RequirePermission(PermissionInventoryIssue), h.IssueInventory)
 	v1.GET("/packing-lists", RequirePermission(PermissionPackingListRead), h.ListPackingLists)
 	v1.GET("/packing-lists/:id", RequirePermission(PermissionPackingListRead), h.GetPackingListDetail)
+	v1.GET("/packing-lists/:id/export/excel", RequirePermission(PermissionPackingListRead), h.ExportPackingListExcel)
 	v1.POST("/packing-lists", internalOnly, RequirePermission(PermissionPackingListCreate), h.CreatePackingList)
 	v1.GET("/surat-jalan-clients", RequirePermission(PermissionSuratJalanClientRead), h.ListSuratJalanClients)
 	v1.GET("/surat-jalan-clients/:id", RequirePermission(PermissionSuratJalanClientRead), h.GetSuratJalanClientDetail)
@@ -199,6 +207,40 @@ func (h *WarehouseDeliveryHandler) GetPackingListDetail(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusOK, "packing list retrieved", item)
+}
+
+// ExportPackingListExcel godoc
+// @Summary      Export Packing List Excel
+// @Description  Generates a downloadable Excel workbook for one packing list using the registered export template.
+// @Tags         Warehouse & Delivery
+// @Produce      application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Packing List ID"
+// @Success      200  {file}    binary
+// @Failure      400  {object}  model.WarehouseErrorDoc
+// @Failure      404  {object}  model.WarehouseErrorDoc
+// @Failure      500  {object}  model.WarehouseErrorDoc
+// @Router       /api/v1/packing-lists/{id}/export/excel [get]
+func (h *WarehouseDeliveryHandler) ExportPackingListExcel(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid packing list id", nil))
+		return
+	}
+	mitraID, ok := GetMitraIDFromContext(c)
+	if !ok {
+		AbortWithError(c, NewHTTPError(http.StatusUnauthorized, "invalid authentication context", nil))
+		return
+	}
+
+	exportedFile, err := h.excelExportUseCase.ExportByID(c.Request.Context(), id, mitraID)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.Header("Content-Disposition", `attachment; filename="`+sanitizePackingListAttachmentFileName(exportedFile.FileName)+`"`)
+	c.Data(http.StatusOK, exportedFile.ContentType, exportedFile.Content)
 }
 
 // CreateSuratJalan godoc
@@ -494,4 +536,14 @@ func (h *WarehouseDeliveryHandler) handleError(c *gin.Context, err error) {
 	default:
 		AbortWithError(c, err)
 	}
+}
+
+func sanitizePackingListAttachmentFileName(fileName string) string {
+	name := strings.TrimSpace(fileName)
+	if name == "" {
+		return "packing_list_export.xlsx"
+	}
+
+	replacer := strings.NewReplacer(`"`, "", "\r", "", "\n", "")
+	return replacer.Replace(name)
 }

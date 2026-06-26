@@ -3289,6 +3289,58 @@
                 }
             }
         },
+        "/api/v1/packing-lists/{id}/export/excel": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Generates a downloadable Excel workbook for one packing list using the registered export template.",
+                "produces": [
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ],
+                "tags": [
+                    "Warehouse \u0026 Delivery"
+                ],
+                "summary": "Export Packing List Excel",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Packing List ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/po-clients": {
             "get": {
                 "security": [

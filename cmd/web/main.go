@@ -248,6 +248,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	packingListExcelExportUseCase, err := usecase.NewPackingListExcelExportUseCase(excelRenderer, warehouseDeliveryUseCase, workOrderProductionUseCase)
+	if err != nil {
+		logger.Error("failed to initialize packing list excel export usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	rekonsiliasiUseCase, err := usecase.NewRekonsiliasiUseCase(queries, dbPool)
 	if err != nil {
 		logger.Error("failed to initialize rekonsiliasi usecase", slog.String("error", err.Error()))
@@ -358,7 +365,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	warehouseDeliveryHandler, err := httpdelivery.NewWarehouseDeliveryHandler(warehouseDeliveryUseCase)
+	warehouseDeliveryHandler, err := httpdelivery.NewWarehouseDeliveryHandler(warehouseDeliveryUseCase, packingListExcelExportUseCase)
 	if err != nil {
 		logger.Error("failed to initialize warehouse delivery handler", slog.String("error", err.Error()))
 		dbPool.Close()
