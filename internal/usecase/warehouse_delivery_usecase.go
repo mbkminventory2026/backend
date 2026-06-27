@@ -666,13 +666,29 @@ func (u *WarehouseDeliveryUseCase) DeleteSuratJalanClient(ctx context.Context, i
 }
 
 func (u *WarehouseDeliveryUseCase) CreateSuratJalanInternalWithData(ctx context.Context, req model.CreateSuratJalanInternalRequest) (*model.SuratJalanInternalCreateResponse, error) {
-	if req.IDWO <= 0 {
+	if len(req.IDPackingLists) == 0 {
 		return nil, ErrWarehouseValidation
+	}
+
+	// Auto-detect id_wo from the first packing list if not supplied
+	idWO := req.IDWO
+	if idWO <= 0 {
+		plRow, err := u.repo.GetPackingListDetail(ctx, entity.GetPackingListDetailParams{
+			IDPackingList: req.IDPackingLists[0],
+			IDMitra:       pgtype.Int4{Valid: false},
+		})
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, ErrWarehouseNotFound
+			}
+			return nil, fmt.Errorf("%w: failed to resolve WO from packing list", ErrWarehouseServiceUnavailable)
+		}
+		idWO = plRow.IDWo
 	}
 
 	noDokumen := req.NoDokumen
 	if noDokumen == "" {
-		noDokumen = fmt.Sprintf("SJ-INT/%d/WO-%d", time.Now().Year(), req.IDWO)
+		noDokumen = fmt.Sprintf("SJ-INT/%d/WO-%d", time.Now().Year(), idWO)
 	}
 
 	tx, err := u.dbPool.Begin(ctx)
@@ -690,11 +706,11 @@ func (u *WarehouseDeliveryUseCase) CreateSuratJalanInternalWithData(ctx context.
 
 	deskripsi := req.Deskripsi
 	if deskripsi == "" {
-		deskripsi = fmt.Sprintf("Surat Jalan Internal WO #%d", req.IDWO)
+		deskripsi = fmt.Sprintf("Surat Jalan Internal WO #%d", idWO)
 	}
 
 	sj, err := qtx.CreateSuratJalanInternal(ctx, entity.CreateSuratJalanInternalParams{
-		IDWo:      pgtype.Int4{Int32: req.IDWO, Valid: true},
+		IDWo:      pgtype.Int4{Int32: idWO, Valid: true},
 		NoDokumen: noDokumen,
 		Deskripsi: deskripsi,
 	})
@@ -733,7 +749,7 @@ func (u *WarehouseDeliveryUseCase) CreateSuratJalanInternalWithData(ctx context.
 
 	return &model.SuratJalanInternalCreateResponse{
 		ID:        sj.IDSuratJalanInternal,
-		IDWO:      req.IDWO,
+		IDWO:      idWO,
 		NoDokumen: sj.NoDokumen,
 		Deskripsi: sj.Deskripsi,
 		CreatedAt: sj.CreatedAt.Time.Format(time.RFC3339),

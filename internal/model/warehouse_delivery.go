@@ -235,8 +235,8 @@ type CreateSuratJalanInternalItemRequest struct {
 }
 
 type CreateSuratJalanInternalRequest struct {
-	IDWO           int32                                  `json:"id_wo" binding:"required,gt=0"`
-	NoDokumen      string                                 `json:"no_dokumen" binding:"required"`
+	IDWO           int32                                  `json:"id_wo"`
+	NoDokumen      string                                 `json:"no_dokumen"`
 	Deskripsi      string                                 `json:"deskripsi"`
 	Items          []CreateSuratJalanInternalItemRequest `json:"items"`
 	IDPackingLists []int32                                `json:"id_packing_lists"`
