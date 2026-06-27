@@ -225,3 +225,77 @@ type WarehouseErrorDoc struct {
 	Message string               `json:"message" example:"related data not found"`
 	Error   WarehouseErrorDetail `json:"error"`
 }
+
+// Surat Jalan Internal types
+type CreateSuratJalanInternalRequest struct {
+	NoDokumen      string  `json:"no_dokumen" binding:"required"`
+	Deskripsi      string  `json:"deskripsi"`
+	IDPackingLists []int32 `json:"id_packing_lists"`
+}
+
+type AssignPackingListRequest struct {
+	IDPackingList int32 `json:"id_packing_list" binding:"required,gt=0"`
+}
+
+type SuratJalanInternalShellRow struct {
+	No        int    `json:"no"`
+	Deskripsi string `json:"deskripsi"`
+	Color     string `json:"color"`
+	Qty       int32  `json:"qty"`
+	Note      string `json:"note"`
+}
+
+type SuratJalanInternalPackingListRow struct {
+	IDPackingList      int32  `json:"id_packing_list"`
+	TotalGarmentPerBox int32  `json:"total_garment_per_box"`
+	TotalReject        int32  `json:"total_reject"`
+	IDWO               int32  `json:"id_wo"`
+	CreatedAt          string `json:"created_at"`
+}
+
+type SuratJalanInternalListItem struct {
+	ID               int32  `json:"id_surat_jalan_internal"`
+	NoDokumen        string `json:"no_dokumen"`
+	Deskripsi        string `json:"deskripsi"`
+	PackingListCount int32  `json:"packing_list_count"`
+	CreatedAt        string `json:"created_at"`
+}
+
+type SuratJalanInternalListResponse struct {
+	Items      []SuratJalanInternalListItem `json:"items"`
+	Pagination PaginationMeta               `json:"pagination"`
+}
+
+type SuratJalanInternalDetailResponse struct {
+	ID           int32                              `json:"id_surat_jalan_internal"`
+	NoDokumen    string                             `json:"no_dokumen"`
+	Deskripsi    string                             `json:"deskripsi"`
+	CreatedAt    string                             `json:"created_at"`
+	PackingLists []SuratJalanInternalPackingListRow `json:"packing_lists"`
+	WOShells     []SuratJalanInternalShellRow       `json:"wo_shells"`
+}
+
+type SuratJalanInternalCreateResponse struct {
+	ID        int32  `json:"id_surat_jalan_internal"`
+	NoDokumen string `json:"no_dokumen"`
+	Deskripsi string `json:"deskripsi"`
+	CreatedAt string `json:"created_at"`
+}
+
+type SuratJalanInternalCreateSuccessDoc struct {
+	Status  string                            `json:"status" example:"success"`
+	Message string                            `json:"message" example:"surat jalan internal created"`
+	Data    SuratJalanInternalCreateResponse  `json:"data"`
+}
+
+type SuratJalanInternalDetailSuccessDoc struct {
+	Status  string                            `json:"status" example:"success"`
+	Message string                            `json:"message" example:"surat jalan internal retrieved"`
+	Data    SuratJalanInternalDetailResponse  `json:"data"`
+}
+
+type SuratJalanInternalListSuccessDoc struct {
+	Status  string                          `json:"status" example:"success"`
+	Message string                          `json:"message" example:"surat jalan internals retrieved"`
+	Data    SuratJalanInternalListResponse  `json:"data"`
+}

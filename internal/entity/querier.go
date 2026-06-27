@@ -83,7 +83,7 @@ type Querier interface {
 	CreateSize(ctx context.Context, namaSize string) (MasterSize, error)
 	CreateSpreadingCuttingPlan(ctx context.Context, arg CreateSpreadingCuttingPlanParams) (SpreadingCuttingPlan, error)
 	CreateSuratJalanClient(ctx context.Context, arg CreateSuratJalanClientParams) (CreateSuratJalanClientRow, error)
-	CreateSuratJalanInternal(ctx context.Context) (SuratJalanInternal, error)
+	CreateSuratJalanInternal(ctx context.Context, arg CreateSuratJalanInternalParams) (SuratJalanInternal, error)
 	CreateTimelinePlan(ctx context.Context, arg CreateTimelinePlanParams) (TimelinePlanProduksi, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	CreateUserAkses(ctx context.Context, arg CreateUserAksesParams) error
@@ -113,6 +113,9 @@ type Querier interface {
 	DeleteRoleHakAksesByRoleID(ctx context.Context, idRole int32) (int64, error)
 	DeleteSize(ctx context.Context, idSize int32) (int64, error)
 	DeleteSuratJalanClient(ctx context.Context, idSuratJalanClient int32) error
+	AssignPackingListToSuratJalan(ctx context.Context, arg AssignPackingListToSuratJalanParams) error
+	UnassignPackingListFromSuratJalan(ctx context.Context, idPackingList int32) error
+	ListPackingListsBySuratJalanID(ctx context.Context, idSuratJalanInternal int32) ([]ListPackingListsBySuratJalanIDRow, error)
 	DeleteTargetProses(ctx context.Context, arg DeleteTargetProsesParams) error
 	DeleteUser(ctx context.Context, idUser int32) (int64, error)
 	DeleteUserAksesByUserID(ctx context.Context, idUser int32) (int64, error)

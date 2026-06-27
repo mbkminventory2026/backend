@@ -286,17 +286,19 @@ func (q *Queries) GetSuratJalanClientDetail(ctx context.Context, arg GetSuratJal
 
 const getSuratJalanInternalDetail = `-- name: GetSuratJalanInternalDetail :one
 SELECT
-    id_surat_jalan_internal,
-    created_at
-FROM SURAT_JALAN_INTERNAL
-WHERE id_surat_jalan_internal = $1
+    sji.id_surat_jalan_internal,
+    sji.no_dokumen,
+    sji.deskripsi,
+    sji.created_at
+FROM SURAT_JALAN_INTERNAL sji
+WHERE sji.id_surat_jalan_internal = $1
 LIMIT 1
 `
 
 func (q *Queries) GetSuratJalanInternalDetail(ctx context.Context, idSuratJalanInternal int32) (SuratJalanInternal, error) {
 	row := q.db.QueryRow(ctx, getSuratJalanInternalDetail, idSuratJalanInternal)
 	var i SuratJalanInternal
-	err := row.Scan(&i.IDSuratJalanInternal, &i.CreatedAt)
+	err := row.Scan(&i.IDSuratJalanInternal, &i.NoDokumen, &i.Deskripsi, &i.CreatedAt)
 	return i, err
 }
 
@@ -1315,9 +1317,14 @@ func (q *Queries) ListSuratJalanClients(ctx context.Context, arg ListSuratJalanC
 const listSuratJalanInternals = `-- name: ListSuratJalanInternals :many
 SELECT
     sji.id_surat_jalan_internal,
+    sji.no_dokumen,
+    sji.deskripsi,
     sji.created_at,
+    COUNT(DISTINCT pl.id_packing_list)::integer AS packing_list_count,
     COUNT(*) OVER() AS total_count
 FROM SURAT_JALAN_INTERNAL sji
+LEFT JOIN PACKING_LIST pl ON pl.id_surat_jalan_internal = sji.id_surat_jalan_internal
+GROUP BY sji.id_surat_jalan_internal
 ORDER BY
     CASE WHEN $1::text = 'created_at' AND NOT $2::bool THEN sji.created_at END ASC,
     CASE WHEN $1::text = 'created_at' AND $2::bool THEN sji.created_at END DESC,
@@ -1336,7 +1343,10 @@ type ListSuratJalanInternalsParams struct {
 
 type ListSuratJalanInternalsRow struct {
 	IDSuratJalanInternal int32              `json:"id_surat_jalan_internal"`
+	NoDokumen            string             `json:"no_dokumen"`
+	Deskripsi            string             `json:"deskripsi"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+	PackingListCount     int32              `json:"packing_list_count"`
 	TotalCount           int64              `json:"total_count"`
 }
 
@@ -1354,7 +1364,14 @@ func (q *Queries) ListSuratJalanInternals(ctx context.Context, arg ListSuratJala
 	var items []ListSuratJalanInternalsRow
 	for rows.Next() {
 		var i ListSuratJalanInternalsRow
-		if err := rows.Scan(&i.IDSuratJalanInternal, &i.CreatedAt, &i.TotalCount); err != nil {
+		if err := rows.Scan(
+			&i.IDSuratJalanInternal,
+			&i.NoDokumen,
+			&i.Deskripsi,
+			&i.CreatedAt,
+			&i.PackingListCount,
+			&i.TotalCount,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

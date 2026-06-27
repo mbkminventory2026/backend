@@ -107,8 +107,36 @@ INSERT INTO PACKING_LIST_REJECT_SIZE (
 RETURNING id_packing_list_reject_size, qty, id_packing_list, id_wo_shell_size, created_at;
 
 -- name: CreateSuratJalanInternal :one
-INSERT INTO SURAT_JALAN_INTERNAL DEFAULT VALUES
-RETURNING id_surat_jalan_internal, created_at;
+INSERT INTO SURAT_JALAN_INTERNAL (
+    no_dokumen,
+    deskripsi
+) VALUES (
+    sqlc.arg(no_dokumen),
+    sqlc.arg(deskripsi)
+)
+RETURNING id_surat_jalan_internal, no_dokumen, deskripsi, created_at;
+
+-- name: AssignPackingListToSuratJalan :exec
+UPDATE PACKING_LIST
+SET id_surat_jalan_internal = sqlc.arg(id_surat_jalan_internal)
+WHERE id_packing_list = sqlc.arg(id_packing_list);
+
+-- name: UnassignPackingListFromSuratJalan :exec
+UPDATE PACKING_LIST
+SET id_surat_jalan_internal = NULL
+WHERE id_packing_list = sqlc.arg(id_packing_list);
+
+-- name: ListPackingListsBySuratJalanID :many
+SELECT
+    pl.id_packing_list,
+    pl.total_garment_per_box,
+    pl.total_reject,
+    pl.id_wo,
+    pl.id_surat_jalan_internal,
+    pl.created_at
+FROM PACKING_LIST pl
+WHERE pl.id_surat_jalan_internal = sqlc.arg(id_surat_jalan_internal)
+ORDER BY pl.id_packing_list ASC;
 
 -- name: CreateSuratJalanClient :one
 INSERT INTO SURAT_JALAN_CLIENT (

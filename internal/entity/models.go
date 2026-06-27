@@ -610,6 +610,8 @@ type SuratJalanClient struct {
 
 type SuratJalanInternal struct {
 	IDSuratJalanInternal int32              `json:"id_surat_jalan_internal"`
+	NoDokumen            string             `json:"no_dokumen"`
+	Deskripsi            string             `json:"deskripsi"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 }
 

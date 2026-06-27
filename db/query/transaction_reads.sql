@@ -584,9 +584,14 @@ LIMIT 1;
 -- name: ListSuratJalanInternals :many
 SELECT
     sji.id_surat_jalan_internal,
+    sji.no_dokumen,
+    sji.deskripsi,
     sji.created_at,
+    COUNT(DISTINCT pl.id_packing_list)::integer AS packing_list_count,
     COUNT(*) OVER() AS total_count
 FROM SURAT_JALAN_INTERNAL sji
+LEFT JOIN PACKING_LIST pl ON pl.id_surat_jalan_internal = sji.id_surat_jalan_internal
+GROUP BY sji.id_surat_jalan_internal
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN sji.created_at END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN sji.created_at END DESC,
@@ -597,9 +602,11 @@ LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 
 -- name: GetSuratJalanInternalDetail :one
 SELECT
-    id_surat_jalan_internal,
-    created_at
-FROM SURAT_JALAN_INTERNAL
-WHERE id_surat_jalan_internal = sqlc.arg(id_surat_jalan_internal)
+    sji.id_surat_jalan_internal,
+    sji.no_dokumen,
+    sji.deskripsi,
+    sji.created_at
+FROM SURAT_JALAN_INTERNAL sji
+WHERE sji.id_surat_jalan_internal = sqlc.arg(id_surat_jalan_internal)
 LIMIT 1;
 

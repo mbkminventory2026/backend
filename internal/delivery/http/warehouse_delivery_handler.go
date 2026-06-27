@@ -43,6 +43,9 @@ func (h *WarehouseDeliveryHandler) RegisterRoutes(router gin.IRouter, authMiddle
 	v1.GET("/surat-jalan-clients/:id", RequirePermission(PermissionSuratJalanClientRead), h.GetSuratJalanClientDetail)
 	v1.GET("/surat-jalan-internals", internalOnly, RequirePermission(PermissionSuratJalanInternalRead), h.ListSuratJalanInternals)
 	v1.GET("/surat-jalan-internals/:id", internalOnly, RequirePermission(PermissionSuratJalanInternalRead), h.GetSuratJalanInternalDetail)
+	v1.POST("/surat-jalan-internals", internalOnly, RequirePermission(PermissionSuratJalanInternalCreate), h.CreateSuratJalanInternalHandler)
+	v1.POST("/surat-jalan-internals/:id/assign", internalOnly, RequirePermission(PermissionSuratJalanInternalCreate), h.AssignPackingListHandler)
+	v1.DELETE("/surat-jalan-internals/:id/assign/:pl_id", internalOnly, RequirePermission(PermissionSuratJalanInternalCreate), h.UnassignPackingListHandler)
 	v1.POST("/surat-jalan/:type", internalOnly, h.CreateSuratJalan)
 
 	v1.GET("/received", RequirePermission(PermissionInventoryReceive), h.ListReceived)
@@ -414,6 +417,49 @@ func (h *WarehouseDeliveryHandler) GetSuratJalanInternalDetail(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusOK, "surat jalan internal retrieved", item)
+}
+
+func (h *WarehouseDeliveryHandler) CreateSuratJalanInternalHandler(c *gin.Context) {
+	var req model.CreateSuratJalanInternalRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+	item, err := h.useCase.CreateSuratJalanInternalWithData(c.Request.Context(), req)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusCreated, "surat jalan internal created", item)
+}
+
+func (h *WarehouseDeliveryHandler) AssignPackingListHandler(c *gin.Context) {
+	idSJ, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid surat jalan internal id", nil))
+		return
+	}
+	var req model.AssignPackingListRequest
+	if !BindJSON(c, &req) {
+		return
+	}
+	if err := h.useCase.AssignPackingListToSJ(c.Request.Context(), idSJ, req.IDPackingList); err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "packing list assigned", nil)
+}
+
+func (h *WarehouseDeliveryHandler) UnassignPackingListHandler(c *gin.Context) {
+	plID, err := parsePathInt32(c, "pl_id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid packing list id", nil))
+		return
+	}
+	if err := h.useCase.UnassignPackingListFromSJ(c.Request.Context(), plID); err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "packing list unassigned", nil)
 }
 
 func (h *WarehouseDeliveryHandler) ListReceived(c *gin.Context) {

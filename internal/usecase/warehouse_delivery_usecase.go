@@ -246,7 +246,10 @@ func (u *WarehouseDeliveryUseCase) CreatePackingList(ctx context.Context, userID
 func (u *WarehouseDeliveryUseCase) CreateSuratJalan(ctx context.Context, suratJalanType string, req *model.CreateSuratJalanClientRequest) (*model.SuratJalanResponse, error) {
 	switch normalizeSuratJalanType(suratJalanType) {
 	case "internal":
-		item, err := u.repo.CreateSuratJalanInternal(ctx)
+		item, err := u.repo.CreateSuratJalanInternal(ctx, entity.CreateSuratJalanInternalParams{
+			NoDokumen: "",
+			Deskripsi: "",
+		})
 		if err != nil {
 			return nil, mapWarehouseDBError(err)
 		}
@@ -479,46 +482,11 @@ func (u *WarehouseDeliveryUseCase) GetSuratJalanClientDetail(ctx context.Context
 }
 
 func (u *WarehouseDeliveryUseCase) ListSuratJalanInternals(ctx context.Context, filter model.TransactionListFilter) (*model.SuratJalanInternalListResponse, error) {
-	page, limit, offset, _, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "id_surat_jalan_internal", true, suratJalanInternalSortColumns)
-	rows, err := u.repo.ListSuratJalanInternals(ctx, entity.ListSuratJalanInternalsParams{
-		SortBy:     sortBy,
-		SortDesc:   sortDesc,
-		PageLimit:  limit,
-		PageOffset: offset,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("%w: failed to list surat jalan internals", ErrWarehouseServiceUnavailable)
-	}
-
-	items := make([]model.SuratJalanInternalListItem, 0, len(rows))
-	total := int64(0)
-	for _, row := range rows {
-		total = row.TotalCount
-		items = append(items, model.SuratJalanInternalListItem{
-			ID:        row.IDSuratJalanInternal,
-			CreatedAt: row.CreatedAt.Time.Format(time.RFC3339),
-		})
-	}
-
-	return &model.SuratJalanInternalListResponse{
-		Items:      items,
-		Pagination: buildPagination(total, page, limit),
-	}, nil
+	return u.ListSuratJalanInternalsEnriched(ctx, filter)
 }
 
 func (u *WarehouseDeliveryUseCase) GetSuratJalanInternalDetail(ctx context.Context, id int32) (*model.SuratJalanInternalDetailResponse, error) {
-	row, err := u.repo.GetSuratJalanInternalDetail(ctx, id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrWarehouseNotFound
-		}
-		return nil, fmt.Errorf("%w: failed to get surat jalan internal", ErrWarehouseServiceUnavailable)
-	}
-
-	return &model.SuratJalanInternalDetailResponse{
-		ID:        row.IDSuratJalanInternal,
-		CreatedAt: row.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	return u.GetSuratJalanInternalWithData(ctx, id)
 }
 
 func (u *WarehouseDeliveryUseCase) CreateSimpleReceived(ctx context.Context, req model.CreateSimpleReceivedRequest) (*model.SimpleReceivedResponse, error) {
@@ -695,4 +663,135 @@ func (u *WarehouseDeliveryUseCase) GetMLIHistory(ctx context.Context, idMLI int3
 
 func (u *WarehouseDeliveryUseCase) DeleteSuratJalanClient(ctx context.Context, id int32) error {
 	return u.repo.DeleteSuratJalanClient(ctx, id)
+}
+
+func (u *WarehouseDeliveryUseCase) CreateSuratJalanInternalWithData(ctx context.Context, req model.CreateSuratJalanInternalRequest) (*model.SuratJalanInternalCreateResponse, error) {
+	if req.NoDokumen == "" {
+		return nil, ErrWarehouseValidation
+	}
+
+	tx, err := u.dbPool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to start transaction", ErrWarehouseServiceUnavailable)
+	}
+	defer func() {
+		rollbackErr := tx.Rollback(ctx)
+		if rollbackErr != nil && !errors.Is(rollbackErr, pgx.ErrTxClosed) {
+			err = rollbackErr
+		}
+	}()
+
+	qtx := entity.New(tx)
+
+	sj, err := qtx.CreateSuratJalanInternal(ctx, entity.CreateSuratJalanInternalParams{
+		NoDokumen: req.NoDokumen,
+		Deskripsi: req.Deskripsi,
+	})
+	if err != nil {
+		return nil, mapWarehouseDBError(err)
+	}
+
+	for _, plID := range req.IDPackingLists {
+		if err := qtx.AssignPackingListToSuratJalan(ctx, entity.AssignPackingListToSuratJalanParams{
+			IDSuratJalanInternal: sj.IDSuratJalanInternal,
+			IDPackingList:        plID,
+		}); err != nil {
+			return nil, mapWarehouseDBError(err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("%w: failed to commit transaction", ErrWarehouseServiceUnavailable)
+	}
+
+	return &model.SuratJalanInternalCreateResponse{
+		ID:        sj.IDSuratJalanInternal,
+		NoDokumen: sj.NoDokumen,
+		Deskripsi: sj.Deskripsi,
+		CreatedAt: sj.CreatedAt.Time.Format(time.RFC3339),
+	}, nil
+}
+
+func (u *WarehouseDeliveryUseCase) GetSuratJalanInternalWithData(ctx context.Context, id int32) (*model.SuratJalanInternalDetailResponse, error) {
+	row, err := u.repo.GetSuratJalanInternalDetail(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrWarehouseNotFound
+		}
+		return nil, fmt.Errorf("%w: failed to get surat jalan internal", ErrWarehouseServiceUnavailable)
+	}
+
+	plRows, err := u.repo.ListPackingListsBySuratJalanID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to get packing lists", ErrWarehouseServiceUnavailable)
+	}
+
+	plItems := make([]model.SuratJalanInternalPackingListRow, 0, len(plRows))
+	for _, pl := range plRows {
+		plItems = append(plItems, model.SuratJalanInternalPackingListRow{
+			IDPackingList:      pl.IDPackingList,
+			TotalGarmentPerBox: pl.TotalGarmentPerBox,
+			TotalReject:        pl.TotalReject,
+			IDWO:               pl.IDWo,
+			CreatedAt:          pl.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	return &model.SuratJalanInternalDetailResponse{
+		ID:           row.IDSuratJalanInternal,
+		NoDokumen:    row.NoDokumen,
+		Deskripsi:    row.Deskripsi,
+		CreatedAt:    row.CreatedAt.Time.Format(time.RFC3339),
+		PackingLists: plItems,
+		WOShells:     []model.SuratJalanInternalShellRow{},
+	}, nil
+}
+
+func (u *WarehouseDeliveryUseCase) ListSuratJalanInternalsEnriched(ctx context.Context, filter model.TransactionListFilter) (*model.SuratJalanInternalListResponse, error) {
+	page, limit, offset, _, sortBy, sortDesc := normalizeListFilter(filter.ListQueryFilter, "id_surat_jalan_internal", true, suratJalanInternalSortColumns)
+	rows, err := u.repo.ListSuratJalanInternals(ctx, entity.ListSuratJalanInternalsParams{
+		SortBy:     sortBy,
+		SortDesc:   sortDesc,
+		PageLimit:  limit,
+		PageOffset: offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to list surat jalan internals", ErrWarehouseServiceUnavailable)
+	}
+
+	items := make([]model.SuratJalanInternalListItem, 0, len(rows))
+	total := int64(0)
+	for _, row := range rows {
+		total = row.TotalCount
+		items = append(items, model.SuratJalanInternalListItem{
+			ID:               row.IDSuratJalanInternal,
+			NoDokumen:        row.NoDokumen,
+			Deskripsi:        row.Deskripsi,
+			PackingListCount: row.PackingListCount,
+			CreatedAt:        row.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	return &model.SuratJalanInternalListResponse{
+		Items:      items,
+		Pagination: buildPagination(total, page, limit),
+	}, nil
+}
+
+func (u *WarehouseDeliveryUseCase) AssignPackingListToSJ(ctx context.Context, idSJ int32, idPL int32) error {
+	_, err := u.repo.GetSuratJalanInternalDetail(ctx, idSJ)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrWarehouseNotFound
+		}
+		return fmt.Errorf("%w: failed to get surat jalan internal", ErrWarehouseServiceUnavailable)
+	}
+	return u.repo.AssignPackingListToSuratJalan(ctx, entity.AssignPackingListToSuratJalanParams{
+		IDSuratJalanInternal: idSJ,
+		IDPackingList:        idPL,
+	})
+}
+
+func (u *WarehouseDeliveryUseCase) UnassignPackingListFromSJ(ctx context.Context, idPL int32) error {
+	return u.repo.UnassignPackingListFromSuratJalan(ctx, idPL)
 }

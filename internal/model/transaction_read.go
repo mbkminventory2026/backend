@@ -181,20 +181,7 @@ type SuratJalanClientListResponse struct {
 	Pagination PaginationMeta             `json:"pagination"`
 }
 
-type SuratJalanInternalListItem struct {
-	ID        int32  `json:"id_surat_jalan_internal"`
-	CreatedAt string `json:"created_at"`
-}
 
-type SuratJalanInternalDetailResponse struct {
-	ID        int32  `json:"id_surat_jalan_internal"`
-	CreatedAt string `json:"created_at"`
-}
-
-type SuratJalanInternalListResponse struct {
-	Items      []SuratJalanInternalListItem `json:"items"`
-	Pagination PaginationMeta               `json:"pagination"`
-}
 
 type WorkOrderListSuccessDoc struct {
 	Status  string                `json:"status" example:"success"`
@@ -268,17 +255,7 @@ type SuratJalanClientDetailSuccessDoc struct {
 	Data    SuratJalanClientDetailResponse `json:"data"`
 }
 
-type SuratJalanInternalListSuccessDoc struct {
-	Status  string                         `json:"status" example:"success"`
-	Message string                         `json:"message" example:"surat jalan internals retrieved"`
-	Data    SuratJalanInternalListResponse `json:"data"`
-}
 
-type SuratJalanInternalDetailSuccessDoc struct {
-	Status  string                           `json:"status" example:"success"`
-	Message string                           `json:"message" example:"surat jalan internal retrieved"`
-	Data    SuratJalanInternalDetailResponse `json:"data"`
-}
 
 type TransactionReadValidationErrorDoc struct {
 	Status  string                         `json:"status" example:"error"`
