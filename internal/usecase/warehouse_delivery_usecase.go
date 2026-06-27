@@ -259,15 +259,12 @@ func (u *WarehouseDeliveryUseCase) CreateSuratJalan(ctx context.Context, suratJa
 		if req == nil || validateDate(req.Tanggal) != nil {
 			return nil, ErrWarehouseValidation
 		}
-		mli, err := u.repo.GetMaterialListItem(ctx, req.IDMaterialListItem)
+		_, err := u.repo.GetMaterialListItem(ctx, req.IDMaterialListItem)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return nil, ErrWarehouseReferenceNotFound
 			}
 			return nil, fmt.Errorf("%w: failed to get material list item", ErrWarehouseServiceUnavailable)
-		}
-		if mli.QtySuratJalan+req.Qty > mli.Qty {
-			return nil, ErrSuratJalanExceedsMLIQty
 		}
 		item, err := u.repo.CreateSuratJalanClient(ctx, entity.CreateSuratJalanClientParams{
 			Tanggal:            mustDate(req.Tanggal),
