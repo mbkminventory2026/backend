@@ -26,18 +26,18 @@ func (h *MaterialListHandler) RegisterRoutes(router gin.IRouter, authMiddleware 
 	v1 := router.Group("/api/v1").Use(authMiddleware)
 	internalOnly := RequireInternalUser()
 
-	v1.GET("/material-lists", RequirePermission(PermissionWORead), h.ListPaginated)
-	v1.GET("/work-orders/:id/material-lists", RequirePermission(PermissionWORead), h.ListByWO)
-	v1.POST("/work-orders/:id/material-lists", internalOnly, RequirePermission(PermissionWOUpdate), h.Create)
+	v1.GET("/material-lists", RequirePermission(PermissionMaterialListRead), h.ListPaginated)
+	v1.GET("/work-orders/:id/material-lists", RequirePermission(PermissionMaterialListRead), h.ListByWO)
+	v1.POST("/work-orders/:id/material-lists", internalOnly, RequirePermission(PermissionMaterialListUpdate), h.Create)
 
-	v1.GET("/material-lists/:id", RequirePermission(PermissionWORead), h.Get)
-	v1.PATCH("/material-lists/:id", internalOnly, RequirePermission(PermissionWOUpdate), h.Update)
-	v1.DELETE("/material-lists/:id", internalOnly, RequirePermission(PermissionWOUpdate), h.Delete)
+	v1.GET("/material-lists/:id", RequirePermission(PermissionMaterialListRead), h.Get)
+	v1.PATCH("/material-lists/:id", internalOnly, RequirePermission(PermissionMaterialListUpdate), h.Update)
+	v1.DELETE("/material-lists/:id", internalOnly, RequirePermission(PermissionMaterialListUpdate), h.Delete)
 
-	v1.POST("/material-lists/:id/items", internalOnly, RequirePermission(PermissionWOUpdate), h.CreateItem)
-	v1.GET("/material-list-items/:id", RequirePermission(PermissionWORead), h.GetItem)
-	v1.PATCH("/material-list-items/:id", internalOnly, RequirePermission(PermissionWOUpdate), h.UpdateItem)
-	v1.DELETE("/material-list-items/:id", internalOnly, RequirePermission(PermissionWOUpdate), h.DeleteItem)
+	v1.POST("/material-lists/:id/items", internalOnly, RequirePermission(PermissionMaterialListUpdate), h.CreateItem)
+	v1.GET("/material-list-items/:id", RequirePermission(PermissionMaterialListRead), h.GetItem)
+	v1.PATCH("/material-list-items/:id", internalOnly, RequirePermission(PermissionMaterialListUpdate), h.UpdateItem)
+	v1.DELETE("/material-list-items/:id", internalOnly, RequirePermission(PermissionMaterialListUpdate), h.DeleteItem)
 }
 
 func (h *MaterialListHandler) Create(c *gin.Context) {

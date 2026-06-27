@@ -95,6 +95,9 @@ const (
 	PermissionWOUpdate = "WO_UPDATE"
 	PermissionWOClose  = "WO_CLOSE"
 
+	PermissionMaterialListRead   = "MATERIAL_LIST_READ"
+	PermissionMaterialListUpdate = "MATERIAL_LIST_UPDATE"
+
 	PermissionProductionSummaryRead  = "PRODUCTION_SUMMARY_READ"
 	PermissionProductionReportRead   = "PRODUCTION_REPORT_READ"
 	PermissionProductionReportCreate = "PRODUCTION_REPORT_CREATE"
