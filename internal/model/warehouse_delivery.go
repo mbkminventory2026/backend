@@ -227,10 +227,19 @@ type WarehouseErrorDoc struct {
 }
 
 // Surat Jalan Internal types
+type CreateSuratJalanInternalItemRequest struct {
+	No        int    `json:"no"`
+	Deskripsi string `json:"deskripsi" binding:"required"`
+	Qty       int32  `json:"qty"`
+	Note      string `json:"note"`
+}
+
 type CreateSuratJalanInternalRequest struct {
-	NoDokumen      string  `json:"no_dokumen" binding:"required"`
-	Deskripsi      string  `json:"deskripsi"`
-	IDPackingLists []int32 `json:"id_packing_lists"`
+	IDWO           int32                                  `json:"id_wo" binding:"required,gt=0"`
+	NoDokumen      string                                 `json:"no_dokumen" binding:"required"`
+	Deskripsi      string                                 `json:"deskripsi"`
+	Items          []CreateSuratJalanInternalItemRequest `json:"items"`
+	IDPackingLists []int32                                `json:"id_packing_lists"`
 }
 
 type AssignPackingListRequest struct {
@@ -240,7 +249,7 @@ type AssignPackingListRequest struct {
 type SuratJalanInternalShellRow struct {
 	No        int    `json:"no"`
 	Deskripsi string `json:"deskripsi"`
-	Color     string `json:"color"`
+	Color     string `json:"color,omitempty"`
 	Qty       int32  `json:"qty"`
 	Note      string `json:"note"`
 }
@@ -255,8 +264,11 @@ type SuratJalanInternalPackingListRow struct {
 
 type SuratJalanInternalListItem struct {
 	ID               int32  `json:"id_surat_jalan_internal"`
+	IDWO             *int32 `json:"id_wo,omitempty"`
 	NoDokumen        string `json:"no_dokumen"`
 	Deskripsi        string `json:"deskripsi"`
+	Buyer            string `json:"buyer,omitempty"`
+	Model            string `json:"model,omitempty"`
 	PackingListCount int32  `json:"packing_list_count"`
 	CreatedAt        string `json:"created_at"`
 }
@@ -268,8 +280,12 @@ type SuratJalanInternalListResponse struct {
 
 type SuratJalanInternalDetailResponse struct {
 	ID           int32                              `json:"id_surat_jalan_internal"`
+	IDWO         *int32                             `json:"id_wo,omitempty"`
 	NoDokumen    string                             `json:"no_dokumen"`
 	Deskripsi    string                             `json:"deskripsi"`
+	Buyer        string                             `json:"buyer,omitempty"`
+	Model        string                             `json:"model,omitempty"`
+	WOQty        int32                              `json:"wo_qty,omitempty"`
 	CreatedAt    string                             `json:"created_at"`
 	PackingLists []SuratJalanInternalPackingListRow `json:"packing_lists"`
 	WOShells     []SuratJalanInternalShellRow       `json:"wo_shells"`
@@ -277,6 +293,7 @@ type SuratJalanInternalDetailResponse struct {
 
 type SuratJalanInternalCreateResponse struct {
 	ID        int32  `json:"id_surat_jalan_internal"`
+	IDWO      int32  `json:"id_wo"`
 	NoDokumen string `json:"no_dokumen"`
 	Deskripsi string `json:"deskripsi"`
 	CreatedAt string `json:"created_at"`

@@ -281,24 +281,33 @@ func (q *Queries) CreateSuratJalanClient(ctx context.Context, arg CreateSuratJal
 
 const createSuratJalanInternal = `-- name: CreateSuratJalanInternal :one
 INSERT INTO SURAT_JALAN_INTERNAL (
+    id_wo,
     no_dokumen,
     deskripsi
 ) VALUES (
     $1,
-    $2
+    $2,
+    $3
 )
-RETURNING id_surat_jalan_internal, no_dokumen, deskripsi, created_at
+RETURNING id_surat_jalan_internal, id_wo, no_dokumen, deskripsi, created_at
 `
 
 type CreateSuratJalanInternalParams struct {
-	NoDokumen string `json:"no_dokumen"`
-	Deskripsi string `json:"deskripsi"`
+	IDWo      pgtype.Int4 `json:"id_wo"`
+	NoDokumen string      `json:"no_dokumen"`
+	Deskripsi string      `json:"deskripsi"`
 }
 
 func (q *Queries) CreateSuratJalanInternal(ctx context.Context, arg CreateSuratJalanInternalParams) (SuratJalanInternal, error) {
-	row := q.db.QueryRow(ctx, createSuratJalanInternal, arg.NoDokumen, arg.Deskripsi)
+	row := q.db.QueryRow(ctx, createSuratJalanInternal, arg.IDWo, arg.NoDokumen, arg.Deskripsi)
 	var i SuratJalanInternal
-	err := row.Scan(&i.IDSuratJalanInternal, &i.NoDokumen, &i.Deskripsi, &i.CreatedAt)
+	err := row.Scan(
+		&i.IDSuratJalanInternal,
+		&i.IDWo,
+		&i.NoDokumen,
+		&i.Deskripsi,
+		&i.CreatedAt,
+	)
 	return i, err
 }
 
@@ -780,6 +789,94 @@ func (q *Queries) ListPackingListsBySuratJalanID(ctx context.Context, idSuratJal
 			&i.TotalReject,
 			&i.IDWo,
 			&i.IDSuratJalanInternal,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const createSuratJalanInternalItem = `-- name: CreateSuratJalanInternalItem :one
+INSERT INTO SURAT_JALAN_INTERNAL_ITEM (
+    id_surat_jalan_internal,
+    no_urut,
+    deskripsi,
+    qty,
+    note
+) VALUES (
+    $1,
+    $2,
+    $3,
+    $4,
+    $5
+)
+RETURNING id_surat_jalan_internal_item, id_surat_jalan_internal, no_urut, deskripsi, qty, note, created_at
+`
+
+type CreateSuratJalanInternalItemParams struct {
+	IDSuratJalanInternal int32  `json:"id_surat_jalan_internal"`
+	NoUrut               int32  `json:"no_urut"`
+	Deskripsi            string `json:"deskripsi"`
+	Qty                  int32  `json:"qty"`
+	Note                 string `json:"note"`
+}
+
+func (q *Queries) CreateSuratJalanInternalItem(ctx context.Context, arg CreateSuratJalanInternalItemParams) (SuratJalanInternalItem, error) {
+	row := q.db.QueryRow(ctx, createSuratJalanInternalItem,
+		arg.IDSuratJalanInternal,
+		arg.NoUrut,
+		arg.Deskripsi,
+		arg.Qty,
+		arg.Note,
+	)
+	var i SuratJalanInternalItem
+	err := row.Scan(
+		&i.IDSuratJalanInternalItem,
+		&i.IDSuratJalanInternal,
+		&i.NoUrut,
+		&i.Deskripsi,
+		&i.Qty,
+		&i.Note,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const listSuratJalanInternalItemsBySJID = `-- name: ListSuratJalanInternalItemsBySJID :many
+SELECT
+    id_surat_jalan_internal_item,
+    id_surat_jalan_internal,
+    no_urut,
+    deskripsi,
+    qty,
+    note,
+    created_at
+FROM SURAT_JALAN_INTERNAL_ITEM
+WHERE id_surat_jalan_internal = $1
+ORDER BY no_urut ASC, id_surat_jalan_internal_item ASC
+`
+
+func (q *Queries) ListSuratJalanInternalItemsBySJID(ctx context.Context, idSuratJalanInternal int32) ([]SuratJalanInternalItem, error) {
+	rows, err := q.db.Query(ctx, listSuratJalanInternalItemsBySJID, idSuratJalanInternal)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SuratJalanInternalItem
+	for rows.Next() {
+		var i SuratJalanInternalItem
+		if err := rows.Scan(
+			&i.IDSuratJalanInternalItem,
+			&i.IDSuratJalanInternal,
+			&i.NoUrut,
+			&i.Deskripsi,
+			&i.Qty,
+			&i.Note,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err

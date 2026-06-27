@@ -287,18 +287,43 @@ func (q *Queries) GetSuratJalanClientDetail(ctx context.Context, arg GetSuratJal
 const getSuratJalanInternalDetail = `-- name: GetSuratJalanInternalDetail :one
 SELECT
     sji.id_surat_jalan_internal,
+    sji.id_wo,
     sji.no_dokumen,
     sji.deskripsi,
-    sji.created_at
+    sji.created_at,
+    COALESCE(wo.buyer, '')::varchar AS buyer,
+    COALESCE(wo.model, '')::varchar AS model,
+    COALESCE(wo.qty, 0)::integer AS wo_qty
 FROM SURAT_JALAN_INTERNAL sji
+LEFT JOIN v_work_order wo ON wo.id_wo = sji.id_wo
 WHERE sji.id_surat_jalan_internal = $1
 LIMIT 1
 `
 
-func (q *Queries) GetSuratJalanInternalDetail(ctx context.Context, idSuratJalanInternal int32) (SuratJalanInternal, error) {
+type GetSuratJalanInternalDetailRow struct {
+	IDSuratJalanInternal int32              `json:"id_surat_jalan_internal"`
+	IDWo                 pgtype.Int4        `json:"id_wo"`
+	NoDokumen            string             `json:"no_dokumen"`
+	Deskripsi            string             `json:"deskripsi"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+	Buyer                string             `json:"buyer"`
+	Model                string             `json:"model"`
+	WoQty                int32              `json:"wo_qty"`
+}
+
+func (q *Queries) GetSuratJalanInternalDetail(ctx context.Context, idSuratJalanInternal int32) (GetSuratJalanInternalDetailRow, error) {
 	row := q.db.QueryRow(ctx, getSuratJalanInternalDetail, idSuratJalanInternal)
-	var i SuratJalanInternal
-	err := row.Scan(&i.IDSuratJalanInternal, &i.NoDokumen, &i.Deskripsi, &i.CreatedAt)
+	var i GetSuratJalanInternalDetailRow
+	err := row.Scan(
+		&i.IDSuratJalanInternal,
+		&i.IDWo,
+		&i.NoDokumen,
+		&i.Deskripsi,
+		&i.CreatedAt,
+		&i.Buyer,
+		&i.Model,
+		&i.WoQty,
+	)
 	return i, err
 }
 
@@ -1317,14 +1342,18 @@ func (q *Queries) ListSuratJalanClients(ctx context.Context, arg ListSuratJalanC
 const listSuratJalanInternals = `-- name: ListSuratJalanInternals :many
 SELECT
     sji.id_surat_jalan_internal,
+    sji.id_wo,
     sji.no_dokumen,
     sji.deskripsi,
     sji.created_at,
+    COALESCE(wo.buyer, '')::varchar AS buyer,
+    COALESCE(wo.model, '')::varchar AS model,
     COUNT(DISTINCT pl.id_packing_list)::integer AS packing_list_count,
     COUNT(*) OVER() AS total_count
 FROM SURAT_JALAN_INTERNAL sji
+LEFT JOIN v_work_order wo ON wo.id_wo = sji.id_wo
 LEFT JOIN PACKING_LIST pl ON pl.id_surat_jalan_internal = sji.id_surat_jalan_internal
-GROUP BY sji.id_surat_jalan_internal
+GROUP BY sji.id_surat_jalan_internal, wo.buyer, wo.model
 ORDER BY
     CASE WHEN $1::text = 'created_at' AND NOT $2::bool THEN sji.created_at END ASC,
     CASE WHEN $1::text = 'created_at' AND $2::bool THEN sji.created_at END DESC,
@@ -1343,9 +1372,12 @@ type ListSuratJalanInternalsParams struct {
 
 type ListSuratJalanInternalsRow struct {
 	IDSuratJalanInternal int32              `json:"id_surat_jalan_internal"`
+	IDWo                 pgtype.Int4        `json:"id_wo"`
 	NoDokumen            string             `json:"no_dokumen"`
 	Deskripsi            string             `json:"deskripsi"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+	Buyer                string             `json:"buyer"`
+	Model                string             `json:"model"`
 	PackingListCount     int32              `json:"packing_list_count"`
 	TotalCount           int64              `json:"total_count"`
 }
@@ -1366,9 +1398,12 @@ func (q *Queries) ListSuratJalanInternals(ctx context.Context, arg ListSuratJala
 		var i ListSuratJalanInternalsRow
 		if err := rows.Scan(
 			&i.IDSuratJalanInternal,
+			&i.IDWo,
 			&i.NoDokumen,
 			&i.Deskripsi,
 			&i.CreatedAt,
+			&i.Buyer,
+			&i.Model,
 			&i.PackingListCount,
 			&i.TotalCount,
 		); err != nil {

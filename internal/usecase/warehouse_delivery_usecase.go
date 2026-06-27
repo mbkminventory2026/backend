@@ -666,8 +666,13 @@ func (u *WarehouseDeliveryUseCase) DeleteSuratJalanClient(ctx context.Context, i
 }
 
 func (u *WarehouseDeliveryUseCase) CreateSuratJalanInternalWithData(ctx context.Context, req model.CreateSuratJalanInternalRequest) (*model.SuratJalanInternalCreateResponse, error) {
-	if req.NoDokumen == "" {
+	if req.IDWO <= 0 {
 		return nil, ErrWarehouseValidation
+	}
+
+	noDokumen := req.NoDokumen
+	if noDokumen == "" {
+		noDokumen = fmt.Sprintf("SJ-INT/%d/WO-%d", time.Now().Year(), req.IDWO)
 	}
 
 	tx, err := u.dbPool.Begin(ctx)
@@ -683,12 +688,34 @@ func (u *WarehouseDeliveryUseCase) CreateSuratJalanInternalWithData(ctx context.
 
 	qtx := entity.New(tx)
 
+	deskripsi := req.Deskripsi
+	if deskripsi == "" {
+		deskripsi = fmt.Sprintf("Surat Jalan Internal WO #%d", req.IDWO)
+	}
+
 	sj, err := qtx.CreateSuratJalanInternal(ctx, entity.CreateSuratJalanInternalParams{
-		NoDokumen: req.NoDokumen,
-		Deskripsi: req.Deskripsi,
+		IDWo:      pgtype.Int4{Int32: req.IDWO, Valid: true},
+		NoDokumen: noDokumen,
+		Deskripsi: deskripsi,
 	})
 	if err != nil {
 		return nil, mapWarehouseDBError(err)
+	}
+
+	for idx, item := range req.Items {
+		noUrut := int32(item.No)
+		if noUrut <= 0 {
+			noUrut = int32(idx + 1)
+		}
+		if _, err := qtx.CreateSuratJalanInternalItem(ctx, entity.CreateSuratJalanInternalItemParams{
+			IDSuratJalanInternal: sj.IDSuratJalanInternal,
+			NoUrut:               noUrut,
+			Deskripsi:            item.Deskripsi,
+			Qty:                  item.Qty,
+			Note:                 item.Note,
+		}); err != nil {
+			return nil, mapWarehouseDBError(err)
+		}
 	}
 
 	for _, plID := range req.IDPackingLists {
@@ -706,6 +733,7 @@ func (u *WarehouseDeliveryUseCase) CreateSuratJalanInternalWithData(ctx context.
 
 	return &model.SuratJalanInternalCreateResponse{
 		ID:        sj.IDSuratJalanInternal,
+		IDWO:      req.IDWO,
 		NoDokumen: sj.NoDokumen,
 		Deskripsi: sj.Deskripsi,
 		CreatedAt: sj.CreatedAt.Time.Format(time.RFC3339),
@@ -737,13 +765,61 @@ func (u *WarehouseDeliveryUseCase) GetSuratJalanInternalWithData(ctx context.Con
 		})
 	}
 
+	woShellRows := make([]model.SuratJalanInternalShellRow, 0)
+	var idWoPtr *int32
+	if row.IDWo.Valid {
+		idWoVal := row.IDWo.Int32
+		idWoPtr = &idWoVal
+	}
+
+	savedItems, err := u.repo.ListSuratJalanInternalItemsBySJID(ctx, id)
+	if err == nil && len(savedItems) > 0 {
+		for _, item := range savedItems {
+			woShellRows = append(woShellRows, model.SuratJalanInternalShellRow{
+				No:        int(item.NoUrut),
+				Deskripsi: item.Deskripsi,
+				Qty:       item.Qty,
+				Note:      item.Note,
+			})
+		}
+	} else if row.IDWo.Valid {
+		idWoVal := row.IDWo.Int32
+		shells, err := u.repo.ListWorkOrderShellsByWorkOrderID(ctx, idWoVal)
+		if err == nil {
+			shellSizes, _ := u.repo.ListWorkOrderShellSizesByWorkOrderID(ctx, idWoVal)
+			idx := 1
+			for _, shell := range shells {
+				for _, sz := range shellSizes {
+					if sz.IDWoShell == shell.IDWoShell {
+						desc := fmt.Sprintf("%s - %s | Warna: %s | Size: %s", row.Buyer, row.Model, shell.Color, sz.Size)
+						if shell.Deskripsi != "" {
+							desc += " (" + shell.Deskripsi + ")"
+						}
+						woShellRows = append(woShellRows, model.SuratJalanInternalShellRow{
+							No:        idx,
+							Deskripsi: desc,
+							Color:     shell.Color,
+							Qty:       sz.Qty,
+							Note:      fmt.Sprintf("Ratio %d", sz.Ratio),
+						})
+						idx++
+					}
+				}
+			}
+		}
+	}
+
 	return &model.SuratJalanInternalDetailResponse{
 		ID:           row.IDSuratJalanInternal,
+		IDWO:         idWoPtr,
 		NoDokumen:    row.NoDokumen,
 		Deskripsi:    row.Deskripsi,
+		Buyer:        row.Buyer,
+		Model:        row.Model,
+		WOQty:        row.WoQty,
 		CreatedAt:    row.CreatedAt.Time.Format(time.RFC3339),
 		PackingLists: plItems,
-		WOShells:     []model.SuratJalanInternalShellRow{},
+		WOShells:     woShellRows,
 	}, nil
 }
 
@@ -763,10 +839,18 @@ func (u *WarehouseDeliveryUseCase) ListSuratJalanInternalsEnriched(ctx context.C
 	total := int64(0)
 	for _, row := range rows {
 		total = row.TotalCount
+		var idWoPtr *int32
+		if row.IDWo.Valid {
+			v := row.IDWo.Int32
+			idWoPtr = &v
+		}
 		items = append(items, model.SuratJalanInternalListItem{
 			ID:               row.IDSuratJalanInternal,
+			IDWO:             idWoPtr,
 			NoDokumen:        row.NoDokumen,
 			Deskripsi:        row.Deskripsi,
+			Buyer:            row.Buyer,
+			Model:            row.Model,
 			PackingListCount: row.PackingListCount,
 			CreatedAt:        row.CreatedAt.Time.Format(time.RFC3339),
 		})

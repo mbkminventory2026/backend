@@ -84,6 +84,8 @@ type Querier interface {
 	CreateSpreadingCuttingPlan(ctx context.Context, arg CreateSpreadingCuttingPlanParams) (SpreadingCuttingPlan, error)
 	CreateSuratJalanClient(ctx context.Context, arg CreateSuratJalanClientParams) (CreateSuratJalanClientRow, error)
 	CreateSuratJalanInternal(ctx context.Context, arg CreateSuratJalanInternalParams) (SuratJalanInternal, error)
+	CreateSuratJalanInternalItem(ctx context.Context, arg CreateSuratJalanInternalItemParams) (SuratJalanInternalItem, error)
+	ListSuratJalanInternalItemsBySJID(ctx context.Context, idSuratJalanInternal int32) ([]SuratJalanInternalItem, error)
 	CreateTimelinePlan(ctx context.Context, arg CreateTimelinePlanParams) (TimelinePlanProduksi, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	CreateUserAkses(ctx context.Context, arg CreateUserAksesParams) error
@@ -186,7 +188,7 @@ type Querier interface {
 	// Mengambil laporan stok material yang teragregasi per lokasi penyimpanan rak
 	GetStockReportPerLokasi(ctx context.Context) ([]GetStockReportPerLokasiRow, error)
 	GetSuratJalanClientDetail(ctx context.Context, arg GetSuratJalanClientDetailParams) (GetSuratJalanClientDetailRow, error)
-	GetSuratJalanInternalDetail(ctx context.Context, idSuratJalanInternal int32) (SuratJalanInternal, error)
+	GetSuratJalanInternalDetail(ctx context.Context, idSuratJalanInternal int32) (GetSuratJalanInternalDetailRow, error)
 	GetTimelinePlanByID(ctx context.Context, idTimeline int32) (TimelinePlanProduksi, error)
 	GetTruePendingApprovalsByUser(ctx context.Context, idUser int32) ([]GetTruePendingApprovalsByUserRow, error)
 	GetUserByID(ctx context.Context, idUser int32) (GetUserByIDRow, error)

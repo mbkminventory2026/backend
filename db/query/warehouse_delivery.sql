@@ -108,13 +108,44 @@ RETURNING id_packing_list_reject_size, qty, id_packing_list, id_wo_shell_size, c
 
 -- name: CreateSuratJalanInternal :one
 INSERT INTO SURAT_JALAN_INTERNAL (
+    id_wo,
     no_dokumen,
     deskripsi
 ) VALUES (
+    sqlc.arg(id_wo),
     sqlc.arg(no_dokumen),
     sqlc.arg(deskripsi)
 )
-RETURNING id_surat_jalan_internal, no_dokumen, deskripsi, created_at;
+RETURNING id_surat_jalan_internal, id_wo, no_dokumen, deskripsi, created_at;
+
+-- name: CreateSuratJalanInternalItem :one
+INSERT INTO SURAT_JALAN_INTERNAL_ITEM (
+    id_surat_jalan_internal,
+    no_urut,
+    deskripsi,
+    qty,
+    note
+) VALUES (
+    sqlc.arg(id_surat_jalan_internal),
+    sqlc.arg(no_urut),
+    sqlc.arg(deskripsi),
+    sqlc.arg(qty),
+    sqlc.arg(note)
+)
+RETURNING id_surat_jalan_internal_item, id_surat_jalan_internal, no_urut, deskripsi, qty, note, created_at;
+
+-- name: ListSuratJalanInternalItemsBySJID :many
+SELECT
+    id_surat_jalan_internal_item,
+    id_surat_jalan_internal,
+    no_urut,
+    deskripsi,
+    qty,
+    note,
+    created_at
+FROM SURAT_JALAN_INTERNAL_ITEM
+WHERE id_surat_jalan_internal = sqlc.arg(id_surat_jalan_internal)
+ORDER BY no_urut ASC, id_surat_jalan_internal_item ASC;
 
 -- name: AssignPackingListToSuratJalan :exec
 UPDATE PACKING_LIST

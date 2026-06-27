@@ -584,14 +584,18 @@ LIMIT 1;
 -- name: ListSuratJalanInternals :many
 SELECT
     sji.id_surat_jalan_internal,
+    sji.id_wo,
     sji.no_dokumen,
     sji.deskripsi,
     sji.created_at,
+    COALESCE(wo.buyer, '')::varchar AS buyer,
+    COALESCE(wo.model, '')::varchar AS model,
     COUNT(DISTINCT pl.id_packing_list)::integer AS packing_list_count,
     COUNT(*) OVER() AS total_count
 FROM SURAT_JALAN_INTERNAL sji
+LEFT JOIN v_work_order wo ON wo.id_wo = sji.id_wo
 LEFT JOIN PACKING_LIST pl ON pl.id_surat_jalan_internal = sji.id_surat_jalan_internal
-GROUP BY sji.id_surat_jalan_internal
+GROUP BY sji.id_surat_jalan_internal, wo.buyer, wo.model
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN sji.created_at END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN sji.created_at END DESC,
@@ -603,10 +607,15 @@ LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 -- name: GetSuratJalanInternalDetail :one
 SELECT
     sji.id_surat_jalan_internal,
+    sji.id_wo,
     sji.no_dokumen,
     sji.deskripsi,
-    sji.created_at
+    sji.created_at,
+    COALESCE(wo.buyer, '')::varchar AS buyer,
+    COALESCE(wo.model, '')::varchar AS model,
+    COALESCE(wo.qty, 0)::integer AS wo_qty
 FROM SURAT_JALAN_INTERNAL sji
+LEFT JOIN v_work_order wo ON wo.id_wo = sji.id_wo
 WHERE sji.id_surat_jalan_internal = sqlc.arg(id_surat_jalan_internal)
 LIMIT 1;
 
