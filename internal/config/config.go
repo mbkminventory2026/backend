@@ -30,6 +30,7 @@ const (
 	defaultServerIdleTO    = "120s"
 	defaultShutdownTO      = "15s"
 	defaultExportTemplate  = "templates/exports"
+	defaultAIServiceURL    = "http://host.docker.internal:8000"
 )
 
 // Config stores all application settings loaded from .env or system environment.
@@ -63,6 +64,7 @@ type Config struct {
 	LoginRateLimitWindowSec   int `mapstructure:"LOGIN_RATE_LIMIT_WINDOW_SECONDS"`
 
 	ExportTemplateDir string `mapstructure:"EXPORT_TEMPLATE_DIR"`
+	AIServiceURL      string `mapstructure:"AI_SERVICE_URL"`
 }
 
 // Load reads configuration from .env (if present) and environment variables.
@@ -81,7 +83,7 @@ func Load() (*Config, error) {
 		"DB_HEALTH_CHECK_PERIOD_SECONDS", "DB_CONNECT_TIMEOUT_SECONDS",
 		"JWT_SECRET", "TURNSTILE_SECRET",
 		"LOGIN_RATE_LIMIT_MAX_ATTEMPTS", "LOGIN_RATE_LIMIT_WINDOW_SECONDS",
-		"EXPORT_TEMPLATE_DIR",
+		"EXPORT_TEMPLATE_DIR", "AI_SERVICE_URL",
 	} {
 		if err := viper.BindEnv(key); err != nil {
 			return nil, fmt.Errorf("bind env %s: %w", key, err)
@@ -105,6 +107,7 @@ func Load() (*Config, error) {
 	viper.SetDefault("SERVER_IDLE_TIMEOUT", defaultServerIdleTO)
 	viper.SetDefault("SHUTDOWN_TIMEOUT", defaultShutdownTO)
 	viper.SetDefault("EXPORT_TEMPLATE_DIR", defaultExportTemplate)
+	viper.SetDefault("AI_SERVICE_URL", defaultAIServiceURL)
 
 	if err := viper.ReadInConfig(); err != nil {
 		var configNotFound viper.ConfigFileNotFoundError

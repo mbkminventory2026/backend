@@ -72,7 +72,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	aiGateway := aigateway.NewGateway("http://host.docker.internal:8000")
+	aiGateway := aigateway.NewGateway(cfg.AIServiceURL)
 
 	// 2. Repository/Queries
 	queries := entity.New(dbPool)
