@@ -255,6 +255,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	suratJalanInternalExcelExportUseCase, err := usecase.NewSuratJalanInternalExcelExportUseCase(excelRenderer, warehouseDeliveryUseCase, workOrderProductionUseCase)
+	if err != nil {
+		logger.Error("failed to initialize surat jalan internal excel export usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	rekonsiliasiUseCase, err := usecase.NewRekonsiliasiUseCase(queries, dbPool)
 	if err != nil {
 		logger.Error("failed to initialize rekonsiliasi usecase", slog.String("error", err.Error()))
@@ -365,7 +372,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	warehouseDeliveryHandler, err := httpdelivery.NewWarehouseDeliveryHandler(warehouseDeliveryUseCase, packingListExcelExportUseCase)
+	warehouseDeliveryHandler, err := httpdelivery.NewWarehouseDeliveryHandler(
+		warehouseDeliveryUseCase,
+		packingListExcelExportUseCase,
+		suratJalanInternalExcelExportUseCase,
+	)
 	if err != nil {
 		logger.Error("failed to initialize warehouse delivery handler", slog.String("error", err.Error()))
 		dbPool.Close()

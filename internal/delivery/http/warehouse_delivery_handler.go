@@ -13,21 +13,30 @@ import (
 )
 
 type WarehouseDeliveryHandler struct {
-	useCase            *usecase.WarehouseDeliveryUseCase
-	excelExportUseCase *usecase.PackingListExcelExportUseCase
+	useCase                         *usecase.WarehouseDeliveryUseCase
+	packingListExcelExportUseCase   *usecase.PackingListExcelExportUseCase
+	suratJalanInternalExcelExportUC *usecase.SuratJalanInternalExcelExportUseCase
 }
 
 func NewWarehouseDeliveryHandler(
 	useCase *usecase.WarehouseDeliveryUseCase,
-	excelExportUseCase *usecase.PackingListExcelExportUseCase,
+	packingListExcelExportUseCase *usecase.PackingListExcelExportUseCase,
+	suratJalanInternalExcelExportUC *usecase.SuratJalanInternalExcelExportUseCase,
 ) (*WarehouseDeliveryHandler, error) {
 	if useCase == nil {
 		return nil, errors.New("warehouse delivery usecase is required")
 	}
-	if excelExportUseCase == nil {
+	if packingListExcelExportUseCase == nil {
 		return nil, errors.New("packing list excel export usecase is required")
 	}
-	return &WarehouseDeliveryHandler{useCase: useCase, excelExportUseCase: excelExportUseCase}, nil
+	if suratJalanInternalExcelExportUC == nil {
+		return nil, errors.New("surat jalan internal excel export usecase is required")
+	}
+	return &WarehouseDeliveryHandler{
+		useCase:                         useCase,
+		packingListExcelExportUseCase:   packingListExcelExportUseCase,
+		suratJalanInternalExcelExportUC: suratJalanInternalExcelExportUC,
+	}, nil
 }
 
 func (h *WarehouseDeliveryHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
@@ -43,6 +52,7 @@ func (h *WarehouseDeliveryHandler) RegisterRoutes(router gin.IRouter, authMiddle
 	v1.GET("/surat-jalan-clients/:id", RequirePermission(PermissionSuratJalanClientRead), h.GetSuratJalanClientDetail)
 	v1.GET("/surat-jalan-internals", internalOnly, RequirePermission(PermissionSuratJalanInternalRead), h.ListSuratJalanInternals)
 	v1.GET("/surat-jalan-internals/:id", internalOnly, RequirePermission(PermissionSuratJalanInternalRead), h.GetSuratJalanInternalDetail)
+	v1.GET("/surat-jalan-internals/:id/export/excel", internalOnly, RequirePermission(PermissionSuratJalanInternalRead), h.ExportSuratJalanInternalExcel)
 	v1.POST("/surat-jalan-internals", internalOnly, RequirePermission(PermissionSuratJalanInternalCreate), h.CreateSuratJalanInternalHandler)
 	v1.POST("/surat-jalan-internals/:id/assign", internalOnly, RequirePermission(PermissionSuratJalanInternalCreate), h.AssignPackingListHandler)
 	v1.DELETE("/surat-jalan-internals/:id/assign/:pl_id", internalOnly, RequirePermission(PermissionSuratJalanInternalCreate), h.UnassignPackingListHandler)
@@ -236,13 +246,42 @@ func (h *WarehouseDeliveryHandler) ExportPackingListExcel(c *gin.Context) {
 		return
 	}
 
-	exportedFile, err := h.excelExportUseCase.ExportByID(c.Request.Context(), id, mitraID)
+	exportedFile, err := h.packingListExcelExportUseCase.ExportByID(c.Request.Context(), id, mitraID)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.Header("Content-Disposition", `attachment; filename="`+sanitizePackingListAttachmentFileName(exportedFile.FileName)+`"`)
+	c.Header("Content-Disposition", `attachment; filename="`+sanitizeExcelAttachmentFileName(exportedFile.FileName, "packing_list_export.xlsx")+`"`)
+	c.Data(http.StatusOK, exportedFile.ContentType, exportedFile.Content)
+}
+
+// ExportSuratJalanInternalExcel godoc
+// @Summary      Export Surat Jalan Internal Excel
+// @Description  Generates a downloadable Excel workbook for one internal delivery note using the registered export template.
+// @Tags         Warehouse & Delivery
+// @Produce      application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Surat Jalan Internal ID"
+// @Success      200  {file}    binary
+// @Failure      400  {object}  model.WarehouseErrorDoc
+// @Failure      404  {object}  model.WarehouseErrorDoc
+// @Failure      500  {object}  model.WarehouseErrorDoc
+// @Router       /api/v1/surat-jalan-internals/{id}/export/excel [get]
+func (h *WarehouseDeliveryHandler) ExportSuratJalanInternalExcel(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid surat jalan internal id", nil))
+		return
+	}
+
+	exportedFile, err := h.suratJalanInternalExcelExportUC.ExportByID(c.Request.Context(), id)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.Header("Content-Disposition", `attachment; filename="`+sanitizeExcelAttachmentFileName(exportedFile.FileName, "surat_jalan_internal_export.xlsx")+`"`)
 	c.Data(http.StatusOK, exportedFile.ContentType, exportedFile.Content)
 }
 
@@ -584,10 +623,10 @@ func (h *WarehouseDeliveryHandler) handleError(c *gin.Context, err error) {
 	}
 }
 
-func sanitizePackingListAttachmentFileName(fileName string) string {
+func sanitizeExcelAttachmentFileName(fileName, fallback string) string {
 	name := strings.TrimSpace(fileName)
 	if name == "" {
-		return "packing_list_export.xlsx"
+		return fallback
 	}
 
 	replacer := strings.NewReplacer(`"`, "", "\r", "", "\n", "")
