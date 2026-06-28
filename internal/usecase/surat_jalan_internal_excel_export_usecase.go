@@ -194,6 +194,10 @@ func writeSuratJalanInternalExportItems(
 		row := suratJalanInternalItemStartRow + index
 		totalQty += item.Qty
 
+		if err := disableSuratJalanInternalDescriptionShrink(workbook, sheetName, row); err != nil {
+			return err
+		}
+
 		values := map[string]any{
 			fmt.Sprintf("A%d", row): item.No,
 			fmt.Sprintf("B%d", row): strings.TrimSpace(item.Deskripsi),
@@ -219,6 +223,33 @@ func writeSuratJalanInternalExportItems(
 	}
 
 	return nil
+}
+
+func disableSuratJalanInternalDescriptionShrink(workbook *excelize.File, sheetName string, row int) error {
+	styleID, err := workbook.GetCellStyle(sheetName, fmt.Sprintf("B%d", row))
+	if err != nil {
+		return err
+	}
+
+	style, err := workbook.GetStyle(styleID)
+	if err != nil {
+		return err
+	}
+	if style == nil {
+		return nil
+	}
+
+	if style.Alignment == nil {
+		style.Alignment = &excelize.Alignment{}
+	}
+	style.Alignment.ShrinkToFit = false
+
+	updatedStyleID, err := workbook.NewStyle(style)
+	if err != nil {
+		return err
+	}
+
+	return workbook.SetCellStyle(sheetName, fmt.Sprintf("B%d", row), fmt.Sprintf("E%d", row), updatedStyleID)
 }
 
 func writeSuratJalanInternalExportFooter(
