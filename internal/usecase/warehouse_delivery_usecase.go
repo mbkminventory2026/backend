@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -32,11 +33,12 @@ var (
 )
 
 type WarehouseDeliveryUseCase struct {
-	repo   entity.Querier
-	dbPool *pgxpool.Pool
+	repo     entity.Querier
+	dbPool   *pgxpool.Pool
+	auditLog *AuditLogUseCase
 }
 
-func NewWarehouseDeliveryUseCase(repo entity.Querier, dbPool *pgxpool.Pool) (*WarehouseDeliveryUseCase, error) {
+func NewWarehouseDeliveryUseCase(repo entity.Querier, dbPool *pgxpool.Pool, auditLog *AuditLogUseCase) (*WarehouseDeliveryUseCase, error) {
 	if repo == nil {
 		return nil, errors.New("warehouse repository is required")
 	}
@@ -45,8 +47,9 @@ func NewWarehouseDeliveryUseCase(repo entity.Querier, dbPool *pgxpool.Pool) (*Wa
 	}
 
 	return &WarehouseDeliveryUseCase{
-		repo:   repo,
-		dbPool: dbPool,
+		repo:     repo,
+		dbPool:   dbPool,
+		auditLog: auditLog,
 	}, nil
 }
 
@@ -66,7 +69,7 @@ func (u *WarehouseDeliveryUseCase) ReceiveInventory(ctx context.Context, req mod
 		return nil, mapWarehouseDBError(err)
 	}
 
-	return &model.ReceiveInventoryResponse{
+	result := &model.ReceiveInventoryResponse{
 		IDReceived:                   item.IDReceived,
 		Tanggal:                      item.Tanggal.Time.Format("2006-01-02"),
 		Qty:                          item.Qty,
@@ -77,7 +80,20 @@ func (u *WarehouseDeliveryUseCase) ReceiveInventory(ctx context.Context, req mod
 		ActualKirim:                  item.ActualKirim,
 		Balance:                      item.Balance,
 		CreatedAt:                    item.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	}
+
+	u.recordWarehouseAudit(
+		ctx,
+		"CREATE",
+		"warehouse-delivery",
+		"inventory_receipts",
+		fmt.Sprintf("%d", result.IDReceived),
+		fmt.Sprintf("Inventory Receipt #%d", result.IDReceived),
+		nil,
+		buildReceiveInventoryAuditSnapshot(result),
+	)
+
+	return result, nil
 }
 
 func (u *WarehouseDeliveryUseCase) IssueInventory(ctx context.Context, req model.IssueInventoryRequest) (*model.IssueInventoryResponse, error) {
@@ -100,12 +116,25 @@ func (u *WarehouseDeliveryUseCase) IssueInventory(ctx context.Context, req model
 		return nil, mapWarehouseDBError(err)
 	}
 
-	return &model.IssueInventoryResponse{
+	result := &model.IssueInventoryResponse{
 		IDRekonsiliasiMaterial: item.IDRekonsiliasiMaterial,
 		QtyIssued:              req.Qty,
 		PreviousBalance:        item.LastBalance,
 		Balance:                item.Balance,
-	}, nil
+	}
+
+	u.recordWarehouseAudit(
+		ctx,
+		"UPDATE",
+		"warehouse-delivery",
+		"rekonsiliasi_materials",
+		fmt.Sprintf("%d", result.IDRekonsiliasiMaterial),
+		fmt.Sprintf("Rekonsiliasi Material #%d", result.IDRekonsiliasiMaterial),
+		buildIssueInventoryBeforeSnapshot(current.Balance),
+		buildIssueInventoryAuditSnapshot(result),
+	)
+
+	return result, nil
 }
 
 func (u *WarehouseDeliveryUseCase) CreatePackingList(ctx context.Context, userID int32, req model.CreatePackingListRequest) (*model.PackingListResponse, error) {
@@ -231,7 +260,7 @@ func (u *WarehouseDeliveryUseCase) CreatePackingList(ctx context.Context, userID
 		suratJalanPtr = &value
 	}
 
-	return &model.PackingListResponse{
+	result := &model.PackingListResponse{
 		ID:                   header.IDPackingList,
 		TotalGarmentPerBox:   header.TotalGarmentPerBox,
 		TotalReject:          header.TotalReject,
@@ -240,7 +269,20 @@ func (u *WarehouseDeliveryUseCase) CreatePackingList(ctx context.Context, userID
 		CreatedAt:            header.CreatedAt.Time.Format(time.RFC3339),
 		Items:                items,
 		RejectSizes:          rejectSizes,
-	}, nil
+	}
+
+	u.recordWarehouseAudit(
+		ctx,
+		"CREATE",
+		"warehouse-delivery",
+		"packing_lists",
+		fmt.Sprintf("%d", result.ID),
+		fmt.Sprintf("Packing List #%d", result.ID),
+		nil,
+		buildPackingListAuditSnapshot(result),
+	)
+
+	return result, nil
 }
 
 func (u *WarehouseDeliveryUseCase) CreateSuratJalan(ctx context.Context, suratJalanType string, req *model.CreateSuratJalanClientRequest) (*model.SuratJalanResponse, error) {
@@ -253,11 +295,22 @@ func (u *WarehouseDeliveryUseCase) CreateSuratJalan(ctx context.Context, suratJa
 		if err != nil {
 			return nil, mapWarehouseDBError(err)
 		}
-		return &model.SuratJalanResponse{
+		result := &model.SuratJalanResponse{
 			Type:         "internal",
 			IDSuratJalan: item.IDSuratJalanInternal,
 			CreatedAt:    item.CreatedAt.Time.Format(time.RFC3339),
-		}, nil
+		}
+		u.recordWarehouseAudit(
+			ctx,
+			"CREATE",
+			"warehouse-delivery",
+			"surat_jalan_internals",
+			fmt.Sprintf("%d", result.IDSuratJalan),
+			fmt.Sprintf("Surat Jalan Internal #%d", result.IDSuratJalan),
+			nil,
+			buildSuratJalanAuditSnapshot(result),
+		)
+		return result, nil
 	case "client":
 		if req == nil || validateDate(req.Tanggal) != nil {
 			return nil, ErrWarehouseValidation
@@ -278,7 +331,7 @@ func (u *WarehouseDeliveryUseCase) CreateSuratJalan(ctx context.Context, suratJa
 		if err != nil {
 			return nil, mapWarehouseDBError(err)
 		}
-		return &model.SuratJalanResponse{
+		result := &model.SuratJalanResponse{
 			Type:               "client",
 			IDSuratJalan:       item.IDSuratJalanClient,
 			Tanggal:            item.Tanggal.Time.Format("2006-01-02"),
@@ -286,7 +339,18 @@ func (u *WarehouseDeliveryUseCase) CreateSuratJalan(ctx context.Context, suratJa
 			Keterangan:         item.Keterangan,
 			IDMaterialListItem: item.IDMaterialList,
 			CreatedAt:          item.CreatedAt.Time.Format(time.RFC3339),
-		}, nil
+		}
+		u.recordWarehouseAudit(
+			ctx,
+			"CREATE",
+			"warehouse-delivery",
+			"surat_jalan_clients",
+			fmt.Sprintf("%d", result.IDSuratJalan),
+			fmt.Sprintf("Surat Jalan Client #%d", result.IDSuratJalan),
+			nil,
+			buildSuratJalanAuditSnapshot(result),
+		)
+		return result, nil
 	default:
 		return nil, ErrSuratJalanTypeUnsupported
 	}
@@ -515,14 +579,27 @@ func (u *WarehouseDeliveryUseCase) CreateSimpleReceived(ctx context.Context, req
 	if err != nil {
 		return nil, mapWarehouseDBError(err)
 	}
-	return &model.SimpleReceivedResponse{
+	result := &model.SimpleReceivedResponse{
 		IDReceived:         row.IDReceived,
 		Tanggal:            row.Tanggal.Time.Format("2006-01-02"),
 		Qty:                row.Qty,
 		Keterangan:         row.Keterangan,
 		IDMaterialListItem: row.IDMaterialListItem,
 		CreatedAt:          row.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	}
+
+	u.recordWarehouseAudit(
+		ctx,
+		"CREATE",
+		"warehouse-delivery",
+		"received",
+		fmt.Sprintf("%d", result.IDReceived),
+		fmt.Sprintf("Received #%d", result.IDReceived),
+		nil,
+		buildSimpleReceivedAuditSnapshot(result),
+	)
+
+	return result, nil
 }
 
 func (u *WarehouseDeliveryUseCase) ListReceived(ctx context.Context, search string, limit, offset int32) (*model.SimpleReceivedListResponse, error) {
@@ -585,6 +662,10 @@ func (u *WarehouseDeliveryUseCase) UpdateSimpleReceived(ctx context.Context, id 
 	if err := validateDate(req.Tanggal); err != nil {
 		return nil, ErrWarehouseValidation
 	}
+	beforeItem, err := u.GetReceivedByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
 	row, err := u.repo.UpdateReceivedSimple(ctx, entity.UpdateReceivedSimpleParams{
 		IDReceived: id,
 		Tanggal:    mustDate(req.Tanggal),
@@ -597,18 +678,48 @@ func (u *WarehouseDeliveryUseCase) UpdateSimpleReceived(ctx context.Context, id 
 		}
 		return nil, mapWarehouseDBError(err)
 	}
-	return &model.SimpleReceivedResponse{
+	result := &model.SimpleReceivedResponse{
 		IDReceived:         row.IDReceived,
 		Tanggal:            row.Tanggal.Time.Format("2006-01-02"),
 		Qty:                row.Qty,
 		Keterangan:         row.Keterangan,
 		IDMaterialListItem: row.IDMaterialListItem,
 		CreatedAt:          row.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	}
+
+	u.recordWarehouseAudit(
+		ctx,
+		"UPDATE",
+		"warehouse-delivery",
+		"received",
+		fmt.Sprintf("%d", result.IDReceived),
+		fmt.Sprintf("Received #%d", result.IDReceived),
+		buildSimpleReceivedDetailAuditSnapshot(beforeItem),
+		buildSimpleReceivedAuditSnapshot(result),
+	)
+
+	return result, nil
 }
 
 func (u *WarehouseDeliveryUseCase) DeleteSimpleReceived(ctx context.Context, id int32) error {
-	return u.repo.DeleteReceivedSimple(ctx, id)
+	beforeItem, err := u.GetReceivedByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if err := u.repo.DeleteReceivedSimple(ctx, id); err != nil {
+		return err
+	}
+	u.recordWarehouseAudit(
+		ctx,
+		"DELETE",
+		"warehouse-delivery",
+		"received",
+		fmt.Sprintf("%d", id),
+		fmt.Sprintf("Received #%d", id),
+		buildSimpleReceivedDetailAuditSnapshot(beforeItem),
+		nil,
+	)
+	return nil
 }
 
 func mapWarehouseDBError(err error) error {
@@ -662,7 +773,24 @@ func (u *WarehouseDeliveryUseCase) GetMLIHistory(ctx context.Context, idMLI int3
 }
 
 func (u *WarehouseDeliveryUseCase) DeleteSuratJalanClient(ctx context.Context, id int32) error {
-	return u.repo.DeleteSuratJalanClient(ctx, id)
+	beforeItem, err := u.GetSuratJalanClientDetail(ctx, id, nil)
+	if err != nil {
+		return err
+	}
+	if err := u.repo.DeleteSuratJalanClient(ctx, id); err != nil {
+		return err
+	}
+	u.recordWarehouseAudit(
+		ctx,
+		"DELETE",
+		"warehouse-delivery",
+		"surat_jalan_clients",
+		fmt.Sprintf("%d", id),
+		fmt.Sprintf("Surat Jalan Client #%d", id),
+		buildSuratJalanClientAuditSnapshot(beforeItem),
+		nil,
+	)
+	return nil
 }
 
 func (u *WarehouseDeliveryUseCase) CreateSuratJalanInternalWithData(ctx context.Context, req model.CreateSuratJalanInternalRequest) (*model.SuratJalanInternalCreateResponse, error) {
@@ -747,13 +875,26 @@ func (u *WarehouseDeliveryUseCase) CreateSuratJalanInternalWithData(ctx context.
 		return nil, fmt.Errorf("%w: failed to commit transaction", ErrWarehouseServiceUnavailable)
 	}
 
-	return &model.SuratJalanInternalCreateResponse{
+	result := &model.SuratJalanInternalCreateResponse{
 		ID:        sj.IDSuratJalanInternal,
 		IDWO:      idWO,
 		NoDokumen: sj.NoDokumen,
 		Deskripsi: sj.Deskripsi,
 		CreatedAt: sj.CreatedAt.Time.Format(time.RFC3339),
-	}, nil
+	}
+
+	u.recordWarehouseAudit(
+		ctx,
+		"CREATE",
+		"warehouse-delivery",
+		"surat_jalan_internals",
+		fmt.Sprintf("%d", result.ID),
+		result.NoDokumen,
+		nil,
+		buildSuratJalanInternalCreateAuditSnapshot(result),
+	)
+
+	return result, nil
 }
 
 func (u *WarehouseDeliveryUseCase) GetSuratJalanInternalWithData(ctx context.Context, id int32) (*model.SuratJalanInternalDetailResponse, error) {
@@ -886,12 +1027,296 @@ func (u *WarehouseDeliveryUseCase) AssignPackingListToSJ(ctx context.Context, id
 		}
 		return fmt.Errorf("%w: failed to get surat jalan internal", ErrWarehouseServiceUnavailable)
 	}
-	return u.repo.AssignPackingListToSuratJalan(ctx, entity.AssignPackingListToSuratJalanParams{
+	beforeItem, err := u.GetSuratJalanInternalWithData(ctx, idSJ)
+	if err != nil {
+		return err
+	}
+	if err := u.repo.AssignPackingListToSuratJalan(ctx, entity.AssignPackingListToSuratJalanParams{
 		IDSuratJalanInternal: idSJ,
 		IDPackingList:        idPL,
-	})
+	}); err != nil {
+		return err
+	}
+	afterItem, err := u.GetSuratJalanInternalWithData(ctx, idSJ)
+	if err != nil {
+		return err
+	}
+	u.recordWarehouseAudit(
+		ctx,
+		"UPDATE",
+		"warehouse-delivery",
+		"surat_jalan_internals",
+		fmt.Sprintf("%d", idSJ),
+		beforeItem.NoDokumen,
+		buildSuratJalanInternalDetailAuditSnapshot(beforeItem),
+		buildSuratJalanInternalDetailAuditSnapshot(afterItem),
+	)
+	return nil
 }
 
 func (u *WarehouseDeliveryUseCase) UnassignPackingListFromSJ(ctx context.Context, idPL int32) error {
-	return u.repo.UnassignPackingListFromSuratJalan(ctx, idPL)
+	packingList, err := u.repo.GetPackingListDetail(ctx, entity.GetPackingListDetailParams{
+		IDPackingList: idPL,
+		IDMitra:       pgtype.Int4{Valid: false},
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrWarehouseNotFound
+		}
+		return fmt.Errorf("%w: failed to get packing list", ErrWarehouseServiceUnavailable)
+	}
+	if !packingList.IDSuratJalanInternal.Valid {
+		return ErrWarehouseNotFound
+	}
+
+	idSJ := packingList.IDSuratJalanInternal.Int32
+	beforeItem, err := u.GetSuratJalanInternalWithData(ctx, idSJ)
+	if err != nil {
+		return err
+	}
+	if err := u.repo.UnassignPackingListFromSuratJalan(ctx, idPL); err != nil {
+		return err
+	}
+	afterItem, err := u.GetSuratJalanInternalWithData(ctx, idSJ)
+	if err != nil {
+		return err
+	}
+	u.recordWarehouseAudit(
+		ctx,
+		"UPDATE",
+		"warehouse-delivery",
+		"surat_jalan_internals",
+		fmt.Sprintf("%d", idSJ),
+		beforeItem.NoDokumen,
+		buildSuratJalanInternalDetailAuditSnapshot(beforeItem),
+		buildSuratJalanInternalDetailAuditSnapshot(afterItem),
+	)
+	return nil
+}
+
+func (u *WarehouseDeliveryUseCase) recordWarehouseAudit(
+	ctx context.Context,
+	action string,
+	module string,
+	entityType string,
+	entityID string,
+	entityLabel string,
+	beforeSnapshot map[string]any,
+	afterSnapshot map[string]any,
+) {
+	if u.auditLog == nil {
+		return
+	}
+
+	auditCtx, ok := GetAuditLogContext(ctx)
+	if !ok {
+		return
+	}
+
+	if err := u.auditLog.Record(ctx, model.AuditLogRecordRequest{
+		ActorUserID:   auditCtx.ActorUserID,
+		ActorRole:     auditCtx.ActorRole,
+		Action:        action,
+		Module:        module,
+		EntityType:    entityType,
+		EntityID:      entityID,
+		EntityLabel:   entityLabel,
+		Method:        auditCtx.Method,
+		Route:         auditCtx.Route,
+		BeforeData:    beforeSnapshot,
+		AfterData:     afterSnapshot,
+		ChangedFields: buildChangedFieldsFromSnapshots(beforeSnapshot, afterSnapshot),
+	}); err != nil {
+		slog.Error(
+			"failed to record warehouse audit log",
+			slog.String("action", action),
+			slog.String("entity_type", entityType),
+			slog.String("error", err.Error()),
+		)
+	}
+}
+
+func buildReceiveInventoryAuditSnapshot(item *model.ReceiveInventoryResponse) map[string]any {
+	if item == nil {
+		return nil
+	}
+	return map[string]any{
+		"id_received":                     item.IDReceived,
+		"tanggal":                         item.Tanggal,
+		"qty":                             item.Qty,
+		"keterangan":                      item.Keterangan,
+		"id_material_list_item":           item.IDMaterialListItem,
+		"id_rekonsiliasi_material":        item.IDRekonsiliasiMaterial,
+		"id_rekonsiliasi_material_terima": item.IDRekonsiliasiMaterialTerima,
+		"actual_kirim":                    item.ActualKirim,
+		"balance":                         item.Balance,
+	}
+}
+
+func buildIssueInventoryBeforeSnapshot(balance int32) map[string]any {
+	return map[string]any{
+		"balance": balance,
+	}
+}
+
+func buildIssueInventoryAuditSnapshot(item *model.IssueInventoryResponse) map[string]any {
+	if item == nil {
+		return nil
+	}
+	return map[string]any{
+		"id_rekonsiliasi_material": item.IDRekonsiliasiMaterial,
+		"qty_issued":               item.QtyIssued,
+		"previous_balance":         item.PreviousBalance,
+		"balance":                  item.Balance,
+	}
+}
+
+func buildPackingListAuditSnapshot(item *model.PackingListResponse) map[string]any {
+	if item == nil {
+		return nil
+	}
+
+	items := make([]map[string]any, 0, len(item.Items))
+	for _, row := range item.Items {
+		sizes := make([]map[string]any, 0, len(row.Sizes))
+		for _, size := range row.Sizes {
+			sizes = append(sizes, map[string]any{
+				"id_wo_shell_size": size.IDWOShellSize,
+				"size":             size.Size,
+				"qty":              size.Qty,
+			})
+		}
+
+		items = append(items, map[string]any{
+			"id_packing_list_item": row.ID,
+			"color":                row.Color,
+			"qty_box":              row.QtyBox,
+			"qty_per_box":          row.QtyPerBox,
+			"box_no_start":         row.BoxNoStart,
+			"box_no_end":           row.BoxNoEnd,
+			"note":                 row.Note,
+			"sizes":                sizes,
+		})
+	}
+
+	return map[string]any{
+		"id_packing_list":         item.ID,
+		"total_garment_per_box":   item.TotalGarmentPerBox,
+		"total_reject":            item.TotalReject,
+		"id_wo":                   item.IDWO,
+		"id_surat_jalan_internal": item.IDSuratJalanInternal,
+		"items":                   items,
+	}
+}
+
+func buildSuratJalanAuditSnapshot(item *model.SuratJalanResponse) map[string]any {
+	if item == nil {
+		return nil
+	}
+	return map[string]any{
+		"type":                  item.Type,
+		"id_surat_jalan":        item.IDSuratJalan,
+		"tanggal":               item.Tanggal,
+		"qty":                   item.Qty,
+		"keterangan":            item.Keterangan,
+		"id_material_list_item": item.IDMaterialListItem,
+		"created_at":            item.CreatedAt,
+	}
+}
+
+func buildSimpleReceivedAuditSnapshot(item *model.SimpleReceivedResponse) map[string]any {
+	if item == nil {
+		return nil
+	}
+	return map[string]any{
+		"id_received":           item.IDReceived,
+		"tanggal":               item.Tanggal,
+		"qty":                   item.Qty,
+		"keterangan":            item.Keterangan,
+		"id_material_list_item": item.IDMaterialListItem,
+	}
+}
+
+func buildSimpleReceivedDetailAuditSnapshot(item *model.SimpleReceivedDetailResponse) map[string]any {
+	if item == nil {
+		return nil
+	}
+	return map[string]any{
+		"id_received":           item.IDReceived,
+		"tanggal":               item.Tanggal,
+		"qty":                   item.Qty,
+		"keterangan":            item.Keterangan,
+		"id_material_list_item": item.IDMaterialListItem,
+		"material_item":         item.MaterialItem,
+		"material_description":  item.MaterialDescription,
+		"id_wo":                 item.IDWO,
+	}
+}
+
+func buildSuratJalanClientAuditSnapshot(item *model.SuratJalanClientDetailResponse) map[string]any {
+	if item == nil {
+		return nil
+	}
+	return map[string]any{
+		"id_surat_jalan_client": item.ID,
+		"tanggal":               item.Tanggal,
+		"qty":                   item.Qty,
+		"keterangan":            item.Keterangan,
+		"id_material_list_item": item.IDMaterialListItem,
+		"material_description":  item.MaterialDescription,
+		"id_wo":                 item.IDWO,
+	}
+}
+
+func buildSuratJalanInternalCreateAuditSnapshot(item *model.SuratJalanInternalCreateResponse) map[string]any {
+	if item == nil {
+		return nil
+	}
+	return map[string]any{
+		"id_surat_jalan_internal": item.ID,
+		"id_wo":                   item.IDWO,
+		"no_dokumen":              item.NoDokumen,
+		"deskripsi":               item.Deskripsi,
+		"created_at":              item.CreatedAt,
+	}
+}
+
+func buildSuratJalanInternalDetailAuditSnapshot(item *model.SuratJalanInternalDetailResponse) map[string]any {
+	if item == nil {
+		return nil
+	}
+
+	packingLists := make([]map[string]any, 0, len(item.PackingLists))
+	for _, row := range item.PackingLists {
+		packingLists = append(packingLists, map[string]any{
+			"id_packing_list":       row.IDPackingList,
+			"total_garment_per_box": row.TotalGarmentPerBox,
+			"total_reject":          row.TotalReject,
+			"id_wo":                 row.IDWO,
+			"created_at":            row.CreatedAt,
+		})
+	}
+
+	items := make([]map[string]any, 0, len(item.WOShells))
+	for _, row := range item.WOShells {
+		items = append(items, map[string]any{
+			"no":        row.No,
+			"deskripsi": row.Deskripsi,
+			"color":     row.Color,
+			"qty":       row.Qty,
+			"note":      row.Note,
+		})
+	}
+
+	return map[string]any{
+		"id_surat_jalan_internal": item.ID,
+		"id_wo":                   item.IDWO,
+		"no_dokumen":              item.NoDokumen,
+		"deskripsi":               item.Deskripsi,
+		"buyer":                   item.Buyer,
+		"model":                   item.Model,
+		"wo_qty":                  item.WOQty,
+		"packing_lists":           packingLists,
+		"items":                   items,
+	}
 }

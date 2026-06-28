@@ -86,7 +86,7 @@ func (h *WarehouseDeliveryHandler) ReceiveInventory(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.ReceiveInventory(c.Request.Context(), req)
+	item, err := h.useCase.ReceiveInventory(withAuditLogContext(c), req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -114,7 +114,7 @@ func (h *WarehouseDeliveryHandler) IssueInventory(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.IssueInventory(c.Request.Context(), req)
+	item, err := h.useCase.IssueInventory(withAuditLogContext(c), req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -146,7 +146,7 @@ func (h *WarehouseDeliveryHandler) CreatePackingList(c *gin.Context) {
 		return
 	}
 
-	item, err := h.useCase.CreatePackingList(c.Request.Context(), userID, req)
+	item, err := h.useCase.CreatePackingList(withAuditLogContext(c), userID, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -326,7 +326,7 @@ func (h *WarehouseDeliveryHandler) CreateSuratJalan(c *gin.Context) {
 		req = payload
 	}
 
-	item, err := h.useCase.CreateSuratJalan(c.Request.Context(), suratJalanType, req)
+	item, err := h.useCase.CreateSuratJalan(withAuditLogContext(c), suratJalanType, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -463,7 +463,7 @@ func (h *WarehouseDeliveryHandler) CreateSuratJalanInternalHandler(c *gin.Contex
 	if !BindJSON(c, &req) {
 		return
 	}
-	item, err := h.useCase.CreateSuratJalanInternalWithData(c.Request.Context(), req)
+	item, err := h.useCase.CreateSuratJalanInternalWithData(withAuditLogContext(c), req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -481,7 +481,7 @@ func (h *WarehouseDeliveryHandler) AssignPackingListHandler(c *gin.Context) {
 	if !BindJSON(c, &req) {
 		return
 	}
-	if err := h.useCase.AssignPackingListToSJ(c.Request.Context(), idSJ, req.IDPackingList); err != nil {
+	if err := h.useCase.AssignPackingListToSJ(withAuditLogContext(c), idSJ, req.IDPackingList); err != nil {
 		h.handleError(c, err)
 		return
 	}
@@ -494,7 +494,7 @@ func (h *WarehouseDeliveryHandler) UnassignPackingListHandler(c *gin.Context) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid packing list id", nil))
 		return
 	}
-	if err := h.useCase.UnassignPackingListFromSJ(c.Request.Context(), plID); err != nil {
+	if err := h.useCase.UnassignPackingListFromSJ(withAuditLogContext(c), plID); err != nil {
 		h.handleError(c, err)
 		return
 	}
@@ -520,7 +520,7 @@ func (h *WarehouseDeliveryHandler) CreateSimpleReceived(c *gin.Context) {
 	if !BindJSON(c, &req) {
 		return
 	}
-	item, err := h.useCase.CreateSimpleReceived(c.Request.Context(), req)
+	item, err := h.useCase.CreateSimpleReceived(withAuditLogContext(c), req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -552,7 +552,7 @@ func (h *WarehouseDeliveryHandler) UpdateSimpleReceived(c *gin.Context) {
 	if !BindJSON(c, &req) {
 		return
 	}
-	item, err := h.useCase.UpdateSimpleReceived(c.Request.Context(), id, req)
+	item, err := h.useCase.UpdateSimpleReceived(withAuditLogContext(c), id, req)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -566,7 +566,7 @@ func (h *WarehouseDeliveryHandler) DeleteSimpleReceived(c *gin.Context) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid received id", nil))
 		return
 	}
-	if err := h.useCase.DeleteSimpleReceived(c.Request.Context(), id); err != nil {
+	if err := h.useCase.DeleteSimpleReceived(withAuditLogContext(c), id); err != nil {
 		h.handleError(c, err)
 		return
 	}
@@ -593,7 +593,7 @@ func (h *WarehouseDeliveryHandler) DeleteSuratJalanClient(c *gin.Context) {
 		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid surat jalan client id", nil))
 		return
 	}
-	if err := h.useCase.DeleteSuratJalanClient(c.Request.Context(), id); err != nil {
+	if err := h.useCase.DeleteSuratJalanClient(withAuditLogContext(c), id); err != nil {
 		h.handleError(c, err)
 		return
 	}

@@ -178,7 +178,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	warehouseDeliveryUseCase, err := usecase.NewWarehouseDeliveryUseCase(queries, dbPool)
+	warehouseDeliveryUseCase, err := usecase.NewWarehouseDeliveryUseCase(queries, dbPool, auditLogUseCase)
 	if err != nil {
 		logger.Error("failed to initialize warehouse delivery usecase", slog.String("error", err.Error()))
 		dbPool.Close()
@@ -443,6 +443,7 @@ func main() {
 	router.Use(httpdelivery.ErrorHandlerMiddleware())
 	router.Use(corsMiddleware(cfg.CORSAllowOrigin))
 	router.Use(httpdelivery.ActivityLogMiddleware(activityLogService))
+	router.Use(httpdelivery.AuditLogFallbackMiddleware(auditLogUseCase))
 
 	// Serve uploaded files statically
 	router.Static("/uploads", "./uploads")
