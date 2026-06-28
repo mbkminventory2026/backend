@@ -76,4 +76,5 @@ volumes:
 
 networks:
   permatatex-net:
-    driver: bridge
+    name: permatatex-shared-net
+    external: true
