@@ -5,7 +5,7 @@ DB_URL ?= postgres://postgres:postgres@localhost:15432/permatatex_inventory?sslm
 LINT_CONFIG := .golangci.yml
 MIGRATE_DOCKER_IMAGE ?= migrate/migrate
 DOCKER_DB_URL ?= postgres://postgres:postgres@permatatex-postgres:5432/permatatex_inventory?sslmode=disable
-DOCKER_NETWORK ?= backend_permatatex-net
+DOCKER_NETWORK ?= permatatex-shared-net
 
 .PHONY: dev db-gen migrate-up migrate-down migrate-up-docker migrate-down-docker migrate-force-docker swag lint lint-fix docker-up docker-down docker-logs seed
 
