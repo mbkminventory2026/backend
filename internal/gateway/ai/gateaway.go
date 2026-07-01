@@ -21,7 +21,7 @@ func NewGateway(baseURL string) *Gateway {
 	return &Gateway{
 		baseURL: baseURL,
 		httpClient: &http.Client{
-			Timeout: 60 * time.Second, // Timeout aman untuk proses AI
+			Timeout: 600 * time.Second, // TabPFN cloud inference bisa 5-10 menit untuk data baru
 		},
 	}
 }
