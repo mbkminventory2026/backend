@@ -15,8 +15,8 @@ func normalizeListFilter(filter model.ListQueryFilter, defaultSort string, defau
 	if limit <= 0 {
 		limit = 20
 	}
-	if limit > 100 {
-		limit = 100
+	if limit > 500 {
+		limit = 500
 	}
 
 	if page <= 0 {
