@@ -31,7 +31,6 @@ import (
 	"permatatex-inventory/internal/config"
 	httpdelivery "permatatex-inventory/internal/delivery/http"
 	"permatatex-inventory/internal/entity"
-	aigateway "permatatex-inventory/internal/gateway/ai"
 	turnstilegateway "permatatex-inventory/internal/gateway/turnstile"
 	"permatatex-inventory/internal/usecase"
 	excel "permatatex-inventory/pkg/exporter/excel"
@@ -71,8 +70,6 @@ func main() {
 		dbPool.Close()
 		os.Exit(1)
 	}
-
-	aiGateway := aigateway.NewGateway(cfg.AIServiceURL)
 
 	// 2. Repository/Queries
 	queries := entity.New(dbPool)
@@ -185,7 +182,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	dashboardUseCase, err := usecase.NewDashboardUseCase(queries, aiGateway)
+	dashboardUseCase, err := usecase.NewDashboardUseCase(queries)
 	if err != nil {
 		logger.Error("failed to initialize dashboard usecase", slog.String("error", err.Error()))
 		dbPool.Close()

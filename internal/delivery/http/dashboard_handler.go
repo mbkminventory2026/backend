@@ -44,7 +44,6 @@ func (h *DashboardHandler) RegisterRoutes(router *gin.Engine, authMiddleware gin
 	api.Use(authMiddleware, RequireInternalUser())
 	{
 		api.GET("/logs", RequirePermission(PermissionLogRead), h.GetLogs)
-		api.POST("/dashboard/ai-estimation", RequirePermission(PermissionAIEstimationRead), h.PredictAIEstimation)
 		api.GET("/dashboard/admin-sistem", RequirePermission(PermissionDashboardRead), h.GetAdminSistemMetrics)
 		api.GET("/dashboard/finance", RequirePermission(PermissionDashboardRead), h.GetFinanceMetrics)
 		api.GET("/dashboard/production", RequirePermission(PermissionDashboardRead), h.GetProductionMetrics)
@@ -78,36 +77,6 @@ func (h *DashboardHandler) GetLogs(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusOK, "Logs berhasil diambil", result)
-}
-
-// PredictAIEstimation menangkap data pesanan baru dari Frontend
-// @Summary AI Delivery Date Estimation untuk Order Baru
-// @Description Memprediksi jadwal menggunakan model TabPFN via Python Service
-// @Tags Dashboard
-// @Accept json
-// @Produce json
-// @Param request body model.AIEstimationRequest true "Data Pesanan Mentah"
-// @Success 200 {object} model.AIEstimationSuccessDoc
-// @Security BearerAuth
-// @Router /api/v1/dashboard/ai-estimation [post]
-func (h *DashboardHandler) PredictAIEstimation(c *gin.Context) {
-	var req model.AIEstimationRequest
-
-	// 1. Parsing payload JSON dari Frontend
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, http.StatusBadRequest, "Format request JSON tidak valid", err.Error())
-		return
-	}
-
-	// 2. Panggil Use Case yang baru (yang akan menghitung rasio dan memanggil Python)
-	result, err := h.useCase.PredictNewOrder(c.Request.Context(), req)
-	if err != nil {
-		response.Fail(c, http.StatusInternalServerError, "Gagal memproses prediksi AI", err.Error())
-		return
-	}
-
-	// 3. Kembalikan respons sukses ke Frontend
-	response.Success(c, http.StatusOK, "Estimasi AI berhasil dihitung", result)
 }
 
 // GetAdminSistemMetrics mengambil metrik KPI dashboard admin sistem

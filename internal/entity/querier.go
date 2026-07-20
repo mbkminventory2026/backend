@@ -202,8 +202,6 @@ type Querier interface {
 	GetWarehouseTotalSuratJalanInternalThisMonth(ctx context.Context) (int64, error)
 	GetWarnaByID(ctx context.Context, idWarna int32) (Warna, error)
 	GetWorkOrderDetail(ctx context.Context, arg GetWorkOrderDetailParams) (GetWorkOrderDetailRow, error)
-	// Mengambil data WO dan Production Internal untuk diolah model Regresi Linier di Golang
-	GetWorkOrderForAIEstimation(ctx context.Context) ([]GetWorkOrderForAIEstimationRow, error)
 	HasPendingPasswordResetRequest(ctx context.Context, idUser int32) (bool, error)
 	HasPendingSteps(ctx context.Context, idOtoritas int32) (bool, error)
 	HasPreviousPendingSteps(ctx context.Context, arg HasPreviousPendingStepsParams) (bool, error)
