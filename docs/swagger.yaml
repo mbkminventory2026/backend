@@ -8,64 +8,6 @@ definitions:
     required:
     - username
     type: object
-  model.AIEstimationRequest:
-    properties:
-      cutting_in_house:
-        type: number
-      embro:
-        type: number
-      furing:
-        type: number
-      jenis:
-        type: number
-      jenis_kain:
-        type: number
-      konsumsi_kain_per_pcs:
-        type: number
-      men_women:
-        type: number
-      panjang_01:
-        type: number
-      qty_l:
-        minimum: 0
-        type: number
-      qty_m:
-        minimum: 0
-        type: number
-      qty_s:
-        minimum: 0
-        type: number
-      qty_xl:
-        minimum: 0
-        type: number
-      qty_xxl:
-        minimum: 0
-        type: number
-    type: object
-  model.AIEstimationSuccessDoc:
-    properties:
-      data:
-        allOf:
-        - $ref: '#/definitions/model.AIPredictionResponseData'
-        description: <-- Sekarang merujuk ke data hasil Python!
-      message:
-        example: Estimasi AI berhasil dihitung
-        type: string
-      status:
-        example: success
-        type: string
-    type: object
-  model.AIPredictionResponseData:
-    properties:
-      estimasi_tahap_cutting_hari:
-        type: number
-      estimasi_tahap_qc_hari:
-        type: number
-      estimasi_tahap_sewing_hari:
-        type: number
-      estimasi_waktu_total_hari:
-        type: number
-    type: object
   model.AddMasterPlanItemEntry:
     properties:
       id_wo_shell:
@@ -3683,10 +3625,30 @@ definitions:
     type: object
   model.SuratJalanInternalDetailResponse:
     properties:
+      buyer:
+        type: string
       created_at:
+        type: string
+      deskripsi:
         type: string
       id_surat_jalan_internal:
         type: integer
+      id_wo:
+        type: integer
+      model:
+        type: string
+      no_dokumen:
+        type: string
+      packing_lists:
+        items:
+          $ref: '#/definitions/model.SuratJalanInternalPackingListRow'
+        type: array
+      wo_qty:
+        type: integer
+      wo_shells:
+        items:
+          $ref: '#/definitions/model.SuratJalanInternalShellRow'
+        type: array
     type: object
   model.SuratJalanInternalDetailSuccessDoc:
     properties:
@@ -3701,9 +3663,21 @@ definitions:
     type: object
   model.SuratJalanInternalListItem:
     properties:
+      buyer:
+        type: string
       created_at:
         type: string
+      deskripsi:
+        type: string
       id_surat_jalan_internal:
+        type: integer
+      id_wo:
+        type: integer
+      model:
+        type: string
+      no_dokumen:
+        type: string
+      packing_list_count:
         type: integer
     type: object
   model.SuratJalanInternalListResponse:
@@ -3725,6 +3699,32 @@ definitions:
       status:
         example: success
         type: string
+    type: object
+  model.SuratJalanInternalPackingListRow:
+    properties:
+      created_at:
+        type: string
+      id_packing_list:
+        type: integer
+      id_wo:
+        type: integer
+      total_garment_per_box:
+        type: integer
+      total_reject:
+        type: integer
+    type: object
+  model.SuratJalanInternalShellRow:
+    properties:
+      color:
+        type: string
+      deskripsi:
+        type: string
+      "no":
+        type: integer
+      note:
+        type: string
+      qty:
+        type: integer
     type: object
   model.SuratJalanResponse:
     properties:
@@ -5122,30 +5122,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Ambil KPI Admin Sistem
-      tags:
-      - Dashboard
-  /api/v1/dashboard/ai-estimation:
-    post:
-      consumes:
-      - application/json
-      description: Memprediksi jadwal menggunakan model TabPFN via Python Service
-      parameters:
-      - description: Data Pesanan Mentah
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/model.AIEstimationRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.AIEstimationSuccessDoc'
-      security:
-      - BearerAuth: []
-      summary: AI Delivery Date Estimation untuk Order Baru
       tags:
       - Dashboard
   /api/v1/dashboard/finance:
@@ -8121,6 +8097,40 @@ paths:
       security:
       - BearerAuth: []
       summary: Get Surat Jalan Internal Detail
+      tags:
+      - Warehouse & Delivery
+  /api/v1/surat-jalan-internals/{id}/export/excel:
+    get:
+      description: Generates a downloadable Excel workbook for one internal delivery
+        note using the registered export template.
+      parameters:
+      - description: Surat Jalan Internal ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WarehouseErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Export Surat Jalan Internal Excel
       tags:
       - Warehouse & Delivery
   /api/v1/surat-jalan/{type}:

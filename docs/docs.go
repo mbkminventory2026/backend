@@ -753,45 +753,6 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/v1/dashboard/ai-estimation": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Memprediksi jadwal menggunakan model TabPFN via Python Service",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Dashboard"
-                ],
-                "summary": "AI Delivery Date Estimation untuk Order Baru",
-                "parameters": [
-                    {
-                        "description": "Data Pesanan Mentah",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.AIEstimationRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.AIEstimationSuccessDoc"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/dashboard/finance": {
             "get": {
                 "security": [
@@ -5500,6 +5461,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/surat-jalan-internals/{id}/export/excel": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Generates a downloadable Excel workbook for one internal delivery note using the registered export template.",
+                "produces": [
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ],
+                "tags": [
+                    "Warehouse \u0026 Delivery"
+                ],
+                "summary": "Export Surat Jalan Internal Excel",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Surat Jalan Internal ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.WarehouseErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/surat-jalan/{type}": {
             "post": {
                 "security": [
@@ -6901,93 +6914,6 @@ const docTemplate = `{
                 "username": {
                     "type": "string",
                     "minLength": 3
-                }
-            }
-        },
-        "model.AIEstimationRequest": {
-            "type": "object",
-            "properties": {
-                "cutting_in_house": {
-                    "type": "number"
-                },
-                "embro": {
-                    "type": "number"
-                },
-                "furing": {
-                    "type": "number"
-                },
-                "jenis": {
-                    "type": "number"
-                },
-                "jenis_kain": {
-                    "type": "number"
-                },
-                "konsumsi_kain_per_pcs": {
-                    "type": "number"
-                },
-                "men_women": {
-                    "type": "number"
-                },
-                "panjang_01": {
-                    "type": "number"
-                },
-                "qty_l": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "qty_m": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "qty_s": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "qty_xl": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "qty_xxl": {
-                    "type": "number",
-                    "minimum": 0
-                }
-            }
-        },
-        "model.AIEstimationSuccessDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "description": "\u003c-- Sekarang merujuk ke data hasil Python!",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.AIPredictionResponseData"
-                        }
-                    ]
-                },
-                "message": {
-                    "type": "string",
-                    "example": "Estimasi AI berhasil dihitung"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "success"
-                }
-            }
-        },
-        "model.AIPredictionResponseData": {
-            "type": "object",
-            "properties": {
-                "estimasi_tahap_cutting_hari": {
-                    "type": "number"
-                },
-                "estimasi_tahap_qc_hari": {
-                    "type": "number"
-                },
-                "estimasi_tahap_sewing_hari": {
-                    "type": "number"
-                },
-                "estimasi_waktu_total_hari": {
-                    "type": "number"
                 }
             }
         },
@@ -12357,11 +12283,41 @@ const docTemplate = `{
         "model.SuratJalanInternalDetailResponse": {
             "type": "object",
             "properties": {
+                "buyer": {
+                    "type": "string"
+                },
                 "created_at": {
+                    "type": "string"
+                },
+                "deskripsi": {
                     "type": "string"
                 },
                 "id_surat_jalan_internal": {
                     "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "no_dokumen": {
+                    "type": "string"
+                },
+                "packing_lists": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SuratJalanInternalPackingListRow"
+                    }
+                },
+                "wo_qty": {
+                    "type": "integer"
+                },
+                "wo_shells": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SuratJalanInternalShellRow"
+                    }
                 }
             }
         },
@@ -12384,10 +12340,28 @@ const docTemplate = `{
         "model.SuratJalanInternalListItem": {
             "type": "object",
             "properties": {
+                "buyer": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
+                "deskripsi": {
+                    "type": "string"
+                },
                 "id_surat_jalan_internal": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "no_dokumen": {
+                    "type": "string"
+                },
+                "packing_list_count": {
                     "type": "integer"
                 }
             }
@@ -12419,6 +12393,46 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "model.SuratJalanInternalPackingListRow": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id_packing_list": {
+                    "type": "integer"
+                },
+                "id_wo": {
+                    "type": "integer"
+                },
+                "total_garment_per_box": {
+                    "type": "integer"
+                },
+                "total_reject": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.SuratJalanInternalShellRow": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "deskripsi": {
+                    "type": "string"
+                },
+                "no": {
+                    "type": "integer"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "qty": {
+                    "type": "integer"
                 }
             }
         },
