@@ -141,10 +141,9 @@ const (
 	PermissionSuratJalanInternalUpdate = "SURAT_JALAN_INTERNAL_UPDATE"
 	PermissionSuratJalanInternalDelete = "SURAT_JALAN_INTERNAL_DELETE"
 
-	PermissionReportRead       = "REPORT_READ"
-	PermissionLogRead          = "LOG_READ"
-	PermissionDashboardRead    = "DASHBOARD_READ"
-	PermissionAIEstimationRead = "AI_ESTIMATION_READ"
+	PermissionReportRead    = "REPORT_READ"
+	PermissionLogRead       = "LOG_READ"
+	PermissionDashboardRead = "DASHBOARD_READ"
 
 	PermissionPasswordResetRequestRead    = "PASSWORD_RESET_REQUEST_READ"
 	PermissionPasswordResetRequestApprove = "PASSWORD_RESET_REQUEST_APPROVE"

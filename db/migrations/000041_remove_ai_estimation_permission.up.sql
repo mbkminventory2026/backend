@@ -1,0 +1,10 @@
+-- Remove role assignments before deleting the retired permission catalog entry.
+DELETE FROM ROLE_HAK_AKSES
+WHERE ID_HAK_AKSES IN (
+    SELECT ID_HAK_AKSES
+    FROM HAK_AKSES
+    WHERE KODE_PERMISSION = 'AI_ESTIMATION_READ'
+);
+
+DELETE FROM HAK_AKSES
+WHERE KODE_PERMISSION = 'AI_ESTIMATION_READ';
