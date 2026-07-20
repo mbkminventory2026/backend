@@ -2,6 +2,7 @@ services:
   # ── Development: Air hot-reload inside Docker ──────────────────────
   dev:
     container_name: permatatex-dev
+    profiles: ["development"]
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -39,14 +40,27 @@ services:
       DB_PASSWORD: "${DB_PASSWORD:-postgres}"
       DB_NAME: "${DB_NAME:-permatatex_inventory}"
       DB_SSLMODE: "${DB_SSLMODE:-disable}"
-      JWT_SECRET: "${JWT_SECRET:-change-me}"
-      TURNSTILE_SECRET: "${TURNSTILE_SECRET:-change-me}"
+      JWT_SECRET: "${JWT_SECRET:?JWT_SECRET is required}"
+      TURNSTILE_SECRET: "${TURNSTILE_SECRET:?TURNSTILE_SECRET is required}"
     ports:
       - "8080:8080"
+    volumes:
+      # ./uploads is a local-only fallback. prod-deploy requires an explicit
+      # absolute UPLOADS_HOST_PATH outside the repository.
+      - type: bind
+        source: "${UPLOADS_HOST_PATH:-./uploads}"
+        target: /app/uploads
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    stop_grace_period: 15s
     networks:
       - permatatex-net
 
@@ -62,10 +76,11 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d permatatex_inventory"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
     restart: unless-stopped
     networks:
       - permatatex-net

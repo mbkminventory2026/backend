@@ -1,77 +1,43 @@
 name: Deploy Backend to VPS
 
-
-
 on:
+  workflow_dispatch:
 
-  push:
+permissions:
+  contents: read
 
-    branches:
-
-      - main
-
-
+concurrency:
+  group: backend-production
+  cancel-in-progress: false
 
 jobs:
-
   deploy:
-
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
 
     steps:
-
-      - name: Checkout Repository
-
-        uses: actions/checkout@v4
-
-
-
-      - name: Executing remote ssh commands to deploy
-
+      - name: Deploy main on VPS
         uses: appleboy/ssh-action@v1.0.3
-
+        env:
+          PROD_DB_URL: ${{ secrets.PROD_DB_URL }}
+          UPLOADS_HOST_PATH: ${{ vars.UPLOADS_HOST_PATH }}
         with:
-
           host: ${{ secrets.VPS_HOST }}
-
           username: ${{ secrets.VPS_USER }}
-
           key: ${{ secrets.VPS_SSH_KEY }}
-
           port: 22
-
+          envs: PROD_DB_URL,UPLOADS_HOST_PATH
+          command_timeout: 30m
           script: |
-
-            # Masuk ke direktori projek di VPS
-
+            set -eu
             cd backend/
 
-            
+            if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+              echo "ERROR: backend worktree on VPS has tracked changes"
+              exit 1
+            fi
 
-            # Ambil code terbaru dari Github
-
-            git checkout main
-
-            git pull origin main
-
-            
-
-            # Jalankan perintah Docker yang diminta
-
-            # Tambahkan flag -d agar container berjalan di background (tidak memblokir terminal)
-
-            docker compose down -v
-
-            docker compose up -d --build
-
-            
-
-            # Menjalankan perintah Makefile
-
-            # Catatan: Jika make dijalankan di dalam container, modifikasi menjadi: docker compose exec -T <nama_service> make migrate-down
-
-            make migrate-down
-
-            make migrate-up
-
-            make seed
+            git switch main
+            git pull --ff-only origin main
+            make prod-deploy
