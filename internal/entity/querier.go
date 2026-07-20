@@ -14,6 +14,7 @@ type Querier interface {
 	AddMasterPlanItem(ctx context.Context, arg AddMasterPlanItemParams) (MasterPlanItem, error)
 	ApprovePRInternal(ctx context.Context, arg ApprovePRInternalParams) (ApprovePRInternalRow, error)
 	ApprovePasswordResetRequest(ctx context.Context, arg ApprovePasswordResetRequestParams) (ApprovePasswordResetRequestRow, error)
+	AssignPackingListToSuratJalan(ctx context.Context, arg AssignPackingListToSuratJalanParams) error
 	AutoCloseWorkOrders(ctx context.Context) error
 	CheckMaterialListBelongsToWO(ctx context.Context, arg CheckMaterialListBelongsToWOParams) (bool, error)
 	ClientCloseWorkOrder(ctx context.Context, idWo int32) (ClientCloseWorkOrderRow, error)
@@ -83,9 +84,8 @@ type Querier interface {
 	CreateSize(ctx context.Context, namaSize string) (MasterSize, error)
 	CreateSpreadingCuttingPlan(ctx context.Context, arg CreateSpreadingCuttingPlanParams) (SpreadingCuttingPlan, error)
 	CreateSuratJalanClient(ctx context.Context, arg CreateSuratJalanClientParams) (CreateSuratJalanClientRow, error)
-	CreateSuratJalanInternal(ctx context.Context, arg CreateSuratJalanInternalParams) (SuratJalanInternal, error)
+	CreateSuratJalanInternal(ctx context.Context, arg CreateSuratJalanInternalParams) (CreateSuratJalanInternalRow, error)
 	CreateSuratJalanInternalItem(ctx context.Context, arg CreateSuratJalanInternalItemParams) (SuratJalanInternalItem, error)
-	ListSuratJalanInternalItemsBySJID(ctx context.Context, idSuratJalanInternal int32) ([]SuratJalanInternalItem, error)
 	CreateTimelinePlan(ctx context.Context, arg CreateTimelinePlanParams) (TimelinePlanProduksi, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	CreateUserAkses(ctx context.Context, arg CreateUserAksesParams) error
@@ -115,9 +115,6 @@ type Querier interface {
 	DeleteRoleHakAksesByRoleID(ctx context.Context, idRole int32) (int64, error)
 	DeleteSize(ctx context.Context, idSize int32) (int64, error)
 	DeleteSuratJalanClient(ctx context.Context, idSuratJalanClient int32) error
-	AssignPackingListToSuratJalan(ctx context.Context, arg AssignPackingListToSuratJalanParams) error
-	UnassignPackingListFromSuratJalan(ctx context.Context, idPackingList int32) error
-	ListPackingListsBySuratJalanID(ctx context.Context, idSuratJalanInternal int32) ([]ListPackingListsBySuratJalanIDRow, error)
 	DeleteTargetProses(ctx context.Context, arg DeleteTargetProsesParams) error
 	DeleteUser(ctx context.Context, idUser int32) (int64, error)
 	DeleteUserAksesByUserID(ctx context.Context, idUser int32) (int64, error)
@@ -199,7 +196,7 @@ type Querier interface {
 	GetWOShellPlansByTimelineID(ctx context.Context, idTimeline int32) ([]GetWOShellPlansByTimelineIDRow, error)
 	GetWarehouseRecentBarang(ctx context.Context) ([]GetWarehouseRecentBarangRow, error)
 	GetWarehouseRecentSuratJalanClient(ctx context.Context) ([]GetWarehouseRecentSuratJalanClientRow, error)
-	GetWarehouseRecentSuratJalanInternal(ctx context.Context) ([]SuratJalanInternal, error)
+	GetWarehouseRecentSuratJalanInternal(ctx context.Context) ([]GetWarehouseRecentSuratJalanInternalRow, error)
 	GetWarehouseTotalItems(ctx context.Context) (int64, error)
 	GetWarehouseTotalSuratJalanClientThisMonth(ctx context.Context) (int64, error)
 	GetWarehouseTotalSuratJalanInternalThisMonth(ctx context.Context) (int64, error)
@@ -241,6 +238,7 @@ type Querier interface {
 	ListPackingListItemsByPackingListID(ctx context.Context, idPackingList int32) ([]PackingListItem, error)
 	ListPackingListRejectSizesByPackingListID(ctx context.Context, idPackingList int32) ([]ListPackingListRejectSizesByPackingListIDRow, error)
 	ListPackingLists(ctx context.Context, arg ListPackingListsParams) ([]ListPackingListsRow, error)
+	ListPackingListsBySuratJalanID(ctx context.Context, idSuratJalanInternal pgtype.Int4) ([]PackingList, error)
 	ListPasswordResetRequests(ctx context.Context) ([]ListPasswordResetRequestsRow, error)
 	ListPenanggungJawabByPOClientID(ctx context.Context, idPoClient int32) ([]PenanggungJawab, error)
 	ListProductionLines(ctx context.Context, arg ListProductionLinesParams) ([]ProductionLine, error)
@@ -266,6 +264,7 @@ type Querier interface {
 	ListSpreadingCuttingPlans(ctx context.Context, arg ListSpreadingCuttingPlansParams) ([]ListSpreadingCuttingPlansRow, error)
 	ListSuratJalanClientByMLI(ctx context.Context, idMaterialListItem int32) ([]ListSuratJalanClientByMLIRow, error)
 	ListSuratJalanClients(ctx context.Context, arg ListSuratJalanClientsParams) ([]ListSuratJalanClientsRow, error)
+	ListSuratJalanInternalItemsBySJID(ctx context.Context, idSuratJalanInternal int32) ([]SuratJalanInternalItem, error)
 	ListSuratJalanInternals(ctx context.Context, arg ListSuratJalanInternalsParams) ([]ListSuratJalanInternalsRow, error)
 	ListTargetHarianByItem(ctx context.Context, idMasterPlanItem int32) ([]MasterPlanTargetHarian, error)
 	ListTargetProsesByItem(ctx context.Context, idMasterPlanItem int32) ([]MasterPlanTargetProse, error)
@@ -284,6 +283,7 @@ type Querier interface {
 	ResetUserPasswordTemporary(ctx context.Context, arg ResetUserPasswordTemporaryParams) (int64, error)
 	SoftDeleteMasterData(ctx context.Context, arg SoftDeleteMasterDataParams) error
 	TouchRekonsiliasi(ctx context.Context, arg TouchRekonsiliasiParams) (Rekonsiliasi, error)
+	UnassignPackingListFromSuratJalan(ctx context.Context, idPackingList int32) error
 	UpdateApprovalStep(ctx context.Context, arg UpdateApprovalStepParams) (UpdateApprovalStepRow, error)
 	UpdateBarang(ctx context.Context, arg UpdateBarangParams) (Barang, error)
 	UpdateDepartemen(ctx context.Context, arg UpdateDepartemenParams) (Departeman, error)

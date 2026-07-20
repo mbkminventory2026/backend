@@ -864,7 +864,7 @@ func (u *WarehouseDeliveryUseCase) CreateSuratJalanInternalWithData(ctx context.
 
 	for _, plID := range req.IDPackingLists {
 		if err := qtx.AssignPackingListToSuratJalan(ctx, entity.AssignPackingListToSuratJalanParams{
-			IDSuratJalanInternal: sj.IDSuratJalanInternal,
+			IDSuratJalanInternal: pgtype.Int4{Int32: sj.IDSuratJalanInternal, Valid: true},
 			IDPackingList:        plID,
 		}); err != nil {
 			return nil, mapWarehouseDBError(err)
@@ -906,7 +906,7 @@ func (u *WarehouseDeliveryUseCase) GetSuratJalanInternalWithData(ctx context.Con
 		return nil, fmt.Errorf("%w: failed to get surat jalan internal", ErrWarehouseServiceUnavailable)
 	}
 
-	plRows, err := u.repo.ListPackingListsBySuratJalanID(ctx, id)
+	plRows, err := u.repo.ListPackingListsBySuratJalanID(ctx, pgtype.Int4{Int32: id, Valid: true})
 	if err != nil {
 		return nil, fmt.Errorf("%w: failed to get packing lists", ErrWarehouseServiceUnavailable)
 	}
@@ -1032,7 +1032,7 @@ func (u *WarehouseDeliveryUseCase) AssignPackingListToSJ(ctx context.Context, id
 		return err
 	}
 	if err := u.repo.AssignPackingListToSuratJalan(ctx, entity.AssignPackingListToSuratJalanParams{
-		IDSuratJalanInternal: idSJ,
+		IDSuratJalanInternal: pgtype.Int4{Int32: idSJ, Valid: true},
 		IDPackingList:        idPL,
 	}); err != nil {
 		return err

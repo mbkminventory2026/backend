@@ -110,15 +110,20 @@ ORDER BY sji.created_at DESC
 LIMIT 5
 `
 
-func (q *Queries) GetWarehouseRecentSuratJalanInternal(ctx context.Context) ([]SuratJalanInternal, error) {
+type GetWarehouseRecentSuratJalanInternalRow struct {
+	IDSuratJalanInternal int32              `json:"id_surat_jalan_internal"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) GetWarehouseRecentSuratJalanInternal(ctx context.Context) ([]GetWarehouseRecentSuratJalanInternalRow, error) {
 	rows, err := q.db.Query(ctx, getWarehouseRecentSuratJalanInternal)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []SuratJalanInternal
+	var items []GetWarehouseRecentSuratJalanInternalRow
 	for rows.Next() {
-		var i SuratJalanInternal
+		var i GetWarehouseRecentSuratJalanInternalRow
 		if err := rows.Scan(&i.IDSuratJalanInternal, &i.CreatedAt); err != nil {
 			return nil, err
 		}
