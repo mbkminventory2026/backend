@@ -73,7 +73,7 @@ prod-validate-config:
 
 prod-deploy: prod-validate-config
 	UPLOADS_HOST_PATH="$(UPLOADS_HOST_PATH)" docker compose build app
-	UPLOADS_HOST_PATH="$(UPLOADS_HOST_PATH)" docker compose up -d --wait db
+	UPLOADS_HOST_PATH="$(UPLOADS_HOST_PATH)" docker compose up -d --wait --no-recreate db
 	@docker run --rm --network $(DOCKER_NETWORK) -v "$(CURDIR)/$(MIGRATIONS_PATH):/migrations" $(MIGRATE_DOCKER_IMAGE) -path=/migrations -database "$(PROD_DB_URL)" up
 	UPLOADS_HOST_PATH="$(UPLOADS_HOST_PATH)" docker compose up -d --no-deps --wait --wait-timeout 60 app
 	UPLOADS_HOST_PATH="$(UPLOADS_HOST_PATH)" docker compose ps
