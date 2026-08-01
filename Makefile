@@ -68,7 +68,10 @@ prod-validate-config:
 	$(if $(strip $(UPLOADS_HOST_PATH)),,$(error UPLOADS_HOST_PATH is required))
 	$(if $(filter /%,$(strip $(UPLOADS_HOST_PATH))),,$(error UPLOADS_HOST_PATH must be an absolute host path))
 	$(if $(wildcard $(strip $(UPLOADS_HOST_PATH))/.),,$(error UPLOADS_HOST_PATH must already exist))
-	$(if $(filter $(realpath $(CURDIR)) $(realpath $(CURDIR))/%,$(realpath $(UPLOADS_HOST_PATH))),$(error production uploads must not use a directory inside the repository),)
+	@repo_path="$$(realpath "$(CURDIR)")"; uploads_path="$$(realpath "$(UPLOADS_HOST_PATH)")"; \
+		if [ "$$uploads_path" = "$$repo_path" ] || [ "$${uploads_path#"$${repo_path}/"}" != "$$uploads_path" ]; then \
+			echo "production uploads must not use a directory inside the repository" >&2; exit 1; \
+		fi
 	@UPLOADS_HOST_PATH="$(UPLOADS_HOST_PATH)" docker compose --profile production config --quiet
 
 prod-deploy: prod-validate-config
