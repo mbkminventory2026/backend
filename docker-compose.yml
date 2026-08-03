@@ -64,6 +64,35 @@ services:
     networks:
       - permatatex-net
 
+  # Manual only: `docker compose --profile backup run --rm --no-deps backup run`.
+  # It deliberately has neither published ports nor a Docker socket mount.
+  backup:
+    profiles: ["backup"]
+    build:
+      context: .
+      dockerfile: Dockerfile.backup
+    environment:
+      BACKUP_DATABASE_URL: "${PROD_DB_URL:?PROD_DB_URL is required}"
+      BACKUP_UPLOADS_SOURCE: /source/uploads
+      BACKUP_DESTINATION: /backups
+      BACKUP_GPG_PUBLIC_KEY_PATH: /run/backup/public.asc
+      BACKUP_GPG_RECIPIENT: "${BACKUP_GPG_RECIPIENT:?BACKUP_GPG_RECIPIENT is required}"
+      BACKUP_APP_GIT_COMMIT: "${BACKUP_APP_GIT_COMMIT:-unknown}"
+    volumes:
+      - type: bind
+        source: "${UPLOADS_HOST_PATH:?UPLOADS_HOST_PATH is required}"
+        target: /source/uploads
+        read_only: true
+      - type: bind
+        source: "${BACKUP_HOST_PATH:?BACKUP_HOST_PATH is required}"
+        target: /backups
+      - type: bind
+        source: "${BACKUP_GPG_PUBLIC_KEY_HOST_PATH:?BACKUP_GPG_PUBLIC_KEY_HOST_PATH is required}"
+        target: /run/backup/public.asc
+        read_only: true
+    networks:
+      - permatatex-net
+
   db:
     container_name: permatatex-postgres
     image: postgres:17-alpine

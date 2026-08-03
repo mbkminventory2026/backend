@@ -8,8 +8,11 @@ DOCKER_DB_URL ?= postgres://postgres:postgres@permatatex-postgres:5432/permatate
 DOCKER_NETWORK ?= permatatex-shared-net
 PROD_DB_URL ?=
 UPLOADS_HOST_PATH ?=
+BACKUP_HOST_PATH ?=
+BACKUP_GPG_PUBLIC_KEY_HOST_PATH ?=
+BACKUP_GPG_RECIPIENT ?=
 
-.PHONY: dev db-gen migrate-up migrate-down migrate-up-docker migrate-down-docker migrate-force-docker swag lint lint-fix docker-up docker-dev-up docker-down docker-logs prod-validate-config prod-deploy prod-status prod-logs seed
+.PHONY: dev db-gen migrate-up migrate-down migrate-up-docker migrate-down-docker migrate-force-docker swag lint lint-fix docker-up docker-dev-up docker-down docker-logs prod-validate-config prod-deploy prod-status prod-logs backup-validate-config backup-run seed
 
 dev:
 	air -c .air.toml
@@ -86,3 +89,23 @@ prod-status:
 
 prod-logs:
 	docker compose logs --tail 100 app
+
+# The backup service is intentionally manual. Host mounts must already exist
+# and stay outside the repository; do not place keys or packages in Git.
+backup-validate-config:
+	$(if $(strip $(PROD_DB_URL)),,$(error PROD_DB_URL is required))
+	$(if $(strip $(UPLOADS_HOST_PATH)),,$(error UPLOADS_HOST_PATH is required))
+	$(if $(strip $(BACKUP_HOST_PATH)),,$(error BACKUP_HOST_PATH is required))
+	$(if $(strip $(BACKUP_GPG_PUBLIC_KEY_HOST_PATH)),,$(error BACKUP_GPG_PUBLIC_KEY_HOST_PATH is required))
+	$(if $(strip $(BACKUP_GPG_RECIPIENT)),,$(error BACKUP_GPG_RECIPIENT is required))
+	$(if $(filter /%,$(strip $(UPLOADS_HOST_PATH))),,$(error UPLOADS_HOST_PATH must be an absolute host path))
+	$(if $(filter /%,$(strip $(BACKUP_HOST_PATH))),,$(error BACKUP_HOST_PATH must be an absolute host path))
+	$(if $(filter /%,$(strip $(BACKUP_GPG_PUBLIC_KEY_HOST_PATH))),,$(error BACKUP_GPG_PUBLIC_KEY_HOST_PATH must be an absolute host path))
+	@set -eu; repo="$$(realpath -e "$(CURDIR)")"; uploads="$$(realpath -e "$(UPLOADS_HOST_PATH)")"; backups="$$(realpath -e "$(BACKUP_HOST_PATH)")"; key="$$(realpath -e "$(BACKUP_GPG_PUBLIC_KEY_HOST_PATH)")"; \
+		[ "$$uploads" != / ] && [ "$$backups" != / ] && [ -d "$$uploads" ] && [ -d "$$backups" ] && [ -f "$$key" ] || { echo "unsafe backup host path" >&2; exit 1; }; \
+		[ "$$uploads" != "$$backups" ] && [ "$${backups#"$$uploads"/}" = "$$backups" ] && [ "$${uploads#"$$backups"/}" = "$$uploads" ] || { echo "backup and uploads paths overlap" >&2; exit 1; }; \
+		case "$$uploads" in "$$repo"|"$$repo"/*) echo "uploads path must be outside repository" >&2; exit 1;; esac; case "$$backups" in "$$repo"|"$$repo"/*) echo "backup path must be outside repository" >&2; exit 1;; esac; case "$$key" in "$$uploads"|"$$uploads"/*|"$$backups"|"$$backups"/*) echo "public key must be outside backup storage" >&2; exit 1;; esac; \
+		UPLOADS_HOST_PATH="$$uploads" BACKUP_HOST_PATH="$$backups" BACKUP_GPG_PUBLIC_KEY_HOST_PATH="$$key" BACKUP_GPG_RECIPIENT="$(BACKUP_GPG_RECIPIENT)" PROD_DB_URL="$(PROD_DB_URL)" docker compose --profile backup config --quiet
+
+backup-run: backup-validate-config
+	@set -eu; uploads="$$(realpath -e "$(UPLOADS_HOST_PATH)")"; backups="$$(realpath -e "$(BACKUP_HOST_PATH)")"; key="$$(realpath -e "$(BACKUP_GPG_PUBLIC_KEY_HOST_PATH)")"; UPLOADS_HOST_PATH="$$uploads" BACKUP_HOST_PATH="$$backups" BACKUP_GPG_PUBLIC_KEY_HOST_PATH="$$key" docker compose --profile backup run --rm --no-deps backup run

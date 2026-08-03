@@ -129,6 +129,82 @@ The database seeder (`make seed`) registers the following accounts with the defa
 
 ---
 
+## Manual encrypted backups
+
+This repository provides a manual-only backup CLI. It has no API endpoint,
+scheduler, queue, cloud-storage integration, or restore command.
+
+The supported production-style invocation is exactly:
+
+```bash
+make backup-run
+```
+
+The backup profile is not started by ordinary `docker compose up`. Before
+running it, export these host-side variables (use paths outside the repository):
+
+```text
+PROD_DB_URL
+UPLOADS_HOST_PATH
+BACKUP_HOST_PATH
+BACKUP_GPG_PUBLIC_KEY_HOST_PATH
+BACKUP_GPG_RECIPIENT
+BACKUP_APP_GIT_COMMIT (optional; defaults to unknown)
+```
+
+`UPLOADS_HOST_PATH` and `BACKUP_HOST_PATH` must be existing absolute host
+directories. `BACKUP_GPG_PUBLIC_KEY_HOST_PATH` must be an existing absolute
+public-key file. The key is mounted read-only at `/run/backup/public.asc`; the
+container creates a temporary keyring, verifies that `BACKUP_GPG_RECIPIENT` is
+a full fingerprint contained in that public key, then encrypts only to that
+fingerprint. It neither mounts nor requests a private key.
+
+`make backup-run` performs the Linux-host canonical-path preflight before it
+invokes `docker compose --profile backup run --rm --no-deps backup run`.
+It rejects root, missing, overlapping (including symlink-alias), repository,
+and key-storage paths. These commands do not print the database URL. For local/disposable testing, use a disposable
+PostgreSQL instance, disposable uploads and backup directories outside this
+repository, and a newly created non-production public key.
+
+The job holds a non-blocking exclusive advisory lock on
+`/backups/.permatatex-backup.lock` for its entire run. The pathname and safe
+metadata remain after release; its existence alone does not mean a job is
+active. A second job exits before backup work when the advisory lock is held or
+unavailable. Plaintext dumps, archives, manifests, metadata, and the
+temporary GPG home are created only in OS temporary directories and removed on
+both success and handled failure. The encrypted package and its sidecar are
+separate atomic renames; the valid `.sha256` sidecar is the completion marker.
+A package without a valid sidecar is incomplete and preserved for operator
+review.
+
+Cancellation before the sidecar rename and destination-directory sync commit
+point returns exit code 130 and rolls back current output. Once both encrypted
+files are finalized and the destination directory is synced, the backup is
+committed: later cancellation does not remove it or return 130, and retention
+finishes using a non-cancelled finalization context.
+
+After a newly generated pair is checksum-verified, retention keeps the newest
+valid generated pair for each of the newest seven UTC dates (and only the
+newest pair if a date has several). Baseline files (`permatatex-baseline-*`),
+orphan files, invalid pairs, and unfamiliar files are never deleted.
+Uploads should be quiesced during the operational maintenance window: this job
+detects relevant file changes while reading but does not claim a full filesystem
+snapshot.
+
+Exit codes:
+
+| Code | Meaning |
+| :--- | :--- |
+| 0 | Success |
+| 2 | Invalid configuration or unsafe path |
+| 3 | Backup lock already held |
+| 4 | Missing prerequisite or PostgreSQL/external command failure |
+| 5 | Packaging, encryption, or verification failure |
+| 6 | Finalization or retention failure |
+| 130 | Handled interruption/cancellation |
+
+---
+
 ## 📄 Swagger API Documentation
 
 Once the server is running, you can view the API specification page:

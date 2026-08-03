@@ -1,0 +1,15 @@
+# syntax=docker/dockerfile:1.7
+ARG GO_VERSION=1.26
+
+FROM golang:${GO_VERSION}-alpine AS builder
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY cmd/backup ./cmd/backup
+COPY internal/backup ./internal/backup
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/backup ./cmd/backup
+
+FROM alpine:3.22
+RUN apk add --no-cache ca-certificates gnupg postgresql17-client
+COPY --from=builder /out/backup /usr/local/bin/backup
+ENTRYPOINT ["/usr/local/bin/backup"]
