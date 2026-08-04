@@ -151,17 +151,36 @@ Configuration values are never returned by the API.
 
 The base production Compose application does not mount backup storage or a
 public key, so ordinary startup and `make prod-deploy` keep the backup API
-disabled. Enable the API explicitly with the backup override after exporting
-the backup variables listed below:
+disabled. The manual production workflow defaults to this base target and uses
+only `docker-compose.yml`.
+
+Enable the API explicitly with `make prod-deploy-backup-api`. This target uses
+the existing production profile with the exact base-plus-override combination:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.backup-api.yml \
-  --profile production up -d --no-deps --wait app
+docker compose -f docker-compose.yml -f docker-compose.backup-api.yml --profile production
 ```
 
-The override requires the database URL, backup destination, public-key host
-path, and recipient fingerprint. Omitting any required value makes Compose
-configuration fail before the application starts.
+The target requires `PROD_DB_URL`, `UPLOADS_HOST_PATH`, `BACKUP_HOST_PATH`,
+`BACKUP_GPG_PUBLIC_KEY_HOST_PATH`, and `BACKUP_GPG_RECIPIENT`.
+`BACKUP_APP_GIT_COMMIT` is injected from the deployed Git commit. Preflight
+rejects missing, overlapping, repository-contained, and incorrectly typed host
+paths before Compose builds or changes a container. It then preserves the base
+migration-first order: build the application image, start and wait for
+PostgreSQL with `--no-recreate`, migrate up, recreate only the application, and
+wait for application health.
+
+This deployment mode only enables the authenticated Backup API; deployment
+never starts a backup. Never install or mount a private or recovery key on the
+host. The first actual backup remains a separate operator action and requires a
+declared upload quiescence window.
+
+A Backup API configuration failure during preflight stops before deployment
+and causes no production change. Any later deployment failure stops the
+workflow, but there is no automatic migration-down, database reset, or
+restoration of the previous application image or container. When rollback is
+required, operators must follow the separately documented rollback procedure
+and use the known prior image or container. Deployment never triggers a backup.
 
 The supported production-style invocation is exactly:
 

@@ -2,6 +2,12 @@ name: Deploy Backend to VPS
 
 on:
   workflow_dispatch:
+    inputs:
+      enable_backup_api:
+        description: Enable Backup API mounts and runtime configuration
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -17,7 +23,8 @@ jobs:
     environment: production
 
     steps:
-      - name: Deploy main on VPS
+      - name: Deploy base application on VPS
+        if: ${{ inputs.enable_backup_api == false }}
         uses: appleboy/ssh-action@v1.0.3
         env:
           PROD_DB_URL: ${{ secrets.PROD_DB_URL }}
@@ -41,3 +48,47 @@ jobs:
             git switch main
             git pull --ff-only origin main
             make prod-deploy
+
+      - name: Deploy application with Backup API on VPS
+        if: ${{ inputs.enable_backup_api == true }}
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          PROD_DB_URL: ${{ secrets.PROD_DB_URL }}
+          UPLOADS_HOST_PATH: ${{ vars.UPLOADS_HOST_PATH }}
+          BACKUP_HOST_PATH: ${{ vars.BACKUP_HOST_PATH }}
+          BACKUP_GPG_PUBLIC_KEY_HOST_PATH: ${{ vars.BACKUP_GPG_PUBLIC_KEY_HOST_PATH }}
+          BACKUP_GPG_RECIPIENT: ${{ secrets.BACKUP_GPG_RECIPIENT }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          envs: PROD_DB_URL,UPLOADS_HOST_PATH,BACKUP_HOST_PATH,BACKUP_GPG_PUBLIC_KEY_HOST_PATH,BACKUP_GPG_RECIPIENT
+          command_timeout: 30m
+          script: |
+            set -eu
+
+            missing=""
+            [ -n "${PROD_DB_URL:-}" ] || missing="$missing PROD_DB_URL"
+            [ -n "${UPLOADS_HOST_PATH:-}" ] || missing="$missing UPLOADS_HOST_PATH"
+            [ -n "${BACKUP_HOST_PATH:-}" ] || missing="$missing BACKUP_HOST_PATH"
+            [ -n "${BACKUP_GPG_PUBLIC_KEY_HOST_PATH:-}" ] || missing="$missing BACKUP_GPG_PUBLIC_KEY_HOST_PATH"
+            [ -n "${BACKUP_GPG_RECIPIENT:-}" ] || missing="$missing BACKUP_GPG_RECIPIENT"
+            if [ -n "$missing" ]; then
+              for variable_name in $missing; do
+                echo "ERROR: missing required configuration: $variable_name" >&2
+              done
+              exit 1
+            fi
+
+            cd backend/
+
+            if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+              echo "ERROR: backend worktree on VPS has tracked changes"
+              exit 1
+            fi
+
+            git switch main
+            git pull --ff-only origin main
+            release_commit="$(git rev-parse --verify HEAD)"
+            BACKUP_APP_GIT_COMMIT="$release_commit" make prod-deploy-backup-api
