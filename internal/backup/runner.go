@@ -44,6 +44,15 @@ type Job struct {
 	Logger   *slog.Logger
 	Commands CommandRunner
 	Now      func() time.Time
+	ID       string
+	Accepted func(Accepted)
+}
+
+// Accepted is the intentionally narrow lifecycle signal emitted once a job
+// has validated its configuration and prerequisites and acquired its lock.
+type Accepted struct {
+	BackupID string
+	Started  time.Time
 }
 
 func NewJob(config Config, logger *slog.Logger) Job {
@@ -69,7 +78,12 @@ func (j Job) Run(ctx context.Context) (runErr error) {
 		j.Now = time.Now
 	}
 	now := j.Now().UTC()
-	id := BackupID(now)
+	id := j.ID
+	if id == "" {
+		id = BackupID(now)
+	} else if _, err := ParseBackupID(id); err != nil {
+		return fmt.Errorf("%w: backup ID is invalid", ErrConfig)
+	}
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -86,7 +100,6 @@ func (j Job) Run(ctx context.Context) (runErr error) {
 			}
 		}
 	}()
-	j.Logger.Info("backup started", slog.String("backup_id", id), slog.String("timestamp_utc", now.Format(time.RFC3339)))
 	temp, err := os.MkdirTemp("", "permatatex-backup-")
 	if err != nil {
 		return fmt.Errorf("%w: temporary workspace", ErrPackage)
@@ -107,16 +120,10 @@ func (j Job) Run(ctx context.Context) (runErr error) {
 	if err := j.verifyAndImportKey(ctx, gpgHome); err != nil {
 		return err
 	}
-	dump := filepath.Join(temp, "database.dump")
-	if err := j.command(ctx, "pg_dump", []string{"--no-password", "--format=custom", "--file=" + dump}, dbEnv); err != nil {
-		return prerequisiteError(ctx, "database dump")
-	}
-	if err := j.command(ctx, "pg_restore", []string{"--no-password", "--list", dump}, nil); err != nil {
-		return prerequisiteError(ctx, "database dump validation")
-	}
-	globals := filepath.Join(temp, "globals.sql")
-	if err := j.command(ctx, "pg_dumpall", []string{"--no-password", "--globals-only", "--file=" + globals}, dbEnv); err != nil {
-		return prerequisiteError(ctx, "globals dump")
+	for _, name := range []string{"pg_dump", "pg_restore", "pg_dumpall", "psql"} {
+		if err := j.command(ctx, name, []string{"--version"}, nil); err != nil {
+			return prerequisiteError(ctx, name+" availability")
+		}
 	}
 	version, err := j.commandOutput(ctx, "psql", []string{"--no-password", "-At", "-c", "SHOW server_version"}, dbEnv)
 	if err != nil {
@@ -133,6 +140,24 @@ func (j Job) Run(ctx context.Context) (runErr error) {
 	pgVersion, dbBytes, migrationVersion, dirty, err := sanitizeDatabaseFacts(version, size, migration)
 	if err != nil {
 		return fmt.Errorf("%w: database metadata", ErrPrereq)
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if j.Accepted != nil {
+		j.Accepted(Accepted{BackupID: id, Started: now})
+	}
+	j.Logger.Info("backup started", slog.String("backup_id", id), slog.String("timestamp_utc", now.Format(time.RFC3339)))
+	dump := filepath.Join(temp, "database.dump")
+	if err := j.command(ctx, "pg_dump", []string{"--no-password", "--format=custom", "--file=" + dump}, dbEnv); err != nil {
+		return prerequisiteError(ctx, "database dump")
+	}
+	if err := j.command(ctx, "pg_restore", []string{"--no-password", "--list", dump}, nil); err != nil {
+		return prerequisiteError(ctx, "database dump validation")
+	}
+	globals := filepath.Join(temp, "globals.sql")
+	if err := j.command(ctx, "pg_dumpall", []string{"--no-password", "--globals-only", "--file=" + globals}, dbEnv); err != nil {
+		return prerequisiteError(ctx, "globals dump")
 	}
 	if err := syncExistingFile(dump); err != nil {
 		return fmt.Errorf("%w: database dump", ErrPackage)
@@ -468,33 +493,18 @@ func applyRetention(ctx context.Context, destination, current string, token stri
 		if err := ctx.Err(); err != nil {
 			return 0, 0, err
 		}
-		matches := backupName.FindStringSubmatch(entry.Name())
-		if matches == nil {
+		if backupName.FindStringSubmatch(entry.Name()) == nil {
 			continue
 		}
 		packagePath := filepath.Join(destination, entry.Name())
 		sidecarPath := packagePath + ".sha256"
-		packageInfo, err := os.Lstat(packagePath)
-		if err != nil || !packageInfo.Mode().IsRegular() {
-			continue
-		}
-		sidecarInfo, err := os.Lstat(sidecarPath)
-		if err != nil || !sidecarInfo.Mode().IsRegular() {
-			continue
-		}
-		sum, err := fileSHA256(ctx, packagePath)
+		id := strings.TrimSuffix(entry.Name(), packageSuffix)
+		item, err := inspectCompleted(ctx, destination, id)
 		if err != nil {
 			continue
 		}
-		content, err := os.ReadFile(sidecarPath)
-		if err != nil || strings.TrimSpace(string(content)) != sum+"  "+entry.Name() {
-			continue
-		}
-		at, err := time.Parse("20060102T150405Z", matches[1])
-		if err != nil {
-			continue
-		}
-		pairs = append(pairs, retainedPair{packagePath, sidecarPath, at.UTC()})
+		at := item.CompletedAt
+		pairs = append(pairs, retainedPair{packagePath, sidecarPath, at})
 	}
 	sort.Slice(pairs, func(i, j int) bool { return pairs[i].at.After(pairs[j].at) })
 	dates, kept, removed := map[string]bool{}, 0, 0

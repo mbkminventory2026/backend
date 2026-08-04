@@ -129,10 +129,39 @@ The database seeder (`make seed`) registers the following accounts with the defa
 
 ---
 
-## Manual encrypted backups
+## Encrypted backups (API and manual CLI)
 
-This repository provides a manual-only backup CLI. It has no API endpoint,
-scheduler, queue, cloud-storage integration, or restore command.
+This repository provides both the existing manual backup CLI and authenticated
+system-backup API routes. Both invoke the same in-process backup engine; there
+is no scheduler, queue, cloud-storage integration, or restore command.
+
+The API exposes `POST /api/v1/system/backups`, status and completed-history
+reads, and an encrypted-package download route. Starts return `202` only after
+configuration and prerequisite validation plus advisory-lock acquisition.
+History and downloads accept only generated encrypted packages with an exact,
+independently verified SHA256 sidecar. Runtime job state and the last result are
+process-local; completed history is reconstructed from the encrypted inventory.
+
+The web process reads these optional settings without validating them during
+startup: `BACKUP_DATABASE_URL`, `BACKUP_UPLOADS_SOURCE`,
+`BACKUP_DESTINATION`, `BACKUP_GPG_PUBLIC_KEY_PATH`,
+`BACKUP_GPG_RECIPIENT`, and `BACKUP_APP_GIT_COMMIT`. If they are absent or
+invalid, the web server still starts but a backup start returns a safe `503`.
+Configuration values are never returned by the API.
+
+The base production Compose application does not mount backup storage or a
+public key, so ordinary startup and `make prod-deploy` keep the backup API
+disabled. Enable the API explicitly with the backup override after exporting
+the backup variables listed below:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.backup-api.yml \
+  --profile production up -d --no-deps --wait app
+```
+
+The override requires the database URL, backup destination, public-key host
+path, and recipient fingerprint. Omitting any required value makes Compose
+configuration fail before the application starts.
 
 The supported production-style invocation is exactly:
 

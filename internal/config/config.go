@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+
+	"permatatex-inventory/internal/backup"
 )
 
 const (
@@ -63,6 +65,13 @@ type Config struct {
 	LoginRateLimitWindowSec   int `mapstructure:"LOGIN_RATE_LIMIT_WINDOW_SECONDS"`
 
 	ExportTemplateDir string `mapstructure:"EXPORT_TEMPLATE_DIR"`
+
+	BackupDatabaseURL       string `mapstructure:"BACKUP_DATABASE_URL"`
+	BackupUploadsSource     string `mapstructure:"BACKUP_UPLOADS_SOURCE"`
+	BackupDestination       string `mapstructure:"BACKUP_DESTINATION"`
+	BackupGPGPublicKeyPath  string `mapstructure:"BACKUP_GPG_PUBLIC_KEY_PATH"`
+	BackupGPGRecipient      string `mapstructure:"BACKUP_GPG_RECIPIENT"`
+	BackupApplicationCommit string `mapstructure:"BACKUP_APP_GIT_COMMIT"`
 }
 
 // Load reads configuration from .env (if present) and environment variables.
@@ -82,6 +91,8 @@ func Load() (*Config, error) {
 		"JWT_SECRET", "TURNSTILE_SECRET",
 		"LOGIN_RATE_LIMIT_MAX_ATTEMPTS", "LOGIN_RATE_LIMIT_WINDOW_SECONDS",
 		"EXPORT_TEMPLATE_DIR",
+		"BACKUP_DATABASE_URL", "BACKUP_UPLOADS_SOURCE", "BACKUP_DESTINATION",
+		"BACKUP_GPG_PUBLIC_KEY_PATH", "BACKUP_GPG_RECIPIENT", "BACKUP_APP_GIT_COMMIT",
 	} {
 		if err := viper.BindEnv(key); err != nil {
 			return nil, fmt.Errorf("bind env %s: %w", key, err)
@@ -152,6 +163,19 @@ func Load() (*Config, error) {
 	cfg.ShutdownTimeout = shutdownTimeout
 
 	return &cfg, nil
+}
+
+// BackupConfig returns the optional backup settings without validating them at
+// web startup. Validation remains owned by the backup engine when a job starts.
+func (c *Config) BackupConfig() backup.Config {
+	return backup.Config{
+		DatabaseURL:       c.BackupDatabaseURL,
+		UploadsSource:     c.BackupUploadsSource,
+		Destination:       c.BackupDestination,
+		PublicKeyPath:     c.BackupGPGPublicKeyPath,
+		Recipient:         c.BackupGPGRecipient,
+		ApplicationCommit: c.BackupApplicationCommit,
+	}
 }
 
 // DatabaseURL returns DB_URL when provided, otherwise builds a PostgreSQL DSN from DB_* values.

@@ -28,6 +28,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	docs "permatatex-inventory/docs"
+	"permatatex-inventory/internal/backup"
 	"permatatex-inventory/internal/config"
 	httpdelivery "permatatex-inventory/internal/delivery/http"
 	"permatatex-inventory/internal/entity"
@@ -85,6 +86,30 @@ func main() {
 	auditLogUseCase, err := usecase.NewAuditLogUseCase(queries)
 	if err != nil {
 		logger.Error("failed to initialize audit log usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	backupConfig := cfg.BackupConfig()
+	backupManager, err := usecase.NewBackupJobManager(
+		func(id string, accepted func(backup.Accepted)) usecase.BackupJob {
+			job := backup.NewJob(backupConfig, logger)
+			job.ID = id
+			job.Accepted = accepted
+			return job
+		},
+		backupConfig.Destination,
+		auditLogUseCase,
+		logger,
+	)
+	if err != nil {
+		logger.Error("failed to initialize backup manager")
+		dbPool.Close()
+		os.Exit(1)
+	}
+	backupUseCase, err := usecase.NewBackupUseCase(backupManager, backupConfig.Destination)
+	if err != nil {
+		logger.Error("failed to initialize backup usecase")
 		dbPool.Close()
 		os.Exit(1)
 	}
@@ -424,6 +449,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	backupHandler, err := httpdelivery.NewBackupHandler(backupUseCase)
+	if err != nil {
+		logger.Error("failed to initialize backup handler")
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	activityLogService, err := usecase.NewActivityLogService(queries, logger)
 	if err != nil {
 		logger.Error("failed to initialize activity log service", slog.String("error", err.Error()))
@@ -494,6 +526,7 @@ func main() {
 	excelExportHandler.RegisterRoutes(router, authMiddleware)
 	rekonsiliasiHandler.RegisterRoutes(router, authMiddleware)
 	auditLogHandler.RegisterRoutes(router, authMiddleware)
+	backupHandler.RegisterRoutes(router, authMiddleware)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -523,6 +556,9 @@ func main() {
 		logger.Error("server stopped unexpectedly", slog.String("error", err.Error()))
 
 		shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+		if backupErr := backupUseCase.Shutdown(shutdownCtx); backupErr != nil {
+			logger.Error("backup manager shutdown incomplete")
+		}
 		if logErr := activityLogService.Shutdown(shutdownCtx); logErr != nil {
 			logger.Error("activity log service shutdown failed", slog.String("error", logErr.Error()))
 		}
@@ -535,12 +571,27 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
 	defer cancel()
+	backupShutdownCh := make(chan error, 1)
+	go func() {
+		backupShutdownCh <- backupUseCase.Shutdown(ctx)
+	}()
+	waitBackupShutdown := func() {
+		select {
+		case backupErr := <-backupShutdownCh:
+			if backupErr != nil {
+				logger.Error("backup manager shutdown incomplete")
+			}
+		case <-ctx.Done():
+			logger.Error("backup manager shutdown incomplete")
+		}
+	}
 
 	if err := server.Shutdown(ctx); err != nil {
 		logger.Error("graceful shutdown failed", slog.String("error", err.Error()))
 		if closeErr := server.Close(); closeErr != nil {
 			logger.Error("force close failed", slog.String("error", closeErr.Error()))
 		}
+		waitBackupShutdown()
 		if logErr := activityLogService.Shutdown(ctx); logErr != nil {
 			logger.Error("activity log service shutdown failed", slog.String("error", logErr.Error()))
 		}
@@ -549,6 +600,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	waitBackupShutdown()
 	if err := activityLogService.Shutdown(ctx); err != nil {
 		logger.Error("activity log service shutdown failed", slog.String("error", err.Error()))
 	}

@@ -1,0 +1,17 @@
+services:
+  app:
+    environment:
+      BACKUP_DATABASE_URL: "${PROD_DB_URL:?PROD_DB_URL is required for the backup API}"
+      BACKUP_UPLOADS_SOURCE: /app/uploads
+      BACKUP_DESTINATION: /backups
+      BACKUP_GPG_PUBLIC_KEY_PATH: /run/backup/public.asc
+      BACKUP_GPG_RECIPIENT: "${BACKUP_GPG_RECIPIENT:?BACKUP_GPG_RECIPIENT is required for the backup API}"
+      BACKUP_APP_GIT_COMMIT: "${BACKUP_APP_GIT_COMMIT:-unknown}"
+    volumes:
+      - type: bind
+        source: "${BACKUP_HOST_PATH:?BACKUP_HOST_PATH is required for the backup API}"
+        target: /backups
+      - type: bind
+        source: "${BACKUP_GPG_PUBLIC_KEY_HOST_PATH:?BACKUP_GPG_PUBLIC_KEY_HOST_PATH is required for the backup API}"
+        target: /run/backup/public.asc
+        read_only: true

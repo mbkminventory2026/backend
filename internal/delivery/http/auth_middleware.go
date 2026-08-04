@@ -152,6 +152,10 @@ const (
 	PermissionRekonsiliasiRead   = "REKONSILIASI_READ"
 	PermissionRekonsiliasiCreate = "REKONSILIASI_CREATE"
 	PermissionRekonsiliasiUpdate = "REKONSILIASI_UPDATE"
+
+	PermissionSystemBackupCreate   = "SYSTEM_BACKUP_CREATE"
+	PermissionSystemBackupRead     = "SYSTEM_BACKUP_READ"
+	PermissionSystemBackupDownload = "SYSTEM_BACKUP_DOWNLOAD"
 )
 
 // AuthMiddleware validates JWT token from Authorization header.

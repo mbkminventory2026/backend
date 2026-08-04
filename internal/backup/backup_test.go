@@ -530,7 +530,8 @@ func TestPostgresCommandsUseSafeArgumentsAndDoNotLeakSecrets(t *testing.T) {
 	cfg := testConfig(t)
 	password := "db-password-unique-value"
 	username := "db-actor-unique-value"
-	cfg.DatabaseURL = "postgres://" + username + ":" + password + "@example.test/inventory?sslmode=require"
+	database, host, port := "inventory", "example.test", "5544"
+	cfg.DatabaseURL = "postgres://" + username + ":" + password + "@" + host + ":" + port + "/" + database + "?sslmode=require"
 	if err := os.WriteFile(filepath.Join(cfg.UploadsSource, "upload"), []byte("payload"), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -542,15 +543,28 @@ func TestPostgresCommandsUseSafeArgumentsAndDoNotLeakSecrets(t *testing.T) {
 	if err := job.Run(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	seen := map[string]int{}
+	versionProbes := map[string]int{}
+	operations := map[string]int{}
 	for _, call := range recorder.calls {
 		switch call.name {
 		case "pg_dump", "pg_dumpall", "pg_restore", "psql":
-			seen[call.name]++
-			if !contains(call.args, "--no-password") {
-				t.Fatalf("%s omitted --no-password", call.name)
-			}
 			joined := strings.Join(call.args, " ")
+			if contains(call.args, "--version") {
+				versionProbes[call.name]++
+				if len(call.args) != 1 || call.args[0] != "--version" || len(call.env) != 0 {
+					t.Fatalf("%s version probe was not isolated: args=%q env_count=%d", call.name, call.args, len(call.env))
+				}
+				for _, connectionValue := range []string{cfg.DatabaseURL, database, username, password, host, port} {
+					if strings.Contains(joined, connectionValue) {
+						t.Fatalf("%s version probe leaked connection data", call.name)
+					}
+				}
+				continue
+			}
+			operations[call.name]++
+			if !contains(call.args, "--no-password") {
+				t.Fatalf("%s operation omitted --no-password", call.name)
+			}
 			for _, secret := range []string{cfg.DatabaseURL, username, password} {
 				if strings.Contains(joined, secret) {
 					t.Fatalf("%s leaked a database secret in arguments", call.name)
@@ -559,12 +573,44 @@ func TestPostgresCommandsUseSafeArgumentsAndDoNotLeakSecrets(t *testing.T) {
 		}
 	}
 	for _, name := range []string{"pg_dump", "pg_dumpall", "pg_restore", "psql"} {
-		if seen[name] == 0 {
-			t.Fatalf("%s was not captured", name)
+		if versionProbes[name] != 1 {
+			t.Fatalf("%s version probe count=%d", name, versionProbes[name])
+		}
+		if operations[name] == 0 {
+			t.Fatalf("%s operation was not captured", name)
 		}
 	}
 	if strings.Contains(logs.String(), password) || strings.Contains(logs.String(), cfg.DatabaseURL) {
 		t.Fatal("database secret leaked to logs")
+	}
+}
+
+type versionProbeFailureCommands struct{ raw string }
+
+func (f versionProbeFailureCommands) Run(ctx context.Context, name string, args, env []string) ([]byte, error) {
+	if name == "pg_dump" && len(args) == 1 && args[0] == "--version" {
+		return []byte(f.raw), errors.New(f.raw)
+	}
+	return fakeCommands{}.Run(ctx, name, args, env)
+}
+
+func TestFailedPostgresVersionProbeIsSafeAndCannotAccept(t *testing.T) {
+	cfg := testConfig(t)
+	raw := "raw-subprocess-output-with-credential"
+	var logs bytes.Buffer
+	job := NewJob(cfg, slog.New(slog.NewJSONHandler(&logs, nil)))
+	job.Commands = versionProbeFailureCommands{raw: raw}
+	accepted := false
+	job.Accepted = func(Accepted) { accepted = true }
+	err := job.Run(context.Background())
+	if !errors.Is(err, ErrPrereq) || ExitCode(err) != 4 {
+		t.Fatalf("version probe failure classification=%v", err)
+	}
+	if accepted {
+		t.Fatal("accepted callback fired after a failed version probe")
+	}
+	if strings.Contains(err.Error(), raw) || strings.Contains(logs.String(), raw) {
+		t.Fatal("version probe output or credential leaked")
 	}
 }
 

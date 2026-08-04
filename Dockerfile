@@ -18,7 +18,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
 FROM alpine:3.22
 WORKDIR /app
 
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata gnupg postgresql17-client
 
 COPY --from=builder /out/web /usr/local/bin/web
 COPY --from=builder /app/templates /app/templates

@@ -224,6 +224,94 @@ definitions:
         example: auth_service_unavailable
         type: string
     type: object
+  model.BackupLastResult:
+    properties:
+      backup_id:
+        type: string
+      encrypted_size_bytes:
+        type: integer
+      finished_at:
+        type: string
+      sha256:
+        type: string
+      state:
+        type: string
+    type: object
+  model.BackupListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.BackupSummary'
+        type: array
+      pagination:
+        $ref: '#/definitions/model.PaginationMeta'
+    type: object
+  model.BackupListSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.BackupListResponse'
+      message:
+        example: backup history retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.BackupStartResponse:
+    properties:
+      backup_id:
+        type: string
+      state:
+        type: string
+    type: object
+  model.BackupStartSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.BackupStartResponse'
+      message:
+        example: backup accepted
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.BackupStatusResponse:
+    properties:
+      backup_id:
+        type: string
+      last_result:
+        $ref: '#/definitions/model.BackupLastResult'
+      latest_completed_backup:
+        $ref: '#/definitions/model.BackupSummary'
+      started_at:
+        type: string
+      state:
+        type: string
+    type: object
+  model.BackupStatusSuccessDoc:
+    properties:
+      data:
+        $ref: '#/definitions/model.BackupStatusResponse'
+      message:
+        example: backup status retrieved
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.BackupSummary:
+    properties:
+      backup_id:
+        type: string
+      completed_at:
+        type: string
+      download_available:
+        type: boolean
+      encrypted_size_bytes:
+        type: integer
+      sha256:
+        type: string
+    type: object
   model.BarangResponse:
     properties:
       created_at:
@@ -8169,6 +8257,145 @@ paths:
       summary: Create Surat Jalan
       tags:
       - Warehouse & Delivery
+  /api/v1/system/backups:
+    get:
+      description: Requires SYSTEM_BACKUP_READ permission. Lists checksum-valid generated
+        encrypted backup pairs, newest first.
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Limit fallback
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.BackupListSuccessDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: List completed backups
+      tags:
+      - System Backups
+    post:
+      description: Requires the ADMIN_SISTEM role and SYSTEM_BACKUP_CREATE permission.
+        Starts one in-process encrypted backup and returns only after prerequisites
+        and the advisory lock are accepted.
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/model.BackupStartSuccessDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Start encrypted backup
+      tags:
+      - System Backups
+  /api/v1/system/backups/{backup_id}/download:
+    get:
+      description: Requires the ADMIN_SISTEM role and SYSTEM_BACKUP_DOWNLOAD permission.
+        Streams one private checksum-verified encrypted backup snapshot.
+      parameters:
+      - description: Server-generated backup ID
+        in: path
+        name: backup_id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Download completed encrypted backup
+      tags:
+      - System Backups
+  /api/v1/system/backups/status:
+    get:
+      description: Requires SYSTEM_BACKUP_READ permission. Returns process-local running
+        state, optional last result, and the latest checksum-valid encrypted backup.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.BackupStatusSuccessDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: Get backup status
+      tags:
+      - System Backups
   /api/v1/timeline-plans:
     get:
       description: Get a paginated list of timeline plans
