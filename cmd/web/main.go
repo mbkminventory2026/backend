@@ -277,7 +277,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	suratJalanInternalExcelExportUseCase, err := usecase.NewSuratJalanInternalExcelExportUseCase(excelRenderer, warehouseDeliveryUseCase, workOrderProductionUseCase)
+	suratJalanInternalExcelExportUseCase, err := usecase.NewSuratJalanInternalExcelExportUseCase(excelRenderer, warehouseDeliveryUseCase, workOrderProductionUseCase, profilPerusahaanUseCase)
 	if err != nil {
 		logger.Error("failed to initialize surat jalan internal excel export usecase", slog.String("error", err.Error()))
 		dbPool.Close()

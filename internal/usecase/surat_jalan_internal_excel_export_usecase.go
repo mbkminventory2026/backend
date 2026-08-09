@@ -3,6 +3,7 @@ package usecase
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -15,28 +16,29 @@ import (
 
 const (
 	suratJalanInternalExportTemplateName = "xlsx/template_surat_jalan.xlsx"
-	suratJalanInternalItemStartRow       = 11
+	suratJalanInternalItemStartRow       = 12
 	suratJalanInternalItemBaseCapacity   = 9
-	suratJalanInternalItemTemplateRow    = 19
-	suratJalanInternalSubtotalBaseRow    = 20
+	suratJalanInternalItemTemplateRow    = 20
+	suratJalanInternalSubtotalBaseRow    = 21
 )
 
 type suratJalanInternalExcelLayout struct {
 	itemExtraRows int
 	subtotalRow   int
-	footerDateRow int
 }
 
 type SuratJalanInternalExcelExportUseCase struct {
 	renderer              *excel.Renderer
 	warehouseDeliveryUC   *WarehouseDeliveryUseCase
 	workOrderProductionUC *WorkOrderProductionUseCase
+	profilPerusahaanUC    *ProfilPerusahaanUseCase
 }
 
 func NewSuratJalanInternalExcelExportUseCase(
 	renderer *excel.Renderer,
 	warehouseDeliveryUC *WarehouseDeliveryUseCase,
 	workOrderProductionUC *WorkOrderProductionUseCase,
+	profilPerusahaanUC *ProfilPerusahaanUseCase,
 ) (*SuratJalanInternalExcelExportUseCase, error) {
 	if renderer == nil {
 		return nil, errors.New("excel renderer is required")
@@ -47,11 +49,15 @@ func NewSuratJalanInternalExcelExportUseCase(
 	if workOrderProductionUC == nil {
 		return nil, errors.New("work order production usecase is required")
 	}
+	if profilPerusahaanUC == nil {
+		return nil, errors.New("profil perusahaan usecase is required")
+	}
 
 	return &SuratJalanInternalExcelExportUseCase{
 		renderer:              renderer,
 		warehouseDeliveryUC:   warehouseDeliveryUC,
 		workOrderProductionUC: workOrderProductionUC,
+		profilPerusahaanUC:    profilPerusahaanUC,
 	}, nil
 }
 
@@ -72,6 +78,10 @@ func (u *SuratJalanInternalExcelExportUseCase) ExportByID(ctx context.Context, i
 			return nil, err
 		}
 	}
+	profile, err := u.profilPerusahaanUC.GetProfilPerusahaan(ctx)
+	if err != nil && !errors.Is(err, ErrProfilPerusahaanNotFound) {
+		return nil, fmt.Errorf("get profil perusahaan: %w", err)
+	}
 
 	workbook, err := u.renderer.OpenTemplate(suratJalanInternalExportTemplateName)
 	if err != nil {
@@ -91,7 +101,7 @@ func (u *SuratJalanInternalExcelExportUseCase) ExportByID(ctx context.Context, i
 		return nil, fmt.Errorf("prepare surat jalan internal export layout: %w", err)
 	}
 
-	if err := writeSuratJalanInternalExportHeader(workbook, sheetName, detail, workOrder); err != nil {
+	if err := writeSuratJalanInternalExportHeader(workbook, sheetName, detail, workOrder, profile); err != nil {
 		return nil, fmt.Errorf("write surat jalan internal export header: %w", err)
 	}
 	if err := writeSuratJalanInternalExportItems(workbook, sheetName, layout, detail.WOShells); err != nil {
@@ -124,7 +134,6 @@ func prepareSuratJalanInternalExportLayout(workbook *excelize.File, sheetName st
 	return suratJalanInternalExcelLayout{
 		itemExtraRows: itemExtraRows,
 		subtotalRow:   suratJalanInternalSubtotalBaseRow + itemExtraRows,
-		footerDateRow: 21 + itemExtraRows,
 	}, nil
 }
 
@@ -133,11 +142,11 @@ func writeSuratJalanInternalExportHeader(
 	sheetName string,
 	detail *model.SuratJalanInternalDetailResponse,
 	workOrder *model.WorkOrderDetailResponse,
+	profile model.ProfilPerusahaanResponse,
 ) error {
 	buyer := strings.TrimSpace(detail.Buyer)
 	style := strings.TrimSpace(detail.Model)
 	poNumber := ""
-	totalQty := detail.WOQty
 
 	if workOrder != nil {
 		if buyer == "" {
@@ -147,22 +156,14 @@ func writeSuratJalanInternalExportHeader(
 			style = strings.TrimSpace(workOrder.POClientItemStyle)
 		}
 		poNumber = strings.TrimSpace(workOrder.PONumber)
-		if totalQty == 0 {
-			totalQty = workOrder.Qty
-		}
-	}
-
-	if totalQty == 0 {
-		for _, item := range detail.WOShells {
-			totalQty += item.Qty
-		}
 	}
 
 	values := map[string]any{
-		"C3": buyer,
-		"C4": style,
-		"C5": poNumber,
-		"C6": totalQty,
+		"C4": strings.TrimSpace(detail.NoDokumen),
+		"C5": formatPOInternalExportDate(detail.CreatedAt),
+		"C7": poNumber,
+		"C8": style,
+		"I5": buyer,
 	}
 
 	for cell, value := range values {
@@ -170,8 +171,31 @@ func writeSuratJalanInternalExportHeader(
 			return err
 		}
 	}
+	if err := insertSuratJalanInternalCompanyLogo(workbook, sheetName, profile.Logo); err != nil {
+		return err
+	}
 
 	return nil
+}
+
+func insertSuratJalanInternalCompanyLogo(workbook *excelize.File, sheetName, logo string) error {
+	encoded := strings.TrimSpace(logo)
+	if encoded == "" {
+		return nil
+	}
+	comma := strings.Index(encoded, ",")
+	if !strings.HasPrefix(encoded, "data:image/") || comma < 0 {
+		return nil
+	}
+	content, err := base64.StdEncoding.DecodeString(encoded[comma+1:])
+	if err != nil {
+		return fmt.Errorf("decode company logo: %w", err)
+	}
+	extension := ".png"
+	if strings.HasPrefix(encoded, "data:image/jpeg") {
+		extension = ".jpg"
+	}
+	return workbook.AddPictureFromBytes(sheetName, "A1", &excelize.Picture{Extension: extension, File: content, Format: &excelize.GraphicOptions{ScaleX: 0.45, ScaleY: 0.45, OffsetX: 4, OffsetY: 4}})
 }
 
 func writeSuratJalanInternalExportItems(
@@ -200,9 +224,9 @@ func writeSuratJalanInternalExportItems(
 
 		values := map[string]any{
 			fmt.Sprintf("A%d", row): item.No,
-			fmt.Sprintf("B%d", row): strings.TrimSpace(item.Deskripsi),
-			fmt.Sprintf("F%d", row): item.Qty,
-			fmt.Sprintf("L%d", row): strings.TrimSpace(item.Note),
+			fmt.Sprintf("B%d", row): item.Qty,
+			fmt.Sprintf("C%d", row): "",
+			fmt.Sprintf("D%d", row): strings.TrimSpace(item.Deskripsi),
 		}
 
 		for cell, value := range values {
@@ -212,16 +236,12 @@ func writeSuratJalanInternalExportItems(
 		}
 	}
 
-	if err := workbook.SetCellValue(sheetName, fmt.Sprintf("A%d", layout.subtotalRow), "SUB TOTAL"); err != nil {
+	if err := workbook.SetCellValue(sheetName, fmt.Sprintf("A%d", layout.subtotalRow), "TOTAL"); err != nil {
 		return err
 	}
-	if err := workbook.SetCellValue(sheetName, fmt.Sprintf("F%d", layout.subtotalRow), totalQty); err != nil {
+	if err := workbook.SetCellValue(sheetName, fmt.Sprintf("B%d", layout.subtotalRow), totalQty); err != nil {
 		return err
 	}
-	if err := workbook.SetCellValue(sheetName, fmt.Sprintf("L%d", layout.subtotalRow), ""); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -249,7 +269,7 @@ func disableSuratJalanInternalDescriptionShrink(workbook *excelize.File, sheetNa
 		return err
 	}
 
-	return workbook.SetCellStyle(sheetName, fmt.Sprintf("B%d", row), fmt.Sprintf("E%d", row), updatedStyleID)
+	return workbook.SetCellStyle(sheetName, fmt.Sprintf("D%d", row), fmt.Sprintf("L%d", row), updatedStyleID)
 }
 
 func writeSuratJalanInternalExportFooter(
@@ -258,22 +278,11 @@ func writeSuratJalanInternalExportFooter(
 	layout suratJalanInternalExcelLayout,
 	detail *model.SuratJalanInternalDetailResponse,
 ) error {
-	dateLabel := "Boyolali, " + formatPOInternalExportDate(detail.CreatedAt)
-	leftDateCell := fmt.Sprintf("A%d", layout.footerDateRow)
-	rightDateCell := fmt.Sprintf("J%d", layout.footerDateRow)
-
-	if err := workbook.SetCellValue(sheetName, leftDateCell, dateLabel); err != nil {
-		return err
-	}
-	if err := workbook.SetCellValue(sheetName, rightDateCell, dateLabel); err != nil {
-		return err
-	}
-
 	return nil
 }
 
 func clearSuratJalanInternalExportRow(workbook *excelize.File, sheetName string, row int) error {
-	for col := 1; col <= 14; col++ {
+	for col := 1; col <= 12; col++ {
 		cell, err := excelize.CoordinatesToCellName(col, row)
 		if err != nil {
 			return err
