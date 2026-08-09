@@ -234,17 +234,46 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 	for _, itemReq := range req.MaterialListItems {
 		var idWoShell pgtype.Int4
 		var idWoTrim pgtype.Int4
+		var idQtyWoShell pgtype.Int4
 
 		if itemReq.ShellIndex != nil {
 			idx := *itemReq.ShellIndex
-			if idx >= 0 && idx < len(recordedShells) {
-				idWoShell = pgtype.Int4{Int32: recordedShells[idx].ID, Valid: true}
+			if idx < 0 || idx >= len(recordedShells) {
+				return nil, ErrWorkOrderValidation
 			}
+			idWoShell = pgtype.Int4{Int32: recordedShells[idx].ID, Valid: true}
 		} else if itemReq.TrimIndex != nil {
 			idx := *itemReq.TrimIndex
-			if idx >= 0 && idx < len(recordedTrims) {
-				idWoTrim = pgtype.Int4{Int32: recordedTrims[idx].ID, Valid: true}
+			if idx < 0 || idx >= len(recordedTrims) {
+				return nil, ErrWorkOrderValidation
 			}
+			idWoTrim = pgtype.Int4{Int32: recordedTrims[idx].ID, Valid: true}
+		}
+		if itemReq.QtyWoShellIndex != nil {
+			idx := *itemReq.QtyWoShellIndex
+			if idx < 0 || idx >= len(recordedShells) {
+				return nil, ErrWorkOrderValidation
+			}
+			idQtyWoShell = pgtype.Int4{Int32: recordedShells[idx].ID, Valid: true}
+		}
+
+		if err := validateMaterialListItemApplicability(ctx, qtx, defaultML.IDMaterialList, materialListItemApplicability{
+			Category:     itemReq.Category,
+			QtyWoScope:   itemReq.QtyWoScope,
+			IDQtyWoShell: nullableInt32Ptr(idQtyWoShell),
+			IDQtyWoSize:  itemReq.IDQtyWoSize,
+		}); err != nil {
+			if errors.Is(err, ErrMaterialListValidation) {
+				return nil, ErrWorkOrderValidation
+			}
+			return nil, fmt.Errorf("%w: material list item applicability: %v", ErrWorkOrderServiceUnavailable, err)
+		}
+		consPerPC, err := materialListConsPerPCForCreate(ctx, qtx, itemReq.ConsPerPC, idWoShell, idWoTrim)
+		if err != nil {
+			if errors.Is(err, ErrMaterialListValidation) {
+				return nil, ErrWorkOrderValidation
+			}
+			return nil, fmt.Errorf("%w: material list item consumption: %v", ErrWorkOrderServiceUnavailable, err)
 		}
 
 		itemName := itemReq.Item
@@ -261,28 +290,17 @@ func (u *WorkOrderProductionUseCase) CreateWorkOrder(ctx context.Context, userID
 			EstPrice:       mustNumeric(itemReq.EstPrice),
 			IDWoShell:      idWoShell,
 			IDWoTrim:       idWoTrim,
+			Category:       nullableTextParam(itemReq.Category),
+			ConsPerPc:      consPerPC,
+			QtyWoScope:     nullableTextParam(itemReq.QtyWoScope),
+			IDQtyWoShell:   idQtyWoShell,
+			IDQtyWoSize:    nullableInt32Param(itemReq.IDQtyWoSize),
 		})
 		if mliErr != nil {
 			return nil, mapWorkOrderDBError(mliErr)
 		}
 
-		itemResp := model.MaterialListItemResponse{
-			ID:          mli.IDMaterialListItem,
-			Item:        mli.Item,
-			Description: mli.Description,
-			Qty:         mli.Qty,
-			Unit:        mli.Unit,
-			EstPrice:    numericToFloat64(mli.EstPrice),
-			CreatedAt:   mli.CreatedAt.Time.Format(time.RFC3339),
-		}
-		if mli.IDWoShell.Valid {
-			v := mli.IDWoShell.Int32
-			itemResp.IDWoShell = &v
-		}
-		if mli.IDWoTrim.Valid {
-			v := mli.IDWoTrim.Int32
-			itemResp.IDWoTrim = &v
-		}
+		itemResp := materialListItemResponse(mli.IDMaterialListItem, mli.Item, mli.Description, mli.Qty, mli.Unit, mli.EstPrice, mli.IDWoShell, mli.IDWoTrim, mli.Category, mli.ConsPerPc, mli.QtyWoScope, mli.IDQtyWoShell, mli.IDQtyWoSize, mli.CreatedAt, 0, 0)
 		items = append(items, itemResp)
 	}
 
@@ -668,25 +686,7 @@ func (u *WorkOrderProductionUseCase) GetWorkOrderDetail(ctx context.Context, id 
 		}
 		items := make([]model.MaterialListItemResponse, 0, len(itemRows))
 		for _, ir := range itemRows {
-			itemResp := model.MaterialListItemResponse{
-				ID:            ir.IDMaterialListItem,
-				Item:          ir.Item,
-				Description:   ir.Description,
-				Qty:           ir.Qty,
-				Unit:          ir.Unit,
-				EstPrice:      numericToFloat64(ir.EstPrice),
-				CreatedAt:     ir.CreatedAt.Time.Format(time.RFC3339),
-				QtySuratJalan: ir.QtySuratJalan,
-				QtyReceived:   ir.QtyReceived,
-			}
-			if ir.IDWoShell.Valid {
-				v := ir.IDWoShell.Int32
-				itemResp.IDWoShell = &v
-			}
-			if ir.IDWoTrim.Valid {
-				v := ir.IDWoTrim.Int32
-				itemResp.IDWoTrim = &v
-			}
+			itemResp := materialListItemResponse(ir.IDMaterialListItem, ir.Item, ir.Description, ir.Qty, ir.Unit, ir.EstPrice, ir.IDWoShell, ir.IDWoTrim, ir.Category, ir.ConsPerPc, ir.QtyWoScope, ir.IDQtyWoShell, ir.IDQtyWoSize, ir.CreatedAt, ir.QtySuratJalan, ir.QtyReceived)
 			items = append(items, itemResp)
 		}
 		materials = append(materials, model.MaterialListResponse{
@@ -1124,6 +1124,11 @@ func buildWorkOrderAuditSnapshot(item *model.WorkOrderResponse) map[string]any {
 				"est_price":             row.EstPrice,
 				"id_wo_shell":           row.IDWoShell,
 				"id_wo_trim":            row.IDWoTrim,
+				"category":              row.Category,
+				"cons_per_pc":           row.ConsPerPC,
+				"qty_wo_scope":          row.QtyWoScope,
+				"id_qty_wo_shell":       row.IDQtyWoShell,
+				"id_qty_wo_size":        row.IDQtyWoSize,
 				"qty_surat_jalan":       row.QtySuratJalan,
 				"qty_received":          row.QtyReceived,
 			})
@@ -1217,6 +1222,11 @@ func buildWorkOrderAuditSnapshotFromDetail(item *model.WorkOrderDetailResponse) 
 				"est_price":             row.EstPrice,
 				"id_wo_shell":           row.IDWoShell,
 				"id_wo_trim":            row.IDWoTrim,
+				"category":              row.Category,
+				"cons_per_pc":           row.ConsPerPC,
+				"qty_wo_scope":          row.QtyWoScope,
+				"id_qty_wo_shell":       row.IDQtyWoShell,
+				"id_qty_wo_size":        row.IDQtyWoSize,
 				"qty_surat_jalan":       row.QtySuratJalan,
 				"qty_received":          row.QtyReceived,
 			})

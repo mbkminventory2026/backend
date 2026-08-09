@@ -99,7 +99,12 @@ INSERT INTO MATERIAL_LIST_ITEM (
     unit,
     est_price,
     id_wo_shell,
-    id_wo_trim
+    id_wo_trim,
+    category,
+    cons_per_pc,
+    qty_wo_scope,
+    id_qty_wo_shell,
+    id_qty_wo_size
 ) VALUES (
     sqlc.arg(id_material_list),
     sqlc.arg(item),
@@ -108,9 +113,14 @@ INSERT INTO MATERIAL_LIST_ITEM (
     sqlc.arg(unit),
     sqlc.arg(est_price)::numeric,
     sqlc.narg(id_wo_shell),
-    sqlc.narg(id_wo_trim)
+    sqlc.narg(id_wo_trim),
+    sqlc.narg(category),
+    sqlc.narg(cons_per_pc)::numeric,
+    sqlc.narg(qty_wo_scope),
+    sqlc.narg(id_qty_wo_shell),
+    sqlc.narg(id_qty_wo_size)
 )
-RETURNING id_material_list_item, id_material_list, item, description, qty, unit, est_price, id_wo_shell, id_wo_trim, created_at;
+RETURNING id_material_list_item, id_material_list, item, description, qty, unit, est_price, id_wo_shell, id_wo_trim, category, cons_per_pc, qty_wo_scope, id_qty_wo_shell, id_qty_wo_size, created_at;
 
 -- name: WorkOrderShellTotalQty :one
 SELECT COALESCE(SUM(qty), 0)::bigint AS total_qty

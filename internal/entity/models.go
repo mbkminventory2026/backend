@@ -194,6 +194,11 @@ type MaterialListItem struct {
 	Qty                int32              `json:"qty"`
 	Unit               string             `json:"unit"`
 	EstPrice           pgtype.Numeric     `json:"est_price"`
+	Category           pgtype.Text        `json:"category"`
+	ConsPerPc          pgtype.Numeric     `json:"cons_per_pc"`
+	QtyWoScope         pgtype.Text        `json:"qty_wo_scope"`
+	IDQtyWoShell       pgtype.Int4        `json:"id_qty_wo_shell"`
+	IDQtyWoSize        pgtype.Int4        `json:"id_qty_wo_size"`
 }
 
 type Mitra struct {

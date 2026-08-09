@@ -7921,11 +7921,20 @@ const docTemplate = `{
                 "unit"
             ],
             "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "cons_per_pc": {
+                    "type": "number"
+                },
                 "description": {
                     "type": "string"
                 },
                 "est_price": {
                     "type": "number"
+                },
+                "id_qty_wo_size": {
+                    "type": "integer"
                 },
                 "item": {
                     "type": "string"
@@ -7933,12 +7942,19 @@ const docTemplate = `{
                 "qty": {
                     "type": "integer"
                 },
+                "qty_wo_scope": {
+                    "type": "string"
+                },
+                "qty_wo_shell_index": {
+                    "description": "Applicability: 0-based index into shells.",
+                    "type": "integer"
+                },
                 "shell_index": {
-                    "description": "0-based index into shells array",
+                    "description": "Material source: 0-based index into shells.",
                     "type": "integer"
                 },
                 "trim_index": {
-                    "description": "0-based index into trims array",
+                    "description": "Material source: 0-based index into trims.",
                     "type": "integer"
                 },
                 "unit": {
@@ -10169,6 +10185,12 @@ const docTemplate = `{
         "model.MaterialListItemResponse": {
             "type": "object",
             "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "cons_per_pc": {
+                    "type": "number"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -10179,6 +10201,12 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "id_material_list_item": {
+                    "type": "integer"
+                },
+                "id_qty_wo_shell": {
+                    "type": "integer"
+                },
+                "id_qty_wo_size": {
                     "type": "integer"
                 },
                 "id_wo_shell": {
@@ -10198,6 +10226,9 @@ const docTemplate = `{
                 },
                 "qty_surat_jalan": {
                     "type": "integer"
+                },
+                "qty_wo_scope": {
+                    "type": "string"
                 },
                 "unit": {
                     "type": "string"

@@ -152,6 +152,23 @@ func (u *MaterialListUseCase) CreateItem(ctx context.Context, idML int32, req mo
 	if ml.IsLocked {
 		return nil, ErrMaterialListLocked
 	}
+	if err := validateMaterialListItemApplicability(ctx, u.repo, idML, materialListItemApplicability{
+		Category:     req.Category,
+		QtyWoScope:   req.QtyWoScope,
+		IDQtyWoShell: req.IDQtyWoShell,
+		IDQtyWoSize:  req.IDQtyWoSize,
+	}); err != nil {
+		return nil, err
+	}
+	idWoShell := nullableInt32Param(req.IDWoShell)
+	idWoTrim := nullableInt32Param(req.IDWoTrim)
+	if err := validateMaterialListItemSources(ctx, u.repo, idML, idWoShell, idWoTrim); err != nil {
+		return nil, err
+	}
+	consPerPC, err := materialListConsPerPCForCreate(ctx, u.repo, req.ConsPerPC, idWoShell, idWoTrim)
+	if err != nil {
+		return nil, err
+	}
 
 	mli, err := u.repo.CreateMaterialListItem(ctx, entity.CreateMaterialListItemParams{
 		IDMaterialList: idML,
@@ -160,35 +177,53 @@ func (u *MaterialListUseCase) CreateItem(ctx context.Context, idML int32, req mo
 		Qty:            req.Qty,
 		Unit:           req.Unit,
 		EstPrice:       mustNumeric(req.EstPrice),
-		IDWoShell:      nullableInt32Param(req.IDWoShell),
-		IDWoTrim:       nullableInt32Param(req.IDWoTrim),
+		IDWoShell:      idWoShell,
+		IDWoTrim:       idWoTrim,
+		Category:       nullableTextParam(req.Category),
+		ConsPerPc:      consPerPC,
+		QtyWoScope:     nullableTextParam(req.QtyWoScope),
+		IDQtyWoShell:   nullableInt32Param(req.IDQtyWoShell),
+		IDQtyWoSize:    nullableInt32Param(req.IDQtyWoSize),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrMaterialListUnavailable, err)
 	}
 
-	resp := model.MaterialListItemResponse{
-		ID:          mli.IDMaterialListItem,
-		Item:        mli.Item,
-		Description: mli.Description,
-		Qty:         mli.Qty,
-		Unit:        mli.Unit,
-		EstPrice:    numericToFloat64(mli.EstPrice),
-		CreatedAt:   mli.CreatedAt.Time.Format(time.RFC3339),
-	}
-	if mli.IDWoShell.Valid {
-		v := mli.IDWoShell.Int32
-		resp.IDWoShell = &v
-	}
-	if mli.IDWoTrim.Valid {
-		v := mli.IDWoTrim.Int32
-		resp.IDWoTrim = &v
-	}
+	resp := materialListItemResponse(mli.IDMaterialListItem, mli.Item, mli.Description, mli.Qty, mli.Unit, mli.EstPrice, mli.IDWoShell, mli.IDWoTrim, mli.Category, mli.ConsPerPc, mli.QtyWoScope, mli.IDQtyWoShell, mli.IDQtyWoSize, mli.CreatedAt, 0, 0)
 	return &resp, nil
 }
 
 func (u *MaterialListUseCase) UpdateItem(ctx context.Context, id int32, req model.UpdateMaterialListItemBody) (*model.MaterialListItemResponse, error) {
-	_, err := u.repo.UpdateMaterialListItem(ctx, entity.UpdateMaterialListItemParams{
+	existing, err := u.repo.GetMaterialListItem(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrMaterialListItemNotFound
+		}
+		return nil, fmt.Errorf("%w: %v", ErrMaterialListUnavailable, err)
+	}
+	ml, err := u.repo.GetMaterialList(ctx, existing.IDMaterialList)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrMaterialListUnavailable, err)
+	}
+	if ml.IsLocked {
+		return nil, ErrMaterialListLocked
+	}
+	if err := validateUpdatedConsPerPC(req.ConsPerPC); err != nil {
+		return nil, err
+	}
+	if err := validateMaterialListItemSources(ctx, u.repo, existing.IDMaterialList, nullableInt32Param(req.IDWoShell), nullableInt32Param(req.IDWoTrim)); err != nil {
+		return nil, err
+	}
+	if err := validateMaterialListItemApplicability(ctx, u.repo, existing.IDMaterialList, materialListItemApplicability{
+		Category:     optionalStringValue(existing.Category, req.Category),
+		QtyWoScope:   optionalStringValue(existing.QtyWoScope, req.QtyWoScope),
+		IDQtyWoShell: optionalInt32Value(existing.IDQtyWoShell, req.IDQtyWoShell),
+		IDQtyWoSize:  optionalInt32Value(existing.IDQtyWoSize, req.IDQtyWoSize),
+	}); err != nil {
+		return nil, err
+	}
+
+	_, err = u.repo.UpdateMaterialListItem(ctx, entity.UpdateMaterialListItemParams{
 		Item:               req.Item,
 		Description:        req.Description,
 		Qty:                req.Qty,
@@ -196,6 +231,16 @@ func (u *MaterialListUseCase) UpdateItem(ctx context.Context, id int32, req mode
 		EstPrice:           mustNumeric(req.EstPrice),
 		IDWoShell:          nullableInt32Param(req.IDWoShell),
 		IDWoTrim:           nullableInt32Param(req.IDWoTrim),
+		SetCategory:        req.Category.Set,
+		Category:           nullableTextParam(req.Category.Value),
+		SetConsPerPc:       req.ConsPerPC.Set,
+		ConsPerPc:          materialListNumericPtr(req.ConsPerPC.Value),
+		SetQtyWoScope:      req.QtyWoScope.Set,
+		QtyWoScope:         nullableTextParam(req.QtyWoScope.Value),
+		SetIDQtyWoShell:    req.IDQtyWoShell.Set,
+		IDQtyWoShell:       nullableInt32Param(req.IDQtyWoShell.Value),
+		SetIDQtyWoSize:     req.IDQtyWoSize.Set,
+		IDQtyWoSize:        nullableInt32Param(req.IDQtyWoSize.Value),
 		IDMaterialListItem: id,
 	})
 	if err != nil {
@@ -209,26 +254,7 @@ func (u *MaterialListUseCase) UpdateItem(ctx context.Context, id int32, req mode
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrMaterialListUnavailable, err)
 	}
-
-	resp := model.MaterialListItemResponse{
-		ID:            mli.IDMaterialListItem,
-		Item:          mli.Item,
-		Description:   mli.Description,
-		Qty:           mli.Qty,
-		Unit:          mli.Unit,
-		EstPrice:      numericToFloat64(mli.EstPrice),
-		CreatedAt:     mli.CreatedAt.Time.Format(time.RFC3339),
-		QtySuratJalan: mli.QtySuratJalan,
-		QtyReceived:   mli.QtyReceived,
-	}
-	if mli.IDWoShell.Valid {
-		v := mli.IDWoShell.Int32
-		resp.IDWoShell = &v
-	}
-	if mli.IDWoTrim.Valid {
-		v := mli.IDWoTrim.Int32
-		resp.IDWoTrim = &v
-	}
+	resp := materialListItemResponse(mli.IDMaterialListItem, mli.Item, mli.Description, mli.Qty, mli.Unit, mli.EstPrice, mli.IDWoShell, mli.IDWoTrim, mli.Category, mli.ConsPerPc, mli.QtyWoScope, mli.IDQtyWoShell, mli.IDQtyWoSize, mli.CreatedAt, mli.QtySuratJalan, mli.QtyReceived)
 	return &resp, nil
 }
 
@@ -264,25 +290,7 @@ type listedML struct {
 func buildMLResponse(ml listedML, mliRows []entity.ListMaterialListItemsByMLRow) model.MaterialListResponse {
 	items := make([]model.MaterialListItemResponse, 0, len(mliRows))
 	for _, ir := range mliRows {
-		ri := model.MaterialListItemResponse{
-			ID:            ir.IDMaterialListItem,
-			Item:          ir.Item,
-			Description:   ir.Description,
-			Qty:           ir.Qty,
-			Unit:          ir.Unit,
-			EstPrice:      numericToFloat64(ir.EstPrice),
-			CreatedAt:     ir.CreatedAt.Time.Format(time.RFC3339),
-			QtySuratJalan: ir.QtySuratJalan,
-			QtyReceived:   ir.QtyReceived,
-		}
-		if ir.IDWoShell.Valid {
-			v := ir.IDWoShell.Int32
-			ri.IDWoShell = &v
-		}
-		if ir.IDWoTrim.Valid {
-			v := ir.IDWoTrim.Int32
-			ri.IDWoTrim = &v
-		}
+		ri := materialListItemResponse(ir.IDMaterialListItem, ir.Item, ir.Description, ir.Qty, ir.Unit, ir.EstPrice, ir.IDWoShell, ir.IDWoTrim, ir.Category, ir.ConsPerPc, ir.QtyWoScope, ir.IDQtyWoShell, ir.IDQtyWoSize, ir.CreatedAt, ir.QtySuratJalan, ir.QtyReceived)
 		items = append(items, ri)
 	}
 	return model.MaterialListResponse{
@@ -381,6 +389,11 @@ func (u *MaterialListUseCase) GetItemDetail(ctx context.Context, id int32) (*mod
 		Qty:                row.Qty,
 		Unit:               row.Unit,
 		EstPrice:           numericToFloat64(row.EstPrice),
+		Category:           nullableTextPtr(row.Category),
+		ConsPerPC:          numericToFloat64Ptr(row.ConsPerPc),
+		QtyWoScope:         nullableTextPtr(row.QtyWoScope),
+		IDQtyWoShell:       nullableInt32PgTypePtr(row.IDQtyWoShell),
+		IDQtyWoSize:        nullableInt32PgTypePtr(row.IDQtyWoSize),
 		CreatedAt:          row.CreatedAt.Time.Format(time.RFC3339),
 		QtySuratJalan:      row.QtySuratJalan,
 		QtyReceived:        row.QtyReceived,

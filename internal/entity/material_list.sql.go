@@ -93,6 +93,11 @@ SELECT
     mli.est_price, 
     mli.id_wo_shell, 
     mli.id_wo_trim, 
+    mli.category,
+    mli.cons_per_pc,
+    mli.qty_wo_scope,
+    mli.id_qty_wo_shell,
+    mli.id_qty_wo_size,
     mli.created_at,
     COALESCE((SELECT SUM(sjc.qty) FROM SURAT_JALAN_CLIENT sjc WHERE sjc.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_surat_jalan,
     COALESCE((SELECT SUM(r.qty) FROM RECEIVED r WHERE r.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_received
@@ -110,6 +115,11 @@ type GetMaterialListItemRow struct {
 	EstPrice           pgtype.Numeric     `json:"est_price"`
 	IDWoShell          pgtype.Int4        `json:"id_wo_shell"`
 	IDWoTrim           pgtype.Int4        `json:"id_wo_trim"`
+	Category           pgtype.Text        `json:"category"`
+	ConsPerPc          pgtype.Numeric     `json:"cons_per_pc"`
+	QtyWoScope         pgtype.Text        `json:"qty_wo_scope"`
+	IDQtyWoShell       pgtype.Int4        `json:"id_qty_wo_shell"`
+	IDQtyWoSize        pgtype.Int4        `json:"id_qty_wo_size"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 	QtySuratJalan      int32              `json:"qty_surat_jalan"`
 	QtyReceived        int32              `json:"qty_received"`
@@ -128,11 +138,35 @@ func (q *Queries) GetMaterialListItem(ctx context.Context, idMaterialListItem in
 		&i.EstPrice,
 		&i.IDWoShell,
 		&i.IDWoTrim,
+		&i.Category,
+		&i.ConsPerPc,
+		&i.QtyWoScope,
+		&i.IDQtyWoShell,
+		&i.IDQtyWoSize,
 		&i.CreatedAt,
 		&i.QtySuratJalan,
 		&i.QtyReceived,
 	)
 	return i, err
+}
+
+const getMaterialListItemConsumptionPrefill = `-- name: GetMaterialListItemConsumptionPrefill :one
+SELECT COALESCE(
+    (SELECT cons FROM WORK_ORDER_TRIM WHERE id_wo_trim = $1),
+    (SELECT cons FROM WORK_ORDER_SHELL WHERE id_wo_shell = $2)
+)::numeric AS cons_per_pc
+`
+
+type GetMaterialListItemConsumptionPrefillParams struct {
+	IDWoTrim  pgtype.Int4 `json:"id_wo_trim"`
+	IDWoShell pgtype.Int4 `json:"id_wo_shell"`
+}
+
+func (q *Queries) GetMaterialListItemConsumptionPrefill(ctx context.Context, arg GetMaterialListItemConsumptionPrefillParams) (pgtype.Numeric, error) {
+	row := q.db.QueryRow(ctx, getMaterialListItemConsumptionPrefill, arg.IDWoTrim, arg.IDWoShell)
+	var cons_per_pc pgtype.Numeric
+	err := row.Scan(&cons_per_pc)
+	return cons_per_pc, err
 }
 
 const getMaterialListItemDetail = `-- name: GetMaterialListItemDetail :one
@@ -146,6 +180,11 @@ SELECT
     mli.est_price,
     mli.id_wo_shell,
     mli.id_wo_trim,
+    mli.category,
+    mli.cons_per_pc,
+    mli.qty_wo_scope,
+    mli.id_qty_wo_shell,
+    mli.id_qty_wo_size,
     mli.created_at,
     COALESCE((SELECT SUM(sjc.qty) FROM SURAT_JALAN_CLIENT sjc WHERE sjc.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_surat_jalan,
     COALESCE((SELECT SUM(r.qty) FROM RECEIVED r WHERE r.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_received,
@@ -170,6 +209,11 @@ type GetMaterialListItemDetailRow struct {
 	EstPrice           pgtype.Numeric     `json:"est_price"`
 	IDWoShell          pgtype.Int4        `json:"id_wo_shell"`
 	IDWoTrim           pgtype.Int4        `json:"id_wo_trim"`
+	Category           pgtype.Text        `json:"category"`
+	ConsPerPc          pgtype.Numeric     `json:"cons_per_pc"`
+	QtyWoScope         pgtype.Text        `json:"qty_wo_scope"`
+	IDQtyWoShell       pgtype.Int4        `json:"id_qty_wo_shell"`
+	IDQtyWoSize        pgtype.Int4        `json:"id_qty_wo_size"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 	QtySuratJalan      int32              `json:"qty_surat_jalan"`
 	QtyReceived        int32              `json:"qty_received"`
@@ -193,6 +237,11 @@ func (q *Queries) GetMaterialListItemDetail(ctx context.Context, idMaterialListI
 		&i.EstPrice,
 		&i.IDWoShell,
 		&i.IDWoTrim,
+		&i.Category,
+		&i.ConsPerPc,
+		&i.QtyWoScope,
+		&i.IDQtyWoShell,
+		&i.IDQtyWoSize,
 		&i.CreatedAt,
 		&i.QtySuratJalan,
 		&i.QtyReceived,
@@ -216,6 +265,11 @@ SELECT
     mli.est_price, 
     mli.id_wo_shell, 
     mli.id_wo_trim, 
+    mli.category,
+    mli.cons_per_pc,
+    mli.qty_wo_scope,
+    mli.id_qty_wo_shell,
+    mli.id_qty_wo_size,
     mli.created_at,
     COALESCE((SELECT SUM(sjc.qty) FROM SURAT_JALAN_CLIENT sjc WHERE sjc.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_surat_jalan,
     COALESCE((SELECT SUM(r.qty) FROM RECEIVED r WHERE r.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_received
@@ -234,6 +288,11 @@ type ListMaterialListItemsByMLRow struct {
 	EstPrice           pgtype.Numeric     `json:"est_price"`
 	IDWoShell          pgtype.Int4        `json:"id_wo_shell"`
 	IDWoTrim           pgtype.Int4        `json:"id_wo_trim"`
+	Category           pgtype.Text        `json:"category"`
+	ConsPerPc          pgtype.Numeric     `json:"cons_per_pc"`
+	QtyWoScope         pgtype.Text        `json:"qty_wo_scope"`
+	IDQtyWoShell       pgtype.Int4        `json:"id_qty_wo_shell"`
+	IDQtyWoSize        pgtype.Int4        `json:"id_qty_wo_size"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 	QtySuratJalan      int32              `json:"qty_surat_jalan"`
 	QtyReceived        int32              `json:"qty_received"`
@@ -258,6 +317,11 @@ func (q *Queries) ListMaterialListItemsByML(ctx context.Context, idMaterialList 
 			&i.EstPrice,
 			&i.IDWoShell,
 			&i.IDWoTrim,
+			&i.Category,
+			&i.ConsPerPc,
+			&i.QtyWoScope,
+			&i.IDQtyWoShell,
+			&i.IDQtyWoSize,
 			&i.CreatedAt,
 			&i.QtySuratJalan,
 			&i.QtyReceived,
@@ -435,6 +499,120 @@ func (q *Queries) LockMaterialList(ctx context.Context, idMaterialList int32) (L
 	return i, err
 }
 
+const materialListHasApplicabilityShell = `-- name: MaterialListHasApplicabilityShell :one
+SELECT EXISTS (
+    SELECT 1
+    FROM MATERIAL_LIST ml
+    JOIN WORK_ORDER_SHELL wos ON wos.id_wo = ml.id_wo
+    WHERE ml.id_material_list = $1
+      AND wos.id_wo_shell = $2
+) AS exists
+`
+
+type MaterialListHasApplicabilityShellParams struct {
+	IDMaterialList int32 `json:"id_material_list"`
+	IDQtyWoShell   int32 `json:"id_qty_wo_shell"`
+}
+
+func (q *Queries) MaterialListHasApplicabilityShell(ctx context.Context, arg MaterialListHasApplicabilityShellParams) (bool, error) {
+	row := q.db.QueryRow(ctx, materialListHasApplicabilityShell, arg.IDMaterialList, arg.IDQtyWoShell)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const materialListHasApplicabilityShellSize = `-- name: MaterialListHasApplicabilityShellSize :one
+SELECT EXISTS (
+    SELECT 1
+    FROM MATERIAL_LIST ml
+    JOIN WORK_ORDER_SHELL wos ON wos.id_wo = ml.id_wo
+    JOIN WORK_ORDER_SHELL_SIZE woss ON woss.id_wo_shell = wos.id_wo_shell
+    WHERE ml.id_material_list = $1
+      AND wos.id_wo_shell = $2
+      AND woss.id_size = $3
+) AS exists
+`
+
+type MaterialListHasApplicabilityShellSizeParams struct {
+	IDMaterialList int32 `json:"id_material_list"`
+	IDQtyWoShell   int32 `json:"id_qty_wo_shell"`
+	IDQtyWoSize    int32 `json:"id_qty_wo_size"`
+}
+
+func (q *Queries) MaterialListHasApplicabilityShellSize(ctx context.Context, arg MaterialListHasApplicabilityShellSizeParams) (bool, error) {
+	row := q.db.QueryRow(ctx, materialListHasApplicabilityShellSize, arg.IDMaterialList, arg.IDQtyWoShell, arg.IDQtyWoSize)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const materialListHasApplicabilitySize = `-- name: MaterialListHasApplicabilitySize :one
+SELECT EXISTS (
+    SELECT 1
+    FROM MATERIAL_LIST ml
+    JOIN WORK_ORDER_SHELL wos ON wos.id_wo = ml.id_wo
+    JOIN WORK_ORDER_SHELL_SIZE woss ON woss.id_wo_shell = wos.id_wo_shell
+    WHERE ml.id_material_list = $1
+      AND woss.id_size = $2
+) AS exists
+`
+
+type MaterialListHasApplicabilitySizeParams struct {
+	IDMaterialList int32 `json:"id_material_list"`
+	IDQtyWoSize    int32 `json:"id_qty_wo_size"`
+}
+
+func (q *Queries) MaterialListHasApplicabilitySize(ctx context.Context, arg MaterialListHasApplicabilitySizeParams) (bool, error) {
+	row := q.db.QueryRow(ctx, materialListHasApplicabilitySize, arg.IDMaterialList, arg.IDQtyWoSize)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const materialListHasSourceShell = `-- name: MaterialListHasSourceShell :one
+SELECT EXISTS (
+    SELECT 1
+    FROM MATERIAL_LIST ml
+    JOIN WORK_ORDER_SHELL wos ON wos.id_wo = ml.id_wo
+    WHERE ml.id_material_list = $1
+      AND wos.id_wo_shell = $2
+) AS exists
+`
+
+type MaterialListHasSourceShellParams struct {
+	IDMaterialList int32 `json:"id_material_list"`
+	IDWoShell      int32 `json:"id_wo_shell"`
+}
+
+func (q *Queries) MaterialListHasSourceShell(ctx context.Context, arg MaterialListHasSourceShellParams) (bool, error) {
+	row := q.db.QueryRow(ctx, materialListHasSourceShell, arg.IDMaterialList, arg.IDWoShell)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const materialListHasSourceTrim = `-- name: MaterialListHasSourceTrim :one
+SELECT EXISTS (
+    SELECT 1
+    FROM MATERIAL_LIST ml
+    JOIN WORK_ORDER_TRIM wot ON wot.id_wo = ml.id_wo
+    WHERE ml.id_material_list = $1
+      AND wot.id_wo_trim = $2
+) AS exists
+`
+
+type MaterialListHasSourceTrimParams struct {
+	IDMaterialList int32 `json:"id_material_list"`
+	IDWoTrim       int32 `json:"id_wo_trim"`
+}
+
+func (q *Queries) MaterialListHasSourceTrim(ctx context.Context, arg MaterialListHasSourceTrimParams) (bool, error) {
+	row := q.db.QueryRow(ctx, materialListHasSourceTrim, arg.IDMaterialList, arg.IDWoTrim)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const updateMaterialList = `-- name: UpdateMaterialList :one
 UPDATE MATERIAL_LIST
 SET name = $1
@@ -478,12 +656,17 @@ SET
     unit = $4,
     est_price = $5::numeric,
     id_wo_shell = $6,
-    id_wo_trim = $7
-WHERE id_material_list_item = $8
+    id_wo_trim = $7,
+    category = CASE WHEN $8::boolean THEN $9::text ELSE category END,
+    cons_per_pc = CASE WHEN $10::boolean THEN $11::numeric ELSE cons_per_pc END,
+    qty_wo_scope = CASE WHEN $12::boolean THEN $13::text ELSE qty_wo_scope END,
+    id_qty_wo_shell = CASE WHEN $14::boolean THEN $15::integer ELSE id_qty_wo_shell END,
+    id_qty_wo_size = CASE WHEN $16::boolean THEN $17::integer ELSE id_qty_wo_size END
+WHERE id_material_list_item = $18
   AND id_material_list IN (
       SELECT id_material_list FROM MATERIAL_LIST WHERE is_locked = FALSE
   )
-RETURNING id_material_list_item, id_material_list, item, description, qty, unit, est_price, id_wo_shell, id_wo_trim, created_at
+RETURNING id_material_list_item, id_material_list, item, description, qty, unit, est_price, id_wo_shell, id_wo_trim, category, cons_per_pc, qty_wo_scope, id_qty_wo_shell, id_qty_wo_size, created_at
 `
 
 type UpdateMaterialListItemParams struct {
@@ -494,6 +677,16 @@ type UpdateMaterialListItemParams struct {
 	EstPrice           pgtype.Numeric `json:"est_price"`
 	IDWoShell          pgtype.Int4    `json:"id_wo_shell"`
 	IDWoTrim           pgtype.Int4    `json:"id_wo_trim"`
+	SetCategory        bool           `json:"set_category"`
+	Category           pgtype.Text    `json:"category"`
+	SetConsPerPc       bool           `json:"set_cons_per_pc"`
+	ConsPerPc          pgtype.Numeric `json:"cons_per_pc"`
+	SetQtyWoScope      bool           `json:"set_qty_wo_scope"`
+	QtyWoScope         pgtype.Text    `json:"qty_wo_scope"`
+	SetIDQtyWoShell    bool           `json:"set_id_qty_wo_shell"`
+	IDQtyWoShell       pgtype.Int4    `json:"id_qty_wo_shell"`
+	SetIDQtyWoSize     bool           `json:"set_id_qty_wo_size"`
+	IDQtyWoSize        pgtype.Int4    `json:"id_qty_wo_size"`
 	IDMaterialListItem int32          `json:"id_material_list_item"`
 }
 
@@ -507,6 +700,11 @@ type UpdateMaterialListItemRow struct {
 	EstPrice           pgtype.Numeric     `json:"est_price"`
 	IDWoShell          pgtype.Int4        `json:"id_wo_shell"`
 	IDWoTrim           pgtype.Int4        `json:"id_wo_trim"`
+	Category           pgtype.Text        `json:"category"`
+	ConsPerPc          pgtype.Numeric     `json:"cons_per_pc"`
+	QtyWoScope         pgtype.Text        `json:"qty_wo_scope"`
+	IDQtyWoShell       pgtype.Int4        `json:"id_qty_wo_shell"`
+	IDQtyWoSize        pgtype.Int4        `json:"id_qty_wo_size"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 }
 
@@ -519,6 +717,16 @@ func (q *Queries) UpdateMaterialListItem(ctx context.Context, arg UpdateMaterial
 		arg.EstPrice,
 		arg.IDWoShell,
 		arg.IDWoTrim,
+		arg.SetCategory,
+		arg.Category,
+		arg.SetConsPerPc,
+		arg.ConsPerPc,
+		arg.SetQtyWoScope,
+		arg.QtyWoScope,
+		arg.SetIDQtyWoShell,
+		arg.IDQtyWoShell,
+		arg.SetIDQtyWoSize,
+		arg.IDQtyWoSize,
 		arg.IDMaterialListItem,
 	)
 	var i UpdateMaterialListItemRow
@@ -532,6 +740,11 @@ func (q *Queries) UpdateMaterialListItem(ctx context.Context, arg UpdateMaterial
 		&i.EstPrice,
 		&i.IDWoShell,
 		&i.IDWoTrim,
+		&i.Category,
+		&i.ConsPerPc,
+		&i.QtyWoScope,
+		&i.IDQtyWoShell,
+		&i.IDQtyWoSize,
 		&i.CreatedAt,
 	)
 	return i, err

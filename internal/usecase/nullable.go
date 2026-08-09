@@ -31,3 +31,10 @@ func nullableStringPtr(value pgtype.Text) *string {
 	v := value.String
 	return &v
 }
+
+func nullableTextParam(value *string) pgtype.Text {
+	if value == nil {
+		return pgtype.Text{Valid: false}
+	}
+	return pgtype.Text{String: *value, Valid: true}
+}

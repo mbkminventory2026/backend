@@ -73,7 +73,12 @@ INSERT INTO MATERIAL_LIST_ITEM (
     unit,
     est_price,
     id_wo_shell,
-    id_wo_trim
+    id_wo_trim,
+    category,
+    cons_per_pc,
+    qty_wo_scope,
+    id_qty_wo_shell,
+    id_qty_wo_size
 ) VALUES (
     $1,
     $2,
@@ -82,9 +87,14 @@ INSERT INTO MATERIAL_LIST_ITEM (
     $5,
     $6::numeric,
     $7,
-    $8
+    $8,
+    $9,
+    $10::numeric,
+    $11,
+    $12,
+    $13
 )
-RETURNING id_material_list_item, id_material_list, item, description, qty, unit, est_price, id_wo_shell, id_wo_trim, created_at
+RETURNING id_material_list_item, id_material_list, item, description, qty, unit, est_price, id_wo_shell, id_wo_trim, category, cons_per_pc, qty_wo_scope, id_qty_wo_shell, id_qty_wo_size, created_at
 `
 
 type CreateMaterialListItemParams struct {
@@ -96,6 +106,11 @@ type CreateMaterialListItemParams struct {
 	EstPrice       pgtype.Numeric `json:"est_price"`
 	IDWoShell      pgtype.Int4    `json:"id_wo_shell"`
 	IDWoTrim       pgtype.Int4    `json:"id_wo_trim"`
+	Category       pgtype.Text    `json:"category"`
+	ConsPerPc      pgtype.Numeric `json:"cons_per_pc"`
+	QtyWoScope     pgtype.Text    `json:"qty_wo_scope"`
+	IDQtyWoShell   pgtype.Int4    `json:"id_qty_wo_shell"`
+	IDQtyWoSize    pgtype.Int4    `json:"id_qty_wo_size"`
 }
 
 type CreateMaterialListItemRow struct {
@@ -108,6 +123,11 @@ type CreateMaterialListItemRow struct {
 	EstPrice           pgtype.Numeric     `json:"est_price"`
 	IDWoShell          pgtype.Int4        `json:"id_wo_shell"`
 	IDWoTrim           pgtype.Int4        `json:"id_wo_trim"`
+	Category           pgtype.Text        `json:"category"`
+	ConsPerPc          pgtype.Numeric     `json:"cons_per_pc"`
+	QtyWoScope         pgtype.Text        `json:"qty_wo_scope"`
+	IDQtyWoShell       pgtype.Int4        `json:"id_qty_wo_shell"`
+	IDQtyWoSize        pgtype.Int4        `json:"id_qty_wo_size"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 }
 
@@ -121,6 +141,11 @@ func (q *Queries) CreateMaterialListItem(ctx context.Context, arg CreateMaterial
 		arg.EstPrice,
 		arg.IDWoShell,
 		arg.IDWoTrim,
+		arg.Category,
+		arg.ConsPerPc,
+		arg.QtyWoScope,
+		arg.IDQtyWoShell,
+		arg.IDQtyWoSize,
 	)
 	var i CreateMaterialListItemRow
 	err := row.Scan(
@@ -133,6 +158,11 @@ func (q *Queries) CreateMaterialListItem(ctx context.Context, arg CreateMaterial
 		&i.EstPrice,
 		&i.IDWoShell,
 		&i.IDWoTrim,
+		&i.Category,
+		&i.ConsPerPc,
+		&i.QtyWoScope,
+		&i.IDQtyWoShell,
+		&i.IDQtyWoSize,
 		&i.CreatedAt,
 	)
 	return i, err

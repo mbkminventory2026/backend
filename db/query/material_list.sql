@@ -42,6 +42,11 @@ SELECT
     mli.est_price,
     mli.id_wo_shell,
     mli.id_wo_trim,
+    mli.category,
+    mli.cons_per_pc,
+    mli.qty_wo_scope,
+    mli.id_qty_wo_shell,
+    mli.id_qty_wo_size,
     mli.created_at,
     COALESCE((SELECT SUM(sjc.qty) FROM SURAT_JALAN_CLIENT sjc WHERE sjc.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_surat_jalan,
     COALESCE((SELECT SUM(r.qty) FROM RECEIVED r WHERE r.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_received,
@@ -95,6 +100,11 @@ SELECT
     mli.est_price, 
     mli.id_wo_shell, 
     mli.id_wo_trim, 
+    mli.category,
+    mli.cons_per_pc,
+    mli.qty_wo_scope,
+    mli.id_qty_wo_shell,
+    mli.id_qty_wo_size,
     mli.created_at,
     COALESCE((SELECT SUM(sjc.qty) FROM SURAT_JALAN_CLIENT sjc WHERE sjc.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_surat_jalan,
     COALESCE((SELECT SUM(r.qty) FROM RECEIVED r WHERE r.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_received
@@ -112,6 +122,11 @@ SELECT
     mli.est_price, 
     mli.id_wo_shell, 
     mli.id_wo_trim, 
+    mli.category,
+    mli.cons_per_pc,
+    mli.qty_wo_scope,
+    mli.id_qty_wo_shell,
+    mli.id_qty_wo_size,
     mli.created_at,
     COALESCE((SELECT SUM(sjc.qty) FROM SURAT_JALAN_CLIENT sjc WHERE sjc.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_surat_jalan,
     COALESCE((SELECT SUM(r.qty) FROM RECEIVED r WHERE r.id_material_list_item = mli.id_material_list_item), 0)::integer AS qty_received
@@ -128,12 +143,71 @@ SET
     unit = sqlc.arg(unit),
     est_price = sqlc.arg(est_price)::numeric,
     id_wo_shell = sqlc.narg(id_wo_shell),
-    id_wo_trim = sqlc.narg(id_wo_trim)
+    id_wo_trim = sqlc.narg(id_wo_trim),
+    category = CASE WHEN sqlc.arg(set_category)::boolean THEN sqlc.narg(category)::text ELSE category END,
+    cons_per_pc = CASE WHEN sqlc.arg(set_cons_per_pc)::boolean THEN sqlc.narg(cons_per_pc)::numeric ELSE cons_per_pc END,
+    qty_wo_scope = CASE WHEN sqlc.arg(set_qty_wo_scope)::boolean THEN sqlc.narg(qty_wo_scope)::text ELSE qty_wo_scope END,
+    id_qty_wo_shell = CASE WHEN sqlc.arg(set_id_qty_wo_shell)::boolean THEN sqlc.narg(id_qty_wo_shell)::integer ELSE id_qty_wo_shell END,
+    id_qty_wo_size = CASE WHEN sqlc.arg(set_id_qty_wo_size)::boolean THEN sqlc.narg(id_qty_wo_size)::integer ELSE id_qty_wo_size END
 WHERE id_material_list_item = sqlc.arg(id_material_list_item)
   AND id_material_list IN (
       SELECT id_material_list FROM MATERIAL_LIST WHERE is_locked = FALSE
   )
-RETURNING id_material_list_item, id_material_list, item, description, qty, unit, est_price, id_wo_shell, id_wo_trim, created_at;
+RETURNING id_material_list_item, id_material_list, item, description, qty, unit, est_price, id_wo_shell, id_wo_trim, category, cons_per_pc, qty_wo_scope, id_qty_wo_shell, id_qty_wo_size, created_at;
+
+-- name: GetMaterialListItemConsumptionPrefill :one
+SELECT COALESCE(
+    (SELECT cons FROM WORK_ORDER_TRIM WHERE id_wo_trim = sqlc.narg(id_wo_trim)),
+    (SELECT cons FROM WORK_ORDER_SHELL WHERE id_wo_shell = sqlc.narg(id_wo_shell))
+)::numeric AS cons_per_pc;
+
+-- name: MaterialListHasApplicabilityShell :one
+SELECT EXISTS (
+    SELECT 1
+    FROM MATERIAL_LIST ml
+    JOIN WORK_ORDER_SHELL wos ON wos.id_wo = ml.id_wo
+    WHERE ml.id_material_list = sqlc.arg(id_material_list)
+      AND wos.id_wo_shell = sqlc.arg(id_qty_wo_shell)
+) AS exists;
+
+-- name: MaterialListHasApplicabilitySize :one
+SELECT EXISTS (
+    SELECT 1
+    FROM MATERIAL_LIST ml
+    JOIN WORK_ORDER_SHELL wos ON wos.id_wo = ml.id_wo
+    JOIN WORK_ORDER_SHELL_SIZE woss ON woss.id_wo_shell = wos.id_wo_shell
+    WHERE ml.id_material_list = sqlc.arg(id_material_list)
+      AND woss.id_size = sqlc.arg(id_qty_wo_size)
+) AS exists;
+
+-- name: MaterialListHasApplicabilityShellSize :one
+SELECT EXISTS (
+    SELECT 1
+    FROM MATERIAL_LIST ml
+    JOIN WORK_ORDER_SHELL wos ON wos.id_wo = ml.id_wo
+    JOIN WORK_ORDER_SHELL_SIZE woss ON woss.id_wo_shell = wos.id_wo_shell
+    WHERE ml.id_material_list = sqlc.arg(id_material_list)
+      AND wos.id_wo_shell = sqlc.arg(id_qty_wo_shell)
+      AND woss.id_size = sqlc.arg(id_qty_wo_size)
+) AS exists;
+
+-- name: MaterialListHasSourceShell :one
+SELECT EXISTS (
+    SELECT 1
+    FROM MATERIAL_LIST ml
+    JOIN WORK_ORDER_SHELL wos ON wos.id_wo = ml.id_wo
+    WHERE ml.id_material_list = sqlc.arg(id_material_list)
+      AND wos.id_wo_shell = sqlc.arg(id_wo_shell)
+) AS exists;
+
+-- name: MaterialListHasSourceTrim :one
+SELECT EXISTS (
+    SELECT 1
+    FROM MATERIAL_LIST ml
+    JOIN WORK_ORDER_TRIM wot ON wot.id_wo = ml.id_wo
+    WHERE ml.id_material_list = sqlc.arg(id_material_list)
+      AND wot.id_wo_trim = sqlc.arg(id_wo_trim)
+) AS exists;
 
 -- name: DeleteMaterialListItem :exec
 DELETE FROM MATERIAL_LIST_ITEM

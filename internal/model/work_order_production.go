@@ -35,13 +35,18 @@ type CreateWorkOrderTrimRequest struct {
 }
 
 type CreateMaterialListItemRequest struct {
-	Item        string  `json:"item"`
-	Description string  `json:"description"`
-	Qty         int32   `json:"qty"`
-	Unit        string  `json:"unit" binding:"required"`
-	EstPrice    float64 `json:"est_price"`
-	ShellIndex  *int    `json:"shell_index,omitempty"` // 0-based index into shells array
-	TrimIndex   *int    `json:"trim_index,omitempty"`  // 0-based index into trims array
+	Item            string   `json:"item"`
+	Description     string   `json:"description"`
+	Qty             int32    `json:"qty"`
+	Unit            string   `json:"unit" binding:"required"`
+	EstPrice        float64  `json:"est_price"`
+	ShellIndex      *int     `json:"shell_index,omitempty"` // Material source: 0-based index into shells.
+	TrimIndex       *int     `json:"trim_index,omitempty"`  // Material source: 0-based index into trims.
+	Category        *string  `json:"category"`
+	ConsPerPC       *float64 `json:"cons_per_pc"`
+	QtyWoScope      *string  `json:"qty_wo_scope"`
+	QtyWoShellIndex *int     `json:"qty_wo_shell_index,omitempty"` // Applicability: 0-based index into shells.
+	IDQtyWoSize     *int32   `json:"id_qty_wo_size"`
 }
 
 type CreateWorkOrderRequest struct {
@@ -95,17 +100,22 @@ type WorkOrderTrimResponse struct {
 }
 
 type MaterialListItemResponse struct {
-	ID            int32   `json:"id_material_list_item"`
-	Item          string  `json:"item"`
-	Description   string  `json:"description"`
-	Qty           int32   `json:"qty"`
-	Unit          string  `json:"unit"`
-	EstPrice      float64 `json:"est_price"`
-	IDWoShell     *int32  `json:"id_wo_shell,omitempty"`
-	IDWoTrim      *int32  `json:"id_wo_trim,omitempty"`
-	CreatedAt     string  `json:"created_at"`
-	QtySuratJalan int32   `json:"qty_surat_jalan"`
-	QtyReceived   int32   `json:"qty_received"`
+	ID            int32    `json:"id_material_list_item"`
+	Item          string   `json:"item"`
+	Description   string   `json:"description"`
+	Qty           int32    `json:"qty"`
+	Unit          string   `json:"unit"`
+	EstPrice      float64  `json:"est_price"`
+	IDWoShell     *int32   `json:"id_wo_shell,omitempty"`
+	IDWoTrim      *int32   `json:"id_wo_trim,omitempty"`
+	Category      *string  `json:"category"`
+	ConsPerPC     *float64 `json:"cons_per_pc"`
+	QtyWoScope    *string  `json:"qty_wo_scope"`
+	IDQtyWoShell  *int32   `json:"id_qty_wo_shell"`
+	IDQtyWoSize   *int32   `json:"id_qty_wo_size"`
+	CreatedAt     string   `json:"created_at"`
+	QtySuratJalan int32    `json:"qty_surat_jalan"`
+	QtyReceived   int32    `json:"qty_received"`
 }
 
 type MaterialListResponse struct {
