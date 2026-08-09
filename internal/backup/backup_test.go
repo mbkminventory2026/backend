@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -282,11 +283,19 @@ func TestFinalizeIsAtomicAndDoesNotOverwrite(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	if err := os.Chmod(partialPackage, 0o644); err != nil {
+		t.Fatal(err)
+	}
 	if err := finalize(context.Background(), partialPackage, partialSidecar, finalPackage, finalSidecar, root); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(finalPackage); err != nil {
 		t.Fatal(err)
+	}
+	if runtime.GOOS != "windows" {
+		if mode := finalPackageMode(t, finalPackage); mode != 0o600 {
+			t.Fatalf("package mode=%#o want %#o", mode, os.FileMode(0o600))
+		}
 	}
 	if err := os.WriteFile(partialPackage, []byte("new"), 0o600); err != nil {
 		t.Fatal(err)
@@ -294,6 +303,18 @@ func TestFinalizeIsAtomicAndDoesNotOverwrite(t *testing.T) {
 	if err := finalize(context.Background(), partialPackage, partialSidecar, finalPackage, finalSidecar, root); !errors.Is(err, ErrFinalize) {
 		t.Fatalf("overwrote output: %v", err)
 	}
+}
+
+func TestFinalizePermissionFailureRollsBackCurrentPair(t *testing.T) {
+	root, partialPackage, partialSidecar, finalPackage, finalSidecar := finalizationFiles(t)
+	originalChmod := chmodFile
+	defer func() { chmodFile = originalChmod }()
+	chmodFile = func(string, os.FileMode) error { return errors.New("injected permission failure") }
+	err := finalize(context.Background(), partialPackage, partialSidecar, finalPackage, finalSidecar, root)
+	if !errors.Is(err, ErrFinalize) || ExitCode(err) != 6 {
+		t.Fatalf("permission failure not classified as finalization: %v", err)
+	}
+	assertNoFinalPair(t, finalPackage, finalSidecar)
 }
 
 func writeValidPair(t *testing.T, destination, stamp string) {
@@ -419,8 +440,14 @@ func TestSuccessfulJobFinalizesVerifiedEncryptedPair(t *testing.T) {
 		t.Fatal(err)
 	}
 	name := "permatatex-backup-20260803T010203Z.tar.gz.gpg"
-	if _, err := os.Stat(filepath.Join(cfg.Destination, name)); err != nil {
+	packagePath := filepath.Join(cfg.Destination, name)
+	if _, err := os.Stat(packagePath); err != nil {
 		t.Fatal(err)
+	}
+	if runtime.GOOS != "windows" {
+		if mode := finalPackageMode(t, packagePath); mode != 0o600 {
+			t.Fatalf("package mode=%#o want %#o", mode, os.FileMode(0o600))
+		}
 	}
 	if _, err := os.Stat(filepath.Join(cfg.Destination, name+".sha256")); err != nil {
 		t.Fatal(err)
@@ -860,4 +887,13 @@ func assertNoFinalPair(t *testing.T, finalPackage, finalSidecar string) {
 			t.Fatalf("completed artifact remains")
 		}
 	}
+}
+
+func finalPackageMode(t *testing.T, path string) os.FileMode {
+	t.Helper()
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return info.Mode().Perm()
 }

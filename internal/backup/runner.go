@@ -24,6 +24,7 @@ const lockName = ".permatatex-backup.lock"
 
 var (
 	renameFile       = os.Rename
+	chmodFile        = os.Chmod
 	removeAllPath    = os.RemoveAll
 	syncDirectoryRun = syncDirectory
 )
@@ -437,6 +438,9 @@ func finalize(ctx context.Context, partialPackage, partialSidecar, finalPackage,
 	}
 	if err := renameFile(partialPackage, finalPackage); err != nil {
 		return fmt.Errorf("%w: package rename", ErrFinalize)
+	}
+	if err := chmodFile(finalPackage, 0o600); err != nil {
+		return errors.Join(fmt.Errorf("%w: package permissions", ErrFinalize), rollbackCurrentPair(destination, finalPackage, finalSidecar))
 	}
 	if err := ctx.Err(); err != nil {
 		return cancellationRollback(err, destination, finalPackage, finalSidecar)
