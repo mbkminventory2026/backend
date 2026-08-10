@@ -51,6 +51,9 @@ func TestMaterialListExportCompositionPreservesBusinessData(t *testing.T) {
 	if got.DetailQty.Shells[1].Values[1].Order != nil {
 		t.Fatal("missing shell-size must remain blank")
 	}
+	if got.DetailQty.Sizes[0].Ratio == nil || *got.DetailQty.Sizes[0].Ratio != 1 || got.DetailQty.Sizes[1].Ratio == nil || *got.DetailQty.Sizes[1].Ratio != 1 {
+		t.Fatalf("persisted shell-size ratios = %+v", got.DetailQty.Sizes)
+	}
 	if *got.DetailQty.Summaries[0].OrderTotal != 50 || *got.DetailQty.Shells[0].Values[1].ActualCut != 0 {
 		t.Fatalf("detail totals/actual zero = %+v", got.DetailQty)
 	}
@@ -83,8 +86,11 @@ func TestMaterialListExportCompositionPreservesBusinessData(t *testing.T) {
 }
 
 func TestMaterialListExportMarkerPlanConflictsAndFallback(t *testing.T) {
-	shells, _, _ := materialListExportShells([]entity.ListMaterialListExportShellSizesRow{shellSize(10, "A", 101, 1, "S", 1)})
-	_, err := materialListExportPlans(shells, []entity.ListMaterialListExportMarkerPlansRow{{IDMarkerPlan: 1, IDWoShell: 10}, {IDMarkerPlan: 2, IDWoShell: 10}}, nil)
+	shells, _, _, err := materialListExportShells([]entity.ListMaterialListExportShellSizesRow{shellSize(10, "A", 101, 1, "S", 1)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = materialListExportPlans(shells, []entity.ListMaterialListExportMarkerPlansRow{{IDMarkerPlan: 1, IDWoShell: 10}, {IDMarkerPlan: 2, IDWoShell: 10}}, nil)
 	if !errors.Is(err, ErrMaterialListExportMarkerPlanConflict) {
 		t.Fatalf("multi parent error = %v", err)
 	}
@@ -102,11 +108,28 @@ func TestMaterialListExportMarkerPlanConflictsAndFallback(t *testing.T) {
 	}
 }
 
+func TestMaterialListExportShellSizeRatioConflictAndUnavailable(t *testing.T) {
+	first := shellSize(10, "A", 101, 1, "S", 1)
+	second := shellSize(11, "B", 102, 1, "S", 1)
+	second.ShellSizeRatio = pgtype.Int4{Int32: 2, Valid: true}
+	if _, _, _, err := materialListExportShells([]entity.ListMaterialListExportShellSizesRow{first, second}); !errors.Is(err, ErrMaterialListExportDataConflict) {
+		t.Fatalf("ratio conflict error = %v", err)
+	}
+	first.ShellSizeRatio = pgtype.Int4{}
+	_, sizes, _, err := materialListExportShells([]entity.ListMaterialListExportShellSizesRow{first})
+	if err != nil || sizes[1].Ratio != nil {
+		t.Fatalf("unavailable ratio = %+v, err=%v", sizes[1].Ratio, err)
+	}
+}
+
 func TestMaterialListExportScopeUsesApplicabilityNotSource(t *testing.T) {
-	shells, _, _ := materialListExportShells([]entity.ListMaterialListExportShellSizesRow{
+	shells, _, _, err := materialListExportShells([]entity.ListMaterialListExportShellSizesRow{
 		shellSize(10, "Source", 101, 1, "S", 5),
 		shellSize(11, "Applicable", 102, 1, "S", 7),
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	row := materialListExportRow(
 		item(1, qtyWoScopeColor, 11, 0, "2", 10, 0, 15),
 		shells,
@@ -191,7 +214,7 @@ func TestMaterialListExportUsesFixedBatchedReads(t *testing.T) {
 }
 
 func shellSize(shell int32, color string, shellSizeID, sizeID int32, name string, qty int32) entity.ListMaterialListExportShellSizesRow {
-	return entity.ListMaterialListExportShellSizesRow{IDWoShell: shell, Color: color, IDWoShellSize: pgtype.Int4{Int32: shellSizeID, Valid: true}, IDSize: pgtype.Int4{Int32: sizeID, Valid: true}, NamaSize: pgtype.Text{String: name, Valid: true}, OrderQty: pgtype.Int4{Int32: qty, Valid: true}}
+	return entity.ListMaterialListExportShellSizesRow{IDWoShell: shell, Color: color, IDWoShellSize: pgtype.Int4{Int32: shellSizeID, Valid: true}, IDSize: pgtype.Int4{Int32: sizeID, Valid: true}, NamaSize: pgtype.Text{String: name, Valid: true}, OrderQty: pgtype.Int4{Int32: qty, Valid: true}, ShellSizeRatio: pgtype.Int4{Int32: 1, Valid: true}}
 }
 func ratio(plan, shell, shellSizeID, sizeID, ratioPlan int32, spread float64) entity.ListMaterialListExportMarkerRatiosRow {
 	return entity.ListMaterialListExportMarkerRatiosRow{IDMarkerPlan: plan, MarkerPlanShellID: shell, RatioShellID: shell, IDWoShellSize: shellSizeID, RatioPlan: ratioPlan, RatioSizeShellID: shell, IDSize: sizeID, PlanSpreadingGelaran: exportNumeric(spread)}

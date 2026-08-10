@@ -52,7 +52,8 @@ SELECT
     woss.id_wo_shell_size,
     woss.id_size,
     ms.nama_size,
-    woss.qty AS order_qty
+    woss.qty AS order_qty,
+    woss.ratio AS shell_size_ratio
 FROM work_order_shell wos
 LEFT JOIN work_order_shell_size woss ON woss.id_wo_shell = wos.id_wo_shell
 LEFT JOIN master_size ms ON ms.id_size = woss.id_size

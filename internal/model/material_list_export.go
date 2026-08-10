@@ -31,8 +31,9 @@ type MaterialListExportDetailQty struct {
 }
 
 type MaterialListExportSize struct {
-	ID   int32
-	Name string
+	ID    int32
+	Name  string
+	Ratio *int32
 }
 
 // Values are aligned to DetailQty.Sizes. A nil value keeps a genuinely absent

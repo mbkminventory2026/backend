@@ -120,7 +120,10 @@ type exportPlan struct {
 }
 
 func composeMaterialListExport(s materialListExportSnapshot) (*model.MaterialListExport, error) {
-	shells, sizes, sizeOrder := materialListExportShells(s.shellSizes)
+	shells, sizes, sizeOrder, err := materialListExportShells(s.shellSizes)
+	if err != nil {
+		return nil, err
+	}
 	planByShellSize, err := materialListExportPlans(shells, s.plans, s.ratios)
 	if err != nil {
 		return nil, err
@@ -145,9 +148,13 @@ func composeMaterialListExport(s materialListExportSnapshot) (*model.MaterialLis
 	return export, nil
 }
 
-func materialListExportShells(rows []entity.ListMaterialListExportShellSizesRow) (map[int32]exportShell, map[int32]model.MaterialListExportSize, []int32) {
+func materialListExportShells(rows []entity.ListMaterialListExportShellSizesRow) (map[int32]exportShell, map[int32]model.MaterialListExportSize, []int32, error) {
 	shells := map[int32]exportShell{}
 	sizes := map[int32]model.MaterialListExportSize{}
+	ratioState := map[int32]struct {
+		value                  int32
+		available, unavailable bool
+	}{}
 	var order []int32
 	for _, row := range rows {
 		shell := shells[row.IDWoShell]
@@ -160,13 +167,31 @@ func materialListExportShells(rows []entity.ListMaterialListExportShellSizesRow)
 		}
 		shell.sizes[row.IDSize.Int32] = exportShellSize{id: row.IDWoShellSize.Int32, sizeID: row.IDSize.Int32, name: row.NamaSize.String, order: int64(row.OrderQty.Int32)}
 		shells[row.IDWoShell] = shell
+		state := ratioState[row.IDSize.Int32]
+		if row.ShellSizeRatio.Valid {
+			if state.available && state.value != row.ShellSizeRatio.Int32 {
+				return nil, nil, nil, fmt.Errorf("%w: conflicting work order shell size ratio for size %d", ErrMaterialListExportDataConflict, row.IDSize.Int32)
+			}
+			state.value, state.available = row.ShellSizeRatio.Int32, true
+		} else {
+			state.unavailable = true
+		}
+		ratioState[row.IDSize.Int32] = state
 		if _, ok := sizes[row.IDSize.Int32]; !ok {
 			sizes[row.IDSize.Int32] = model.MaterialListExportSize{ID: row.IDSize.Int32, Name: row.NamaSize.String}
 			order = append(order, row.IDSize.Int32)
 		}
 	}
+	for id, state := range ratioState {
+		if state.available && !state.unavailable {
+			value := state.value
+			size := sizes[id]
+			size.Ratio = &value
+			sizes[id] = size
+		}
+	}
 	sort.Slice(order, func(i, j int) bool { return sizes[order[i]].Name < sizes[order[j]].Name })
-	return shells, sizes, order
+	return shells, sizes, order, nil
 }
 
 func materialListExportPlans(shells map[int32]exportShell, parents []entity.ListMaterialListExportMarkerPlansRow, rows []entity.ListMaterialListExportMarkerRatiosRow) (map[int32]exportPlan, error) {
