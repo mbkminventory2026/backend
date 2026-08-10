@@ -142,7 +142,28 @@ func (u *MaterialListUseCase) Delete(ctx context.Context, id int32) error {
 }
 
 func (u *MaterialListUseCase) CreateItem(ctx context.Context, idML int32, req model.CreateMaterialListItemBody) (*model.MaterialListItemResponse, error) {
-	ml, err := u.repo.GetMaterialList(ctx, idML)
+	return createMaterialListItem(ctx, u.repo, idML, req)
+}
+
+// materialListItemCreateRepository is deliberately the narrow create surface
+// shared by the ordinary CRUD path and the transactional XLSX importer.
+type materialListItemCreateRepository interface {
+	GetMaterialList(context.Context, int32) (entity.GetMaterialListRow, error)
+	CreateMaterialListItem(context.Context, entity.CreateMaterialListItemParams) (entity.CreateMaterialListItemRow, error)
+	materialListApplicabilityRepository
+	materialListSourceRepository
+	materialListConsumptionPrefillRepository
+}
+
+func createMaterialListItem(ctx context.Context, repo materialListItemCreateRepository, idML int32, req model.CreateMaterialListItemBody) (*model.MaterialListItemResponse, error) {
+	return createMaterialListItemWithNumeric(ctx, repo, idML, req, mustNumeric(req.EstPrice), nil)
+}
+
+// createMaterialListItemWithNumeric retains the ordinary CreateItem validation,
+// source/applicability checks, and prefill behavior while permitting import to
+// preserve DECIMAL input without routing it through float64.
+func createMaterialListItemWithNumeric(ctx context.Context, repo materialListItemCreateRepository, idML int32, req model.CreateMaterialListItemBody, estPrice pgtype.Numeric, explicitCons *pgtype.Numeric) (*model.MaterialListItemResponse, error) {
+	ml, err := repo.GetMaterialList(ctx, idML)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrMaterialListNotFound
@@ -152,7 +173,7 @@ func (u *MaterialListUseCase) CreateItem(ctx context.Context, idML int32, req mo
 	if ml.IsLocked {
 		return nil, ErrMaterialListLocked
 	}
-	if err := validateMaterialListItemApplicability(ctx, u.repo, idML, materialListItemApplicability{
+	if err := validateMaterialListItemApplicability(ctx, repo, idML, materialListItemApplicability{
 		Category:     req.Category,
 		QtyWoScope:   req.QtyWoScope,
 		IDQtyWoShell: req.IDQtyWoShell,
@@ -162,21 +183,27 @@ func (u *MaterialListUseCase) CreateItem(ctx context.Context, idML int32, req mo
 	}
 	idWoShell := nullableInt32Param(req.IDWoShell)
 	idWoTrim := nullableInt32Param(req.IDWoTrim)
-	if err := validateMaterialListItemSources(ctx, u.repo, idML, idWoShell, idWoTrim); err != nil {
+	if err := validateMaterialListItemSources(ctx, repo, idML, idWoShell, idWoTrim); err != nil {
 		return nil, err
 	}
-	consPerPC, err := materialListConsPerPCForCreate(ctx, u.repo, req.ConsPerPC, idWoShell, idWoTrim)
-	if err != nil {
-		return nil, err
+	var consPerPC pgtype.Numeric
+	if explicitCons != nil {
+		consPerPC = *explicitCons
+	} else {
+		var err error
+		consPerPC, err = materialListConsPerPCForCreate(ctx, repo, req.ConsPerPC, idWoShell, idWoTrim)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	mli, err := u.repo.CreateMaterialListItem(ctx, entity.CreateMaterialListItemParams{
+	mli, err := repo.CreateMaterialListItem(ctx, entity.CreateMaterialListItemParams{
 		IDMaterialList: idML,
 		Item:           req.Item,
 		Description:    req.Description,
 		Qty:            req.Qty,
 		Unit:           req.Unit,
-		EstPrice:       mustNumeric(req.EstPrice),
+		EstPrice:       estPrice,
 		IDWoShell:      idWoShell,
 		IDWoTrim:       idWoTrim,
 		Category:       nullableTextParam(req.Category),

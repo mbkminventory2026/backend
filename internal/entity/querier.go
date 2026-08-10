@@ -151,6 +151,7 @@ type Querier interface {
 	// Dedicated, batched reads for the Material List export composition.  These
 	// queries deliberately expose source and applicability separately.
 	GetMaterialListExportHeader(ctx context.Context, idMaterialList int32) (GetMaterialListExportHeaderRow, error)
+	GetMaterialListForUpdate(ctx context.Context, idMaterialList int32) (GetMaterialListForUpdateRow, error)
 	GetMaterialListItem(ctx context.Context, idMaterialListItem int32) (GetMaterialListItemRow, error)
 	GetMaterialListItemConsumptionPrefill(ctx context.Context, arg GetMaterialListItemConsumptionPrefillParams) (pgtype.Numeric, error)
 	GetMaterialListItemDetail(ctx context.Context, idMaterialListItem int32) (GetMaterialListItemDetailRow, error)

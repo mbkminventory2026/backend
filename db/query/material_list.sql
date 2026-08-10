@@ -65,6 +65,12 @@ SELECT id_material_list, id_wo, name, is_locked, created_at
 FROM MATERIAL_LIST
 WHERE id_material_list = sqlc.arg(id_material_list);
 
+-- name: GetMaterialListForUpdate :one
+SELECT id_material_list, id_wo, name, is_locked, created_at
+FROM MATERIAL_LIST
+WHERE id_material_list = sqlc.arg(id_material_list)
+FOR UPDATE;
+
 -- name: ListUnlockedMaterialListsByWO :many
 SELECT id_material_list, id_wo, name, is_locked, created_at
 FROM MATERIAL_LIST

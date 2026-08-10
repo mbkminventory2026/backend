@@ -82,6 +82,34 @@ func (q *Queries) GetMaterialList(ctx context.Context, idMaterialList int32) (Ge
 	return i, err
 }
 
+const getMaterialListForUpdate = `-- name: GetMaterialListForUpdate :one
+SELECT id_material_list, id_wo, name, is_locked, created_at
+FROM MATERIAL_LIST
+WHERE id_material_list = $1
+FOR UPDATE
+`
+
+type GetMaterialListForUpdateRow struct {
+	IDMaterialList int32              `json:"id_material_list"`
+	IDWo           int32              `json:"id_wo"`
+	Name           string             `json:"name"`
+	IsLocked       bool               `json:"is_locked"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) GetMaterialListForUpdate(ctx context.Context, idMaterialList int32) (GetMaterialListForUpdateRow, error) {
+	row := q.db.QueryRow(ctx, getMaterialListForUpdate, idMaterialList)
+	var i GetMaterialListForUpdateRow
+	err := row.Scan(
+		&i.IDMaterialList,
+		&i.IDWo,
+		&i.Name,
+		&i.IsLocked,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getMaterialListItem = `-- name: GetMaterialListItem :one
 SELECT 
     mli.id_material_list_item, 
