@@ -1,8 +1,11 @@
 package httpdelivery
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -12,14 +15,22 @@ import (
 )
 
 type MaterialListHandler struct {
-	useCase *usecase.MaterialListUseCase
+	useCase            *usecase.MaterialListUseCase
+	excelExportUseCase materialListExcelExporter
 }
 
-func NewMaterialListHandler(useCase *usecase.MaterialListUseCase) (*MaterialListHandler, error) {
+type materialListExcelExporter interface {
+	ExportByID(context.Context, int32) (*model.ExportedFile, error)
+}
+
+func NewMaterialListHandler(useCase *usecase.MaterialListUseCase, excelExportUseCase materialListExcelExporter) (*MaterialListHandler, error) {
 	if useCase == nil {
 		return nil, errors.New("material list usecase is required")
 	}
-	return &MaterialListHandler{useCase: useCase}, nil
+	if excelExportUseCase == nil {
+		return nil, errors.New("material list excel export usecase is required")
+	}
+	return &MaterialListHandler{useCase: useCase, excelExportUseCase: excelExportUseCase}, nil
 }
 
 func (h *MaterialListHandler) RegisterRoutes(router gin.IRouter, authMiddleware gin.HandlerFunc) {
@@ -31,6 +42,7 @@ func (h *MaterialListHandler) RegisterRoutes(router gin.IRouter, authMiddleware 
 	v1.POST("/work-orders/:id/material-lists", internalOnly, RequirePermission(PermissionMaterialListUpdate), h.Create)
 
 	v1.GET("/material-lists/:id", RequirePermission(PermissionMaterialListRead), h.Get)
+	v1.GET("/material-lists/:id/export/excel", internalOnly, RequirePermission(PermissionMaterialListRead), h.ExportExcel)
 	v1.PATCH("/material-lists/:id", internalOnly, RequirePermission(PermissionMaterialListUpdate), h.Update)
 	v1.DELETE("/material-lists/:id", internalOnly, RequirePermission(PermissionMaterialListUpdate), h.Delete)
 
@@ -38,6 +50,37 @@ func (h *MaterialListHandler) RegisterRoutes(router gin.IRouter, authMiddleware 
 	v1.GET("/material-list-items/:id", RequirePermission(PermissionMaterialListRead), h.GetItem)
 	v1.PATCH("/material-list-items/:id", internalOnly, RequirePermission(PermissionMaterialListUpdate), h.UpdateItem)
 	v1.DELETE("/material-list-items/:id", internalOnly, RequirePermission(PermissionMaterialListUpdate), h.DeleteItem)
+}
+
+// ExportExcel godoc
+// @Summary      Export Material List Excel
+// @Description  Generates a downloadable Excel workbook for one material list.
+// @Tags         Material List
+// @Produce      application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Material List ID"
+// @Success      200  {file}    binary
+// @Failure      400  {object}  model.WorkOrderErrorDoc
+// @Failure      403  {object}  model.WorkOrderErrorDoc
+// @Failure      404  {object}  model.WorkOrderErrorDoc
+// @Failure      409  {object}  model.WorkOrderErrorDoc
+// @Failure      500  {object}  model.WorkOrderErrorDoc
+// @Router       /api/v1/material-lists/{id}/export/excel [get]
+func (h *MaterialListHandler) ExportExcel(c *gin.Context) {
+	id, err := parsePathInt32(c, "id")
+	if err != nil {
+		AbortWithError(c, NewHTTPError(http.StatusBadRequest, "invalid material list id", nil))
+		return
+	}
+
+	exportedFile, err := h.excelExportUseCase.ExportByID(c.Request.Context(), id)
+	if err != nil {
+		h.handleExportError(c, err)
+		return
+	}
+
+	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, sanitizeMaterialListAttachmentFileName(exportedFile.FileName)))
+	c.Data(http.StatusOK, exportedFile.ContentType, exportedFile.Content)
 }
 
 func (h *MaterialListHandler) Create(c *gin.Context) {
@@ -211,4 +254,25 @@ func (h *MaterialListHandler) handleError(c *gin.Context, err error) {
 	default:
 		AbortWithError(c, NewHTTPError(http.StatusInternalServerError, err.Error(), nil))
 	}
+}
+
+func (h *MaterialListHandler) handleExportError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, usecase.ErrMaterialListNotFound):
+		AbortWithError(c, NewHTTPError(http.StatusNotFound, err.Error(), model.WorkOrderErrorDetail{Code: "material_list_not_found"}))
+	case errors.Is(err, usecase.ErrMaterialListExportMarkerPlanConflict):
+		AbortWithError(c, NewHTTPError(http.StatusConflict, "material list export conflict", model.WorkOrderErrorDetail{Code: "marker_plan_conflict"}))
+	case errors.Is(err, usecase.ErrMaterialListExportDataConflict):
+		AbortWithError(c, NewHTTPError(http.StatusConflict, "material list export conflict", model.WorkOrderErrorDetail{Code: "material_list_export_data_conflict"}))
+	default:
+		AbortWithError(c, NewHTTPError(http.StatusInternalServerError, "failed to export material list", model.WorkOrderErrorDetail{Code: "material_list_export_failed"}))
+	}
+}
+
+func sanitizeMaterialListAttachmentFileName(fileName string) string {
+	name := strings.TrimSpace(fileName)
+	if name == "" {
+		return "MATERIAL_LIST.xlsx"
+	}
+	return strings.NewReplacer(`"`, "", "\r", "", "\n", "").Replace(name)
 }

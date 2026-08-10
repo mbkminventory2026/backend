@@ -256,6 +256,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	materialListExportUseCase, err := usecase.NewMaterialListExportUseCase(queries)
+	if err != nil {
+		logger.Error("failed to initialize material list export usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
+	materialListExcelExportUseCase, err := usecase.NewMaterialListExcelExportUseCase(excelRenderer, materialListExportUseCase, profilPerusahaanUseCase)
+	if err != nil {
+		logger.Error("failed to initialize material list excel export usecase", slog.String("error", err.Error()))
+		dbPool.Close()
+		os.Exit(1)
+	}
+
 	poInternalExcelExportUseCase, err := usecase.NewPOInternalExcelExportUseCase(excelRenderer, transactionDocumentUseCase, profilPerusahaanUseCase)
 	if err != nil {
 		logger.Error("failed to initialize po internal excel export usecase", slog.String("error", err.Error()))
@@ -345,7 +359,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	materialListHandler, err := httpdelivery.NewMaterialListHandler(materialListUseCase)
+	materialListHandler, err := httpdelivery.NewMaterialListHandler(materialListUseCase, materialListExcelExportUseCase)
 	if err != nil {
 		logger.Error("failed to initialize material list handler", slog.String("error", err.Error()))
 		dbPool.Close()
