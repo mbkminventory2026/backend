@@ -6693,6 +6693,136 @@ paths:
       summary: Update Color
       tags:
       - Master Data
+  /api/v1/material-lists/{id}/export/excel:
+    get:
+      description: Generates a downloadable Excel workbook for one material list.
+      parameters:
+      - description: Material List ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Export Material List Excel
+      tags:
+      - Material List
+  /api/v1/material-lists/{id}/import/excel:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Validates and imports an XLSX workbook atomically.
+      parameters:
+      - description: Material List ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: XLSX import workbook
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Import Material List XLSX
+      tags:
+      - Material List
+  /api/v1/material-lists/{id}/import/excel/template:
+    get:
+      description: Generates an XLSX import template for one unlocked material list.
+      parameters:
+      - description: Material List ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.WorkOrderErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: Download Material List import template
+      tags:
+      - Material List
   /api/v1/packing-lists:
     get:
       description: Returns a paginated list of packing list headers.
