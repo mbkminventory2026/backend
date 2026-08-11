@@ -94,7 +94,9 @@ func TestMaterialListExportMarkerPlanConflictsAndFallback(t *testing.T) {
 	if !errors.Is(err, ErrMaterialListExportMarkerPlanConflict) {
 		t.Fatalf("multi parent error = %v", err)
 	}
-	_, err = materialListExportPlans(shells, []entity.ListMaterialListExportMarkerPlansRow{{IDMarkerPlan: 1, IDWoShell: 10}}, []entity.ListMaterialListExportMarkerRatiosRow{ratio(1, 11, 101, 1, 1, 1)})
+	mismatchedRatioSize := ratio(1, 10, 101, 1, 1, 1)
+	mismatchedRatioSize.RatioSizeShellID = 11
+	_, err = materialListExportPlans(shells, []entity.ListMaterialListExportMarkerPlansRow{{IDMarkerPlan: 1, IDWoShell: 10}}, []entity.ListMaterialListExportMarkerRatiosRow{mismatchedRatioSize})
 	if !errors.Is(err, ErrMaterialListExportDataConflict) {
 		t.Fatalf("mismatch error = %v", err)
 	}
@@ -105,6 +107,66 @@ func TestMaterialListExportMarkerPlanConflictsAndFallback(t *testing.T) {
 	qty, source = materialListExportCutting([]exportShellSize{{id: 101}}, map[int32]exportPlan{101: {known: true, qty: 7}}, map[int32]int64{101: 0})
 	if source != model.MaterialListCuttingActual || *qty != 0 {
 		t.Fatalf("actual zero = %v %v", source, qty)
+	}
+}
+
+func TestMaterialListExportCompositionAcceptsImportedScopesWithCrossShellMarkerComponents(t *testing.T) {
+	categoryFabric, categorySewing, categoryPacking := "FABRIC", "SEWING", "PACKING"
+	items := []entity.ListMaterialListExportItemsRow{
+		item(16, qtyWoScopeWholeWO, 0, 0, "0.350", 1, 0, 3),
+		item(17, qtyWoScopeSize, 0, 4, "0.000", 0, 1, 4),
+		item(18, qtyWoScopeColor, 2, 0, "1.000", 0, 0, 0),
+		item(19, qtyWoScopeColorSize, 2, 4, "0.500", 1, 0, 3),
+	}
+	items[0].Item, items[0].Category = "E2E-IMP-A-BLANK-CONS", pgtype.Text{String: categoryFabric, Valid: true}
+	items[1].Item, items[1].Category = "E2E-IMP-B-ZERO-CONS", pgtype.Text{String: categorySewing, Valid: true}
+	items[2].Item, items[2].Category = "E2E-IMP-C-COLOR", pgtype.Text{String: categoryPacking, Valid: true}
+	items[3].Item, items[3].Category = "E2E-IMP-D-COLOR-SIZE", pgtype.Text{String: categoryFabric, Valid: true}
+
+	interliningRatio := ratio(2, 3, 9, 4, 5, 50)
+	interliningRatio.MarkerPlanShellID = 1
+	composed, err := composeMaterialListExport(materialListExportSnapshot{
+		header: entity.GetMaterialListExportHeaderRow{
+			IDMaterialList: 1, MaterialListName: "Imported E2E", IDWo: 1,
+			Buyer: "Buyer", Model: "Model", Style: "Style", WoQty: 1000,
+			Delivery: pgtype.Date{Time: time.Date(2026, 8, 11, 0, 0, 0, 0, time.UTC), Valid: true},
+		},
+		items: items,
+		shellSizes: []entity.ListMaterialListExportShellSizesRow{
+			shellSize(1, "NAVY", 7, 4, "M", 250),
+			shellSize(2, "MAROON", 8, 4, "M", 250),
+			shellSize(3, "WHITE", 9, 4, "M", 250),
+		},
+		plans: []entity.ListMaterialListExportMarkerPlansRow{{IDMarkerPlan: 2, IDWoShell: 1}},
+		ratios: []entity.ListMaterialListExportMarkerRatiosRow{
+			ratio(2, 1, 7, 4, 3, 50),
+			interliningRatio,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(composed.MaterialRows) != 4 {
+		t.Fatalf("material rows = %d, want 4", len(composed.MaterialRows))
+	}
+	if got := composed.MaterialRows[0]; got.ConsPerPC == nil || *got.ConsPerPC != 0.35 || got.QtyWO == nil || *got.QtyWO != 1000 {
+		t.Fatalf("WHOLE_WO scope with prefilled consumption = %+v", got)
+	}
+	if got := composed.MaterialRows[1]; got.QtyWO == nil || *got.QtyWO != 750 || got.Total == nil || *got.Total != 0 {
+		t.Fatalf("SIZE scope with explicit zero consumption = %+v", got)
+	}
+	if got := composed.MaterialRows[2]; got.QtyWO == nil || *got.QtyWO != 250 || got.Applicability.ShellID == nil || *got.Applicability.ShellID != 2 {
+		t.Fatalf("COLOR scope = %+v", got)
+	}
+	if got := composed.MaterialRows[3]; got.QtyWO == nil || *got.QtyWO != 250 || got.Source.ShellID == nil || *got.Source.ShellID != 1 || got.Applicability.ShellID == nil || *got.Applicability.ShellID != 2 || got.Applicability.SizeID == nil || *got.Applicability.SizeID != 4 {
+		t.Fatalf("COLOR_SIZE source/applicability = %+v", got)
+	}
+	file, err := renderMaterialListExcel(materialListTestRenderer(t), composed, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(file.Content) == 0 {
+		t.Fatal("rendered export is empty")
 	}
 }
 

@@ -197,6 +197,9 @@ func materialListExportShells(rows []entity.ListMaterialListExportShellSizesRow)
 func materialListExportPlans(shells map[int32]exportShell, parents []entity.ListMaterialListExportMarkerPlansRow, rows []entity.ListMaterialListExportMarkerRatiosRow) (map[int32]exportPlan, error) {
 	parentsByShell := map[int32][]int32{}
 	for _, parent := range parents {
+		if _, found := shells[parent.IDWoShell]; !found {
+			return nil, fmt.Errorf("%w: marker plan shell is outside work order", ErrMaterialListExportDataConflict)
+		}
 		parentsByShell[parent.IDWoShell] = append(parentsByShell[parent.IDWoShell], parent.IDMarkerPlan)
 	}
 	for shellID, parentIDs := range parentsByShell {
@@ -212,17 +215,20 @@ func materialListExportPlans(shells map[int32]exportShell, parents []entity.List
 		}
 	}
 	for _, row := range rows {
-		expectedShell, found := parentShell[row.IDMarkerPlan]
-		if !found || expectedShell != row.MarkerPlanShellID || row.RatioShellID != expectedShell || row.RatioSizeShellID != expectedShell {
-			return nil, fmt.Errorf("%w: marker ratio shell does not match marker plan", ErrMaterialListExportDataConflict)
+		markerPlanShell, found := parentShell[row.IDMarkerPlan]
+		if !found || markerPlanShell != row.MarkerPlanShellID {
+			return nil, fmt.Errorf("%w: marker ratio does not match marker plan", ErrMaterialListExportDataConflict)
 		}
-		shell, found := shells[expectedShell]
+		if row.RatioShellID != row.RatioSizeShellID {
+			return nil, fmt.Errorf("%w: marker ratio size shell does not match ratio shell", ErrMaterialListExportDataConflict)
+		}
+		shell, found := shells[row.RatioShellID]
 		if !found {
-			return nil, fmt.Errorf("%w: marker plan shell is outside work order", ErrMaterialListExportDataConflict)
+			return nil, fmt.Errorf("%w: marker ratio shell is outside work order", ErrMaterialListExportDataConflict)
 		}
 		size, found := shell.sizes[row.IDSize]
 		if !found || size.id != row.IDWoShellSize {
-			return nil, fmt.Errorf("%w: ratio size does not match marker plan shell", ErrMaterialListExportDataConflict)
+			return nil, fmt.Errorf("%w: ratio size does not match ratio shell", ErrMaterialListExportDataConflict)
 		}
 		plan, found := plans[row.IDWoShellSize]
 		if !found {
