@@ -185,6 +185,10 @@ type Querier interface {
 	GetSizeByID(ctx context.Context, idSize int32) (MasterSize, error)
 	GetSizeByName(ctx context.Context, btrim string) (MasterSize, error)
 	GetSpreadingCuttingPlanByID(ctx context.Context, idSpreadingCuttingPlan int32) (GetSpreadingCuttingPlanByIDRow, error)
+	// Dedicated fixed reads for the renderer-neutral Spreading & Cutting Plan
+	// export. Marker Plan, Data Approve Cutting Plan, and REPORT_CUTTING are
+	// intentionally outside this document's source graph.
+	GetSpreadingCuttingPlanExportHeader(ctx context.Context, idSpreadingCuttingPlan int32) (GetSpreadingCuttingPlanExportHeaderRow, error)
 	// Mengambil laporan stok material yang teragregasi per kategori barang garmen
 	GetStockReportPerKategori(ctx context.Context) ([]GetStockReportPerKategoriRow, error)
 	// Mengambil laporan stok material yang teragregasi per lokasi penyimpanan rak
@@ -272,6 +276,9 @@ type Querier interface {
 	ListRolePermissions(ctx context.Context, idRole int32) ([]string, error)
 	ListRoles(ctx context.Context, arg ListRolesParams) ([]ListRolesRow, error)
 	ListSizes(ctx context.Context, arg ListSizesParams) ([]MasterSize, error)
+	ListSpreadingCuttingPlanExportRatios(ctx context.Context, idSpreadingCuttingPlan int32) ([]ListSpreadingCuttingPlanExportRatiosRow, error)
+	ListSpreadingCuttingPlanExportReceivedByShell(ctx context.Context, idWo int32) ([]ListSpreadingCuttingPlanExportReceivedByShellRow, error)
+	ListSpreadingCuttingPlanExportShellSizes(ctx context.Context, idWo int32) ([]ListSpreadingCuttingPlanExportShellSizesRow, error)
 	ListSpreadingCuttingPlans(ctx context.Context, arg ListSpreadingCuttingPlansParams) ([]ListSpreadingCuttingPlansRow, error)
 	ListSuratJalanClientByMLI(ctx context.Context, idMaterialListItem int32) ([]ListSuratJalanClientByMLIRow, error)
 	ListSuratJalanClients(ctx context.Context, arg ListSuratJalanClientsParams) ([]ListSuratJalanClientsRow, error)
